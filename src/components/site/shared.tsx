@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Clock3 } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Sparkles } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
@@ -69,9 +69,15 @@ export function PageHeader({
             {title}
           </h1>
           {description && (
-            <p className="mt-4 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
-              {description}
-            </p>
+            <>
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+                {description}
+              </p>
+              <span
+                className="divider-dots mt-5 opacity-70"
+                aria-hidden="true"
+              />
+            </>
           )}
         </motion.div>
       </div>
@@ -244,6 +250,49 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
         <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </motion.article>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Quiz teaser band — routes unsure visitors to the Smile Check       */
+/* ------------------------------------------------------------------ */
+
+export function QuizTeaser({ className = "" }: { className?: string }) {
+  const { navigate } = useRouter();
+  const { d } = useLang();
+  const t = d.shared;
+  return (
+    <div
+      className={`card-lift flex flex-col items-center gap-5 rounded-[2rem] border border-blue-100/80 bg-ice px-6 py-6 text-center sm:flex-row sm:justify-between sm:px-8 sm:text-left ${className}`}
+    >
+      <div className="flex flex-col items-center gap-4 sm:flex-row">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-gold shadow-sm ring-1 ring-amber-100">
+          <Sparkles className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="font-heading text-base font-bold text-brand-navy">
+            {t.quizTeaserTitle}
+          </p>
+          <p className="mt-0.5 max-w-md text-sm leading-relaxed text-slate-500">
+            {t.quizTeaserText}
+          </p>
+        </div>
+      </div>
+      <a
+        href="#/assessment"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate("/assessment");
+        }}
+        className="btn-shine group inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white shadow-lg shadow-navy-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-xl"
+      >
+        {t.quizTeaserCta}
+        <ArrowRight
+          className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+          aria-hidden="true"
+        />
+      </a>
+    </div>
   );
 }
 

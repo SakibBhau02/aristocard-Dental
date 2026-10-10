@@ -18,6 +18,7 @@ import { AppointmentPage } from "@/components/site/pages/appointment-page";
 import { GalleryPage } from "@/components/site/pages/gallery-page";
 import { FaqsPage } from "@/components/site/pages/faqs-page";
 import { EstimatorPage } from "@/components/site/pages/estimator-page";
+import { AssessmentPage } from "@/components/site/pages/assessment-page";
 import { StatusPage } from "@/components/site/pages/status-page";
 import { AdminPage } from "@/components/site/pages/admin-page";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
@@ -61,6 +62,8 @@ function PageRouter() {
     page = <FaqsPage />;
   } else if (segments[0] === "estimator") {
     page = <EstimatorPage />;
+  } else if (segments[0] === "assessment") {
+    page = <AssessmentPage />;
   } else if (segments[0] === "status") {
     page = <StatusPage />;
   } else if (segments[0] === "admin") {

@@ -1,0 +1,605 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  BadgePercent,
+     7→  CalendarCheck,
+     8→  Calculator,
+     9→  ChevronUp,
+    10→  Info,
+    11→  Minus,
+    12→  Plus,
+    13→  Printer,
+    14→  Receipt,
+    15→  RotateCcw,
+    16→  Sparkles,
+    17→  Trash2,
+    18→  Wallet,
+    19→} from "lucide-react";
+    20→import { useRouter, usePageMeta } from "@/lib/router";
+    21→import { useLang, toBnDigits } from "@/lib/i18n";
+    22→import { PageHeader, CtaBanner } from "@/components/site/shared";
+    23→import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
+    24→import { DynamicIcon } from "@/components/site/icon-map";
+    25→import { Button } from "@/components/ui/button";
+    26→import { cn } from "@/lib/utils";
+    27→
+    28→/* ------------------------------------------------------------------ */
+    29→/*  PRICE ESTIMATOR — interactive treatment cost calculator (EN / বাংলা) */
+    30→/* ------------------------------------------------------------------ */
+    31→
+    32→type EstimatorItem = {
+    33→  slug: string;
+    34→  name: string;
+    35→  icon: string;
+    36→  category: string;
+    37→  min: number; // BDT
+    38→  max: number; // BDT
+    39→  unit: string; // "per tooth", "per session", "full treatment"…
+    40→  step: number; // quantity step
+    41→  maxQty: number;
+    42→  note?: string;
+    43→};
+    44→
+    45→const estimatorItems: EstimatorItem[] = [
+    46→  { slug: "consultation", name: "Consultation & Checkup", icon: "Stethoscope", category: "General", min: 500, max: 1000, unit: "per visit", step: 1, maxQty: 4 },
+    47→  { slug: "scaling", name: "Scaling & Polishing", icon: "Sparkles", category: "General", min: 1500, max: 3000, unit: "per session", step: 1, maxQty: 4 },
+    48→  { slug: "whitening", name: "Teeth Whitening", icon: "Smile", category: "Cosmetic", min: 8000, max: 20000, unit: "full treatment", step: 1, maxQty: 2, note: "In-clinic professional gel" },
+    49→  { slug: "filling", name: "Tooth-Colored Filling", icon: "Zap", category: "Restorative", min: 1500, max: 3500, unit: "per tooth", step: 1, maxQty: 10 },
+    50→  { slug: "root-canal", name: "Root Canal Treatment", icon: "Activity", category: "Restorative", min: 4000, max: 8000, unit: "per tooth", step: 1, maxQty: 8, note: "Molars may cost more" },
+    51→  { slug: "crown", name: "Crown (Zirconia/PFM)", icon: "Crown", category: "Restorative", min: 6000, max: 25000, unit: "per tooth", step: 1, maxQty: 10, note: "Zirconia at higher end" },
+    52→  { slug: "bridge", name: "Bridge (per unit)", icon: "Anchor", category: "Restorative", min: 6000, max: 15000, unit: "per unit", step: 1, maxQty: 6 },
+    53→  { slug: "implant", name: "Dental Implant + Crown", icon: "Anchor", category: "Surgical", min: 35000, max: 70000, unit: "per tooth", step: 1, maxQty: 8, note: "Implant system dependent" },
+    54→  { slug: "extraction", name: "Wisdom Tooth Extraction", icon: "Scissors", category: "Surgical", min: 4000, max: 12000, unit: "per tooth", step: 1, maxQty: 4 },
+    55→  { slug: "veneer", name: "Porcelain Veneer", icon: "Gem", category: "Cosmetic", min: 8000, max: 20000, unit: "per tooth", step: 1, maxQty: 10 },
+    56→  { slug: "braces-metal", name: "Metal Braces (Full Case)", icon: "Grid3x3", category: "Orthodontics", min: 35000, max: 70000, unit: "full treatment", step: 1, maxQty: 2 },
+    57→  { slug: "braces-ceramic", name: "Ceramic Braces (Full Case)", icon: "Grid3x3", category: "Orthodontics", min: 60000, max: 100000, unit: "full treatment", step: 1, maxQty: 2 },
+    58→  { slug: "invisalign", name: "Invisalign® Clear Aligners", icon: "Smile", category: "Orthodontics", min: 150000, max: 350000, unit: "full treatment", step: 1, maxQty: 1, note: "Complexity dependent" },
+    59→  { slug: "gum", name: "Gum Treatment (Deep Cleaning)", icon: "Leaf", category: "Preventive", min: 2500, max: 6000, unit: "per session", step: 1, maxQty: 4 },
+    60→  { slug: "kids", name: "Kids' Checkup + Fluoride", icon: "Baby", category: "Preventive", min: 1000, max: 2500, unit: "per visit", step: 1, maxQty: 4 },
+    61→];
+    62→
+    63→type Selection = Record<string, number>;
+    64→
+    65→/* Map estimator items → real service slugs (for booking deep-link) */
+    66→const serviceByEstimatorSlug: Record<string, string> = {
+    67→  scaling: "periodontal-gum-treatment",
+    68→  filling: "laser-assisted-fillings",
+    69→  "root-canal": "root-canal-treatment",
+    70→  crown: "crowns-bridges",
+    71→  bridge: "crowns-bridges",
+    72→  implant: "dental-implants",
+    73→  extraction: "oral-maxillofacial-surgery",
+    74→  veneer: "porcelain-veneers",
+    75→  "braces-metal": "traditional-braces-orthodontics",
+    76→  "braces-ceramic": "traditional-braces-orthodontics",
+    77→  invisalign: "invisalign-clear-aligners",
+    78→  gum: "periodontal-gum-treatment",
+    79→  kids: "pediatric-dentistry",
+    80→};
+    81→
+    82→export function EstimatorPage() {
+    83→  const { navigate } = useRouter();
+    84→  const { lang, d } = useLang();
+    85→  const bn = lang === "bn";
+    86→  const t = d.estimatorPage;
+    87→  const [selection, setSelection] = useState<Selection>({});
+    88→
+    89→  const formatBDT = (n: number) => {
+    90→    const s = `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    91→    return bn ? toBnDigits(s) : s;
+    92→  };
+    93→
+    94→  /* localized item name */
+    95→  const itemName = (item: EstimatorItem) =>
+    96→    bn ? (t.items as Record<string, string>)[item.slug] ?? item.name : item.name;
+    97→  const itemUnit = (item: EstimatorItem) =>
+    98→    bn ? (t.units as Record<string, string>)[item.unit] ?? item.unit : item.unit;
+    99→
+   100→  usePageMeta({
+   101→    title: "Treatment Cost Estimator — Dental Prices in Dhaka (2026)",
+   102→    description:
+   103→      "Estimate your dental treatment cost in Bangladesh before your visit. Transparent price ranges for implants, braces, Invisalign, root canals, veneers & more at Aristocrat Dental Care, Uttara Dhaka.",
+   104→    jsonLd: {
+   105→      "@context": "https://schema.org",
+   106→      "@type": "WebApplication",
+   107→      name: "Dental Treatment Cost Estimator",
+   108→      applicationCategory: "HealthApplication",
+   109→      operatingSystem: "Web",
+   110→      url: "https://aristocratdentalcarebd.com/#/estimator",
+   111→      offersCurrency: "BDT",
+   112→      description:
+   113→        "Interactive estimator for dental treatment costs in Dhaka, Bangladesh.",
+   114→    },
+   115→  });
+   116→
+   117→  const totals = useMemo(() => {
+   118→    let min = 0;
+   119→    let max = 0;
+   120→    let count = 0;
+   121→    for (const [slug, qty] of Object.entries(selection)) {
+   122→      if (qty <= 0) continue;
+   123→      const item = estimatorItems.find((i) => i.slug === slug);
+   124→      if (!item) continue;
+   125→      min += item.min * qty;
+   126→      max += item.max * qty;
+   127→      count += qty;
+   128→    }
+   129→    return { min, max, count, isEmpty: count === 0 };
+   130→  }, [selection]);
+   131→
+   132→  /* Mobile: the sticky bottom estimate bar (when visible) lifts the
+   133→     floating action buttons via a body class — nothing overlaps. */
+   134→  useEffect(() => {
+   135→    document.body.classList.toggle("has-mobile-bar", !totals.isEmpty);
+   136→    return () => {
+   137→      document.body.classList.remove("has-mobile-bar");
+   138→    };
+   139→  }, [totals.isEmpty]);
+   140→
+   141→  const scrollToSummary = () => {
+   142→    document
+   143→      .getElementById("estimate-summary")
+   144→      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+   145→  };
+   146→
+   147→  const setQty = (slug: string, qty: number) => {
+   148→    setSelection((prev) => {
+   149→      const next = { ...prev };
+   150→      if (qty <= 0) delete next[slug];
+   151→      else next[slug] = qty;
+   152→      return next;
+   153→    });
+   154→  };
+   155→
+   156→  /* Deep-link to booking with the estimate pre-filled */
+   157→  const bookWithEstimate = () => {
+   158→    const entries = Object.entries(selection).filter(([, qty]) => qty > 0);
+   159→    const params = new URLSearchParams();
+   160→    const primaryService = entries
+   161→      .map(([slug]) => serviceByEstimatorSlug[slug])
+   162→      .find(Boolean);
+   163→    if (primaryService) params.set("service", primaryService);
+   164→    const summary = entries
+   165→      .map(([slug, qty]) => {
+   166→        const item = estimatorItems.find((i) => i.slug === slug);
+   167→        return item ? `${item.name}${qty > 1 ? ` ×${qty}` : ""}` : null;
+   168→      })
+   169→      .filter(Boolean)
+   170→      .join(", ");
+   171→    params.set(
+   172→      "note",
+   173→      `Online estimate: ${summary} — est. ৳${totals.min.toLocaleString("en-IN")}–৳${totals.max.toLocaleString("en-IN")}. Please confirm exact pricing at consultation.`
+   174→    );
+   175→    navigate(`/appointment?${params.toString()}`);
+   176→  };
+   177→
+   178→  const grouped = useMemo(() => {
+   179→    const groups: Record<string, EstimatorItem[]> = {};
+   180→    for (const item of estimatorItems) {
+   181→      groups[item.category] ??= [];
+   182→      groups[item.category].push(item);
+   183→    }
+   184→    return groups;
+   185→  }, []);
+   186→
+   187→  return (
+   188→    <>
+   189→      <PageHeader
+   190→        eyebrow={t.eyebrow}
+   191→        title={t.title}
+   192→        description={t.description}
+   193→        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: t.breadcrumb }]}
+   194→      />
+   195→
+   196→      <section className="py-14 sm:py-16" aria-label="Treatment cost estimator tool">
+   197→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   198→          <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr]">
+   199→            {/* Item picker */}
+   200→            <div>
+   201→              <SectionHeading
+   202→                align="left"
+   203→                eyebrow={t.stepEyebrow}
+   204→                title={t.stepTitle}
+   205→                description={t.stepText}
+   206→              />
+   207→
+   208→              <div className="mt-10 space-y-10">
+   209→                {Object.entries(grouped).map(([category, items]) => (
+   210→                  <div key={category}>
+   211→                    <h3 className="font-heading flex items-center gap-3 text-sm font-bold uppercase tracking-[0.16em] text-brand-blue">
+   212→                      <span className="h-px w-8 bg-brand-blue/40" aria-hidden="true" />
+   213→                      {d.categories[category as keyof typeof d.categories] ?? category}
+   214→                    </h3>
+   215→                    <StaggerContainer className="mt-4 grid gap-3 sm:grid-cols-2">
+   216→                      {items.map((item) => {
+   217→                        const qty = selection[item.slug] ?? 0;
+   218→                        const active = qty > 0;
+   219→                        return (
+   220→                          <StaggerItem key={item.slug}>
+   221→                            <div
+   222→                              className={cn(
+   223→                                "group flex items-center gap-4 rounded-2xl border p-4 transition-all duration-400",
+   224→                                active
+   225→                                  ? "border-brand-blue/50 bg-blue-50/60 shadow-[0_10px_30px_-14px_rgba(30,125,255,0.4)]"
+   226→                                  : "border-blue-100/70 bg-white hover:border-brand-blue/30 hover:shadow-[0_10px_25px_-14px_rgba(30,125,255,0.3)]"
+   227→                              )}
+   228→                            >
+   229→                              <span
+   230→                                className={cn(
+   231→                                  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-400",
+   232→                                  active
+   233→                                    ? "bg-brand-blue text-white shadow-lg shadow-blue-500/40"
+   234→                                    : "bg-blue-50 text-brand-blue ring-1 ring-blue-100 group-hover:scale-105"
+   235→                                )}
+   236→                              >
+   237→                                <DynamicIcon name={item.icon} className="h-5.5 w-5.5" />
+   238→                              </span>
+   239→
+   240→                              <div className="min-w-0 flex-1">
+   241→                                <p className="font-heading text-sm font-bold leading-snug text-brand-navy">
+   242→                                  {itemName(item)}
+   243→                                </p>
+   244→                                <p className="mt-0.5 text-xs text-slate-500">
+   245→                                  {formatBDT(item.min)}–{formatBDT(item.max)}{" "}
+   246→                                  <span className="text-slate-400">{itemUnit(item)}</span>
+   247→                                </p>
+   248→                              </div>
+   249→
+   250→                              {/* Quantity stepper */}
+   251→                              <div className="flex items-center gap-1.5">
+   252→                                <button
+   253→                                  type="button"
+   254→                                  onClick={() => setQty(item.slug, Math.max(0, qty - item.step))}
+   255→                                  disabled={!active}
+   256→                                  aria-label={t.removeOne.replace("{item}", itemName(item))}
+   257→                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-100 disabled:opacity-30"
+   258→                                >
+   259→                                  <Minus className="h-4 w-4" aria-hidden="true" />
+   260→                                </button>
+   261→                                <motion.span
+   262→                                  key={qty}
+   263→                                  initial={{ scale: 1.4 }}
+   264→                                  animate={{ scale: 1 }}
+   265→                                  className={cn(
+   266→                                    "w-7 text-center font-heading text-sm font-bold",
+   267→                                    active ? "text-brand-blue" : "text-slate-300"
+   268→                                  )}
+   269→                                >
+   270→                                  {bn ? toBnDigits(qty) : qty}
+   271→                                </motion.span>
+   272→                                <button
+   273→                                  type="button"
+   274→                                  onClick={() =>
+   275→                                    setQty(item.slug, Math.min(item.maxQty, qty + item.step))
+   276→                                  }
+   277→                                  aria-label={t.addOne.replace("{item}", itemName(item))}
+   278→                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-blue text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy"
+   279→                                >
+   280→                                  <Plus className="h-4 w-4" aria-hidden="true" />
+   281→                                </button>
+   282→                              </div>
+   283→                            </div>
+   284→                          </StaggerItem>
+   285→                        );
+   286→                      })}
+   287→                    </StaggerContainer>
+   288→                  </div>
+   289→                ))}
+   290→              </div>
+   291→            </div>
+   292→
+   293→            {/* Sticky summary (scroll target for the mobile bar) */}
+   294→            <div id="estimate-summary" className="scroll-mt-28">
+   295→              <Reveal delay={0.1}>
+   296→                <div className="sticky top-28">
+   297→                  <div className="hero-mesh-dark relative overflow-hidden rounded-[2rem] p-7 shadow-2xl shadow-navy-900/40 sm:p-8">
+   298→                    <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+   299→                    <div className="relative">
+   300→                      <div className="flex items-center gap-3">
+   301→                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-amber-300 ring-1 ring-white/15">
+   302→                          <Calculator className="h-5.5 w-5.5" aria-hidden="true" />
+   303→                        </span>
+   304→                        <div>
+   305→                          <h2 className="font-heading text-lg font-bold text-white">
+   306→                            {t.totalTitle}
+   307→                          </h2>
+   308→                          <p className="text-xs text-blue-200/80">
+   309→                            {totals.count > 0
+   310→                              ? (totals.count > 1 ? t.itemsSelected : t.itemSelected).replace(
+   311→                                  "{count}",
+   312→                                  bn ? toBnDigits(totals.count) : String(totals.count)
+   313→                                )
+   314→                              : t.selectToBegin}
+   315→                          </p>
+   316→                        </div>
+   317→                      </div>
+   318→
+   319→                      <div className="mt-7" aria-live="polite">
+   320→                        <AnimatePresence mode="wait">
+   321→                          {totals.isEmpty ? (
+   322→                            <motion.div
+   323→                              key="empty"
+   324→                              initial={{ opacity: 0, y: 10 }}
+   325→                              animate={{ opacity: 1, y: 0 }}
+   326→                              exit={{ opacity: 0, y: -10 }}
+   327→                              className="rounded-2xl border border-dashed border-white/25 p-6 text-center"
+   328→                            >
+   329→                              <Wallet className="mx-auto h-8 w-8 text-blue-300/60" aria-hidden="true" />
+   330→                              <p className="mt-3 text-sm text-blue-200/80">
+   331→                                {t.emptyText}
+   332→                              </p>
+   333→                            </motion.div>
+   334→                          ) : (
+   335→                            <motion.div
+   336→                              key="total"
+   337→                              initial={{ opacity: 0, y: 10 }}
+   338→                              animate={{ opacity: 1, y: 0 }}
+   339→                              exit={{ opacity: 0, y: -10 }}
+   340→                              className="rounded-2xl bg-white/8 p-6 ring-1 ring-white/12"
+   341→                            >
+   342→                              <p className="text-center font-heading text-3xl font-bold text-white sm:text-[2.15rem]">
+   343→                                {formatBDT(totals.min)}
+   344→                                <span className="mx-1 text-blue-300/70">–</span>
+   345→                                {formatBDT(totals.max)}
+   346→                              </p>
+   347→                              <p className="mt-2 text-center text-xs text-blue-200/80">
+   348→                                {t.rangeNote}
+   349→                              </p>
+   350→                            </motion.div>
+   351→                          )}
+   352→                        </AnimatePresence>
+   353→                      </div>
+   354→
+   355→                      {/* Selected items list */}
+   356→                      {!totals.isEmpty && (
+   357→                        <ul className="scroll-area mt-6 max-h-48 space-y-2 overflow-y-auto pr-1">
+   358→                          {Object.entries(selection).map(([slug, qty]) => {
+   359→                            const item = estimatorItems.find((i) => i.slug === slug);
+   360→                            if (!item) return null;
+   361→                            return (
+   362→                              <li
+   363→                                key={slug}
+   364→                                className="flex items-center justify-between gap-3 rounded-xl bg-white/8 px-4 py-2.5 text-sm ring-1 ring-white/10"
+   365→                              >
+   366→                                <span className="min-w-0 flex-1 truncate text-blue-100/90">
+   367→                                  {itemName(item)}
+   368→                                  {qty > 1 && (
+   369→                                    <span className="ml-1.5 rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-bold text-white">
+   370→                                      ×{bn ? toBnDigits(qty) : qty}
+   371→                                    </span>
+   372→                                  )}
+   373→                                </span>
+   374→                                <span className="shrink-0 font-semibold text-white">
+   375→                                  {formatBDT(item.min * qty)}–{formatBDT(item.max * qty)}
+   376→                                </span>
+   377→                                <button
+   378→                                  type="button"
+   379→                                  onClick={() => setQty(slug, 0)}
+   380→                                  aria-label={t.removeItem.replace("{item}", itemName(item))}
+   381→                                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-blue-200/60 transition-colors hover:bg-rose-500/20 hover:text-rose-300"
+   382→                                >
+   383→                                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+   384→                                </button>
+   385→                              </li>
+   386→                            );
+   387→                          })}
+   388→                        </ul>
+   389→                      )}
+   390→
+   391→                      <div className="mt-6 space-y-3">
+   392→                        <Button
+   393→                          asChild={!totals.isEmpty ? false : true}
+   394→                          onClick={totals.isEmpty ? undefined : bookWithEstimate}
+   395→                          className="w-full rounded-2xl bg-white py-4 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+   396→                        >
+   397→                          {totals.isEmpty ? (
+   398→                            <a
+   399→                              href="#/appointment"
+   400→                              onClick={(e) => {
+   401→                                e.preventDefault();
+   402→                                navigate("/appointment");
+   403→                              }}
+   404→                              className="inline-flex items-center justify-center gap-2"
+   405→                            >
+   406→                              <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   407→                              {t.book}
+   408→                            </a>
+   409→                          ) : (
+   410→                            <span className="inline-flex items-center justify-center gap-2">
+   411→                              <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   412→                              {t.bookWithEstimate}
+   413→                            </span>
+   414→                          )}
+   415→                        </Button>
+   416→                        {!totals.isEmpty && (
+   417→                          <>
+   418→                            <button
+   419→                              type="button"
+   420→                              onClick={() => window.print()}
+   421→                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white ring-1 ring-white/20 transition-all duration-300 hover:bg-white/15"
+   422→                            >
+   423→                              <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+   424→                              {t.print}
+   425→                            </button>
+   426→                            <button
+   427→                              type="button"
+   428→                              onClick={() => setSelection({})}
+   429→                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-semibold text-blue-200/80 ring-1 ring-white/20 transition-all duration-300 hover:bg-white/10 hover:text-white"
+   430→                            >
+   431→                              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+   432→                              {t.reset}
+   433→                            </button>
+   434→                          </>
+   435→                        )}
+   436→                      </div>
+   437→                    </div>
+   438→                  </div>
+   439→
+   440→                  {/* assurance card */}
+   441→                  <div className="mt-4 rounded-3xl border border-blue-100/80 bg-white p-5">
+   442→                    <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-brand-navy">
+   443→                      <BadgePercent className="h-4.5 w-4.5 text-brand-blue" aria-hidden="true" />
+   444→                      {t.whyRange}
+   445→                      <Receipt className="ml-auto h-4 w-4 text-slate-300" aria-hidden="true" />
+   446→                    </h3>
+   447→                    <p className="mt-2.5 text-xs leading-relaxed text-slate-600">
+   448→                      {t.whyRangeText}{" "}
+   449→                      <span className="font-semibold text-brand-navy">
+   450→                        {t.installments}
+   451→                      </span>
+   452→                    </p>
+   453→                  </div>
+   454→                </div>
+   455→              </Reveal>
+   456→            </div>
+   457→          </div>
+   458→
+   459→          {/* How pricing works */}
+   460→          <Reveal className="mt-16">
+   461→            <div className="grid gap-4 rounded-[2rem] border border-blue-100 bg-ice p-7 sm:grid-cols-3 sm:p-8">
+   462→              {t.assurance.map((item, i) => (
+   463→                <div key={i} className="flex items-start gap-4">
+   464→                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
+   465→                    <DynamicIcon name={["Sparkles", "BadgeCheck", "Wallet"][i]} className="h-5.5 w-5.5" />
+   466→                  </span>
+   467→                  <span>
+   468→                    <span className="font-heading block text-sm font-bold text-brand-navy">
+   469→                      {item.title}
+   470→                    </span>
+   471→                    <span className="mt-1 block text-sm leading-relaxed text-slate-600">
+   472→                      {item.text}
+   473→                    </span>
+   474→                  </span>
+   475→                </div>
+   476→              ))}
+   477→            </div>
+   478→          </Reveal>
+   479→
+   480→          {/* disclaimer */}
+   481→          <Reveal className="mt-6">
+   482→            <p className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs leading-relaxed text-amber-800">
+   483→              <Info className="mt-0.5 h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+   484→              <span>
+   485→                <strong>{t.disclaimerTitle}</strong> {t.disclaimerText}
+   486→              </span>
+   487→            </p>
+   488→          </Reveal>
+   489→        </div>
+   490→      </section>
+   491→
+   492→      {/* Print-only estimate sheet (visible only when printing) */}
+   493→      <div className="print-sheet hidden print:block" aria-hidden="true">
+   494→        <div style={{ fontFamily: "Georgia, serif", color: "#002060", padding: "8px 4px" }}>
+   495→          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #002060", paddingBottom: 12 }}>
+   496→            <div>
+   497→              <div style={{ fontSize: 20, fontWeight: 700 }}>Aristocrat Dental Care &amp; Orthodontic Center</div>
+   498→              <div style={{ fontSize: 12, color: "#475569" }}>Uttara, Dhaka, Bangladesh • Hotline 01715-027522</div>
+   499→            </div>
+   500→            <div style={{ fontSize: 12, color: "#475569", textAlign: "right" }}>
+   501→              Treatment Cost Estimate<br />
+   502→              {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+   503→            </div>
+   504→          </div>
+   505→          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16, fontSize: 13 }}>
+   506→            <thead>
+   507→              <tr style={{ borderBottom: "1.5px solid #cbd5e1", textAlign: "left" }}>
+   508→                <th style={{ padding: "8px 6px" }}>Treatment</th>
+   509→                <th style={{ padding: "8px 6px", textAlign: "center" }}>Qty</th>
+   510→                <th style={{ padding: "8px 6px", textAlign: "right" }}>Unit Range (BDT)</th>
+   511→                <th style={{ padding: "8px 6px", textAlign: "right" }}>Line Total (BDT)</th>
+   512→              </tr>
+   513→            </thead>
+   514→            <tbody>
+   515→              {Object.entries(selection)
+   516→                .filter(([, qty]) => qty > 0)
+   517→                .map(([slug, qty]) => {
+   518→                  const item = estimatorItems.find((i) => i.slug === slug);
+   519→                  if (!item) return null;
+   520→                  return (
+   521→                    <tr key={slug} style={{ borderBottom: "1px solid #e2e8f0" }}>
+   522→                      <td style={{ padding: "8px 6px" }}>
+   523→                        {item.name}
+   524→                        <span style={{ color: "#64748b", fontSize: 11 }}> ({item.unit})</span>
+   525→                      </td>
+   526→                      <td style={{ padding: "8px 6px", textAlign: "center" }}>{qty}</td>
+   527→                      <td style={{ padding: "8px 6px", textAlign: "right" }}>{item.min.toLocaleString()} – {item.max.toLocaleString()}</td>
+   528→                      <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600 }}>
+   529→                        {(item.min * qty).toLocaleString()} – {(item.max * qty).toLocaleString()}
+   530→                      </td>
+   531→                    </tr>
+   532→                  );
+   533→                })}
+   534→            </tbody>
+   535→          </table>
+   536→          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+   537→            <div style={{ background: "#f0f7ff", borderRadius: 10, padding: "10px 18px", fontSize: 15, fontWeight: 700 }}>
+   538→              Estimated Total: BDT {totals.min.toLocaleString()} – {totals.max.toLocaleString()}
+   539→            </div>
+   540→          </div>
+   541→          <p style={{ marginTop: 16, fontSize: 11, color: "#475569", lineHeight: 1.6 }}>
+   542→            This estimate reflects typical Dhaka market rates and is provided for planning purposes only — not a binding quote.
+   543→            Your personalized written plan with exact pricing is confirmed by our specialists after examination and digital
+   544→            diagnostics. Installments available. Book online at aristocratdentalcarebd.com or call 01715-027522
+   545→            (Sat–Thu, 10:00 AM – 9:00 PM).
+   546→          </p>
+   547→        </div>
+   548→      </div>
+   549→
+   550→      {/* Mobile sticky estimate bar — running total always in reach (lg-hidden:
+   551→          desktop keeps the side summary card) */}
+   552→      <AnimatePresence>
+   553→        {!totals.isEmpty && (
+   554→          <motion.div
+   555→            initial={{ y: 110, opacity: 0 }}
+   556→            animate={{ y: 0, opacity: 1 }}
+   557→            exit={{ y: 110, opacity: 0 }}
+   558→            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+   559→            className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+   560→            role="region"
+   561→            aria-label="Estimated total summary bar"
+   562→          >
+   563→            <div className="safe-bottom-bar border-t border-white/10 bg-brand-navy/95 backdrop-blur-lg shadow-[0_-14px_44px_-14px_rgba(0,18,58,0.6)]">
+   564→              <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-2.5">
+   565→                <button
+   566→                  type="button"
+   567→                  onClick={scrollToSummary}
+   568→                  aria-label={t.mobileDetails}
+   569→                  className="group min-w-0 flex-1 rounded-2xl px-2 py-1 text-left transition-colors hover:bg-white/5"
+   570→                >
+   571→                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-blue-200/80">
+   572→                    {(totals.count > 1 ? t.itemsSelected : t.itemSelected).replace(
+   573→                      "{count}",
+   574→                      bn ? toBnDigits(totals.count) : String(totals.count)
+   575→                    )}
+   576→                    <ChevronUp className="h-3 w-3 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true" />
+   577→                  </span>
+   578→                  <span className="font-heading block truncate text-lg font-bold leading-tight text-white">
+   579→                    {formatBDT(totals.min)}
+   580→                    <span className="mx-1 text-blue-300/70">–</span>
+   581→                    {formatBDT(totals.max)}
+   582→                  </span>
+   583→                </button>
+   584→                <button
+   585→                  type="button"
+   586→                  onClick={bookWithEstimate}
+   587→                  className="btn-shine inline-flex shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-brand-gold px-5 py-2.5 text-sm font-bold text-brand-navy shadow-lg shadow-amber-900/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+   588→                >
+   589→                  <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+   590→                  {t.mobileBook}
+   591→                </button>
+   592→              </div>
+   593→            </div>
+   594→          </motion.div>
+   595→        )}
+   596→      </AnimatePresence>
+   597→
+   598→      <CtaBanner
+   599→        title={t.ctaTitle}
+   600→        description={t.ctaDescription}
+   601→      />
+   602→    </>
+   603→  );
+   604→}
+   605→

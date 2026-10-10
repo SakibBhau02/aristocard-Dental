@@ -427,7 +427,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
             <div>
               <Reveal delay={0.1}>
                 <div className="sticky top-28 space-y-4">
-                  <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
+                  <div className="card-lift rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
                     <h3 className="font-heading text-base font-bold text-brand-navy">
                       {t.consultation}
                     </h3>
@@ -479,7 +479,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                   </div>
 
                   {/* other doctors */}
-                  <div className="rounded-3xl border border-blue-100/80 bg-ice p-6">
+                  <div className="card-lift rounded-3xl border border-blue-100/80 bg-ice p-6">
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-base font-bold text-brand-navy">
                         {t.otherSpecialists}

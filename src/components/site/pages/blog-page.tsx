@@ -6,10 +6,14 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  Check,
   CheckCircle2,
   Clock3,
+  Facebook,
   Lightbulb,
+  Link2,
   ListTree,
+  MessageCircle,
   Search,
   Share2,
   Tag,
@@ -18,6 +22,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 import { blogPosts, blogCategories, getPost } from "@/lib/data/blog";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
@@ -459,21 +464,41 @@ export function BlogDetailPage({ slug }: { slug: string }) {
     el?.focus({ preventScroll: true });
   };
 
-  const shareArticle = async () => {
-    const url = `${window.location.origin}/#/blog/${slug}`;
-    const shareData = {
-      title: post?.title ?? "Dental health article",
-      text: post?.excerpt ?? "Expert dental advice from Aristocrat Dental Care",
-      url,
-    };
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  /* Deep-linkable article URL (matches the canonical production URL) */
+  const articleUrl = () => `${window.location.origin}/#/blog/${slug}`;
+  const shareTitle = () => (bn && post?.titleBn ? post.titleBn : post?.title ?? "Dental health article");
+
+  const shareWhatsApp = () => {
+    const text = `${shareTitle()} — ${articleUrl()}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  };
+
+  const shareFacebook = () => {
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl())}`,
+      "_blank",
+      "noopener,noreferrer,width=640,height=580"
+    );
+  };
+
+  const copyLink = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(url);
-      }
+      await navigator.clipboard.writeText(articleUrl());
+      setCopied(true);
+      toast({
+        title: t.shareCopied,
+        description: t.shareCopiedDesc,
+      });
+      window.setTimeout(() => setCopied(false), 2600);
     } catch {
-      /* user dismissed share sheet — no-op */
+      toast({
+        title: t.shareFail,
+        description: t.shareFailDesc,
+        variant: "destructive",
+      });
     }
   };
 
@@ -708,7 +733,10 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                       {(bnSection?.body ?? section.body).map((para, j) => (
                         <p
                           key={j}
-                          className="text-[15px] leading-relaxed text-slate-600 sm:text-base"
+                          className={cn(
+                            "text-[15px] leading-relaxed text-slate-600 sm:text-base",
+                            i === 0 && j === 0 && "article-lead"
+                          )}
                         >
                           {para}
                         </p>
@@ -784,14 +812,63 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 </Badge>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={shareArticle}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50 hover:ring-brand-blue/30"
+            <div
+              className="flex flex-wrap items-center gap-2"
+              role="group"
+              aria-label={t.share}
             >
-              <Share2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
-              {t.share}
-            </button>
+              <span className="mr-1 hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:inline-flex">
+                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {t.share}
+              </span>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${bn && post.titleBn ? post.titleBn : post.title} — ${typeof window !== "undefined" ? `${window.location.origin}/#/blog/${slug}` : `https://aristocratdentalcarebd.com/#/blog/${slug}`}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  /* let real users open the link naturally; keep href as the fallback */
+                  e.preventDefault();
+                  shareWhatsApp();
+                }}
+                aria-label={t.shareWa}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </a>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/#/blog/${slug}` : "https://aristocratdentalcarebd.com/#/blog/" + slug)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  shareFacebook();
+                }}
+                aria-label={t.shareFb}
+                className="inline-flex items-center gap-2 rounded-full bg-brand-blue-soft px-4 py-2.5 text-xs font-bold text-brand-blue ring-1 ring-blue-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+              >
+                <Facebook className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Facebook</span>
+              </a>
+              <button
+                type="button"
+                onClick={copyLink}
+                aria-label={t.shareCopy}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold ring-1 transition-all duration-300 hover:-translate-y-0.5",
+                  copied
+                    ? "bg-brand-navy text-white ring-brand-navy"
+                    : "bg-white text-brand-navy ring-blue-100 hover:bg-blue-50 hover:ring-brand-blue/30"
+                )}
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+                ) : (
+                  <Link2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+                )}
+                <span className="hidden sm:inline">{copied ? t.shareCopied : t.shareCopy}</span>
+              </button>
+            </div>
           </div>
         </div>
       </article>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BadgePercent,
   CalendarCheck,
   Calculator,
+  ChevronUp,
   Info,
   Minus,
   Plus,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { PageHeader, CtaBanner } from "@/components/site/shared";
+import { PageHeader, CtaBanner, QuizTeaser } from "@/components/site/shared";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { DynamicIcon } from "@/components/site/icon-map";
 import { Button } from "@/components/ui/button";
@@ -127,6 +128,21 @@ export function EstimatorPage() {
     }
     return { min, max, count, isEmpty: count === 0 };
   }, [selection]);
+
+  /* Mobile: the sticky bottom estimate bar (when visible) lifts the
+     floating action buttons via a body class — nothing overlaps. */
+  useEffect(() => {
+    document.body.classList.toggle("has-mobile-bar", !totals.isEmpty);
+    return () => {
+      document.body.classList.remove("has-mobile-bar");
+    };
+  }, [totals.isEmpty]);
+
+  const scrollToSummary = () => {
+    document
+      .getElementById("estimate-summary")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const setQty = (slug: string, qty: number) => {
     setSelection((prev) => {
@@ -274,8 +290,8 @@ export function EstimatorPage() {
               </div>
             </div>
 
-            {/* Sticky summary */}
-            <div>
+            {/* Sticky summary (scroll target for the mobile bar) */}
+            <div id="estimate-summary" className="scroll-mt-28">
               <Reveal delay={0.1}>
                 <div className="sticky top-28">
                   <div className="hero-mesh-dark relative overflow-hidden rounded-[2rem] p-7 shadow-2xl shadow-navy-900/40 sm:p-8">
@@ -530,6 +546,61 @@ export function EstimatorPage() {
           </p>
         </div>
       </div>
+
+      {/* Mobile sticky estimate bar — running total always in reach (lg-hidden:
+          desktop keeps the side summary card) */}
+      <AnimatePresence>
+        {!totals.isEmpty && (
+          <motion.div
+            initial={{ y: 110, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 110, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+            role="region"
+            aria-label="Estimated total summary bar"
+          >
+            <div className="safe-bottom-bar border-t border-white/10 bg-brand-navy/95 backdrop-blur-lg shadow-[0_-14px_44px_-14px_rgba(0,18,58,0.6)]">
+              <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-2.5">
+                <button
+                  type="button"
+                  onClick={scrollToSummary}
+                  aria-label={t.mobileDetails}
+                  className="group min-w-0 flex-1 rounded-2xl px-2 py-1 text-left transition-colors hover:bg-white/5"
+                >
+                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-blue-200/80">
+                    {(totals.count > 1 ? t.itemsSelected : t.itemSelected).replace(
+                      "{count}",
+                      bn ? toBnDigits(totals.count) : String(totals.count)
+                    )}
+                    <ChevronUp className="h-3 w-3 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true" />
+                  </span>
+                  <span className="font-heading block truncate text-lg font-bold leading-tight text-white">
+                    {formatBDT(totals.min)}
+                    <span className="mx-1 text-blue-300/70">–</span>
+                    {formatBDT(totals.max)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={bookWithEstimate}
+                  className="btn-shine inline-flex shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-brand-gold px-5 py-2.5 text-sm font-bold text-brand-navy shadow-lg shadow-amber-900/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+                  {t.mobileBook}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Smile Check — guide unsure visitors before the CTA */}
+      <Reveal className="pb-2">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <QuizTeaser />
+        </div>
+      </Reveal>
 
       <CtaBanner
         title={t.ctaTitle}

@@ -40,7 +40,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/site/motion";
-import { ServiceCard, DoctorCard, CtaBanner } from "@/components/site/shared";
+import { ServiceCard, DoctorCard, CtaBanner, QuizTeaser } from "@/components/site/shared";
 import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
@@ -116,7 +116,7 @@ export function HomePage() {
             >
               {d.home.hero.titleA}{" "}
               <span className="relative inline-block">
-                <span className="gradient-text">{d.home.hero.titleB}</span>
+                <span className="gradient-text text-shimmer">{d.home.hero.titleB}</span>
                 <svg
                   className="absolute -bottom-2 left-0 w-full text-amber-400"
                   viewBox="0 0 220 12"
@@ -531,6 +531,11 @@ export function HomePage() {
                 <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </a>
             </Button>
+          </Reveal>
+
+          {/* Smile Check — for visitors unsure where to start */}
+          <Reveal className="mt-8" delay={0.08}>
+            <QuizTeaser />
           </Reveal>
         </div>
       </section>

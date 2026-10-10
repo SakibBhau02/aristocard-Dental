@@ -43,6 +43,21 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
       setState(parseHash(window.location.hash));
     };
     window.addEventListener("hashchange", onHashChange);
+    /* Catch a hash that arrived during the hydration window (between
+       HTML load and this effect attaching the listener) — e.g. deep-link
+       fragments applied before hydration, or very slow connections where
+       the user changes the hash first. No-op when already in sync.
+       Deferred to a microtask: syncs external state without a cascading
+       synchronous render inside the effect body. */
+    queueMicrotask(() => {
+      setState((prev) => {
+        const current = parseHash(window.location.hash);
+        return current.path === prev.path &&
+          current.query.toString() === prev.query.toString()
+          ? prev
+          : current;
+      });
+    });
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 

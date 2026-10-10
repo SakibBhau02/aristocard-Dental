@@ -1,0 +1,1637 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  BadgeCheck,
+     7→  Ban,
+     8→  CalendarClock,
+     9→  CalendarDays,
+    10→  CalendarRange,
+    11→  CheckCircle2,
+    12→  Clock,
+    13→  Download,
+    14→  Inbox,
+    15→  Loader2,
+    16→  Lock,
+    17→  LogOut,
+    18→  MessageSquareQuote,
+    19→  RefreshCw,
+    20→  Search,
+    21→  ShieldCheck,
+    22→  Sparkles,
+    23→  Star,
+    24→  X,
+    25→} from "lucide-react";
+    26→import { usePageMeta } from "@/lib/router";
+    27→import { services } from "@/lib/data/services";
+    28→import { doctors } from "@/lib/data/doctors";
+    29→import { cn } from "@/lib/utils";
+    30→import { Button } from "@/components/ui/button";
+    31→
+    32→/* ------------------------------------------------------------------ */
+    33→/*  ADMIN — passcode-protected appointment dashboard (#/admin)          */
+    34→/*  Staff use only. Not indexed, not in navbar/sitemap.                 */
+    35→/* ------------------------------------------------------------------ */
+    36→
+    37→type AppointmentRow = {
+    38→  id: number;
+    39→  refCode: string;
+    40→  name: string;
+    41→  phone: string;
+    42→  email: string | null;
+    43→  date: string;
+    44→  time: string;
+    45→  doctorSlug: string | null;
+    46→  serviceSlug: string | null;
+    47→  notes: string | null;
+    48→  status: string;
+    49→  source: string | null;
+    50→  createdAt: string;
+    51→};
+    52→
+    53→type Stats = {
+    54→  total: number;
+    55→  pending: number;
+    56→  confirmed: number;
+    57→  completed: number;
+    58→  cancelled: number;
+    59→  today: number;
+    60→  upcoming: number;
+    61→};
+    62→
+    63→type ReviewRow = {
+    64→  id: string;
+    65→  name: string;
+    66→  phone: string | null;
+    67→  rating: number;
+    68→  serviceSlug: string | null;
+    69→  title: string | null;
+    70→  message: string;
+    71→  approved: boolean;
+    72→  createdAt: string;
+    73→};
+    74→
+    75→type ReviewStats = {
+    76→  total: number;
+    77→  pending: number;
+    78→  approved: number;
+    79→  average: number;
+    80→};
+    81→
+    82→type AdminView = "appointments" | "reviews";
+    83→type ReviewFilter = "ALL" | "PENDING" | "APPROVED";
+    84→
+    85→const SESSION_KEY = "adc-admin-code";
+    86→type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+    87→
+    88→/* --- date-range presets (computed client-side, staff's local timezone) --- */
+    89→type DatePreset = "all" | "today" | "next7" | "next30" | "past30" | "custom";
+    90→
+    91→function toIsoDate(d: Date): string {
+    92→  const p = (n: number) => String(n).padStart(2, "0");
+    93→  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    94→}
+    95→function localToday(): string {
+    96→  return toIsoDate(new Date());
+    97→}
+    98→function addDaysIso(iso: string, days: number): string {
+    99→  const [y, m, d] = iso.split("-").map(Number);
+   100→  return toIsoDate(new Date(y, m - 1, d + days));
+   101→}
+   102→
+   103→const DATE_PRESETS: {
+   104→  id: Exclude<DatePreset, "custom">;
+   105→  label: string;
+   106→  range: () => [string, string];
+   107→}[] = [
+   108→  { id: "all", label: "All time", range: () => ["", ""] },
+   109→  { id: "today", label: "Today", range: () => [localToday(), localToday()] },
+   110→  { id: "next7", label: "Next 7 days", range: () => [localToday(), addDaysIso(localToday(), 6)] },
+   111→  { id: "next30", label: "Next 30 days", range: () => [localToday(), addDaysIso(localToday(), 29)] },
+   112→  { id: "past30", label: "Past 30 days", range: () => [addDaysIso(localToday(), -29), localToday()] },
+   113→];
+   114→
+   115→/* --- external store for the admin session (SSR-safe, lint-safe) --- */
+   116→let storedCode: string | null = null;
+   117→const codeListeners = new Set<() => void>();
+   118→if (typeof window !== "undefined") {
+   119→  try {
+   120→    storedCode = sessionStorage.getItem(SESSION_KEY);
+   121→  } catch {
+   122→    /* ignore */
+   123→  }
+   124→}
+   125→function subscribeCode(fn: () => void) {
+   126→  codeListeners.add(fn);
+   127→  return () => {
+   128→    codeListeners.delete(fn);
+   129→  };
+   130→}
+   131→function getCodeSnapshot(): string | null {
+   132→  return storedCode;
+   133→}
+   134→function getServerCode(): string | null {
+   135→  return null;
+   136→}
+   137→function setStoredCode(c: string | null) {
+   138→  storedCode = c;
+   139→  try {
+   140→    if (c) sessionStorage.setItem(SESSION_KEY, c);
+   141→    else sessionStorage.removeItem(SESSION_KEY);
+   142→  } catch {
+   143→    /* ignore */
+   144→  }
+   145→  codeListeners.forEach((fn) => fn());
+   146→}
+   147→
+   148→const statusStyles: Record<string, string> = {
+   149→  PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
+   150→  CONFIRMED: "bg-blue-50 text-brand-blue ring-blue-200",
+   151→  COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+   152→  CANCELLED: "bg-rose-50 text-rose-600 ring-rose-200",
+   153→};
+   154→
+   155→export function AdminPage() {
+   156→  usePageMeta({
+   157→    title: "Admin — Appointment Dashboard",
+   158→    description: "Staff-only appointment management dashboard.",
+   159→  });
+   160→
+   161→  /* noindex for this back-office page */
+   162→  useEffect(() => {
+   163→    const meta = document.createElement("meta");
+   164→    meta.name = "robots";
+   165→    meta.content = "noindex, nofollow";
+   166→    meta.dataset.adminNoindex = "true";
+   167→    document.head.appendChild(meta);
+   168→    return () => {
+   169→      meta.remove();
+   170→    };
+   171→  }, []);
+   172→
+   173→  const code = useSyncExternalStore(subscribeCode, getCodeSnapshot, getServerCode);
+   174→
+   175→  return code ? (
+   176→    <AdminDashboard
+   177→      code={code}
+   178→      onLogout={() => setStoredCode(null)}
+   179→    />
+   180→  ) : (
+   181→    <AdminGate
+   182→      onUnlock={(c) => setStoredCode(c)}
+   183→    />
+   184→  );
+   185→}
+   186→
+   187→/* ------------------------------------------------------------------ */
+   188→/*  Passcode gate                                                       */
+   189→/* ------------------------------------------------------------------ */
+   190→
+   191→function AdminGate({ onUnlock }: { onUnlock: (code: string) => void }) {
+   192→  const [value, setValue] = useState("");
+   193→  const [error, setError] = useState<string | null>(null);
+   194→  const [checking, setChecking] = useState(false);
+   195→
+   196→  async function handleSubmit(e: React.FormEvent) {
+   197→    e.preventDefault();
+   198→    if (checking) return;
+   199→    setError(null);
+   200→    setChecking(true);
+   201→    try {
+   202→      const res = await fetch("/api/admin/appointments", {
+   203→        headers: { "x-admin-code": value.trim() },
+   204→      });
+   205→      if (res.status === 401) {
+   206→        setError("Incorrect passcode. Please try again.");
+   207→        return;
+   208→      }
+   209→      if (!res.ok) throw new Error("Server error");
+   210→      onUnlock(value.trim());
+   211→    } catch {
+   212→      setError("Could not reach the server. Please try again.");
+   213→    } finally {
+   214→      setChecking(false);
+   215→    }
+   216→  }
+   217→
+   218→  return (
+   219→    <div className="hero-mesh flex flex-1 items-center justify-center px-4 py-24">
+   220→      <motion.div
+   221→        initial={{ opacity: 0, y: 24 }}
+   222→        animate={{ opacity: 1, y: 0 }}
+   223→        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   224→        className="w-full max-w-md"
+   225→      >
+   226→        <form
+   227→          onSubmit={handleSubmit}
+   228→          className="card-shine rounded-[2rem] border border-blue-100 bg-white p-8 shadow-[0_24px_60px_-24px_rgba(0,32,96,0.35)] sm:p-10"
+   229→        >
+   230→          <div className="flex items-center justify-center">
+   231→            <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-navy text-white shadow-lg shadow-navy-900/30">
+   232→              <Lock className="h-7 w-7" aria-hidden="true" />
+   233→            </span>
+   234→          </div>
+   235→          <h1 className="font-heading mt-6 text-center text-2xl font-bold text-brand-navy">
+   236→            Staff Access Only
+   237→          </h1>
+   238→          <p className="mt-2 text-center text-sm leading-relaxed text-slate-500">
+   239→            Enter the clinic admin passcode to manage appointments. This area is
+   240→            for Aristocrat Dental Care staff.
+   241→          </p>
+   242→
+   243→          <label htmlFor="admin-code" className="sr-only">
+   244→            Admin passcode
+   245→          </label>
+   246→          <input
+   247→            id="admin-code"
+   248→            type="password"
+   249→            autoComplete="current-password"
+   250→            value={value}
+   251→            onChange={(e) => setValue(e.target.value)}
+   252→            placeholder="Admin passcode"
+   253→            className="mt-7 h-13 w-full rounded-2xl border border-blue-100 bg-ice px-5 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   254→          />
+   255→
+   256→          {error && (
+   257→            <p className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600 ring-1 ring-rose-100">
+   258→              {error}
+   259→            </p>
+   260→          )}
+   261→
+   262→          <Button
+   263→            type="submit"
+   264→            disabled={checking || value.trim().length === 0}
+   265→            className="mt-5 h-12 w-full rounded-2xl bg-brand-navy text-sm font-bold text-white shadow-lg shadow-navy-900/25 hover:bg-brand-blue disabled:opacity-60"
+   266→          >
+   267→            {checking ? (
+   268→              <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+   269→            ) : (
+   270→              <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   271→            )}
+   272→            Unlock Dashboard
+   273→          </Button>
+   274→
+   275→          <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
+   276→            Sessions expire when you close the tab. Demo passcode:{" "}
+   277→            <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+   278→              aristocrat-2026
+   279→            </code>
+   280→          </p>
+   281→        </form>
+   282→      </motion.div>
+   283→    </div>
+   284→  );
+   285→}
+   286→
+   287→/* ------------------------------------------------------------------ */
+   288→/*  Dashboard — shell with section tabs (Appointments | Reviews)        */
+   289→/* ------------------------------------------------------------------ */
+   290→
+   291→function AdminDashboard({ code, onLogout }: { code: string; onLogout: () => void }) {
+   292→  const [view, setView] = useState<AdminView>("appointments");
+   293→  const [sessionExpired, setSessionExpired] = useState(false);
+   294→  const [reviewsPending, setReviewsPending] = useState<number | null>(null);
+   295→  const handleExpired = useCallback(() => setSessionExpired(true), []);
+   296→
+   297→  /* Light initial fetch so the Reviews tab can show its pending badge
+   298→     before the staff member opens that view. */
+   299→  useEffect(() => {
+   300→    let cancelled = false;
+   301→    (async () => {
+   302→      try {
+   303→        const res = await fetch("/api/admin/reviews", {
+   304→          headers: { "x-admin-code": code },
+   305→        });
+   306→        if (res.status === 401) {
+   307→          setSessionExpired(true);
+   308→          return;
+   309→        }
+   310→        if (!res.ok) return;
+   311→        const data = await res.json();
+   312→        if (!cancelled && data?.stats) setReviewsPending(data.stats.pending ?? 0);
+   313→      } catch {
+   314→        /* badge is best-effort */
+   315→      }
+   316→    })();
+   317→    return () => {
+   318→      cancelled = true;
+   319→    };
+   320→  }, [code]);
+   321→
+   322→  if (sessionExpired) {
+   323→    return (
+   324→      <div className="flex flex-1 items-center justify-center px-4 py-24">
+   325→        <div className="max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center">
+   326→          <Lock className="mx-auto h-8 w-8 text-amber-600" aria-hidden="true" />
+   327→          <h2 className="font-heading mt-4 text-lg font-bold text-amber-900">
+   328→            Session expired
+   329→          </h2>
+   330→          <p className="mt-2 text-sm text-amber-800">
+   331→            Your passcode was rejected. Please sign in again.
+   332→          </p>
+   333→          <Button onClick={onLogout} className="mt-5 rounded-full bg-amber-600 hover:bg-amber-700">
+   334→            Back to sign-in
+   335→          </Button>
+   336→        </div>
+   337→      </div>
+   338→    );
+   339→  }
+   340→
+   341→  return (
+   342→    <div className="section-wash min-h-screen flex-1 pb-20">
+   343→      {/* Section tabs */}
+   344→      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+   345→        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Dashboard sections">
+   346→          <DashboardTab
+   347→            active={view === "appointments"}
+   348→            onClick={() => setView("appointments")}
+   349→            Icon={CalendarDays}
+   350→          >
+   351→            Appointments
+   352→          </DashboardTab>
+   353→          <DashboardTab
+   354→            active={view === "reviews"}
+   355→            onClick={() => setView("reviews")}
+   356→            Icon={Star}
+   357→            badge={reviewsPending}
+   358→          >
+   359→            Reviews
+   360→          </DashboardTab>
+   361→        </div>
+   362→      </div>
+   363→
+   364→      <AnimatePresence mode="wait">
+   365→        <motion.div
+   366→          key={view}
+   367→          initial={{ opacity: 0, y: 14 }}
+   368→          animate={{ opacity: 1, y: 0 }}
+   369→          exit={{ opacity: 0, y: -14 }}
+   370→          transition={{ duration: 0.28, ease: "easeOut" }}
+   371→        >
+   372→          {view === "appointments" ? (
+   373→            <AppointmentsPanel
+   374→              code={code}
+   375→              onLogout={onLogout}
+   376→              onSessionExpired={handleExpired}
+   377→            />
+   378→          ) : (
+   379→            <ReviewsPanel
+   380→              code={code}
+   381→              onLogout={onLogout}
+   382→              onSessionExpired={handleExpired}
+   383→              onPendingChange={setReviewsPending}
+   384→            />
+   385→          )}
+   386→        </motion.div>
+   387→      </AnimatePresence>
+   388→    </div>
+   389→  );
+   390→}
+   391→
+   392→function DashboardTab({
+   393→  active,
+   394→  onClick,
+   395→  Icon,
+   396→  badge,
+   397→  children,
+   398→}: {
+   399→  active: boolean;
+   400→  onClick: () => void;
+   401→  Icon: typeof CalendarDays;
+   402→  badge?: number | null;
+   403→  children: React.ReactNode;
+   404→}) {
+   405→  return (
+   406→    <button
+   407→      type="button"
+   408→      role="tab"
+   409→      aria-selected={active}
+   410→      onClick={onClick}
+   411→      className={cn(
+   412→        "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300",
+   413→        active
+   414→          ? "bg-brand-navy text-white shadow-lg shadow-navy-900/25"
+   415→          : "bg-white/90 text-slate-600 ring-1 ring-blue-100 hover:text-brand-navy hover:ring-blue-200"
+   416→      )}
+   417→    >
+   418→      <Icon className="h-4 w-4" aria-hidden="true" />
+   419→      {children}
+   420→      {typeof badge === "number" && badge > 0 && (
+   421→        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-700">
+   422→          {badge}
+   423→        </span>
+   424→      )}
+   425→    </button>
+   426→  );
+   427→}
+   428→
+   429→/* ------------------------------------------------------------------ */
+   430→/*  Appointments view                                                   */
+   431→/* ------------------------------------------------------------------ */
+   432→
+   433→function AppointmentsPanel({
+   434→  code,
+   435→  onLogout,
+   436→  onSessionExpired,
+   437→}: {
+   438→  code: string;
+   439→  onLogout: () => void;
+   440→  onSessionExpired: () => void;
+   441→}) {
+   442→  const [rows, setRows] = useState<AppointmentRow[]>([]);
+   443→  const [stats, setStats] = useState<Stats | null>(null);
+   444→  const [loading, setLoading] = useState(true);
+   445→  const [loadError, setLoadError] = useState<string | null>(null);
+   446→  const [filter, setFilter] = useState<StatusFilter>("ALL");
+   447→  const [search, setSearch] = useState("");
+   448→  const [busyRef, setBusyRef] = useState<string | null>(null);
+   449→  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+   450→  const [preset, setPreset] = useState<DatePreset>("all");
+   451→  const [fromDate, setFromDate] = useState("");
+   452→  const [toDate, setToDate] = useState("");
+   453→  const [range, setRange] = useState<{
+   454→    from: string | null;
+   455→    to: string | null;
+   456→    label: string;
+   457→    total: number;
+   458→  } | null>(null);
+   459→  const [exporting, setExporting] = useState(false);
+   460→  const loadIdRef = useRef(0);
+   461→
+   462→  const load = useCallback(async () => {
+   463→    const requestId = ++loadIdRef.current;
+   464→    setLoading(true);
+   465→    setLoadError(null);
+   466→    try {
+   467→      const qs = new URLSearchParams();
+   468→      if (fromDate) qs.set("from", fromDate);
+   469→      if (toDate) qs.set("to", toDate);
+   470→      const query = qs.toString();
+   471→      const res = await fetch(
+   472→        `/api/admin/appointments${query ? `?${query}` : ""}`,
+   473→        { headers: { "x-admin-code": code } }
+   474→      );
+   475→      if (res.status === 401) {
+   476→        onSessionExpired();
+   477→        return;
+   478→      }
+   479→      const data = await res.json();
+   480→      if (!res.ok) throw new Error(data.error || "Failed to load");
+   481→      if (requestId !== loadIdRef.current) return; /* a newer request is in flight */
+   482→      setRows(data.appointments ?? []);
+   483→      setStats(data.stats ?? null);
+   484→      setRange(data.range ?? null);
+   485→      setLastUpdated(new Date());
+   486→    } catch (err) {
+   487→      if (requestId !== loadIdRef.current) return;
+   488→      setLoadError(err instanceof Error ? err.message : "Failed to load appointments.");
+   489→    } finally {
+   490→      if (requestId === loadIdRef.current) setLoading(false);
+   491→    }
+   492→  }, [code, fromDate, toDate, onSessionExpired]);
+   493→
+   494→  useEffect(() => {
+   495→    load();
+   496→  }, [load]);
+   497→
+   498→  /* auto-refresh every 60s (pause when tab hidden) */
+   499→  useEffect(() => {
+   500→    const id = window.setInterval(() => {
+   501→      if (document.visibilityState === "visible") load();
+   502→    }, 60_000);
+   503→    return () => window.clearInterval(id);
+   504→  }, [load]);
+   505→
+   506→  async function updateStatus(refCode: string, status: string) {
+   507→    setBusyRef(refCode);
+   508→    try {
+   509→      const res = await fetch("/api/admin/appointments", {
+   510→        method: "POST",
+   511→        headers: {
+   512→          "Content-Type": "application/json",
+   513→          "x-admin-code": code,
+   514→        },
+   515→        body: JSON.stringify({ refCode, status }),
+   516→      });
+   517→      const data = await res.json();
+   518→      if (res.status === 401) {
+   519→        onSessionExpired();
+   520→        return;
+   521→      }
+   522→      if (!res.ok) throw new Error(data.error || "Update failed");
+   523→      setRows((prev) =>
+   524→        prev.map((r) => (r.refCode === refCode ? { ...r, status } : r))
+   525→      );
+   526→      setStats((prev) => {
+   527→        if (!prev) return prev;
+   528→        const statusOf = (r: AppointmentRow) =>
+   529→          r.refCode === refCode ? status : r.status;
+   530→        const today = localToday();
+   531→        return {
+   532→          ...prev,
+   533→          pending: rows.filter((r) => statusOf(r) === "PENDING").length,
+   534→          confirmed: rows.filter((r) => statusOf(r) === "CONFIRMED").length,
+   535→          completed: rows.filter((r) => statusOf(r) === "COMPLETED").length,
+   536→          cancelled: rows.filter((r) => statusOf(r) === "CANCELLED").length,
+   537→          today: rows.filter((r) => r.date === today && statusOf(r) !== "CANCELLED").length,
+   538→          upcoming: rows.filter(
+   539→            (r) => r.date >= today && (statusOf(r) === "PENDING" || statusOf(r) === "CONFIRMED")
+   540→          ).length,
+   541→        };
+   542→      });
+   543→    } catch {
+   544→      setLoadError("Could not update status. Please retry.");
+   545→    } finally {
+   546→      setBusyRef(null);
+   547→    }
+   548→  }
+   549→
+   550→  /* --- date-range filtering --- */
+   551→  function applyPreset(id: Exclude<DatePreset, "custom">) {
+   552→    const p = DATE_PRESETS.find((d) => d.id === id) ?? DATE_PRESETS[0];
+   553→    const [f, t] = p.range();
+   554→    setPreset(id);
+   555→    setFromDate(f);
+   556→    setToDate(t);
+   557→  }
+   558→
+   559→  function onFromDateChange(value: string) {
+   560→    setFromDate(value);
+   561→    setPreset(value || toDate ? "custom" : "all");
+   562→  }
+   563→
+   564→  function onToDateChange(value: string) {
+   565→    setToDate(value);
+   566→    setPreset(fromDate || value ? "custom" : "all");
+   567→  }
+   568→
+   569→  const invalidRange = Boolean(fromDate && toDate && fromDate > toDate);
+   570→
+   571→  /* --- CSV export of the currently filtered set --- */
+   572→  async function exportCsv() {
+   573→    if (exporting) return;
+   574→    setExporting(true);
+   575→    try {
+   576→      const qs = new URLSearchParams({ format: "csv" });
+   577→      if (fromDate) qs.set("from", fromDate);
+   578→      if (toDate) qs.set("to", toDate);
+   579→      if (filter !== "ALL") qs.set("status", filter);
+   580→      const res = await fetch(`/api/admin/appointments?${qs.toString()}`, {
+   581→        headers: { "x-admin-code": code },
+   582→      });
+   583→      if (res.status === 401) {
+   584→        onSessionExpired();
+   585→        return;
+   586→      }
+   587→      if (!res.ok) throw new Error("Export failed");
+   588→      const blob = await res.blob();
+   589→      const disposition = res.headers.get("Content-Disposition") ?? "";
+   590→      const filename =
+   591→        /filename="([^"]+)"/.exec(disposition)?.[1] ?? "appointments.csv";
+   592→      const url = URL.createObjectURL(blob);
+   593→      const a = document.createElement("a");
+   594→      a.href = url;
+   595→      a.download = filename;
+   596→      document.body.appendChild(a);
+   597→      a.click();
+   598→      a.remove();
+   599→      URL.revokeObjectURL(url);
+   600→    } catch {
+   601→      setLoadError("Could not export the CSV. Please try again.");
+   602→    } finally {
+   603→      setExporting(false);
+   604→    }
+   605→  }
+   606→
+   607→  const serviceMap = useMemo(() => {
+   608→    const m: Record<string, string> = {};
+   609→    services.forEach((s) => (m[s.slug] = s.shortName));
+   610→    return m;
+   611→  }, []);
+   612→  const doctorMap = useMemo(() => {
+   613→    const m: Record<string, string> = {};
+   614→    doctors.forEach((doc) => (m[doc.slug] = doc.name));
+   615→    return m;
+   616→  }, []);
+   617→
+   618→  const filtered = useMemo(() => {
+   619→    const q = search.trim().toLowerCase();
+   620→    return rows.filter((r) => {
+   621→      if (filter !== "ALL" && r.status !== filter) return false;
+   622→      if (!q) return true;
+   623→      return (
+   624→        r.name.toLowerCase().includes(q) ||
+   625→        r.phone.includes(q) ||
+   626→        r.refCode.toLowerCase().includes(q)
+   627→      );
+   628→    });
+   629→  }, [rows, filter, search]);
+   630→
+   631→  const statCards = stats
+   632→    ? [
+   633→        { label: "Total", value: stats.total, Icon: Inbox, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+   634→        { label: "Pending", value: stats.pending, Icon: Clock, tone: "text-amber-700 bg-amber-50 ring-amber-100" },
+   635→        { label: "Confirmed", value: stats.confirmed, Icon: BadgeCheck, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
+   636→        { label: "Completed", value: stats.completed, Icon: CheckCircle2, tone: "text-emerald-700 bg-emerald-50 ring-emerald-100" },
+   637→        { label: "Cancelled", value: stats.cancelled, Icon: Ban, tone: "text-rose-600 bg-rose-50 ring-rose-100" },
+   638→        { label: "Today", value: stats.today, Icon: CalendarClock, tone: "text-brand-navy bg-ice ring-blue-100" },
+   639→      ]
+   640→    : [];
+   641→
+   642→  return (
+   643→    <div>
+   644→      {/* Header */}
+   645→      <div className="hero-mesh-dark noise relative mt-6 overflow-hidden">
+   646→        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+   647→        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
+   648→          <div>
+   649→            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+   650→              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+   651→              Staff Console
+   652→            </span>
+   653→            <h1 className="font-heading mt-3 text-2xl font-bold text-white sm:text-3xl">
+   654→              Appointment Dashboard
+   655→            </h1>
+   656→            <p className="mt-1 text-sm text-blue-100/80">
+   657→              {lastUpdated
+   658→                ? `Last updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} • auto-refreshes every 60s`
+   659→                : "Loading…"}
+   660→            </p>
+   661→          </div>
+   662→          <div className="flex items-center gap-2.5">
+   663→            <Button
+   664→              onClick={load}
+   665→              disabled={loading}
+   666→              variant="outline"
+   667→              className="rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+   668→            >
+   669→              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden="true" />
+   670→              Refresh
+   671→            </Button>
+   672→            <Button
+   673→              onClick={onLogout}
+   674→              className="rounded-full bg-white text-brand-navy hover:bg-blue-100"
+   675→            >
+   676→              <LogOut className="h-4 w-4" aria-hidden="true" />
+   677→              Sign out
+   678→            </Button>
+   679→          </div>
+   680→        </div>
+   681→      </div>
+   682→
+   683→      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   684→        {/* Stats */}
+   685→        <div className="-mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+   686→          {statCards.map((s, i) => (
+   687→            <motion.div
+   688→              key={s.label}
+   689→              initial={{ opacity: 0, y: 16 }}
+   690→              animate={{ opacity: 1, y: 0 }}
+   691→              transition={{ delay: i * 0.05, duration: 0.4 }}
+   692→              className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]"
+   693→            >
+   694→              <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1", s.tone)}>
+   695→                <s.Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   696→              </span>
+   697→              <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+   698→                {s.value}
+   699→              </p>
+   700→              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   701→                {s.label}
+   702→              </p>
+   703→            </motion.div>
+   704→          ))}
+   705→        </div>
+   706→
+   707→        {/* Stat cards reflect the active date range */}
+   708→        <AnimatePresence mode="wait">
+   709→          <motion.p
+   710→            key={range ? range.label : "all-time"}
+   711→            initial={{ opacity: 0 }}
+   712→            animate={{ opacity: 1 }}
+   713→            exit={{ opacity: 0 }}
+   714→            transition={{ duration: 0.25 }}
+   715→            className="mt-3 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+   716→          >
+   717→            {range ? `Stat cards · ${range.label}` : "Stat cards · all time"}
+   718→          </motion.p>
+   719→        </AnimatePresence>
+   720→
+   721→        {/* Toolbar */}
+   722→        <div className="mt-8 rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+   723→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   724→          <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Filter by status">
+   725→            {(["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as StatusFilter[]).map((f) => {
+   726→              const active = filter === f;
+   727→              const count =
+   728→                f === "ALL" ? rows.length : rows.filter((r) => r.status === f).length;
+   729→              return (
+   730→                <button
+   731→                  key={f}
+   732→                  role="tab"
+   733→                  aria-selected={active}
+   734→                  onClick={() => setFilter(f)}
+   735→                  className={cn(
+   736→                    "relative rounded-full px-4 py-2 text-xs font-bold transition-all duration-300",
+   737→                    active
+   738→                      ? "bg-brand-navy text-white shadow-md shadow-navy-900/25"
+   739→                      : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+   740→                  )}
+   741→                >
+   742→                  {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+   743→                  <span
+   744→                    className={cn(
+   745→                      "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+   746→                      active ? "bg-white/20 text-white" : "bg-white text-slate-500"
+   747→                    )}
+   748→                  >
+   749→                    {count}
+   750→                  </span>
+   751→                </button>
+   752→              );
+   753→            })}
+   754→          </div>
+   755→          <div className="relative sm:w-72">
+   756→            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+   757→            <input
+   758→              type="search"
+   759→              value={search}
+   760→              onChange={(e) => setSearch(e.target.value)}
+   761→              placeholder="Search name, phone or ref…"
+   762→              aria-label="Search appointments"
+   763→              className="h-11 w-full rounded-full border border-blue-100 bg-ice pl-10 pr-4 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   764→            />
+   765→          </div>
+   766→          </div>
+   767→
+   768→          {/* Date-range filter row */}
+   769→          <div className="my-4 border-t border-blue-100/70" aria-hidden="true" />
+   770→          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+   771→            <div className="flex flex-wrap items-center gap-1.5">
+   772→              <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+   773→                <CalendarRange className="h-3.5 w-3.5" aria-hidden="true" />
+   774→                Dates
+   775→              </span>
+   776→              {DATE_PRESETS.map((p) => {
+   777→                const active = preset === p.id;
+   778→                return (
+   779→                  <button
+   780→                    key={p.id}
+   781→                    type="button"
+   782→                    aria-pressed={active}
+   783→                    onClick={() => applyPreset(p.id)}
+   784→                    className={cn(
+   785→                      "rounded-full px-3.5 py-2 text-xs font-bold transition-all duration-300",
+   786→                      active
+   787→                        ? "bg-brand-blue text-white shadow-md shadow-blue-500/30 ring-2 ring-brand-blue/40"
+   788→                        : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+   789→                    )}
+   790→                  >
+   791→                    {p.label}
+   792→                  </button>
+   793→                );
+   794→              })}
+   795→            </div>
+   796→
+   797→            <div className="flex flex-wrap items-center gap-2.5">
+   798→              <div className="flex items-center gap-2">
+   799→                <label htmlFor="admin-from-date" className="sr-only">
+   800→                  From date
+   801→                </label>
+   802→                <input
+   803→                  id="admin-from-date"
+   804→                  type="date"
+   805→                  value={fromDate}
+   806→                  onChange={(e) => onFromDateChange(e.target.value)}
+   807→                  aria-label="Show appointments from this date"
+   808→                  className="h-11 w-[8.75rem] rounded-xl border border-blue-100 bg-ice px-3 text-[13px] font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   809→                />
+   810→                <span className="text-xs font-bold text-slate-300" aria-hidden="true">
+   811→                  →
+   812→                </span>
+   813→                <label htmlFor="admin-to-date" className="sr-only">
+   814→                  To date
+   815→                </label>
+   816→                <input
+   817→                  id="admin-to-date"
+   818→                  type="date"
+   819→                  value={toDate}
+   820→                  onChange={(e) => onToDateChange(e.target.value)}
+   821→                  aria-label="Show appointments up to this date"
+   822→                  className="h-11 w-[8.75rem] rounded-xl border border-blue-100 bg-ice px-3 text-[13px] font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   823→                />
+   824→              </div>
+   825→              <Button
+   826→                type="button"
+   827→                onClick={exportCsv}
+   828→                disabled={exporting}
+   829→                title="Download the currently filtered appointments as a CSV file"
+   830→                className="h-11 rounded-full bg-brand-gold px-5 text-sm font-bold text-brand-navy shadow-md shadow-amber-500/30 hover:bg-amber-400 disabled:opacity-60"
+   831→              >
+   832→                {exporting ? (
+   833→                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   834→                ) : (
+   835→                  <Download className="h-4 w-4" aria-hidden="true" />
+   836→                )}
+   837→                Export CSV
+   838→              </Button>
+   839→            </div>
+   840→          </div>
+   841→
+   842→          {invalidRange && (
+   843→            <p className="mt-3 text-xs font-medium text-rose-600">
+   844→              The “From” date is after the “To” date — no appointments can match this range.
+   845→            </p>
+   846→          )}
+   847→        </div>
+   848→
+   849→        {/* Active range indicator */}
+   850→        <AnimatePresence>
+   851→          {range && (
+   852→            <motion.div
+   853→              initial={{ opacity: 0, y: -8 }}
+   854→              animate={{ opacity: 1, y: 0 }}
+   855→              exit={{ opacity: 0, y: -8 }}
+   856→              transition={{ duration: 0.3, ease: "easeOut" }}
+   857→              role="status"
+   858→              className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-2xl border border-amber-200/80 bg-brand-gold-soft/50 px-4 py-3 shadow-sm"
+   859→            >
+   860→              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-amber-200">
+   861→                <CalendarRange className="h-4.5 w-4.5" aria-hidden="true" />
+   862→              </span>
+   863→              <p className="text-sm text-slate-600">
+   864→                Showing{" "}
+   865→                <span className="font-heading text-base font-bold tabular-nums text-brand-navy">
+   866→                  {range.total}
+   867→                </span>{" "}
+   868→                appointment{range.total === 1 ? "" : "s"} in range{" "}
+   869→                <span className="font-semibold text-brand-navy">{range.label}</span>
+   870→              </p>
+   871→              <button
+   872→                type="button"
+   873→                onClick={() => applyPreset("all")}
+   874→                className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-xs font-bold text-slate-600 ring-1 ring-amber-200 transition-all duration-300 hover:text-rose-600 hover:ring-rose-200"
+   875→              >
+   876→                <X className="h-3.5 w-3.5" aria-hidden="true" />
+   877→                Clear filter
+   878→              </button>
+   879→            </motion.div>
+   880→          )}
+   881→        </AnimatePresence>
+   882→
+   883→        {loadError && (
+   884→          <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+   885→            {loadError}
+   886→          </p>
+   887→        )}
+   888→
+   889→        {/* List */}
+   890→        {loading && rows.length === 0 ? (
+   891→          <div className="mt-8 flex items-center justify-center py-20">
+   892→            <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden="true" />
+   893→          </div>
+   894→        ) : filtered.length === 0 ? (
+   895→          <motion.div
+   896→            initial={{ opacity: 0, y: 10 }}
+   897→            animate={{ opacity: 1, y: 0 }}
+   898→            transition={{ duration: 0.35 }}
+   899→            className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white/60 py-20 text-center"
+   900→          >
+   901→            <CalendarDays className="mx-auto h-10 w-10 text-blue-300" aria-hidden="true" />
+   902→            <p className="font-heading mt-4 text-lg font-bold text-brand-navy">
+   903→              {rows.length === 0 && range
+   904→                ? "No appointments in this date range"
+   905→                : "No appointments found"}
+   906→            </p>
+   907→            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+   908→              {rows.length === 0 && range
+   909→                ? "No bookings fall inside the selected date range. Try widening it or clear the filter."
+   910→                : rows.length === 0
+   911→                  ? "New online bookings will appear here in real time."
+   912→                  : "Try a different filter or search term."}
+   913→            </p>
+   914→            {rows.length === 0 && range && (
+   915→              <Button
+   916→                onClick={() => applyPreset("all")}
+   917→                variant="outline"
+   918→                className="mt-5 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   919→              >
+   920→                <X className="h-4 w-4" aria-hidden="true" />
+   921→                Clear date filter
+   922→              </Button>
+   923→            )}
+   924→          </motion.div>
+   925→        ) : (
+   926→          <>
+   927→            {/* Desktop table */}
+   928→            <div className="mt-6 hidden overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_14px_40px_-24px_rgba(0,32,96,0.25)] lg:block">
+   929→              <div className="max-h-[38rem] overflow-y-auto scroll-area">
+   930→                <table className="w-full text-left text-sm table-zebra">
+   931→                  <thead className="sticky top-0 z-10 bg-ice/95 backdrop-blur">
+   932→                    <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+   933→                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+   934→                      <th scope="col" className="px-5 py-3.5 font-semibold">Service / Doctor</th>
+   935→                      <th scope="col" className="px-5 py-3.5 font-semibold">Schedule</th>
+   936→                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+   937→                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+   938→                    </tr>
+   939→                  </thead>
+   940→                  <tbody className="divide-y divide-blue-50">
+   941→                    {filtered.map((r) => (
+   942→                      <tr key={r.id} className="transition-colors hover:bg-blue-50/40">
+   943→                        <td className="px-5 py-4">
+   944→                          <p className="font-semibold text-brand-navy">{r.name}</p>
+   945→                          <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+   946→                          <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+   947→                        </td>
+   948→                        <td className="px-5 py-4">
+   949→                          <p className="text-xs font-semibold text-slate-700">
+   950→                            {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "—"}
+   951→                          </p>
+   952→                          <p className="mt-0.5 text-xs text-slate-500">
+   953→                            {r.doctorSlug ? doctorMap[r.doctorSlug] ?? r.doctorSlug : "Any available doctor"}
+   954→                          </p>
+   955→                          {r.notes && (
+   956→                            <p className="mt-1 line-clamp-1 max-w-56 text-[11px] italic text-slate-400" title={r.notes}>
+   957→                              “{r.notes}”
+   958→                            </p>
+   959→                          )}
+   960→                        </td>
+   961→                        <td className="px-5 py-4">
+   962→                          <p className="font-semibold tabular-nums text-slate-700">{r.date}</p>
+   963→                          <p className="mt-0.5 text-xs text-slate-500">{r.time}</p>
+   964→                        </td>
+   965→                        <td className="px-5 py-4">
+   966→                          <span className={cn(
+   967→                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1",
+   968→                            statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+   969→                          )}>
+   970→                            {r.status === "PENDING" && (
+   971→                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+   972→                            )}
+   973→                            {r.status}
+   974→                          </span>
+   975→                        </td>
+   976→                        <td className="px-5 py-4">
+   977→                          <div className="flex items-center justify-end gap-1.5">
+   978→                            {busyRef === r.refCode ? (
+   979→                              <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+   980→                            ) : (
+   981→                              <>
+   982→                                {r.status === "PENDING" && (
+   983→                                  <>
+   984→                                    <SmallAction
+   985→                                      label="Confirm"
+   986→                                      tone="confirm"
+   987→                                      onClick={() => updateStatus(r.refCode, "CONFIRMED")}
+   988→                                    />
+   989→                                    <SmallAction
+   990→                                      label="Cancel"
+   991→                                      tone="cancel"
+   992→                                      onClick={() => updateStatus(r.refCode, "CANCELLED")}
+   993→                                    />
+   994→                                  </>
+   995→                                )}
+   996→                                {r.status === "CONFIRMED" && (
+   997→                                  <>
+   998→                                    <SmallAction
+   999→                                      label="Complete"
+  1000→                                      tone="complete"
+  1001→                                      onClick={() => updateStatus(r.refCode, "COMPLETED")}
+  1002→                                    />
+  1003→                                    <SmallAction
+  1004→                                      label="Cancel"
+  1005→                                      tone="cancel"
+  1006→                                      onClick={() => updateStatus(r.refCode, "CANCELLED")}
+  1007→                                    />
+  1008→                                  </>
+  1009→                                )}
+  1010→                                {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+  1011→                                  <SmallAction
+  1012→                                    label="Reopen"
+  1013→                                    tone="neutral"
+  1014→                                    onClick={() => updateStatus(r.refCode, "PENDING")}
+  1015→                                  />
+  1016→                                )}
+  1017→                              </>
+  1018→                            )}
+  1019→                          </div>
+  1020→                        </td>
+  1021→                      </tr>
+  1022→                    ))}
+  1023→                  </tbody>
+  1024→                </table>
+  1025→              </div>
+  1026→            </div>
+  1027→
+  1028→            {/* Mobile cards */}
+  1029→            <div className="mt-6 space-y-3 lg:hidden">
+  1030→              {filtered.map((r) => (
+  1031→                <motion.article
+  1032→                  key={r.id}
+  1033→                  initial={{ opacity: 0, y: 14 }}
+  1034→                  animate={{ opacity: 1, y: 0 }}
+  1035→                  className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+  1036→                >
+  1037→                  <div className="flex items-start justify-between gap-3">
+  1038→                    <div>
+  1039→                      <p className="font-semibold text-brand-navy">{r.name}</p>
+  1040→                      <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+  1041→                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+  1042→                    </div>
+  1043→                    <span className={cn(
+  1044→                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+  1045→                      statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+  1046→                    )}>
+  1047→                      {r.status === "PENDING" && (
+  1048→                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1049→                      )}
+  1050→                      {r.status}
+  1051→                    </span>
+  1052→                  </div>
+  1053→                  <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-ice px-3.5 py-3 text-xs text-slate-600">
+  1054→                    <p className="col-span-2">
+  1055→                      <Sparkles className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1056→                      {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "Service: —"}
+  1057→                      {r.doctorSlug ? ` • ${doctorMap[r.doctorSlug] ?? r.doctorSlug}` : ""}
+  1058→                    </p>
+  1059→                    <p className="col-span-2 font-semibold tabular-nums">
+  1060→                      <CalendarDays className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1061→                      {r.date} • {r.time}
+  1062→                    </p>
+  1063→                    {r.notes && (
+  1064→                      <p className="col-span-2 line-clamp-2 italic text-slate-400">“{r.notes}”</p>
+  1065→                    )}
+  1066→                  </div>
+  1067→                  {busyRef === r.refCode ? (
+  1068→                    <div className="mt-3 flex justify-center py-1.5">
+  1069→                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1070→                    </div>
+  1071→                  ) : (
+  1072→                    <div className="mt-3 flex flex-wrap gap-2">
+  1073→                      {r.status === "PENDING" && (
+  1074→                        <>
+  1075→                          <SmallAction label="Confirm" tone="confirm" onClick={() => updateStatus(r.refCode, "CONFIRMED")} />
+  1076→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1077→                        </>
+  1078→                      )}
+  1079→                      {r.status === "CONFIRMED" && (
+  1080→                        <>
+  1081→                          <SmallAction label="Complete" tone="complete" onClick={() => updateStatus(r.refCode, "COMPLETED")} />
+  1082→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1083→                        </>
+  1084→                      )}
+  1085→                      {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+  1086→                        <SmallAction label="Reopen as Pending" tone="neutral" onClick={() => updateStatus(r.refCode, "PENDING")} />
+  1087→                      )}
+  1088→                    </div>
+  1089→                  )}
+  1090→                </motion.article>
+  1091→              ))}
+  1092→            </div>
+  1093→          </>
+  1094→        )}
+  1095→      </div>
+  1096→    </div>
+  1097→  );
+  1098→}
+  1099→
+  1100→/* ------------------------------------------------------------------ */
+  1101→/*  Reviews view — patient review moderation                            */
+  1102→/* ------------------------------------------------------------------ */
+  1103→
+  1104→function StarsRow({ value }: { value: number }) {
+  1105→  return (
+  1106→    <span role="img" aria-label={`${value} out of 5 stars`} className="flex items-center gap-0.5">
+  1107→      {Array.from({ length: 5 }).map((_, i) => (
+  1108→        <Star
+  1109→          key={i}
+  1110→          aria-hidden="true"
+  1111→          className={cn(
+  1112→            "h-3.5 w-3.5",
+  1113→            i < value ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"
+  1114→          )}
+  1115→        />
+  1116→      ))}
+  1117→    </span>
+  1118→  );
+  1119→}
+  1120→
+  1121→function ReviewsPanel({
+  1122→  code,
+  1123→  onLogout,
+  1124→  onSessionExpired,
+  1125→  onPendingChange,
+  1126→}: {
+  1127→  code: string;
+  1128→  onLogout: () => void;
+  1129→  onSessionExpired: () => void;
+  1130→  onPendingChange: (n: number) => void;
+  1131→}) {
+  1132→  const [rows, setRows] = useState<ReviewRow[]>([]);
+  1133→  const [stats, setStats] = useState<ReviewStats | null>(null);
+  1134→  const [loading, setLoading] = useState(true);
+  1135→  const [loadError, setLoadError] = useState<string | null>(null);
+  1136→  const [filter, setFilter] = useState<ReviewFilter>("ALL");
+  1137→  const [search, setSearch] = useState("");
+  1138→  const [busyId, setBusyId] = useState<string | null>(null);
+  1139→  const [exporting, setExporting] = useState(false);
+  1140→  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  1141→  const loadIdRef = useRef(0);
+  1142→
+  1143→  const load = useCallback(async () => {
+  1144→    const requestId = ++loadIdRef.current;
+  1145→    setLoading(true);
+  1146→    setLoadError(null);
+  1147→    try {
+  1148→      const res = await fetch("/api/admin/reviews", {
+  1149→        headers: { "x-admin-code": code },
+  1150→      });
+  1151→      if (res.status === 401) {
+  1152→        onSessionExpired();
+  1153→        return;
+  1154→      }
+  1155→      const data = await res.json();
+  1156→      if (!res.ok) throw new Error(data.error || "Failed to load");
+  1157→      if (requestId !== loadIdRef.current) return; /* a newer request is in flight */
+  1158→      setRows(data.reviews ?? []);
+  1159→      setStats(data.stats ?? null);
+  1160→      setLastUpdated(new Date());
+  1161→      onPendingChange(data.stats?.pending ?? 0);
+  1162→    } catch (err) {
+  1163→      if (requestId !== loadIdRef.current) return;
+  1164→      setLoadError(err instanceof Error ? err.message : "Failed to load reviews.");
+  1165→    } finally {
+  1166→      if (requestId === loadIdRef.current) setLoading(false);
+  1167→    }
+  1168→  }, [code, onSessionExpired, onPendingChange]);
+  1169→
+  1170→  useEffect(() => {
+  1171→    load();
+  1172→  }, [load]);
+  1173→
+  1174→  /* auto-refresh every 60s (pause when tab hidden) */
+  1175→  useEffect(() => {
+  1176→    const id = window.setInterval(() => {
+  1177→      if (document.visibilityState === "visible") load();
+  1178→    }, 60_000);
+  1179→    return () => window.clearInterval(id);
+  1180→  }, [load]);
+  1181→
+  1182→  async function reviewAction(id: string, action: "approve" | "reject" | "delete") {
+  1183→    setBusyId(id);
+  1184→    try {
+  1185→      const res = await fetch("/api/admin/reviews", {
+  1186→        method: "POST",
+  1187→        headers: {
+  1188→          "Content-Type": "application/json",
+  1189→          "x-admin-code": code,
+  1190→        },
+  1191→        body: JSON.stringify({ id, action }),
+  1192→      });
+  1193→      const data = await res.json();
+  1194→      if (res.status === 401) {
+  1195→        onSessionExpired();
+  1196→        return;
+  1197→      }
+  1198→      if (!res.ok) throw new Error(data.error || "Update failed");
+  1199→      /* the server is the source of truth — refresh rows, stats and the tab badge */
+  1200→      await load();
+  1201→    } catch (err) {
+  1202→      setLoadError(err instanceof Error ? err.message : "Could not update the review.");
+  1203→    } finally {
+  1204→      setBusyId(null);
+  1205→    }
+  1206→  }
+  1207→
+  1208→  /* --- CSV export of every review --- */
+  1209→  async function exportCsv() {
+  1210→    if (exporting) return;
+  1211→    setExporting(true);
+  1212→    try {
+  1213→      const res = await fetch(`/api/admin/reviews?format=csv`, {
+  1214→        headers: { "x-admin-code": code },
+  1215→      });
+  1216→      if (res.status === 401) {
+  1217→        onSessionExpired();
+  1218→        return;
+  1219→      }
+  1220→      if (!res.ok) throw new Error("Export failed");
+  1221→      const blob = await res.blob();
+  1222→      const disposition = res.headers.get("Content-Disposition") ?? "";
+  1223→      const filename =
+  1224→        /filename="([^"]+)"/.exec(disposition)?.[1] ?? "reviews.csv";
+  1225→      const url = URL.createObjectURL(blob);
+  1226→      const a = document.createElement("a");
+  1227→      a.href = url;
+  1228→      a.download = filename;
+  1229→      document.body.appendChild(a);
+  1230→      a.click();
+  1231→      a.remove();
+  1232→      URL.revokeObjectURL(url);
+  1233→    } catch {
+  1234→      setLoadError("Could not export the CSV. Please try again.");
+  1235→    } finally {
+  1236→      setExporting(false);
+  1237→    }
+  1238→  }
+  1239→
+  1240→  const serviceMap = useMemo(() => {
+  1241→    const m: Record<string, string> = {};
+  1242→    services.forEach((s) => (m[s.slug] = s.shortName));
+  1243→    return m;
+  1244→  }, []);
+  1245→
+  1246→  const filtered = useMemo(() => {
+  1247→    const q = search.trim().toLowerCase();
+  1248→    return rows.filter((r) => {
+  1249→      if (filter !== "ALL" && (filter === "PENDING") === r.approved) return false;
+  1250→      if (!q) return true;
+  1251→      return r.name.toLowerCase().includes(q);
+  1252→    });
+  1253→  }, [rows, filter, search]);
+  1254→
+  1255→  const statCards = stats
+  1256→    ? [
+  1257→        { label: "Total", value: stats.total, Icon: Inbox, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+  1258→        { label: "Pending", value: stats.pending, Icon: Clock, tone: "text-amber-700 bg-amber-50 ring-amber-100" },
+  1259→        { label: "Approved", value: stats.approved, Icon: BadgeCheck, tone: "text-emerald-700 bg-emerald-50 ring-emerald-100" },
+  1260→        {
+  1261→          label: "Avg rating",
+  1262→          value: stats.average > 0 ? stats.average.toFixed(1) : "—",
+  1263→          Icon: Star,
+  1264→          tone: "text-amber-700 bg-amber-50 ring-amber-100",
+  1265→        },
+  1266→      ]
+  1267→    : [];
+  1268→
+  1269→  return (
+  1270→    <div>
+  1271→      {/* Header */}
+  1272→      <div className="hero-mesh-dark noise relative mt-6 overflow-hidden">
+  1273→        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+  1274→        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
+  1275→          <div>
+  1276→            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+  1277→              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+  1278→              Staff Console
+  1279→            </span>
+  1280→            <h1 className="font-heading mt-3 text-2xl font-bold text-white sm:text-3xl">
+  1281→              Review Moderation
+  1282→            </h1>
+  1283→            <p className="mt-1 text-sm text-blue-100/80">
+  1284→              {lastUpdated
+  1285→                ? `Last updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} • auto-refreshes every 60s`
+  1286→                : "Loading…"}
+  1287→            </p>
+  1288→          </div>
+  1289→          <div className="flex items-center gap-2.5">
+  1290→            <Button
+  1291→              onClick={load}
+  1292→              disabled={loading}
+  1293→              variant="outline"
+  1294→              className="rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+  1295→            >
+  1296→              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden="true" />
+  1297→              Refresh
+  1298→            </Button>
+  1299→            <Button
+  1300→              onClick={onLogout}
+  1301→              className="rounded-full bg-white text-brand-navy hover:bg-blue-100"
+  1302→            >
+  1303→              <LogOut className="h-4 w-4" aria-hidden="true" />
+  1304→              Sign out
+  1305→            </Button>
+  1306→          </div>
+  1307→        </div>
+  1308→      </div>
+  1309→
+  1310→      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1311→        {/* Stats */}
+  1312→        <div className="-mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  1313→          {statCards.map((s, i) => (
+  1314→            <motion.div
+  1315→              key={s.label}
+  1316→              initial={{ opacity: 0, y: 16 }}
+  1317→              animate={{ opacity: 1, y: 0 }}
+  1318→              transition={{ delay: i * 0.05, duration: 0.4 }}
+  1319→              className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]"
+  1320→            >
+  1321→              <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1", s.tone)}>
+  1322→                <s.Icon className="h-4.5 w-4.5" aria-hidden="true" />
+  1323→              </span>
+  1324→              <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+  1325→                {s.value}
+  1326→              </p>
+  1327→              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+  1328→                {s.label}
+  1329→              </p>
+  1330→            </motion.div>
+  1331→          ))}
+  1332→        </div>
+  1333→
+  1334→        {/* Toolbar */}
+  1335→        <div className="mt-8 rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+  1336→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  1337→            <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Filter reviews by status">
+  1338→              {(["ALL", "PENDING", "APPROVED"] as ReviewFilter[]).map((f) => {
+  1339→                const active = filter === f;
+  1340→                const count =
+  1341→                  f === "ALL"
+  1342→                    ? rows.length
+  1343→                    : rows.filter((r) => (f === "PENDING") !== r.approved).length;
+  1344→                return (
+  1345→                  <button
+  1346→                    key={f}
+  1347→                    role="tab"
+  1348→                    aria-selected={active}
+  1349→                    onClick={() => setFilter(f)}
+  1350→                    className={cn(
+  1351→                      "relative rounded-full px-4 py-2 text-xs font-bold transition-all duration-300",
+  1352→                      active
+  1353→                        ? "bg-brand-navy text-white shadow-md shadow-navy-900/25"
+  1354→                        : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+  1355→                    )}
+  1356→                  >
+  1357→                    {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+  1358→                    <span
+  1359→                      className={cn(
+  1360→                        "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+  1361→                        active ? "bg-white/20 text-white" : "bg-white text-slate-500"
+  1362→                      )}
+  1363→                    >
+  1364→                      {count}
+  1365→                    </span>
+  1366→                  </button>
+  1367→                );
+  1368→              })}
+  1369→            </div>
+  1370→            <div className="flex flex-wrap items-center gap-2.5">
+  1371→              <div className="relative flex-1 sm:w-72 sm:flex-none">
+  1372→                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+  1373→                <input
+  1374→                  type="search"
+  1375→                  value={search}
+  1376→                  onChange={(e) => setSearch(e.target.value)}
+  1377→                  placeholder="Search by name…"
+  1378→                  aria-label="Search reviews"
+  1379→                  className="h-11 w-full rounded-full border border-blue-100 bg-ice pl-10 pr-4 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+  1380→                />
+  1381→              </div>
+  1382→              <Button
+  1383→                type="button"
+  1384→                onClick={exportCsv}
+  1385→                disabled={exporting}
+  1386→                title="Download every review as a CSV file"
+  1387→                className="h-11 rounded-full bg-brand-gold px-5 text-sm font-bold text-brand-navy shadow-md shadow-amber-500/30 hover:bg-amber-400 disabled:opacity-60"
+  1388→              >
+  1389→                {exporting ? (
+  1390→                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  1391→                ) : (
+  1392→                  <Download className="h-4 w-4" aria-hidden="true" />
+  1393→                )}
+  1394→                Export CSV
+  1395→              </Button>
+  1396→            </div>
+  1397→          </div>
+  1398→        </div>
+  1399→
+  1400→        {loadError && (
+  1401→          <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+  1402→            {loadError}
+  1403→          </p>
+  1404→        )}
+  1405→
+  1406→        {/* List */}
+  1407→        {loading && rows.length === 0 ? (
+  1408→          <div className="mt-8 flex items-center justify-center py-20">
+  1409→            <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden="true" />
+  1410→          </div>
+  1411→        ) : filtered.length === 0 ? (
+  1412→          <motion.div
+  1413→            initial={{ opacity: 0, y: 10 }}
+  1414→            animate={{ opacity: 1, y: 0 }}
+  1415→            transition={{ duration: 0.35 }}
+  1416→            className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white/60 py-20 text-center"
+  1417→          >
+  1418→            <MessageSquareQuote className="mx-auto h-10 w-10 text-blue-300" aria-hidden="true" />
+  1419→            <p className="font-heading mt-4 text-lg font-bold text-brand-navy">
+  1420→              {rows.length === 0 ? "No reviews yet" : "No reviews found"}
+  1421→            </p>
+  1422→            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+  1423→              {rows.length === 0
+  1424→                ? "Patient reviews submitted on the website will appear here for approval."
+  1425→                : "Try a different filter or search term."}
+  1426→            </p>
+  1427→          </motion.div>
+  1428→        ) : (
+  1429→          <>
+  1430→            {/* Desktop table */}
+  1431→            <div className="mt-6 hidden overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_14px_40px_-24px_rgba(0,32,96,0.25)] lg:block">
+  1432→              <div className="max-h-[38rem] overflow-y-auto scroll-area">
+  1433→                <table className="w-full text-left text-sm table-zebra">
+  1434→                  <thead className="sticky top-0 z-10 bg-ice/95 backdrop-blur">
+  1435→                    <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+  1436→                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+  1437→                      <th scope="col" className="px-5 py-3.5 font-semibold">Review</th>
+  1438→                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+  1439→                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+  1440→                    </tr>
+  1441→                  </thead>
+  1442→                  <tbody className="divide-y divide-blue-50">
+  1443→                    {filtered.map((r) => (
+  1444→                      <tr
+  1445→                        key={r.id}
+  1446→                        className={cn(
+  1447→                          "transition-colors hover:bg-blue-50/40",
+  1448→                          !r.approved && "bg-amber-50/50"
+  1449→                        )}
+  1450→                      >
+  1451→                        <td className="px-5 py-4">
+  1452→                          <p className="font-semibold text-brand-navy">{r.name}</p>
+  1453→                          <p className="mt-0.5 text-xs text-slate-500">{r.phone ?? "—"}</p>
+  1454→                          <p className="mt-0.5 text-[10px] text-slate-400">
+  1455→                            {new Date(r.createdAt).toLocaleDateString("en-US", {
+  1456→                              month: "short",
+  1457→                              day: "numeric",
+  1458→                              year: "numeric",
+  1459→                            })}
+  1460→                          </p>
+  1461→                        </td>
+  1462→                        <td className="px-5 py-4">
+  1463→                          <StarsRow value={r.rating} />
+  1464→                          {r.title && (
+  1465→                            <p className="mt-1 text-xs font-semibold text-brand-navy">
+  1466→                              {r.title}
+  1467→                            </p>
+  1468→                          )}
+  1469→                          <p className="mt-1 line-clamp-2 max-w-md text-xs leading-relaxed text-slate-500" title={r.message}>
+  1470→                            {r.message}
+  1471→                          </p>
+  1472→                          {r.serviceSlug && (
+  1473→                            <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+  1474→                              <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
+  1475→                              {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+  1476→                            </span>
+  1477→                          )}
+  1478→                        </td>
+  1479→                        <td className="px-5 py-4">
+  1480→                          <span
+  1481→                            className={cn(
+  1482→                              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1",
+  1483→                              r.approved
+  1484→                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+  1485→                                : "bg-amber-50 text-amber-700 ring-amber-200"
+  1486→                            )}
+  1487→                          >
+  1488→                            {!r.approved && (
+  1489→                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1490→                            )}
+  1491→                            {r.approved ? "APPROVED" : "PENDING"}
+  1492→                          </span>
+  1493→                        </td>
+  1494→                        <td className="px-5 py-4">
+  1495→                          <div className="flex items-center justify-end gap-1.5">
+  1496→                            {busyId === r.id ? (
+  1497→                              <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1498→                            ) : (
+  1499→                              <>
+  1500→                                {!r.approved && (
+  1501→                                  <SmallAction
+  1502→                                    label="Approve"
+  1503→                                    tone="confirm"
+  1504→                                    onClick={() => reviewAction(r.id, "approve")}
+  1505→                                  />
+  1506→                                )}
+  1507→                                {r.approved && (
+  1508→                                  <SmallAction
+  1509→                                    label="Reject"
+  1510→                                    tone="warn"
+  1511→                                    onClick={() => reviewAction(r.id, "reject")}
+  1512→                                  />
+  1513→                                )}
+  1514→                                <SmallAction
+  1515→                                  label="Delete"
+  1516→                                  tone="cancel"
+  1517→                                  onClick={() => reviewAction(r.id, "delete")}
+  1518→                                />
+  1519→                              </>
+  1520→                            )}
+  1521→                          </div>
+  1522→                        </td>
+  1523→                      </tr>
+  1524→                    ))}
+  1525→                  </tbody>
+  1526→                </table>
+  1527→              </div>
+  1528→            </div>
+  1529→
+  1530→            {/* Mobile cards */}
+  1531→            <div className="mt-6 space-y-3 lg:hidden">
+  1532→              {filtered.map((r) => (
+  1533→                <motion.article
+  1534→                  key={r.id}
+  1535→                  initial={{ opacity: 0, y: 14 }}
+  1536→                  animate={{ opacity: 1, y: 0 }}
+  1537→                  className={cn(
+  1538→                    "rounded-2xl border border-blue-100 bg-white p-4 shadow-sm",
+  1539→                    !r.approved && "ring-2 ring-amber-200"
+  1540→                  )}
+  1541→                >
+  1542→                  <div className="flex items-start justify-between gap-3">
+  1543→                    <div>
+  1544→                      <p className="font-semibold text-brand-navy">{r.name}</p>
+  1545→                      <p className="mt-0.5 text-xs text-slate-500">{r.phone ?? "—"}</p>
+  1546→                      <p className="mt-0.5 text-[10px] text-slate-400">
+  1547→                        {new Date(r.createdAt).toLocaleDateString("en-US", {
+  1548→                          month: "short",
+  1549→                          day: "numeric",
+  1550→                          year: "numeric",
+  1551→                        })}
+  1552→                      </p>
+  1553→                    </div>
+  1554→                    <span
+  1555→                      className={cn(
+  1556→                        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+  1557→                        r.approved
+  1558→                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+  1559→                          : "bg-amber-50 text-amber-700 ring-amber-200"
+  1560→                      )}
+  1561→                    >
+  1562→                      {!r.approved && (
+  1563→                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1564→                      )}
+  1565→                      {r.approved ? "APPROVED" : "PENDING"}
+  1566→                    </span>
+  1567→                  </div>
+  1568→                  <div className="mt-3 rounded-xl bg-ice px-3.5 py-3">
+  1569→                    <StarsRow value={r.rating} />
+  1570→                    {r.title && (
+  1571→                      <p className="mt-1 text-xs font-semibold text-brand-navy">{r.title}</p>
+  1572→                    )}
+  1573→                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-500">
+  1574→                      {r.message}
+  1575→                    </p>
+  1576→                    {r.serviceSlug && (
+  1577→                      <span className="mt-2 inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+  1578→                        <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
+  1579→                        {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+  1580→                      </span>
+  1581→                    )}
+  1582→                  </div>
+  1583→                  {busyId === r.id ? (
+  1584→                    <div className="mt-3 flex justify-center py-1.5">
+  1585→                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1586→                    </div>
+  1587→                  ) : (
+  1588→                    <div className="mt-3 flex flex-wrap gap-2">
+  1589→                      {!r.approved && (
+  1590→                        <SmallAction label="Approve" tone="confirm" onClick={() => reviewAction(r.id, "approve")} />
+  1591→                      )}
+  1592→                      {r.approved && (
+  1593→                        <SmallAction label="Reject" tone="warn" onClick={() => reviewAction(r.id, "reject")} />
+  1594→                      )}
+  1595→                      <SmallAction label="Delete" tone="cancel" onClick={() => reviewAction(r.id, "delete")} />
+  1596→                    </div>
+  1597→                  )}
+  1598→                </motion.article>
+  1599→              ))}
+  1600→            </div>
+  1601→          </>
+  1602→        )}
+  1603→      </div>
+  1604→    </div>
+  1605→  );
+  1606→}
+  1607→
+  1608→function SmallAction({
+  1609→  label,
+  1610→  tone,
+  1611→  onClick,
+  1612→}: {
+  1613→  label: string;
+  1614→  tone: "confirm" | "complete" | "cancel" | "neutral" | "warn";
+  1615→  onClick: () => void;
+  1616→}) {
+  1617→  const tones = {
+  1618→    confirm: "bg-blue-50 text-brand-blue ring-blue-200 hover:bg-brand-blue hover:text-white",
+  1619→    complete: "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-600 hover:text-white",
+  1620→    cancel: "bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-500 hover:text-white",
+  1621→    neutral: "bg-slate-50 text-slate-600 ring-slate-200 hover:bg-slate-600 hover:text-white",
+  1622→    warn: "bg-amber-50 text-amber-700 ring-amber-200 hover:bg-brand-gold hover:text-brand-navy",
+  1623→  };
+  1624→  return (
+  1625→    <button
+  1626→      type="button"
+  1627→      onClick={onClick}
+  1628→      className={cn(
+  1629→        "rounded-full px-3.5 py-1.5 text-[11px] font-bold ring-1 transition-all duration-300",
+  1630→        tones[tone]
+  1631→      )}
+  1632→    >
+  1633→      {label}
+  1634→    </button>
+  1635→  );
+  1636→}
+  1637→

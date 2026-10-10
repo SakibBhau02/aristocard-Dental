@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminCode } from "@/lib/admin-auth";
+import { isAdminAuthorized } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { reviewsToCsv } from "@/lib/admin-csv";
 
 /* ------------------------------------------------------------------ */
-/*  Admin API — passcode-protected review moderation                    */
+/*  Admin API — admin-protected review moderation                       */
 /*  GET  /api/admin/reviews                                            */
 /*        → JSON: list ALL reviews (incl. pending) + stats              */
 /*        → CSV : ?format=csv exports every review                     */
 /*  POST /api/admin/reviews  → { id, action: approve|reject|delete }    */
-/*  Auth: x-admin-code header must match ADMIN_PASSCODE                 */
+/*  Auth: valid x-admin-code header OR signed session cookie            */
+/*        (issued by POST /api/admin/login)                             */
 /* ------------------------------------------------------------------ */
 
 const VALID_ACTIONS = ["approve", "reject", "delete"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
 
 function isAuthorized(req: NextRequest): boolean {
-  /* Timing-safe check via shared helper (src/lib/admin-auth.ts). */
-  return verifyAdminCode(req.headers.get("x-admin-code"));
+  /* Timing-safe check via shared helper (src/lib/admin-auth.ts) —
+     accepts the passcode header or the httpOnly session cookie. */
+  return isAdminAuthorized(req);
 }
 
 /* GET — list every review (newest first) + moderation stats. */

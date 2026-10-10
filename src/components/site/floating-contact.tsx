@@ -28,7 +28,7 @@ export function FloatingContact() {
   return (
     <>
       <motion.div
-        className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-4"
+        className="fab-stack fixed bottom-5 right-5 z-40 flex flex-col items-end gap-4"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -85,7 +85,7 @@ export function FloatingContact() {
             type="button"
             onClick={scrollTop}
             aria-label="Scroll back to top"
-            className="fixed bottom-5 left-5 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-navy shadow-xl shadow-navy-900/15 ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:text-white hover:shadow-2xl"
+            className="scroll-top-btn fixed bottom-5 left-5 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-navy shadow-xl shadow-navy-900/15 ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:text-white hover:shadow-2xl"
             initial={{ opacity: 0, y: 16, scale: 0.85 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.85 }}

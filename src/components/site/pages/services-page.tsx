@@ -7,7 +7,7 @@ import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { services, serviceCategories } from "@/lib/data/services";
 import { site } from "@/lib/site";
-import { ServiceCard, PageHeader, CtaBanner } from "@/components/site/shared";
+import { ServiceCard, PageHeader, CtaBanner, QuizTeaser } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -219,6 +219,13 @@ export function ServicesPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* Smile Check — guide unsure visitors before the CTA */}
+      <Reveal className="pb-2">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <QuizTeaser />
+        </div>
+      </Reveal>
 
       <CtaBanner />
     </>

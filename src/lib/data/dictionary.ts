@@ -50,6 +50,9 @@ const en = {
     ctaHours:
       "Open Saturday–Thursday, 10:00 AM – 9:00 PM • Same-week appointments available",
     breadcrumbHome: "Home",
+    quizTeaserTitle: "Not sure which treatment you need?",
+    quizTeaserText: "Answer 5 quick questions and get a personalized starting plan in 60 seconds.",
+    quizTeaserCta: "Take the Smile Check",
   },
 
   /* ---------------- Home page ---------------- */
@@ -542,6 +545,86 @@ const en = {
     askText: "Our patient desk answers calls and messages within hours — no question is too small.",
   },
 
+  /* ---------------- Smile assessment quiz page ---------------- */
+  assessmentPage: {
+    eyebrow: "60-Second Smile Check",
+    title: "Find out what your smile needs",
+    description: "Answer five quick questions and get a personalized treatment direction from our specialists — no sign-up, no email, and your answers never leave this device.",
+    breadcrumb: "Smile Assessment",
+    metaTitle: "Smile Assessment — Find the Right Treatment in 60 Seconds",
+    metaDescription: "Take the 60-second smile assessment at Aristocrat Dental Care, Uttara. Five quick questions give you a personalized treatment direction — whitening, aligners, implants, root canal or a checkup.",
+    stepOf: "Question {n} of {total}",
+    backLabel: "Back",
+    restart: "Start over",
+    privacyNote: "Takes about a minute — your answers stay on this device and are never sent anywhere.",
+    questions: [
+      {
+        question: "What brings you in today?",
+        options: ["Whiter, brighter smile", "Straighter teeth", "Replace missing teeth", "Pain or discomfort relief", "General checkup & care"],
+      },
+      {
+        question: "How do you feel about your smile today?",
+        options: ["Love it, just maintaining", "It's okay, could be better", "Honestly, I hide it"],
+      },
+      {
+        question: "Any of these bothering you right now?",
+        options: ["Tooth sensitivity", "Toothache or pain", "Bleeding gums", "Bad breath", "None of these"],
+      },
+      {
+        question: "When did you last see a dentist?",
+        options: ["Within the last 6 months", "6 months – 2 years", "More than 2 years", "Honestly, I can't remember"],
+      },
+      {
+        question: "How soon do you want to start?",
+        options: ["As soon as possible", "Within a month", "Just researching for now"],
+      },
+    ],
+    resultsEyebrow: "Your Results",
+    resultsTitle: "Your Smile Plan",
+    resultsIntro: "Based on your answers, here's where we'd recommend starting. Think of it as a direction, not a diagnosis — the exact plan is confirmed at your consultation.",
+    recommendedLabel: "Recommended for you",
+    planNote: "This short quiz narrows the direction — your dentist confirms the right plan after a proper examination and digital diagnostics.",
+    whiteningCardTitle: "Professional Teeth Whitening",
+    whiteningCardText: "In-clinic whitening that lifts years of stain safely — a noticeably brighter smile in a single visit.",
+    checkupCardTitle: "Comprehensive Checkup & Cleaning",
+    checkupCardText: "A full examination with digital X-rays and a professional clean — the healthy baseline every treatment plan starts from.",
+    viewService: "Explore this treatment",
+    specialCta: "Book this visit",
+    reasons: {
+      brightening: "For the brightening goal you picked",
+      straightening: "For the straighter teeth you want",
+      replacing: "To replace the missing teeth you mentioned",
+      painRelief: "To relieve the pain you told us about",
+      restoring: "A gentle, tooth-preserving fix for the sensitivity or discomfort you reported",
+      gumCare: "To settle the gum or breath issues you flagged",
+      confidence: "To give you back the smile confidence you described",
+      checkup: "The healthy baseline your goal builds on",
+    },
+    nextStepsTitle: "What happens at your visit",
+    nextSteps: [
+      {
+        title: "Consultation & digital diagnostics",
+        text: "A specialist examines you with digital X-rays — nothing guessed, everything seen.",
+      },
+      {
+        title: "Personalized written plan",
+        text: "You leave with a plan on paper: what you need, in what order, and why.",
+      },
+      {
+        title: "Transparent quote before treatment",
+        text: "Exact pricing in writing before anything begins — no surprises, ever.",
+      },
+    ],
+    urgencyTitle: "Better to book within a week",
+    urgencyText: "We recommend booking within the next week. Pain and long gaps between dental visits tend to get more complicated — and costlier — with time. A quick examination now can save a lot later.",
+    urgencyAction: "Call {phone}",
+    ctaTitle: "Turn your plan into a booked appointment",
+    ctaDescription: "Your Smile Plan is ready — the next step takes two minutes. Book online now, or estimate your cost first if you'd like numbers.",
+    ctaButton: "Book Your Consultation",
+    ctaSecondary: "Estimate Your Cost",
+    retake: "Retake the quiz",
+  },
+
   /* ---------------- Status page ---------------- */
   statusPage: {
     eyebrow: "Booking Tools",
@@ -663,6 +746,8 @@ const en = {
     rangeNote: "Estimated range in BDT (৳) • Final price confirmed at consultation",
     book: "Book Consultation",
     bookWithEstimate: "Book with This Estimate",
+    mobileBook: "Book",
+    mobileDetails: "View full breakdown",
     print: "Print / Save Estimate",
     reset: "Reset Estimate",
     whyRange: "Why a range, not one price?",
@@ -772,6 +857,13 @@ const en = {
     authorLabel: "Written & medically reviewed by",
     consult: "Consult",
     share: "Share this article",
+    shareWa: "Share on WhatsApp",
+    shareFb: "Share on Facebook",
+    shareCopy: "Copy link",
+    shareCopied: "Link copied!",
+    shareCopiedDesc: "The article link is on your clipboard — send it to family and friends.",
+    shareFail: "Couldn't copy the link",
+    shareFailDesc: "Please copy it from the address bar instead.",
     relatedEyebrow: "Keep Reading",
     relatedTitle: "Related articles",
     ctaTitle: "Reading is great. A healthy smile is better.",
@@ -927,6 +1019,9 @@ const bn: Dictionary = {
     ctaHours:
       "শনিবার–বৃহস্পতিবার খোলা, সকাল ১০টা – রাত ৯টা • একই সপ্তাহে অ্যাপয়েন্টমেন্ট পাওয়া যায়",
     breadcrumbHome: "হোম",
+    quizTeaserTitle: "কোন চিকিৎসাটি আপনার দরকার বুঝতে পারছেন না?",
+    quizTeaserText: "৫টি ছোট প্রশ্নের উত্তর দিন — ৬০ সেকেন্ডে পেয়ে যান আপনার জন্য প্রস্তাবিত শুরুর পরিকল্পনা।",
+    quizTeaserCta: "স্মাইল চেক নিন",
   },
 
   /* ---------------- Home page ---------------- */
@@ -1393,6 +1488,86 @@ const bn: Dictionary = {
     askText: "আমাদের পেশেন্ট ডেস্ক ঘণ্টার মধ্যেই কল ও মেসেজের উত্তর দেয় — কোনো প্রশ্নই ছোট নয়।",
   },
 
+  /* ---------------- Smile assessment quiz page ---------------- */
+  assessmentPage: {
+    eyebrow: "৬০ সেকেন্ডের স্মাইল চেক",
+    title: "জেনে নিন আপনার হাসির কী দরকার",
+    description: "পাঁচটি ছোট প্রশ্নের উত্তর দিন — পেয়ে যান আমাদের বিশেষজ্ঞদের পরামর্শে আপনার হাসির জন্য প্রস্তাবিত চিকিৎসার স্পষ্ট দিকনির্দেশনা। কোনো সাইন-আপ নেই, ইমেইল লাগে না — উত্তর এই ডিভাইসের বাইরে যায় না।",
+    breadcrumb: "স্মাইল অ্যাসেসমেন্ট",
+    metaTitle: "স্মাইল অ্যাসেসমেন্ট — ৬০ সেকেন্ডে সঠিক চিকিৎসা খুঁজে নিন",
+    metaDescription: "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ার, উত্তরার ৬০ সেকেন্ডের স্মাইল অ্যাসেসমেন্ট দিন। ৫টি ছোট প্রশ্নের উত্তরে পান আপনার জন্য প্রস্তাবিত চিকিৎসার দিকনির্দেশনা — হোয়াইটেনিং, অ্যালাইনার, ইমপ্ল্যান্ট, রুট ক্যানেল বা চেকআপ।",
+    stepOf: "প্রশ্ন {n} / {total}",
+    backLabel: "পেছনে",
+    restart: "আবার শুরু করুন",
+    privacyNote: "মাত্র এক মিনিট লাগে — আপনার উত্তর এই ডিভাইসেই থাকে, কোথাও পাঠানো হয় না।",
+    questions: [
+      {
+        question: "আজ আপনি কী কারণে এসেছেন?",
+        options: ["আরও সাদা, উজ্জ্বল হাসি", "সোজা, সুবিন্যস্ত দাঁত", "হারানো দাঁত পুনরুদ্ধার", "ব্যথা বা অস্বস্তির সমাধান", "সাধারণ চেকআপ ও যত্ন"],
+      },
+      {
+        question: "আজ আপনার হাসি নিয়ে কেমন অনুভব করেন?",
+        options: ["খুব ভালো — শুধু রক্ষণাবেক্ষণ চাই", "মন্দ নয়, তবে আরও ভালো হতে পারত", "সত্যি বলতে, হাসিটা লুকিয়ে ফেলি"],
+      },
+      {
+        question: "এই মুহূর্তে কোনোটা কি আপনাকে বিরক্ত করছে?",
+        options: ["দাঁতে সংবেদনশীলতা", "দাঁতে ব্যথা", "মাড়ি থেকে রক্ত পড়া", "মুখের দুর্গন্ধ", "এগুলোর কোনোটাই নয়"],
+      },
+      {
+        question: "শেষ কবে ডেন্টিস্টের কাছে গিয়েছিলেন?",
+        options: ["গত ৬ মাসের মধ্যে", "৬ মাস – ২ বছর আগে", "২ বছরের বেশি আগে", "সত্যি বলতে, মনে নেই"],
+      },
+      {
+        question: "কত তাড়াতাড়ি শুরু করতে চান?",
+        options: ["যত দ্রুত সম্ভব", "এক মাসের মধ্যে", "আপাতত শুধু জেনে নিচ্ছি"],
+      },
+    ],
+    resultsEyebrow: "আপনার ফলাফল",
+    resultsTitle: "আপনার স্মাইল প্ল্যান",
+    resultsIntro: "আপনার উত্তরের ভিত্তিতে কোথা থেকে শুরু করা উচিত — সেটাই এখানে। এটি দিকনির্দেশনা, রোগনির্ণয় নয় — সঠিক পরিকল্পনা কনফার্ম হবে কনসালটেশনে।",
+    recommendedLabel: "আপনার জন্য প্রস্তাবিত",
+    planNote: "ছোট্ট এই কুইজ দিকটা এগিয়ে দেয় — পরীক্ষা ও ডিজিটাল ডায়াগনস্টিকসের পর আপনার ডেন্টিস্টই সঠিক পরিকল্পনা নিশ্চিত করবেন।",
+    whiteningCardTitle: "প্রফেশনাল টিথ হোয়াইটেনিং",
+    whiteningCardText: "ক্লিনিকে করা হোয়াইটেনিং — নিরাপদে, এক ভিজিটেই বছরের পুরনো দাগ উঠে গিয়ে হাসি হয় উজ্জ্বল।",
+    checkupCardTitle: "সম্পূর্ণ চেকআপ ও ক্লিনিং",
+    checkupCardText: "ডিজিটাল এক্স-রেসহ পূর্ণাঙ্গ পরীক্ষা ও প্রফেশনাল ক্লিনিং — যে স্বাস্থ্যকর ভিত্তি থেকে সব পরিকল্পনা শুরু হয়।",
+    viewService: "চিকিৎসাটি দেখুন",
+    specialCta: "এই ভিজিট বুক করুন",
+    reasons: {
+      brightening: "আপনার বেছে নেওয়া উজ্জ্বল হাসির লক্ষ্যের জন্য",
+      straightening: "আপনার চাওয়া সোজা দাঁতের জন্য",
+      replacing: "আপনার উল্লেখ করা হারানো দাঁত ফিরিয়ে আনতে",
+      painRelief: "আপনার জানানো ব্যথা থেকে মুক্তি দিতে",
+      restoring: "আপনার বলা সংবেদনশীলতা বা অস্বস্তির নরম, দাঁত-বাঁচানো সমাধান",
+      gumCare: "আপনার উল্লেখ করা মাড়ি বা মুখের দুর্গন্ধের সমস্যা সামলাতে",
+      confidence: "আপনার বর্ণনা করা হাসির আত্মবিশ্বাস ফিরিয়ে আনতে",
+      checkup: "আপনার লক্ষ্যের স্বাস্থ্যকর ভিত্তি তৈরি করতে",
+    },
+    nextStepsTitle: "ভিজিটে কী কী ঘটবে",
+    nextSteps: [
+      {
+        title: "কনসালটেশন ও ডিজিটাল ডায়াগনস্টিকস",
+        text: "ডিজিটাল এক্স-রেসহ বিশেষজ্ঞ পরীক্ষা করবেন — কোনো অনুমান নয়, সবকিছু চোখে দেখে।",
+      },
+      {
+        title: "ব্যক্তিগত লিখিত পরিকল্পনা",
+        text: "কী দরকার, কোন ক্রমে, কেন — স্পষ্ট প্ল্যান লিখে হাতে পাবেন।",
+      },
+      {
+        title: "চিকিৎসার আগেই স্বচ্ছ খরচ",
+        text: "কোনো কাজ শুরুর আগেই লিখিতভাবে সঠিক খরচ — কোনো চমক নেই, কখনও নয়।",
+      },
+    ],
+    urgencyTitle: "এক সপ্তাহের মধ্যেই বুক করাই ভালো",
+    urgencyText: "আমরা সাজেস্ট করছি আগামী এক সপ্তাহের মধ্যেই অ্যাপয়েন্টমেন্ট নিন — ব্যথা আর দীর্ঘ বিরতি সময়ের সাথে আরও জটিল ও ব্যয়বহুল হয়ে ওঠে। আজই ছোট্ট একটা পরীক্ষা অনেক বড় ঝামেলা বাঁচিয়ে দিতে পারে।",
+    urgencyAction: "কল করুন {phone}",
+    ctaTitle: "প্ল্যানটাকে বুক করা অ্যাপয়েন্টমেন্টে বদলে ফেলুন",
+    ctaDescription: "আপনার স্মাইল প্ল্যান প্রস্তুত — পরের ধাপে লাগবে মাত্র দুই মিনিট। এখনই অনলাইনে বুক করুন, অথবা আগে খরচের হিসাবটা দেখে নিন।",
+    ctaButton: "কনসালটেশন বুক করুন",
+    ctaSecondary: "খরচের হিসাব দেখুন",
+    retake: "আবার কুইজ দিন",
+  },
+
   /* ---------------- Gallery page ---------------- */
   galleryPage: {
     eyebrow: "স্মাইল গ্যালারি",
@@ -1539,6 +1714,8 @@ const bn: Dictionary = {
     rangeNote: "আনুমানিক পরিসর (৳) • চূড়ান্ত মূল্য কনসালটেশনে নিশ্চিত হয়",
     book: "কনসালটেশন বুক করুন",
     bookWithEstimate: "এই হিসাব নিয়ে বুক করুন",
+    mobileBook: "বুক করুন",
+    mobileDetails: "সম্পূর্ণ হিসাব দেখুন",
     print: "প্রিন্ট / সেভ করুন",
     reset: "হিসাব রিসেট করুন",
     whyRange: "কেন পরিসর, একটি দাম নয়?",
@@ -1648,6 +1825,13 @@ const bn: Dictionary = {
     authorLabel: "লিখেছেন ও মেডিকেলি রিভিউ করেছেন",
     consult: "কনসালটেশন নিন:",
     share: "আর্টিকেল শেয়ার করুন",
+    shareWa: "হোয়াটসঅ্যাপে শেয়ার করুন",
+    shareFb: "ফেসবুকে শেয়ার করুন",
+    shareCopy: "লিঙ্ক কপি করুন",
+    shareCopied: "লিঙ্ক কপি হয়েছে!",
+    shareCopiedDesc: "আর্টিকেলের লিঙ্ক এখন আপনার ক্লিপবোর্ডে — পরিবার ও বন্ধুদের পাঠিয়ে দিন।",
+    shareFail: "লিঙ্ক কপি করা যায়নি",
+    shareFailDesc: "অনুগ্রহ করে অ্যাড্রেস বার থেকে কপি করুন।",
     relatedEyebrow: "আরও পড়ুন",
     relatedTitle: "সম্পর্কিত আর্টিকেল",
     ctaTitle: "পড়া ভালো, সুস্থ হাসি আরও ভালো।",

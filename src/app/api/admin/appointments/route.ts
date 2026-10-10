@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminCode } from "@/lib/admin-auth";
+import { isAdminAuthorized } from "@/lib/admin-auth";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
@@ -11,20 +11,22 @@ import {
 } from "@/lib/admin-csv";
 
 /* ------------------------------------------------------------------ */
-/*  Admin API — passcode-protected appointment management               */
+/*  Admin API — admin-protected appointment management                 */
 /*  GET  /api/admin/appointments                                        */
 /*        → JSON: list + stats (+ date-range scoped, ?from&to&status)  */
 /*        → CSV : ?format=csv exports the filtered set                  */
 /*  POST /api/admin/appointments  → update status by refCode            */
-/*  Auth: x-admin-code header must match ADMIN_PASSCODE                 */
+/*  Auth: valid x-admin-code header OR signed session cookie            */
+/*        (issued by POST /api/admin/login)                             */
 /* ------------------------------------------------------------------ */
 
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
 type Status = (typeof VALID_STATUSES)[number];
 
 function isAuthorized(req: NextRequest): boolean {
-  /* Timing-safe check via shared helper (src/lib/admin-auth.ts). */
-  return verifyAdminCode(req.headers.get("x-admin-code"));
+  /* Timing-safe check via shared helper (src/lib/admin-auth.ts) —
+     accepts the passcode header or the httpOnly session cookie. */
+  return isAdminAuthorized(req);
 }
 
 /* GET — list appointments (newest first) + summary stats.

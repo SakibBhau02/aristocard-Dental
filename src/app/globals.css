@@ -444,6 +444,22 @@ html[lang="bn"] {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ---------- Mobile estimate-bar coordination ----------
+   When the estimator's sticky bottom bar is visible (< lg screens),
+   body gains .has-mobile-bar and the floating action stack + the
+   scroll-to-top button lift above the bar so nothing overlaps.      */
+@media (max-width: 1023.98px) {
+  body.has-mobile-bar .fab-stack,
+  body.has-mobile-bar .scroll-top-btn {
+    bottom: 5.75rem; /* 92px — clears the ~72px bar + breathing room */
+  }
+}
+/* Smooth lift for the FABs (they animate via CSS transition) */
+.fab-stack,
+.scroll-top-btn {
+  transition: bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* ---------- Image zoom wrapper ---------- */
 .zoom-img {
   overflow: hidden;
@@ -617,6 +633,93 @@ html[lang="bn"] {
   opacity: 1;
 }
 
+/* ---------- Unified card hover lift ---------- */
+/* Apply to white surface cards (doctors, gallery cases, service grids).
+   Lift + soft brand shadow; plays well with card-accent-top/card-shine. */
+.card-lift {
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.card-lift:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 22px 48px -18px rgba(0, 32, 96, 0.28),
+    0 6px 14px -8px rgba(30, 125, 255, 0.18);
+}
+
+/* ---------- Animated shimmer sweep on gradient/gold text ---------- */
+/* A slow light sweep across already-clipped gradient text (hero accents). */
+@keyframes text-shimmer {
+  0%,
+  100% {
+    background-position: 120% center;
+  }
+  50% {
+    background-position: -20% center;
+  }
+}
+.gradient-text.text-shimmer,
+.gold-text.text-shimmer {
+  background-size: 220% 100%;
+  animation: text-shimmer 7s ease-in-out infinite;
+}
+/* gold-text uses a 2-stop gold gradient — widen it for the sweep */
+.gold-text.text-shimmer {
+  background-image: linear-gradient(
+    110deg,
+    #f59e0b 0%,
+    #fde68a 38%,
+    #fbbf24 52%,
+    #f59e0b 100%
+  );
+}
+
+/* ---------- Decorative three-dot divider ---------- */
+.divider-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.divider-dots::before,
+.divider-dots::after {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: #4194ff;
+}
+.divider-dots::after {
+  background: #f59e0b;
+}
+
+/* ---------- Blog article lead paragraph ---------- */
+/* First paragraph of the first article section — magazine-style emphasis. */
+.article-lead {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  font-weight: 500;
+  color: var(--brand-navy);
+  border-left: 3px solid var(--brand-gold);
+  padding-left: 1rem;
+}
+@media (min-width: 640px) {
+  .article-lead {
+    font-size: 1.1rem;
+  }
+}
+
+/* ---------- Gold selection on dark navy surfaces ---------- */
+/* The global ::selection is brand blue — it vanishes on navy; use gold there. */
+.bg-brand-navy ::selection,
+.hero-mesh-dark ::selection,
+.noise-parent ::selection {
+  background: #f59e0b;
+  color: #002060;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
@@ -630,6 +733,20 @@ html[lang="bn"] {
   .card-accent-top::before {
     transition: none;
     display: none;
+  }
+  .gradient-text.text-shimmer,
+  .gold-text.text-shimmer {
+    animation: none;
+    background-size: 100% 100%;
+  }
+  .card-lift,
+  .card-lift:hover {
+    transition: none;
+    transform: none;
+  }
+  .fab-stack,
+  .scroll-top-btn {
+    transition: none;
   }
   html {
     scroll-behavior: auto;
@@ -656,3 +773,5 @@ html[lang="bn"] {
     padding: 24px;
   }
 }
+
+/* cache-bust r8 */

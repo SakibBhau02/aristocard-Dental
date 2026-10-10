@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BadgeCheck,
@@ -30,8 +30,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
-/*  ADMIN — passcode-protected appointment dashboard (#/admin)          */
+/*  ADMIN — session-cookie-protected appointment dashboard (#/admin)    */
 /*  Staff use only. Not indexed, not in navbar/sitemap.                 */
+/*  Auth: POST /api/admin/login sets an httpOnly session cookie (8h);    */
+/*  the passcode itself never persists client-side.                     */
 /* ------------------------------------------------------------------ */
 
 type AppointmentRow = {
@@ -82,7 +84,7 @@ type ReviewStats = {
 type AdminView = "appointments" | "reviews";
 type ReviewFilter = "ALL" | "PENDING" | "APPROVED";
 
-const SESSION_KEY = "adc-admin-code";
+const LEGACY_SESSION_KEY = "adc-admin-code"; /* pre-session era; cleared on boot */
 type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
 /* --- date-range presets (computed client-side, staff's local timezone) --- */
@@ -112,38 +114,7 @@ const DATE_PRESETS: {
   { id: "past30", label: "Past 30 days", range: () => [addDaysIso(localToday(), -29), localToday()] },
 ];
 
-/* --- external store for the admin session (SSR-safe, lint-safe) --- */
-let storedCode: string | null = null;
-const codeListeners = new Set<() => void>();
-if (typeof window !== "undefined") {
-  try {
-    storedCode = sessionStorage.getItem(SESSION_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-function subscribeCode(fn: () => void) {
-  codeListeners.add(fn);
-  return () => {
-    codeListeners.delete(fn);
-  };
-}
-function getCodeSnapshot(): string | null {
-  return storedCode;
-}
-function getServerCode(): string | null {
-  return null;
-}
-function setStoredCode(c: string | null) {
-  storedCode = c;
-  try {
-    if (c) sessionStorage.setItem(SESSION_KEY, c);
-    else sessionStorage.removeItem(SESSION_KEY);
-  } catch {
-    /* ignore */
-  }
-  codeListeners.forEach((fn) => fn());
-}
+/* --- auth state: "checking" (restoring session) | "locked" | "open" --- */
 
 const statusStyles: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
@@ -170,17 +141,69 @@ export function AdminPage() {
     };
   }, []);
 
-  const code = useSyncExternalStore(subscribeCode, getCodeSnapshot, getServerCode);
+  const [authState, setAuthState] = useState<"checking" | "locked" | "open">(
+    "checking"
+  );
 
-  return code ? (
-    <AdminDashboard
-      code={code}
-      onLogout={() => setStoredCode(null)}
-    />
+  /* Restore an existing cookie session (and clear any legacy
+     pre-session-era key) — the passcode is never re-sent or stored. */
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(LEGACY_SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/session");
+        if (!cancelled) setAuthState(res.ok ? "open" : "locked");
+      } catch {
+        if (!cancelled) setAuthState("locked");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {
+      /* clearing the local state matters more than the network call */
+    }
+    setAuthState("locked");
+  }, []);
+
+  if (authState === "checking") return <AdminBoot />;
+
+  return authState === "open" ? (
+    <AdminDashboard onLogout={handleLogout} />
   ) : (
-    <AdminGate
-      onUnlock={(c) => setStoredCode(c)}
-    />
+    <AdminGate onUnlock={() => setAuthState("open")} />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Boot state while restoring the cookie session                        */
+/* ------------------------------------------------------------------ */
+
+function AdminBoot() {
+  return (
+    <div className="hero-mesh flex flex-1 items-center justify-center px-4 py-24">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-col items-center gap-4"
+      >
+        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-navy-900/30">
+          <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+        </span>
+        <p className="text-sm font-medium text-slate-500">Checking your session…</p>
+      </motion.div>
+    </div>
   );
 }
 
@@ -188,7 +211,7 @@ export function AdminPage() {
 /*  Passcode gate                                                       */
 /* ------------------------------------------------------------------ */
 
-function AdminGate({ onUnlock }: { onUnlock: (code: string) => void }) {
+function AdminGate({ onUnlock }: { onUnlock: () => void }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -199,15 +222,23 @@ function AdminGate({ onUnlock }: { onUnlock: (code: string) => void }) {
     setError(null);
     setChecking(true);
     try {
-      const res = await fetch("/api/admin/appointments", {
-        headers: { "x-admin-code": value.trim() },
+      /* The passcode travels once, in this request body — the server
+         responds with an httpOnly session cookie that does the rest. */
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: value.trim() }),
       });
       if (res.status === 401) {
         setError("Incorrect passcode. Please try again.");
         return;
       }
+      if (res.status === 429) {
+        setError("Too many attempts. Please wait a few minutes and try again.");
+        return;
+      }
       if (!res.ok) throw new Error("Server error");
-      onUnlock(value.trim());
+      onUnlock();
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {
@@ -273,7 +304,7 @@ function AdminGate({ onUnlock }: { onUnlock: (code: string) => void }) {
           </Button>
 
           <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
-            Sessions expire when you close the tab. Demo passcode:{" "}
+            You'll stay signed in for 8 hours on this device. Demo passcode:{" "}
             <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
               aristocrat-2026
             </code>
@@ -288,21 +319,19 @@ function AdminGate({ onUnlock }: { onUnlock: (code: string) => void }) {
 /*  Dashboard — shell with section tabs (Appointments | Reviews)        */
 /* ------------------------------------------------------------------ */
 
-function AdminDashboard({ code, onLogout }: { code: string; onLogout: () => void }) {
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [view, setView] = useState<AdminView>("appointments");
   const [sessionExpired, setSessionExpired] = useState(false);
   const [reviewsPending, setReviewsPending] = useState<number | null>(null);
   const handleExpired = useCallback(() => setSessionExpired(true), []);
 
   /* Light initial fetch so the Reviews tab can show its pending badge
-     before the staff member opens that view. */
+     before the staff member opens that view. (Cookie auth — no header.) */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/admin/reviews", {
-          headers: { "x-admin-code": code },
-        });
+        const res = await fetch("/api/admin/reviews");
         if (res.status === 401) {
           setSessionExpired(true);
           return;
@@ -317,7 +346,7 @@ function AdminDashboard({ code, onLogout }: { code: string; onLogout: () => void
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, []);
 
   if (sessionExpired) {
     return (
@@ -328,7 +357,8 @@ function AdminDashboard({ code, onLogout }: { code: string; onLogout: () => void
             Session expired
           </h2>
           <p className="mt-2 text-sm text-amber-800">
-            Your passcode was rejected. Please sign in again.
+            Your session ended (it expires after 8 hours for security).
+            Please sign in again to continue.
           </p>
           <Button onClick={onLogout} className="mt-5 rounded-full bg-amber-600 hover:bg-amber-700">
             Back to sign-in
@@ -371,13 +401,11 @@ function AdminDashboard({ code, onLogout }: { code: string; onLogout: () => void
         >
           {view === "appointments" ? (
             <AppointmentsPanel
-              code={code}
               onLogout={onLogout}
               onSessionExpired={handleExpired}
             />
           ) : (
             <ReviewsPanel
-              code={code}
               onLogout={onLogout}
               onSessionExpired={handleExpired}
               onPendingChange={setReviewsPending}
@@ -431,11 +459,9 @@ function DashboardTab({
 /* ------------------------------------------------------------------ */
 
 function AppointmentsPanel({
-  code,
   onLogout,
   onSessionExpired,
 }: {
-  code: string;
   onLogout: () => void;
   onSessionExpired: () => void;
 }) {
@@ -469,8 +495,7 @@ function AppointmentsPanel({
       if (toDate) qs.set("to", toDate);
       const query = qs.toString();
       const res = await fetch(
-        `/api/admin/appointments${query ? `?${query}` : ""}`,
-        { headers: { "x-admin-code": code } }
+        `/api/admin/appointments${query ? `?${query}` : ""}`
       );
       if (res.status === 401) {
         onSessionExpired();
@@ -489,7 +514,7 @@ function AppointmentsPanel({
     } finally {
       if (requestId === loadIdRef.current) setLoading(false);
     }
-  }, [code, fromDate, toDate, onSessionExpired]);
+  }, [fromDate, toDate, onSessionExpired]);
 
   useEffect(() => {
     load();
@@ -510,7 +535,6 @@ function AppointmentsPanel({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-code": code,
         },
         body: JSON.stringify({ refCode, status }),
       });
@@ -577,9 +601,7 @@ function AppointmentsPanel({
       if (fromDate) qs.set("from", fromDate);
       if (toDate) qs.set("to", toDate);
       if (filter !== "ALL") qs.set("status", filter);
-      const res = await fetch(`/api/admin/appointments?${qs.toString()}`, {
-        headers: { "x-admin-code": code },
-      });
+      const res = await fetch(`/api/admin/appointments?${qs.toString()}`);
       if (res.status === 401) {
         onSessionExpired();
         return;
@@ -1119,12 +1141,10 @@ function StarsRow({ value }: { value: number }) {
 }
 
 function ReviewsPanel({
-  code,
   onLogout,
   onSessionExpired,
   onPendingChange,
 }: {
-  code: string;
   onLogout: () => void;
   onSessionExpired: () => void;
   onPendingChange: (n: number) => void;
@@ -1145,9 +1165,7 @@ function ReviewsPanel({
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await fetch("/api/admin/reviews", {
-        headers: { "x-admin-code": code },
-      });
+      const res = await fetch("/api/admin/reviews");
       if (res.status === 401) {
         onSessionExpired();
         return;
@@ -1165,7 +1183,7 @@ function ReviewsPanel({
     } finally {
       if (requestId === loadIdRef.current) setLoading(false);
     }
-  }, [code, onSessionExpired, onPendingChange]);
+  }, [onSessionExpired, onPendingChange]);
 
   useEffect(() => {
     load();
@@ -1186,7 +1204,6 @@ function ReviewsPanel({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-code": code,
         },
         body: JSON.stringify({ id, action }),
       });
@@ -1210,9 +1227,7 @@ function ReviewsPanel({
     if (exporting) return;
     setExporting(true);
     try {
-      const res = await fetch(`/api/admin/reviews?format=csv`, {
-        headers: { "x-admin-code": code },
-      });
+      const res = await fetch(`/api/admin/reviews?format=csv`);
       if (res.status === 401) {
         onSessionExpired();
         return;
