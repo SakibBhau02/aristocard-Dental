@@ -1,0 +1,171 @@
+import type { Doctor, Testimonial } from "@/lib/types";
+
+/* ------------------------------------------------------------------ */
+/*  Aristocrat Dental Care — Doctors & Testimonials                    */
+/* ------------------------------------------------------------------ */
+
+export const doctors: Doctor[] = [
+  {
+    slug: "dr-shazia-khanam",
+    id: 22,
+    name: "Dr. Shazia Khanam",
+    credentials: ["BDS", "MDS"],
+    role: "Chief Dental Surgeon & Founder",
+    department: "Advanced Dentistry & Orthodontics",
+    bio: "At the heart of Aristocrat Dental Care is Dr. Shazia Khanam, a highly skilled and experienced dentist dedicated to her craft. With a passion for continued learning and a gentle touch, Dr. Khanam specializes in creating personalized treatment plans that address the unique needs of every patient. Her philosophy: \u201CA healthy smile is a gateway to overall well-being.\u201D Known for a compassionate approach that eases dental anxiety, she leads the clinic's standard of clinical excellence.",
+    experienceYears: 8,
+    patientsTreated: 5000,
+    rating: 4.9,
+    specializations: [
+      "Orthodontics & Braces",
+      "Cosmetic Dentistry",
+      "Smile Design",
+      "Clear Aligner Therapy",
+    ],
+    languages: ["Bangla", "English"],
+    consultationDays: ["Saturday", "Monday", "Wednesday"],
+    verified: true,
+    accent: "#1e7dff",
+  },
+  {
+    slug: "dr-abdur-rahim",
+    id: 21,
+    name: "Dr. Abdur Rahim",
+    credentials: ["BDS", "MDS"],
+    role: "Senior Consultant",
+    department: "Advanced Dentistry & Orthodontics",
+    bio: "Dr. Abdur Rahim brings advanced training in oral & maxillofacial surgery alongside conservative dentistry and endodontics. Patients value his calm precision and clear explanations at every step of treatment. He handles complex restorative cases and surgical extractions with meticulous care.",
+    experienceYears: 3,
+    patientsTreated: 101,
+    rating: 4.0,
+    specializations: [
+      "Conservative Dentistry & Endodontics",
+      "Oral & Maxillofacial Surgery",
+      "Crown & Bridge Prosthodontics",
+    ],
+    languages: ["Bangla", "English"],
+    consultationDays: ["Sunday", "Tuesday", "Thursday"],
+    verified: true,
+    accent: "#002060",
+  },
+  {
+    slug: "dr-jumla-binte-jafor",
+    id: 23,
+    name: "Dr. Jumla Binte Jafor",
+    credentials: ["BDS (DU)", "PGT (OMFS)", "PGT (Conservative Dentistry & Endodontics)"],
+    role: "Consultant Dental Surgeon",
+    department: "Restorative & Surgical Dentistry",
+    bio: "Dr. Jumla Binte Jafor holds postgraduate training in both oral & maxillofacial surgery and conservative dentistry & endodontics from the University of Dhaka. Her dual expertise makes her exceptionally versatile — equally at home saving a compromised tooth through endodontic therapy or performing precise surgical procedures.",
+    experienceYears: 5,
+    patientsTreated: 1200,
+    rating: 4.7,
+    specializations: [
+      "Root Canal Treatment",
+      "Oral Surgery",
+      "Restorative Dentistry",
+    ],
+    languages: ["Bangla", "English"],
+    consultationDays: ["Saturday", "Sunday", "Tuesday"],
+    verified: true,
+    accent: "#0ea5a5",
+  },
+  {
+    slug: "dr-israt-jahan-rimi",
+    id: 16,
+    name: "Dr. Israt Jahan Rimi",
+    credentials: ["BDS (DU)", "PGT (OMFS)"],
+    role: "Consultant Dental Surgeon",
+    department: "General & Surgical Dentistry",
+    bio: "Dr. Israt Jahan Rimi combines postgraduate training in oral & maxillofacial surgery with a famously warm chair-side manner. Patients frequently mention her ability to put even anxious children completely at ease — a skill that makes her especially beloved in our pediatric room.",
+    experienceYears: 4,
+    patientsTreated: 800,
+    rating: 4.8,
+    specializations: [
+      "Pediatric Dentistry",
+      "Oral Surgery",
+      "Preventive Dentistry",
+    ],
+    languages: ["Bangla", "English"],
+    consultationDays: ["Monday", "Wednesday", "Thursday"],
+    verified: true,
+    accent: "#f59e0b",
+  },
+];
+
+export function getDoctor(slug: string): Doctor | undefined {
+  return doctors.find((d) => d.slug === slug);
+}
+
+export const testimonials: Testimonial[] = [
+  {
+    name: "Tanvir Ahmed",
+    rating: 5,
+    text: "\"Professional, clean, and modern facility.\" From the moment I entered the clinic, I could tell this was a top-tier dental center. Modern equipment, hygienic environment, and a highly skilled team. My smile makeover exceeded expectations.",
+    treatment: "Smile Makeover",
+    language: "en",
+  },
+  {
+    name: "সাদিয়া আক্তার",
+    rating: 5,
+    text: "\"অসাধারণ সেবা এবং যত্নশীল ডাক্তার!\" আমার দাঁতের সমস্যা নিয়ে অনেক জায়গায় গিয়েছিলাম, কিন্তু এখানে এসে আমি সত্যিকারের পার্থক্য অনুভব করেছি। ডাক্তার খুব ধৈর্য নিয়ে সব বুঝিয়েছেন এবং ট্রিটমেন্টও একদম ব্যথামুক্ত ছিল।",
+    treatment: "Root Canal Treatment",
+    language: "bn",
+  },
+  {
+    name: "Israt Jahan Rimi",
+    rating: 5,
+    text: "A nice cozy ambience with providence of all dental health care. They have Best doctors who serving their best treatment to the patients. They also have specially designed room for kids — that helps reduce the fear of dental treatment on gradually visit 😊",
+    treatment: "Family Dental Care",
+    language: "en",
+  },
+  {
+    name: "Riyad Hassan Rana",
+    rating: 5,
+    text: "\"The best dental experience I've ever had!\" The staff at Aristocrat Dental Care made me feel comfortable from the moment I walked in. My root canal treatment was painless, and the doctor explained every step clearly. Highly recommended.",
+    treatment: "Root Canal Treatment",
+    language: "en",
+  },
+  {
+    name: "Paromita Islam",
+    rating: 5,
+    text: "Had a great experience at Aristocrat Dental Care and Orthodontic Center! The staff was warm and welcoming, and the treatment was smooth and professional. Dr. Shazia and Dr. Rimi both were kind, explained everything clearly, and made me feel at ease. Highly recommend for quality dental care!",
+    treatment: "Consultation & Treatment",
+    language: "en",
+  },
+  {
+    name: "Shohan",
+    rating: 5,
+    text: "Aristocrat Dental Care & Orthodontic Center is truly the best dental clinic in Uttara. Their work quality is excellent, the environment is clean and professional, and the staff are very caring. The doctors are amazing, especially Dr. Sazia Khanam — she is highly skilled, gentle, and explains everything clearly. I felt very comfortable and confident during my treatment. Highly recommended for anyone looking for the best dental care in Uttara.",
+    location: "Uttara, Dhaka",
+    treatment: "Orthodontics",
+    language: "en",
+  },
+  {
+    name: "Paula Mahzabeen",
+    rating: 5,
+    text: "Professional, hygienic, and patient-focused dental care. The consultation and treatment were handled with precision and care. Outstanding dental care. Dr. Shazia Khanam was knowledgeable and made me feel comfortable throughout the treatment. Clean environment and great service. Strongly recommended.",
+    treatment: "General Dentistry",
+    language: "en",
+  },
+  {
+    name: "Ivy Rahman",
+    rating: 5,
+    text: "অনেক জায়গায় ডক্টর দেখিয়েছে। বাট আপু আপনার এখানে এত সুন্দর করে দাঁতের কাজ করে এটা আমি না করলে বুঝতে পারতাম না। এত যত্ন সহকারে আপনারা পেশেন্ট দেখেন এটা আমার খুব ভালো লেগেছে। আমি খুবই খুশি আপনার এখানে ট্রিটমেন্ট নিতে পেরে। আপনার জন্য দোয়া ভালোবাসা দুইটাই থাকলো অনেক দূর এগিয়ে যান। আমি খুব শান্তি পেলাম আমি একটা বিশ্বাসের জায়গা পেলাম।",
+    treatment: "Prosthetic Dentistry",
+    language: "bn",
+  },
+  {
+    name: "Rayhan Topu",
+    rating: 5,
+    text: "One of the best dental clinics I have visited in my entire life.",
+    treatment: "Dental Care",
+    language: "en",
+  },
+  {
+    name: "Sabia Nazneen",
+    rating: 5,
+    text: "I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.",
+    treatment: "General Dentistry",
+    language: "en",
+  },
+];

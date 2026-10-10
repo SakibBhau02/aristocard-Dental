@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# AI crawlers — AGIO friendly (allow AI answer engines)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+Sitemap: https://aristocratdentalcarebd.com/sitemap.xml

@@ -1,0 +1,173 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { services } from "@/lib/data/services";
+import { doctors } from "@/lib/data/doctors";
+
+/* ------------------------------------------------------------------ */
+/*  POST /api/appointments — create a new appointment booking          */
+/* ------------------------------------------------------------------ */
+
+function generateRefCode(): string {
+  const stamp = Date.now().toString(36).toUpperCase().slice(-5);
+  const rand = Math.random().toString(36).toUpperCase().slice(2, 5);
+  return `ADC-${stamp}${rand}`;
+}
+
+const TIME_SLOT_RE =
+  /^(10|11|12|02|03|04|05|06|07|08):[03]0 (AM|PM)$/;
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      name,
+      phone,
+      email,
+      date,
+      time,
+      doctorSlug,
+      serviceSlug,
+      notes,
+    } = body ?? {};
+
+    /* Validation */
+    const errors: string[] = [];
+
+    if (!name || typeof name !== "string" || name.trim().length < 2) {
+      errors.push("Patient name is required (min 2 characters).");
+    }
+    if (!phone || typeof phone !== "string") {
+      errors.push("Phone number is required.");
+    } else {
+      const normalized = phone.replace(/[-\s]/g, "");
+      if (!/^01[3-9]\d{8}$/.test(normalized)) {
+        errors.push("Please provide a valid Bangladeshi mobile number (e.g. 01712345678).");
+      }
+    }
+    if (email && (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      errors.push("Please provide a valid email address.");
+    }
+    if (!date || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      errors.push("A valid appointment date is required.");
+    } else {
+      const chosen = new Date(`${date}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (chosen < today) {
+        errors.push("Appointment date cannot be in the past.");
+      }
+    }
+    if (!time || typeof time !== "string" || !TIME_SLOT_RE.test(time)) {
+      errors.push("Please choose a valid time slot.");
+    }
+    if (serviceSlug && !services.some((s) => s.slug === serviceSlug)) {
+      errors.push("Unknown service selected.");
+    }
+    if (doctorSlug && !doctors.some((d) => d.slug === doctorSlug)) {
+      errors.push("Unknown doctor selected.");
+    }
+    if (notes && typeof notes !== "string" && notes.length > 1000) {
+      errors.push("Notes must be under 1000 characters.");
+    }
+
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: errors[0], errors },
+        { status: 400 }
+      );
+    }
+
+    /* Duplicate check: same phone + same date + same slot */
+    const normalizedPhone = (phone as string).replace(/[-\s]/g, "");
+    const duplicate = await db.appointment.findFirst({
+      where: {
+        phone: normalizedPhone,
+        date,
+        time,
+        status: { not: "CANCELLED" },
+      },
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error:
+            "You already have an appointment booked for this date and time. Please choose a different slot or call us to reschedule.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const appointment = await db.appointment.create({
+      data: {
+        refCode: generateRefCode(),
+        name: (name as string).trim(),
+        phone: normalizedPhone,
+        email: email?.trim() || null,
+        date,
+        time,
+        doctorSlug: doctorSlug || null,
+        serviceSlug: serviceSlug || null,
+        notes: notes?.trim() || null,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        id: appointment.refCode,
+        appointment: {
+          refCode: appointment.refCode,
+          name: appointment.name,
+          date: appointment.date,
+          time: appointment.time,
+          status: appointment.status,
+        },
+        message:
+          "Appointment request received. Our team will call to confirm your slot.",
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("[appointments] POST error:", err);
+    return NextResponse.json(
+      { error: "Internal server error. Please try again or call us directly." },
+      { status: 500 }
+    );
+  }
+}
+
+/* GET /api/appointments?phone=... — check own bookings (privacy-safe) */
+export async function GET(req: NextRequest) {
+  try {
+    const phone = req.nextUrl.searchParams.get("phone");
+    if (!phone || !/^01[3-9]\d{8}$/.test(phone.replace(/[-\s]/g, ""))) {
+      return NextResponse.json(
+        { error: "A valid phone number query parameter is required." },
+        { status: 400 }
+      );
+    }
+    const normalized = phone.replace(/[-\s]/g, "");
+    const appointments = await db.appointment.findMany({
+      where: { phone: normalized },
+      select: {
+        refCode: true,
+        name: true,
+        date: true,
+        time: true,
+        status: true,
+        serviceSlug: true,
+        doctorSlug: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    return NextResponse.json({ appointments });
+  } catch (err) {
+    console.error("[appointments] GET error:", err);
+    return NextResponse.json(
+      { error: "Internal server error." },
+      { status: 500 }
+    );
+  }
+}

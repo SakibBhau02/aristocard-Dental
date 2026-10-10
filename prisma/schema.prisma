@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/* ------------------------------------------------------------------ */
+/*  Aristocrat Dental Care — Data Models                               */
+/* ------------------------------------------------------------------ */
+
+model Appointment {
+  id          String   @id @default(cuid())
+  refCode     String   @unique
+  name        String
+  phone       String
+  email       String?
+  date        String
+  time        String
+  doctorSlug  String?
+  serviceSlug String?
+  notes       String?
+  status      String   @default("PENDING") // PENDING | CONFIRMED | CANCELLED | COMPLETED
+  source      String   @default("WEBSITE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
