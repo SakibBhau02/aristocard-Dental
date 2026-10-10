@@ -29,6 +29,8 @@ import { services } from "@/lib/data/services";
 import { DynamicIcon } from "@/components/site/icon-map";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { slidesForRoute } from "@/lib/data/hero-media";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +60,7 @@ export function BlogPage() {
   usePageMeta({
     title: "Dental Health Blog — Expert Advice from Uttara's Trusted Dentists",
     description:
-      "Evidence-based dental health guides from Aristocrat Dental Care specialists: checkup frequency, root canal facts, Invisalign vs braces, implant costs in Bangladesh, kids' dental care & more.",
+      "Evidence-based dental health guides from Aristocrat Dental Care specialists: checkup frequency, root canal facts, Invisalign vs braces, kids' dental care & more.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "Blog",
@@ -548,12 +550,12 @@ export function BlogDetailPage({ slug }: { slug: string }) {
   return (
     <>
       <ReadingProgress />
-      {/* Article hero */}
-      <section className="hero-mesh-dark relative overflow-hidden">
-        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+      {/* Article hero — centered over a sliding backdrop */}
+      <section className="relative isolate overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={slidesForRoute("blog")} overlay="deep" interval={8000} />
+        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-24 pt-12 text-center sm:px-6 sm:pt-16">
           <nav aria-label="Breadcrumb" className="mb-8">
-            <ol className="flex flex-wrap items-center gap-1.5 text-xs text-blue-200/80">
+            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>
                 <a
                   href="#/"
@@ -591,13 +593,13 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
+            <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25 backdrop-blur-sm">
               {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
             </span>
-            <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
+            <h1 className="font-heading mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
               {bn && post.titleBn ? post.titleBn : post.title}
             </h1>
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
               <span className="inline-flex items-center gap-2">
                 <Avatar className="h-9 w-9 border-2 border-white/20">
                   <AvatarFallback className="bg-white/10 font-heading text-xs font-bold text-white">
@@ -620,17 +622,6 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             </div>
           </motion.div>
         </div>
-        <svg
-          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
-          viewBox="0 0 1440 56"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
-            fill="currentColor"
-          />
-        </svg>
       </section>
 
       {/* Article body */}

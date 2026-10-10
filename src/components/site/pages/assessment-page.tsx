@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarCheck,
-  Calculator,
   Check,
   CheckCircle2,
   Clock3,
@@ -538,15 +537,6 @@ export function AssessmentPage() {
                       >
                         <CalendarCheck className="h-5 w-5" aria-hidden="true" />
                         {t.ctaButton}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => navigate("/estimator")}
-                        className="rounded-full px-8 py-4 text-base font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white hover:text-white"
-                      >
-                        <Calculator className="h-5 w-5" aria-hidden="true" />
-                        {t.ctaSecondary}
                       </Button>
                     </div>
                   </div>

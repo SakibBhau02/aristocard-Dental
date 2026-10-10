@@ -1,0 +1,225 @@
+=== sweep 4: case-insensitive estimate/estimator/EMI under src ===
+src/lib/data/services.ts:75:          "Our dental lab crafts your crown or bridge from premium porcelain or zirconia, shade-matched to your smile.",
+src/lib/data/dictionary.ts:115:      premiumBadge: "Premium Facility",
+src/lib/data/dictionary.ts:242:        "One short, genuinely useful email a month — seasonal care reminders, clinic offers and new expert guides from our blog. No spam, ever.",
+src/lib/data/dictionary.ts:306:    description: `Welcome to {site} — a premier destination for comprehensive dental care in Uttara, Dhaka.`,
+src/lib/data/dictionary.ts:310:    storyP1b: ", our clinic is recognized as a premier destination for comprehensive dental care in Uttara.",
+src/lib/data/dictionary.ts:314:    storyQuote: "“Under the expert leadership of Dr. Shazia Khanam, our clinic is recognized as a premier destination for comprehensive dental care.”",
+src/lib/data/dictionary.ts:1057:      premiumBadge: "প্রিমিয়াম সুবিধা",
+src/components/site/navbar.tsx:78:            <span className="font-semibold tracking-wide text-amber-200">
+src/components/site/navbar.tsx:139:                      "relative rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-300 xl:px-3.5 xl:text-sm",
+src/components/site/navbar.tsx:190:              className="btn-press btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
+src/components/site/navbar.tsx:318:                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+src/components/site/navbar.tsx:328:                  className="w-full rounded-2xl bg-brand-blue py-6 text-base font-semibold text-white shadow-lg shadow-blue-500/25 hover:bg-brand-navy"
+src/components/site/navbar.tsx:344:                  className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-brand-navy ring-1 ring-blue-100"
+src/components/site/patient-reviews.tsx:334:                    <p className="truncate text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:339:                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
+src/components/site/patient-reviews.tsx:415:                  <span id="review-rating-label" className="block text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:466:                    <Label htmlFor="review-name" className="text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:481:                    <Label htmlFor="review-phone" className="text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:500:                  <Label htmlFor="review-service" className="text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:526:                  <Label htmlFor="review-title" className="text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:541:                  <Label htmlFor="review-message" className="text-sm font-semibold text-brand-navy">
+src/components/site/patient-reviews.tsx:564:                    className="rounded-full border-blue-200 px-6 font-semibold text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+src/components/site/before-after-slider.tsx:81:      aria-valuemin={0}
+src/components/site/clinic-status.tsx:92:        "inline-flex items-center gap-1.5 font-semibold",
+src/components/site/site-search.tsx:146:     read — keeps SSR/hydration deterministic). queueMicrotask defers the
+src/components/site/site-search.tsx:151:    queueMicrotask(() => setRecent(loadRecent()));
+src/components/site/site-search.tsx:324:                            <span className="block truncate text-sm font-semibold text-brand-navy">
+src/components/site/site-search.tsx:340:                  <span className="block text-sm font-semibold text-brand-navy">
+src/components/site/site-search.tsx:372:                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-brand-navy">
+src/components/site/site-search.tsx:398:                            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40"
+src/components/site/pages/gallery-page.tsx:104:                    "relative rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+src/components/site/pages/gallery-page.tsx:173:                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100">
+src/components/site/pages/home-page.tsx:103:              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100"
+src/components/site/pages/home-page.tsx:232:                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/home-page.tsx:236:                <span className="inline-flex items-center gap-1 text-sm font-semibold text-white">
+src/components/site/pages/home-page.tsx:387:              className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-brand-navy/70"
+src/components/site/pages/home-page.tsx:406:                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/home-page.tsx:408:                      {d.home.why.premiumBadge}
+src/components/site/pages/home-page.tsx:450:                  <span className="mt-1 block text-xs font-semibold text-brand-navy">
+src/components/site/pages/home-page.tsx:776:                    <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+src/components/site/pages/home-page.tsx:803:                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue hover:text-brand-navy"
+src/components/site/pages/service-detail-page.tsx:181:              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/service-detail-page.tsx:242:                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
+src/components/site/pages/service-detail-page.tsx:249:                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
+src/components/site/pages/service-detail-page.tsx:256:                  <dd className="text-right font-semibold text-white">{service.anesthesia}</dd>
+src/components/site/pages/service-detail-page.tsx:495:                        <dt className="font-semibold text-brand-navy">{c.patient}</dt>
+src/components/site/pages/service-detail-page.tsx:535:                  <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+src/components/site/pages/service-detail-page.tsx:584:                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-semibold text-brand-blue transition-all duration-300 hover:bg-brand-blue hover:text-white"
+src/components/site/pages/contact-page.tsx:243:                              "font-semibold",
+src/components/site/pages/contact-page.tsx:299:                      className="mt-8 rounded-full border-brand-blue/30 px-7 font-semibold text-brand-navy hover:bg-blue-50"
+src/components/site/pages/contact-page.tsx:324:                          <Label htmlFor="contact-name" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/contact-page.tsx:339:                          <Label htmlFor="contact-phone" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/contact-page.tsx:355:                        <Label htmlFor="contact-email" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/contact-page.tsx:371:                        <Label htmlFor="contact-subject" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/contact-page.tsx:384:                        <Label htmlFor="contact-message" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/services-page.tsx:103:                  "relative shrink-0 rounded-full px-4 py-2.5 text-xs font-semibold transition-all duration-300",
+src/components/site/pages/services-page.tsx:137:                    <span> — {t.inCategory} <span className="font-semibold text-brand-blue">{d.categories[category as keyof typeof d.categories]}</span></span>
+src/components/site/pages/services-page.tsx:146:                    <span> {t.inCategory} <span className="font-semibold text-brand-blue">{category}</span></span>
+src/components/site/pages/services-page.tsx:191:                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 ring-1 ring-amber-100">
+src/components/site/pages/faqs-page.tsx:190:                    "relative rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-300",
+src/components/site/pages/faqs-page.tsx:262:                          <AccordionTrigger className="py-4.5 text-left font-heading text-[15px] font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+src/components/site/pages/faqs-page.tsx:268:                              <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-brand-blue ring-1 ring-blue-100">
+src/components/site/pages/faqs-page.tsx:278:                                  className="text-[12px] font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 transition-colors hover:text-brand-navy"
+src/components/site/pages/about-page.tsx:86:                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/about-page.tsx:268:                      <span className="text-sm font-semibold text-white">{bn ? "৪.৯" : "4.9"}</span>
+src/components/site/pages/appointment-page.tsx:261:                <dd className="font-semibold text-brand-navy">{form.name}</dd>
+src/components/site/pages/appointment-page.tsx:265:                <dd className="font-semibold text-brand-navy">{form.phone}</dd>
+src/components/site/pages/appointment-page.tsx:269:                <dd className="font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:276:                  <dd className="font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:283:                <dd className="text-right font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:350:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/appointment-page.tsx:376:                className="inline-flex items-center gap-1 font-semibold text-white underline decoration-amber-400/70 decoration-2 underline-offset-4 transition-colors hover:text-amber-300"
+src/components/site/pages/appointment-page.tsx:426:                        "hidden text-xs font-semibold sm:block",
+src/components/site/pages/appointment-page.tsx:478:                        <Label htmlFor="appt-name" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:492:                        <Label htmlFor="appt-phone" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:515:                      <Label htmlFor="appt-email" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:531:                      <Label className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:571:                      <Label className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:621:                              <span className="block truncate text-sm font-semibold">
+src/components/site/pages/appointment-page.tsx:660:                      <Label htmlFor="appt-date" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:685:                      <Label className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:702:                              "rounded-xl px-2 py-2.5 text-xs font-semibold transition-all duration-300 sm:text-sm",
+src/components/site/pages/appointment-page.tsx:718:                      <Label htmlFor="appt-notes" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/appointment-page.tsx:780:                            <dd className="font-semibold text-brand-navy sm:text-right">
+src/components/site/pages/appointment-page.tsx:789:                        className="mt-4 text-xs font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
+src/components/site/pages/appointment-page.tsx:812:                    className="rounded-full border-blue-200 px-7 py-4 font-semibold text-brand-navy hover:bg-blue-50"
+src/components/site/pages/admin-page.tsx:671:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/admin-page.tsx:722:              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/admin-page.tsx:737:            className="mt-3 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+src/components/site/pages/admin-page.tsx:767:                      "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+src/components/site/pages/admin-page.tsx:891:                <span className="font-semibold text-brand-navy">{range.label}</span>
+src/components/site/pages/admin-page.tsx:955:                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+src/components/site/pages/admin-page.tsx:956:                      <th scope="col" className="px-5 py-3.5 font-semibold">Service / Doctor</th>
+src/components/site/pages/admin-page.tsx:957:                      <th scope="col" className="px-5 py-3.5 font-semibold">Schedule</th>
+src/components/site/pages/admin-page.tsx:958:                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+src/components/site/pages/admin-page.tsx:959:                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+src/components/site/pages/admin-page.tsx:966:                          <p className="font-semibold text-brand-navy">{r.name}</p>
+src/components/site/pages/admin-page.tsx:971:                          <p className="text-xs font-semibold text-slate-700">
+src/components/site/pages/admin-page.tsx:984:                          <p className="font-semibold tabular-nums text-slate-700">{r.date}</p>
+src/components/site/pages/admin-page.tsx:1061:                      <p className="font-semibold text-brand-navy">{r.name}</p>
+src/components/site/pages/admin-page.tsx:1081:                    <p className="col-span-2 font-semibold tabular-nums">
+src/components/site/pages/admin-page.tsx:1291:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/admin-page.tsx:1342:              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/admin-page.tsx:1375:                        "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+src/components/site/pages/admin-page.tsx:1451:                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+src/components/site/pages/admin-page.tsx:1452:                      <th scope="col" className="px-5 py-3.5 font-semibold">Review</th>
+src/components/site/pages/admin-page.tsx:1453:                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+src/components/site/pages/admin-page.tsx:1454:                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+src/components/site/pages/admin-page.tsx:1467:                          <p className="font-semibold text-brand-navy">{r.name}</p>
+src/components/site/pages/admin-page.tsx:1480:                            <p className="mt-1 text-xs font-semibold text-brand-navy">
+src/components/site/pages/admin-page.tsx:1488:                            <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+src/components/site/pages/admin-page.tsx:1559:                      <p className="font-semibold text-brand-navy">{r.name}</p>
+src/components/site/pages/admin-page.tsx:1586:                      <p className="mt-1 text-xs font-semibold text-brand-navy">{r.title}</p>
+src/components/site/pages/admin-page.tsx:1592:                      <span className="mt-2 inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+src/components/site/pages/blog-page.tsx:129:                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
+src/components/site/pages/blog-page.tsx:256:                    "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
+src/components/site/pages/blog-page.tsx:608:                  <span className="block font-semibold text-white">{post.author}</span>
+src/components/site/pages/blog-page.tsx:696:                              ? "bg-blue-50 font-semibold text-brand-blue"
+src/components/site/pages/blog-page.tsx:832:                        className="group inline-flex items-center gap-2.5 rounded-full bg-blue-50 py-2 pl-2 pr-4 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+src/components/site/pages/blog-page.tsx:869:              <span className="mr-1 hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:inline-flex">
+src/components/site/pages/blog-page.tsx:973:                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
+src/components/site/pages/assessment-page.tsx:262:                    className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-blue"
+src/components/site/pages/assessment-page.tsx:272:                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-brand-blue"
+src/components/site/pages/assessment-page.tsx:360:                              "flex min-h-12 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-all duration-300 sm:px-5",
+src/components/site/pages/assessment-page.tsx:391:                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50 disabled:pointer-events-none disabled:opacity-0"
+src/components/site/pages/assessment-page.tsx:417:                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-blue ring-1 ring-blue-100">
+src/components/site/pages/assessment-page.tsx:431:                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50"
+src/components/site/pages/assessment-page.tsx:440:              <p className="mt-9 text-center text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">
+src/components/site/pages/assessment-page.tsx:586:        <p className="mt-1 text-[13px] font-semibold text-brand-blue">
+src/components/site/pages/assessment-page.tsx:640:          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
+src/components/site/pages/status-page.tsx:228:                      "relative flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-300",
+src/components/site/pages/status-page.tsx:262:                        <Label htmlFor="ref-input" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:277:                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 font-mono text-base font-semibold tracking-wider text-brand-navy placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+src/components/site/pages/status-page.tsx:282:                          <span className="font-mono font-semibold text-brand-blue">ADC-</span>
+src/components/site/pages/status-page.tsx:288:                        <Label htmlFor="phone-input" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:303:                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base font-semibold text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+src/components/site/pages/status-page.tsx:422:                                <p className="mt-0.5 text-sm font-semibold text-brand-blue">
+src/components/site/pages/status-page.tsx:433:                                  <span className="font-semibold">{t.yourNote}</span> {appt.notes}
+src/components/site/pages/status-page.tsx:443:                              <span className="ml-auto font-semibold text-brand-navy">{appt.name}</span>
+src/components/site/pages/status-page.tsx:448:                              <span className="ml-auto text-right font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:459:                              <span className="ml-auto text-right font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:564:                    <span className="font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:573:                <Label htmlFor="cancel-phone" className="text-sm font-semibold text-brand-navy">
+src/components/site/pages/status-page.tsx:583:                  className="mt-2 h-12 rounded-2xl border-blue-100 bg-ice/60 text-base font-semibold tracking-wide text-brand-navy placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+src/components/site/pages/doctors-page.tsx:156:        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+src/components/site/pages/doctors-page.tsx:169:          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+src/components/site/pages/doctors-page.tsx:185:            className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+src/components/site/pages/doctors-page.tsx:238:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:246:                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
+src/components/site/pages/doctors-page.tsx:263:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:285:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:311:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:330:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:341:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:352:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/pages/doctors-page.tsx:584:              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/pages/doctors-page.tsx:598:                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15"
+src/components/site/pages/doctors-page.tsx:771:                        <dd className="text-right font-semibold text-brand-navy">
+src/components/site/pages/doctors-page.tsx:780:                        <dd className="text-right font-semibold text-brand-navy">
+src/components/site/motion.tsx:173:          "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]",
+src/components/site/shared.tsx:64:          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+src/components/site/shared.tsx:126:        <Badge variant="outline" className={`${colors.bg} ${colors.text} border-0 text-[10px] font-semibold uppercase tracking-wider`}>
+src/components/site/shared.tsx:134:      <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+src/components/site/shared.tsx:152:          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
+src/components/site/shared.tsx:226:        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+src/components/site/shared.tsx:235:        className="mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+src/components/site/shared.tsx:245:        className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+src/components/site/service-reviews.tsx:266:                    <p className="truncate text-sm font-semibold text-brand-navy">
+src/components/site/service-reviews.tsx:271:                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
+src/components/site/footer.tsx:105:              <span className="ml-1 text-sm font-semibold text-white">
+src/components/site/footer.tsx:134:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+src/components/site/footer.tsx:161:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+src/components/site/footer.tsx:190:                  className="text-sm font-semibold text-amber-300 hover:text-amber-200"
+src/components/site/footer.tsx:200:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+src/components/site/footer.tsx:216:                    <span className="font-semibold">{site.phone}</span>
+src/components/site/footer.tsx:406:            <p className="text-sm font-semibold text-emerald-200">
+src/components/ui/menubar.tsx:131:        <MenubarPrimitive.ItemIndicator>
+src/components/ui/menubar.tsx:133:        </MenubarPrimitive.ItemIndicator>
+src/components/ui/menubar.tsx:155:        <MenubarPrimitive.ItemIndicator>
+src/components/ui/menubar.tsx:157:        </MenubarPrimitive.ItemIndicator>
+src/components/ui/toast.tsx:98:    className={cn("text-sm font-semibold [&+div]:text-xs", className)}
+src/components/ui/select.tsx:116:        <SelectPrimitive.ItemIndicator>
+src/components/ui/select.tsx:118:        </SelectPrimitive.ItemIndicator>
+src/components/ui/form.tsx:61:    formItemId: `${id}-form-item`,
+src/components/ui/form.tsx:94:  const { error, formItemId } = useFormField()
+src/components/ui/form.tsx:101:      htmlFor={formItemId}
+src/components/ui/form.tsx:108:  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+src/components/ui/form.tsx:113:      id={formItemId}
+src/components/ui/dropdown-menu.tsx:102:        <DropdownMenuPrimitive.ItemIndicator>
+src/components/ui/dropdown-menu.tsx:104:        </DropdownMenuPrimitive.ItemIndicator>
+src/components/ui/dropdown-menu.tsx:137:        <DropdownMenuPrimitive.ItemIndicator>
+src/components/ui/dropdown-menu.tsx:139:        </DropdownMenuPrimitive.ItemIndicator>
+src/components/ui/card.tsx:35:      className={cn("leading-none font-semibold", className)}
+src/components/ui/dialog.tsx:113:      className={cn("text-lg leading-none font-semibold", className)}
+src/components/ui/sheet.tsx:111:      className={cn("text-foreground font-semibold", className)}
+src/components/ui/alert-dialog.tsx:102:      className={cn("text-lg font-semibold", className)}
+src/components/ui/drawer.tsx:105:      className={cn("text-foreground font-semibold", className)}
+src/components/ui/context-menu.tsx:154:        <ContextMenuPrimitive.ItemIndicator>
+src/components/ui/context-menu.tsx:156:        </ContextMenuPrimitive.ItemIndicator>
+src/components/ui/context-menu.tsx:178:        <ContextMenuPrimitive.ItemIndicator>
+src/components/ui/context-menu.tsx:180:        </ContextMenuPrimitive.ItemIndicator>
+src/app/globals.css:252:/* ---------- Film-grain noise overlay (subtle premium texture) ---------- */
+exit=0
+=== sweep 5: BN leftover money words ===
+exit=1
+=== sweep 6: remaining bare 'free' tokens ===
+src/lib/admin-csv.ts:43: *   or carriage return) — important for free-text fields like names/notes.
+src/lib/site.ts:69:    title: "Pain-Free Comfort",
+src/lib/site.ts:71:      "Gentle techniques, modern anesthesia and anxiety-easing care that makes every visit calm and stress-free.",
+src/lib/data/services.ts:508:      "Anyone wanting metal-free, invisible fillings",
+src/lib/data/services.ts:649:      "A friendly, fear-free environment designed for children — preventative care, habit counseling and development monitoring for a lifetime of healthy smiles.",
+src/lib/data/services.ts:651:      "Gentle care for little smiles. Our pediatric dentistry creates a friendly, fear-free environment for children, focusing on preventative care, habit counseling, and monitoring development to ensure your child grows up with a healthy, happy smile. Our clinic features a specially designed kids' room that helps reduce dental fear gradually with every visit.",
+src/lib/data/services.ts:657:        title: "Fear-Free Environment",
+src/lib/data/services.ts:692:          "A fun, pressure-free introduction — a ride in the chair, counting teeth and lots of praise.",
+src/lib/data/dictionary.ts:52:      "Book your consultation with our specialist dentists today — modern technology, pain-free care and specialist expertise, all under one roof in Uttara.",
+src/lib/data/dictionary.ts:79:        "Pain-free treatment",
+src/lib/data/dictionary.ts:88:        { title: "Laser Pain-Free Fillings", note: "Often no injection needed" },
+src/lib/data/dictionary.ts:128:          title: "Pain-Free Comfort",
+src/lib/data/dictionary.ts:130:            "Gentle techniques, modern anesthesia and anxiety-easing care that makes every visit calm and stress-free.",
+src/lib/data/dictionary.ts:326:      "Pain-free & comfortable care",
+src/lib/data/dictionary.ts:333:    missionText: "To provide accessible, high-quality dental care that prioritizes patient safety, comfort, and long-term oral health. We strive to make every visit a stress-free experience through modern dentistry and personalized care.",
+src/lib/data/dictionary.ts:373:      { title: "Comfort", description: "We create a welcoming, anxiety-free environment for patients of all ages — from toddlers to grandparents." },
+src/lib/data/doctors.ts:175:    text: "I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.",
+exit=0

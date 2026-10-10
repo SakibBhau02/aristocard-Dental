@@ -32,6 +32,8 @@ import { DynamicIcon } from "@/components/site/icon-map";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { slidesForRoute } from "@/lib/data/hero-media";
 import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
@@ -514,12 +516,12 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
 
   return (
     <>
-      {/* HERO */}
-      <section className="hero-mesh-dark relative overflow-hidden">
-        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+      {/* HERO — centered over a sliding team backdrop */}
+      <section className="relative isolate overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={slidesForRoute("doctors")} overlay="deep" interval={8000} />
+        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
           <nav aria-label="Breadcrumb" className="mb-8">
-            <ol className="flex flex-wrap items-center gap-1.5 text-xs text-blue-200/80">
+            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>
                 <a
                   href="#/"
@@ -550,22 +552,22 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
             </ol>
           </nav>
 
-          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div className="mx-auto flex max-w-2xl flex-col items-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="relative mx-auto w-full max-w-xs"
+              className="relative mx-auto w-full max-w-[200px]"
             >
               <div
-                className="flex aspect-square items-center justify-center rounded-[2rem] ring-8 ring-white/10"
+                className="flex aspect-square items-center justify-center rounded-[2rem] ring-8 ring-white/10 backdrop-blur-sm"
                 style={{
-                  background: `linear-gradient(140deg, ${doctor.accent}33, rgba(255,255,255,0.06))`,
+                  background: `linear-gradient(140deg, ${doctor.accent}55, rgba(255,255,255,0.08))`,
                 }}
               >
                 <span
-                  className="font-heading text-7xl font-bold"
-                  style={{ color: "rgba(255,255,255,0.9)" }}
+                  className="font-heading text-6xl font-bold"
+                  style={{ color: "rgba(255,255,255,0.92)" }}
                 >
                   {initials}
                 </span>
@@ -580,22 +582,23 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8"
             >
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
                 {t.available}
               </span>
-              <h1 className="font-heading mt-4 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
+              <h1 className="font-heading mx-auto mt-4 max-w-2xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
                 {doctor.name}
               </h1>
               <p className="mt-2 text-lg font-medium text-amber-300">{role}</p>
               <p className="mt-1 text-sm text-blue-200/85">{department}</p>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
                 {doctor.credentials.map((c) => (
                   <span
                     key={c}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur-sm"
                   >
                     <GraduationCap className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
                     {bn ? c.replace("BDS", "বিডিএস").replace("MDS", "এমডিএস").replace("PGT", "পিজিটি") : c}
@@ -603,18 +606,18 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+                  className="btn-press btn-shine inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-amber-500/40"
                 >
                   <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
                   {t.book}
                 </button>
                 <a
                   href={`tel:${site.phoneRaw}`}
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
                 >
                   {t.callWith.replace("{phone}", site.phone)}
                 </a>
@@ -622,17 +625,6 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
             </motion.div>
           </div>
         </div>
-        <svg
-          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
-          viewBox="0 0 1440 56"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
-            fill="currentColor"
-          />
-        </svg>
       </section>
 
       {/* BODY */}

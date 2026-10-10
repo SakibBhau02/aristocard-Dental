@@ -1,0 +1,986 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  ArrowRight,
+     7→  ArrowUpRight,
+     8→  CalendarDays,
+     9→  Check,
+    10→  CheckCircle2,
+    11→  Clock3,
+    12→  Facebook,
+    13→  Lightbulb,
+    14→  Link2,
+    15→  ListTree,
+    16→  MessageCircle,
+    17→  Search,
+    18→  Share2,
+    19→  Stethoscope,
+    20→  Tag,
+    21→  UserRound,
+    22→  X,
+    23→} from "lucide-react";
+    24→import { useRouter, usePageMeta } from "@/lib/router";
+    25→import { useLang, toBnDigits } from "@/lib/i18n";
+    26→import { useToast } from "@/hooks/use-toast";
+    27→import { blogPosts, blogCategories, getPost } from "@/lib/data/blog";
+    28→import { services } from "@/lib/data/services";
+    29→import { DynamicIcon } from "@/components/site/icon-map";
+    30→import { PageHeader, CtaBanner } from "@/components/site/shared";
+    31→import { Reveal, SectionHeading } from "@/components/site/motion";
+    32→import { HeroBackdrop } from "@/components/site/hero-backdrop";
+    33→import { slidesForRoute } from "@/lib/data/hero-media";
+    34→import { NotFoundPage } from "@/components/site/pages/not-found-page";
+    35→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    36→import { Badge } from "@/components/ui/badge";
+    37→import { Input } from "@/components/ui/input";
+    38→import { cn } from "@/lib/utils";
+    39→import Image from "next/image";
+    40→
+    41→/* ------------------------------------------------------------------ */
+    42→/*  BLOG LIST PAGE (EN / বাংলা)                                        */
+    43→/* ------------------------------------------------------------------ */
+    44→
+    45→/* "8 min read" → "৮ মিনিট পাঠ" when Bangla */
+    46→function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
+    47→  if (!bn) return readTime;
+    48→  const n = readTime.match(/\d+/)?.[0] ?? "";
+    49→  return n ? `${toBnDigits(n)} ${minRead}` : readTime;
+    50→}
+    51→
+    52→export function BlogPage() {
+    53→  const [category, setCategory] = useState("All");
+    54→  const [search, setSearch] = useState("");
+    55→  const { navigate } = useRouter();
+    56→  const { lang, d } = useLang();
+    57→  const bn = lang === "bn";
+    58→  const t = d.blogPage;
+    59→
+    60→  usePageMeta({
+    61→    title: "Dental Health Blog — Expert Advice from Uttara's Trusted Dentists",
+    62→    description:
+    63→      "Evidence-based dental health guides from Aristocrat Dental Care specialists: checkup frequency, root canal facts, Invisalign vs braces, kids' dental care & more.",
+    64→    jsonLd: {
+    65→      "@context": "https://schema.org",
+    66→      "@type": "Blog",
+    67→      name: "Aristocrat Dental Care Health Blog",
+    68→      url: "https://aristocratdentalcarebd.com/#/blog",
+    69→      publisher: { "@type": "Organization", name: "Aristocrat Dental Care & Orthodontic Center" },
+    70→    },
+    71→  });
+    72→
+    73→  const searching = search.trim().length > 0;
+    74→
+    75→  /* Category filter combined with text search (EN + BN content) */
+    76→  const filtered = useMemo(() => {
+    77→    const q = search.trim().toLowerCase();
+    78→    return blogPosts.filter((p) => {
+    79→      const matchCategory = category === "All" || p.category === category;
+    80→      const matchSearch =
+    81→        !q ||
+    82→        p.title.toLowerCase().includes(q) ||
+    83→        p.excerpt.toLowerCase().includes(q) ||
+    84→        p.category.toLowerCase().includes(q) ||
+    85→        (p.titleBn?.toLowerCase().includes(q) ?? false) ||
+    86→        (p.excerptBn?.toLowerCase().includes(q) ?? false);
+    87→      return matchCategory && matchSearch;
+    88→    });
+    89→  }, [category, search]);
+    90→  const featured = blogPosts.find((p) => p.featured) ?? blogPosts[0];
+    91→  /* While searching, the hero is hidden and every match goes into the grid */
+    92→  const rest = searching
+    93→    ? filtered
+    94→    : filtered.filter((p) => p.slug !== featured.slug || category !== "All");
+    95→
+    96→  const resultCountText = t.searchResults.replace(
+    97→    "{count}",
+    98→    bn ? toBnDigits(rest.length) : String(rest.length)
+    99→  );
+   100→
+   101→  return (
+   102→    <>
+   103→      <PageHeader
+   104→        eyebrow={t.eyebrow}
+   105→        title={t.title}
+   106→        description={t.description}
+   107→        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.blog }]}
+   108→      />
+   109→
+   110→      {/* Featured post — hidden while searching */}
+   111→      {!searching && (
+   112→        <section className="py-14 sm:py-16" aria-label="Featured article">
+   113→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   114→            <Reveal>
+   115→              <a
+   116→                href={`#/blog/${featured.slug}`}
+   117→                onClick={(e) => {
+   118→                  e.preventDefault();
+   119→                  navigate(`/blog/${featured.slug}`);
+   120→                }}
+   121→                className="group grid overflow-hidden rounded-[2rem] border border-blue-100/80 bg-white shadow-[0_16px_50px_-24px_rgba(0,32,96,0.25)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_28px_60px_-24px_rgba(30,125,255,0.35)] lg:grid-cols-[1.1fr_0.9fr]"
+   122→                aria-label={`Read featured article: ${bn && featured.titleBn ? featured.titleBn : featured.title}`}
+   123→              >
+   124→                <div className="hero-mesh-dark relative flex min-h-[260px] flex-col justify-between p-8 sm:p-10">
+   125→                  <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+   126→                  <span className="relative inline-flex w-fit items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
+   127→                    <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
+   128→                    {t.featured}
+   129→                  </span>
+   130→                  <div className="relative">
+   131→                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
+   132→                      {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
+   133→                    </span>
+   134→                    <h2 className="font-heading mt-4 text-2xl font-bold leading-snug text-white sm:text-3xl">
+   135→                      {bn && featured.titleBn ? featured.titleBn : featured.title}
+   136→                    </h2>
+   137→                    <p className="mt-3 text-sm leading-relaxed text-blue-100/85">
+   138→                      {bn && featured.excerptBn ? featured.excerptBn : featured.excerpt}
+   139→                    </p>
+   140→                  </div>
+   141→                  <span className="relative inline-flex w-fit items-center gap-2 text-sm font-bold text-white">
+   142→                    {t.readGuide}
+   143→                    <ArrowUpRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
+   144→                  </span>
+   145→                </div>
+   146→
+   147→                <div className="flex flex-col justify-between bg-white p-8 sm:p-10">
+   148→                  <div>
+   149→                    {featured.image && (
+   150→                      <div className="zoom-img relative mb-6 overflow-hidden rounded-2xl ring-1 ring-blue-100">
+   151→                        <Image
+   152→                          src={featured.image}
+   153→                          alt={featured.imageAlt ?? featured.title}
+   154→                          width={672}
+   155→                          height={384}
+   156→                          className="h-44 w-full object-cover sm:h-48"
+   157→                        />
+   158→                        <span
+   159→                          className="absolute inset-0 bg-gradient-to-t from-brand-navy/35 via-transparent to-transparent"
+   160→                          aria-hidden="true"
+   161→                        />
+   162→                      </div>
+   163→                    )}
+   164→                    <span className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm leading-relaxed text-brand-navy ring-1 ring-blue-100">
+   165→                      <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+   166→                      <span>
+   167→                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
+   168→                          {t.quickAnswer}
+   169→                        </span>
+   170→                        {bn && featured.quickAnswerBn
+   171→                          ? featured.quickAnswerBn.slice(0, 140)
+   172→                          : featured.quickAnswer.slice(0, 140)}
+   173→                        …
+   174→                      </span>
+   175→                    </span>
+   176→                    <div className="mt-6 flex flex-wrap gap-2">
+   177→                      {featured.tags.map((tag) => (
+   178→                        <Badge
+   179→                          key={tag}
+   180→                          variant="outline"
+   181→                          className="border-blue-100 bg-ice text-[11px] font-medium text-brand-navy"
+   182→                        >
+   183→                          #{tag}
+   184→                        </Badge>
+   185→                      ))}
+   186→                    </div>
+   187→                  </div>
+   188→                  <div className="mt-8 flex items-center gap-4 border-t border-blue-50 pt-6">
+   189→                    <Avatar className="h-11 w-11 border-2 border-amber-200">
+   190→                      <AvatarFallback className="font-heading text-sm font-bold text-brand-navy">
+   191→                        {featured.author
+   192→                          .replace("Dr. ", "")
+   193→                          .split(" ")
+   194→                          .map((n) => n[0])
+   195→                          .slice(0, 2)
+   196→                          .join("")}
+   197→                      </AvatarFallback>
+   198→                    </Avatar>
+   199→                    <div className="min-w-0">
+   200→                      <span className="block truncate text-sm font-bold text-brand-navy">
+   201→                        {featured.author}
+   202→                      </span>
+   203→                      <span className="block truncate text-xs text-slate-500">
+   204→                        {featured.authorCredentials}
+   205→                      </span>
+   206→                    </div>
+   207→                    <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-xs text-slate-500 sm:flex">
+   208→                      <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+   209→                      {localizeReadTime(featured.readTime, bn, t.minRead)}
+   210→                    </span>
+   211→                  </div>
+   212→                </div>
+   213→              </a>
+   214→            </Reveal>
+   215→          </div>
+   216→        </section>
+   217→      )}
+   218→
+   219→      {/* Category filter + search + grid */}
+   220→      <section className="pb-16 sm:pb-20" aria-label="All articles">
+   221→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   222→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   223→            {/* Search — filters by title, excerpt and category (EN content) */}
+   224→            <div className="relative w-full sm:w-64">
+   225→              <Search
+   226→                className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+   227→                aria-hidden="true"
+   228→              />
+   229→              <Input
+   230→                type="search"
+   231→                value={search}
+   232→                onChange={(e) => setSearch(e.target.value)}
+   233→                placeholder={t.searchPlaceholder}
+   234→                aria-label={t.searchPlaceholder}
+   235→                className="h-11 rounded-full border-blue-200/80 bg-white pl-11 pr-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
+   236→              />
+   237→              {search && (
+   238→                <button
+   239→                  type="button"
+   240→                  onClick={() => setSearch("")}
+   241→                  aria-label={t.searchClear}
+   242→                  title={t.searchClear}
+   243→                  className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy"
+   244→                >
+   245→                  <X className="h-4 w-4" aria-hidden="true" />
+   246→                </button>
+   247→              )}
+   248→            </div>
+   249→            <div className="scroll-area flex flex-1 items-center gap-2 overflow-x-auto pb-2">
+   250→              <Tag className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+   251→              {blogCategories.map((c) => (
+   252→                <button
+   253→                  key={c}
+   254→                  type="button"
+   255→                  onClick={() => setCategory(c)}
+   256→                  aria-pressed={category === c}
+   257→                  className={cn(
+   258→                    "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
+   259→                    category === c
+   260→                      ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   261→                      : "bg-blue-50 text-brand-navy hover:bg-blue-100"
+   262→                  )}
+   263→                >
+   264→                  {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+   265→                  <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
+   266→                    {bn
+   267→                      ? toBnDigits(
+   268→                          c === "All"
+   269→                            ? blogPosts.length
+   270→                            : blogPosts.filter((p) => p.category === c).length
+   271→                        )
+   272→                      : c === "All"
+   273→                        ? blogPosts.length
+   274→                        : blogPosts.filter((p) => p.category === c).length}
+   275→                  </span>
+   276→                </button>
+   277→              ))}
+   278→            </div>
+   279→          </div>
+   280→
+   281→          {searching && rest.length > 0 && (
+   282→            <p className="mt-6 text-sm text-slate-500" aria-live="polite">
+   283→              {resultCountText}
+   284→            </p>
+   285→          )}
+   286→
+   287→          <AnimatePresence mode="wait">
+   288→            {rest.length > 0 ? (
+   289→              <motion.div
+   290→                key={`${category}-${search}`}
+   291→                className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+   292→                initial={{ opacity: 0, y: 14 }}
+   293→                animate={{ opacity: 1, y: 0 }}
+   294→                exit={{ opacity: 0 }}
+   295→                transition={{ duration: 0.35 }}
+   296→              >
+   297→              {rest.map((post, i) => (
+   298→                <motion.article
+   299→                  key={post.slug}
+   300→                  initial={{ opacity: 0, y: 20 }}
+   301→                  whileInView={{ opacity: 1, y: 0 }}
+   302→                  viewport={{ once: true, margin: "-30px" }}
+   303→                  transition={{ duration: 0.5, delay: (i % 3) * 0.07 }}
+   304→                >
+   305→                  <a
+   306→                    href={`#/blog/${post.slug}`}
+   307→                    onClick={(e) => {
+   308→                      e.preventDefault();
+   309→                      navigate(`/blog/${post.slug}`);
+   310→                    }}
+   311→                    className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
+   312→                    aria-label={`Read article: ${bn && post.titleBn ? post.titleBn : post.title}`}
+   313→                  >
+   314→                    {post.image ? (
+   315→                      <div className="zoom-img relative h-44 w-full overflow-hidden">
+   316→                        <Image
+   317→                          src={post.image}
+   318→                          alt={post.imageAlt ?? post.title}
+   319→                          width={448}
+   320→                          height={256}
+   321→                          className="h-full w-full object-cover"
+   322→                        />
+   323→                        <span
+   324→                          className="absolute inset-0 bg-gradient-to-t from-brand-navy/45 via-brand-navy/5 to-transparent"
+   325→                          aria-hidden="true"
+   326→                        />
+   327→                        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue backdrop-blur">
+   328→                          {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+   329→                        </span>
+   330→                      </div>
+   331→                    ) : (
+   332→                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
+   333→                        {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+   334→                      </span>
+   335→                    )}
+   336→                    <div className="flex flex-1 flex-col p-6 pt-5">
+   337→                    <h3 className={cn(
+   338→                      "font-heading text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue",
+   339→                      !post.image && "mt-4"
+   340→                    )}>
+   341→                      {bn && post.titleBn ? post.titleBn : post.title}
+   342→                    </h3>
+   343→                    <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
+   344→                      {bn && post.excerptBn ? post.excerptBn : post.excerpt}
+   345→                    </p>
+   346→                    <div className="mt-5 flex items-center justify-between border-t border-blue-50 pt-4 text-xs text-slate-500">
+   347→                      <span className="inline-flex items-center gap-1.5">
+   348→                        <UserRound className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   349→                        {post.author}
+   350→                      </span>
+   351→                      <span className="inline-flex items-center gap-1.5">
+   352→                        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+   353→                        {localizeReadTime(post.readTime, bn, t.minRead)}
+   354→                      </span>
+   355→                    </div>
+   356→                    </div>
+   357→                  </a>
+   358→                </motion.article>
+   359→              ))}
+   360→              </motion.div>
+   361→            ) : (
+   362→              <motion.div
+   363→                key="empty"
+   364→                className="mx-auto mt-8 max-w-md rounded-3xl border border-dashed border-blue-200 bg-ice p-12 text-center"
+   365→                initial={{ opacity: 0, y: 16 }}
+   366→                animate={{ opacity: 1, y: 0 }}
+   367→                exit={{ opacity: 0 }}
+   368→              >
+   369→                <Search className="mx-auto h-10 w-10 text-brand-blue/50" aria-hidden="true" />
+   370→                <p className="mt-4 text-sm leading-relaxed text-slate-500">
+   371→                  {t.noResults}
+   372→                </p>
+   373→              </motion.div>
+   374→            )}
+   375→          </AnimatePresence>
+   376→        </div>
+   377→      </section>
+   378→
+   379→      <CtaBanner
+   380→        title={t.ctaTitle}
+   381→        description={t.ctaDescription}
+   382→      />
+   383→    </>
+   384→  );
+   385→}
+   386→
+   387→/* ------------------------------------------------------------------ */
+   388→/*  BLOG DETAIL PAGE — AEO format with quick answer (EN / বাংলা)        */
+   389→/* ------------------------------------------------------------------ */
+   390→
+   391→/* ------------------------------------------------------------------ */
+   392→/*  Reading progress bar — top of viewport while reading an article    */
+   393→/* ------------------------------------------------------------------ */
+   394→
+   395→function ReadingProgress() {
+   396→  const [progress, setProgress] = useState(0);
+   397→
+   398→  useEffect(() => {
+   399→    let raf = 0;
+   400→    const update = () => {
+   401→      raf = 0;
+   402→      const el = document.documentElement;
+   403→      const total = el.scrollHeight - el.clientHeight;
+   404→      setProgress(total > 0 ? Math.min(1, el.scrollTop / total) : 0);
+   405→    };
+   406→    const onScroll = () => {
+   407→      if (!raf) raf = requestAnimationFrame(update);
+   408→    };
+   409→    update();
+   410→    window.addEventListener("scroll", onScroll, { passive: true });
+   411→    window.addEventListener("resize", onScroll, { passive: true });
+   412→    return () => {
+   413→      window.removeEventListener("scroll", onScroll);
+   414→      window.removeEventListener("resize", onScroll);
+   415→      if (raf) cancelAnimationFrame(raf);
+   416→    };
+   417→  }, []);
+   418→
+   419→  return (
+   420→    <div
+   421→      className="reading-progress"
+   422→      style={{ transform: `scaleX(${progress})` }}
+   423→      aria-hidden="true"
+   424→    />
+   425→  );
+   426→}
+   427→
+   428→/* Active-section tracking for the article table of contents */
+   429→function useActiveSection(count: number) {
+   430→  const [active, setActive] = useState(0);
+   431→
+   432→  useEffect(() => {
+   433→    if (count < 2) return;
+   434→    const headings = Array.from({ length: count }, (_, i) =>
+   435→      document.getElementById(`section-${i}`)
+   436→    );
+   437→    const visible = headings.filter(Boolean) as HTMLElement[];
+   438→    if (visible.length === 0) return;
+   439→    const observer = new IntersectionObserver(
+   440→      (entries) => {
+   441→        entries.forEach((entry) => {
+   442→          if (entry.isIntersecting) {
+   443→            const idx = Number(entry.target.id.replace("section-", ""));
+   444→            setActive(idx);
+   445→          }
+   446→        });
+   447→      },
+   448→      { rootMargin: "-25% 0px -65% 0px", threshold: 0 }
+   449→    );
+   450→    visible.forEach((h) => observer.observe(h));
+   451→    return () => observer.disconnect();
+   452→  }, [count]);
+   453→  return [active, setActive] as const;
+   454→}
+   455→
+   456→export function BlogDetailPage({ slug }: { slug: string }) {
+   457→  const { navigate } = useRouter();
+   458→  const { lang, d } = useLang();
+   459→  const bn = lang === "bn";
+   460→  const t = d.blogPage;
+   461→  const post = getPost(slug);
+   462→  const [activeSection, setActiveSection] = useActiveSection(post?.sections.length ?? 0);
+   463→
+   464→  const goToSection = (i: number) => {
+   465→    /* NOTE: never use href="#section-x" — it would hijack the hash router */
+   466→    setActiveSection(i);
+   467→    const el = document.getElementById(`section-${i}`);
+   468→    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+   469→    el?.focus({ preventScroll: true });
+   470→  };
+   471→
+   472→  const { toast } = useToast();
+   473→  const [copied, setCopied] = useState(false);
+   474→
+   475→  /* Deep-linkable article URL (matches the canonical production URL) */
+   476→  const articleUrl = () => `${window.location.origin}/#/blog/${slug}`;
+   477→  const shareTitle = () => (bn && post?.titleBn ? post.titleBn : post?.title ?? "Dental health article");
+   478→
+   479→  const shareWhatsApp = () => {
+   480→    const text = `${shareTitle()} — ${articleUrl()}`;
+   481→    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+   482→  };
+   483→
+   484→  const shareFacebook = () => {
+   485→    window.open(
+   486→      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl())}`,
+   487→      "_blank",
+   488→      "noopener,noreferrer,width=640,height=580"
+   489→    );
+   490→  };
+   491→
+   492→  const copyLink = async () => {
+   493→    try {
+   494→      await navigator.clipboard.writeText(articleUrl());
+   495→      setCopied(true);
+   496→      toast({
+   497→        title: t.shareCopied,
+   498→        description: t.shareCopiedDesc,
+   499→      });
+   500→      window.setTimeout(() => setCopied(false), 2600);
+   501→    } catch {
+   502→      toast({
+   503→        title: t.shareFail,
+   504→        description: t.shareFailDesc,
+   505→        variant: "destructive",
+   506→      });
+   507→    }
+   508→  };
+   509→
+   510→  usePageMeta({
+   511→    title: post
+   512→      ? bn && post.titleBn
+   513→        ? post.titleBn
+   514→        : post.title
+   515→      : "Article Not Found",
+   516→    description: post ? (bn && post.excerptBn ? post.excerptBn : post.excerpt) : undefined,
+   517→    jsonLd: post
+   518→      ? {
+   519→          "@context": "https://schema.org",
+   520→          "@type": "MedicalWebPage",
+   521→          headline: post.title,
+   522→          description: post.excerpt,
+   523→          datePublished: post.date,
+   524→          dateModified: post.updated,
+   525→          author: {
+   526→            "@type": "Person",
+   527→            name: post.author,
+   528→            jobTitle: post.authorCredentials,
+   529→          },
+   530→          publisher: {
+   531→            "@type": "Organization",
+   532→            name: "Aristocrat Dental Care & Orthodontic Center",
+   533→          },
+   534→          about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
+   535→          lastReviewed: post.updated,
+   536→        }
+   537→      : undefined,
+   538→  });
+   539→
+   540→  if (!post) return <NotFoundPage />;
+   541→
+   542→  const related = blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
+   543→  const authorInitials = post.author
+   544→    .replace("Dr. ", "")
+   545→    .split(" ")
+   546→    .map((n) => n[0])
+   547→    .slice(0, 2)
+   548→    .join("");
+   549→
+   550→  return (
+   551→    <>
+   552→      <ReadingProgress />
+   553→      {/* Article hero — centered over a sliding backdrop */}
+   554→      <section className="relative isolate overflow-hidden bg-brand-navy">
+   555→        <HeroBackdrop slides={slidesForRoute("blog")} overlay="deep" interval={8000} />
+   556→        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-24 pt-12 text-center sm:px-6 sm:pt-16">
+   557→          <nav aria-label="Breadcrumb" className="mb-8">
+   558→            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+   559→              <li>
+   560→                <a
+   561→                  href="#/"
+   562→                  onClick={(e) => {
+   563→                    e.preventDefault();
+   564→                    navigate("/");
+   565→                  }}
+   566→                  className="transition-colors hover:text-white"
+   567→                >
+   568→                  {d.chrome.nav.home}
+   569→                </a>
+   570→              </li>
+   571→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   572→              <li>
+   573→                <a
+   574→                  href="#/blog"
+   575→                  onClick={(e) => {
+   576→                    e.preventDefault();
+   577→                    navigate("/blog");
+   578→                  }}
+   579→                  className="transition-colors hover:text-white"
+   580→                >
+   581→                  {d.chrome.nav.blog}
+   582→                </a>
+   583→              </li>
+   584→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   585→              <li className="max-w-[220px] truncate font-medium text-white">
+   586→                {bn && post.titleBn ? post.titleBn : post.title}
+   587→              </li>
+   588→            </ol>
+   589→          </nav>
+   590→
+   591→          <motion.div
+   592→            initial={{ opacity: 0, y: 24 }}
+   593→            animate={{ opacity: 1, y: 0 }}
+   594→            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   595→          >
+   596→            <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25 backdrop-blur-sm">
+   597→              {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+   598→            </span>
+   599→            <h1 className="font-heading mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
+   600→              {bn && post.titleBn ? post.titleBn : post.title}
+   601→            </h1>
+   602→            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
+   603→              <span className="inline-flex items-center gap-2">
+   604→                <Avatar className="h-9 w-9 border-2 border-white/20">
+   605→                  <AvatarFallback className="bg-white/10 font-heading text-xs font-bold text-white">
+   606→                    {authorInitials}
+   607→                  </AvatarFallback>
+   608→                </Avatar>
+   609→                <span>
+   610→                  <span className="block font-semibold text-white">{post.author}</span>
+   611→                  <span className="block text-xs">{post.authorCredentials}</span>
+   612→                </span>
+   613→              </span>
+   614→              <span className="inline-flex items-center gap-1.5">
+   615→                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+   616→                {t.updated}: {new Date(post.updated).toLocaleDateString(bn ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" })}
+   617→              </span>
+   618→              <span className="inline-flex items-center gap-1.5">
+   619→                <Clock3 className="h-4 w-4" aria-hidden="true" />
+   620→                {localizeReadTime(post.readTime, bn, t.minRead)}
+   621→              </span>
+   622→            </div>
+   623→          </motion.div>
+   624→        </div>
+   625→      </section>
+   626→
+   627→      {/* Article body */}
+   628→      <article className="py-14 sm:py-16">
+   629→        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+   630→          {/* Cover image */}
+   631→          {post.image && (
+   632→            <Reveal>
+   633→              <figure className="zoom-img relative -mt-24 overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-20px_rgba(0,32,96,0.45)] ring-1 ring-blue-100 sm:-mt-28">
+   634→                <Image
+   635→                  src={post.image}
+   636→                  alt={post.imageAlt ?? post.title}
+   637→                  width={896}
+   638→                  height={504}
+   639→                  priority
+   640→                  className="h-56 w-full object-cover sm:h-80"
+   641→                />
+   642→                <span
+   643→                  className="absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+   644→                  aria-hidden="true"
+   645→                />
+   646→              </figure>
+   647→            </Reveal>
+   648→          )}
+   649→
+   650→          {/* AEO quick answer */}
+   651→          <Reveal className="mt-10">
+   652→            <div className="rounded-3xl border-l-4 border-brand-blue bg-ice p-6 sm:p-8">
+   653→              <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   654→                <Lightbulb className="h-4 w-4" aria-hidden="true" />
+   655→                {t.quickAnswer}
+   656→              </span>
+   657→              <p className="mt-3 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
+   658→                {bn && post.quickAnswerBn ? post.quickAnswerBn : post.quickAnswer}
+   659→              </p>
+   660→            </div>
+   661→          </Reveal>
+   662→
+   663→          {/* Table of contents */}
+   664→          {post.sections.length >= 3 && (
+   665→            <Reveal className="mt-6">
+   666→              <nav
+   667→                aria-label={t.onThisPage}
+   668→                className="rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)] sm:p-6"
+   669→              >
+   670→                <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   671→                  <ListTree className="h-4 w-4" aria-hidden="true" />
+   672→                  {t.onThisPage}
+   673→                </span>
+   674→                <ol className="mt-3 space-y-1">
+   675→                  {post.sections.map((section, i) => {
+   676→                    const label = bn ? post.sectionsBn?.[i]?.heading ?? section.heading : section.heading;
+   677→                    const isActive = activeSection === i;
+   678→                    return (
+   679→                      <li key={section.heading}>
+   680→                        <button
+   681→                          type="button"
+   682→                          onClick={() => goToSection(i)}
+   683→                          aria-current={isActive ? "location" : undefined}
+   684→                          className={cn(
+   685→                            "flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left text-sm transition-all duration-300",
+   686→                            isActive
+   687→                              ? "bg-blue-50 font-semibold text-brand-blue"
+   688→                              : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+   689→                          )}
+   690→                        >
+   691→                          <span
+   692→                            className={cn(
+   693→                              "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold tabular-nums transition-colors",
+   694→                              isActive
+   695→                                ? "bg-brand-blue text-white"
+   696→                                : "bg-blue-50 text-brand-blue"
+   697→                            )}
+   698→                          >
+   699→                            {bn ? toBnDigits(i + 1) : i + 1}
+   700→                          </span>
+   701→                          <span className="leading-snug">{label}</span>
+   702→                        </button>
+   703→                      </li>
+   704→                    );
+   705→                  })}
+   706→                </ol>
+   707→              </nav>
+   708→            </Reveal>
+   709→          )}
+   710→
+   711→          {/* Sections */}
+   712→          <div className="mt-10 space-y-10">
+   713→            {post.sections.map((section, i) => {
+   714→              const bnSection = bn ? post.sectionsBn?.[i] : undefined;
+   715→              const listItems = bnSection?.list ?? section.list;
+   716→              return (
+   717→                <Reveal key={section.heading} delay={i * 0.03}>
+   718→                  <section aria-labelledby={`section-${i}`}>
+   719→                    <h2
+   720→                      id={`section-${i}`}
+   721→                      tabIndex={-1}
+   722→                      className="font-heading text-xl font-bold text-brand-navy outline-none focus-visible:rounded-lg sm:text-2xl"
+   723→                    >
+   724→                      {bnSection?.heading ?? section.heading}
+   725→                    </h2>
+   726→                    <div className="mt-4 space-y-4">
+   727→                      {(bnSection?.body ?? section.body).map((para, j) => (
+   728→                        <p
+   729→                          key={j}
+   730→                          className={cn(
+   731→                            "text-[15px] leading-relaxed text-slate-600 sm:text-base",
+   732→                            i === 0 && j === 0 && "article-lead"
+   733→                          )}
+   734→                        >
+   735→                          {para}
+   736→                        </p>
+   737→                      ))}
+   738→                    </div>
+   739→                    {listItems && (
+   740→                      <ul className="mt-4 space-y-2.5 rounded-2xl border border-blue-100/80 bg-white p-5 sm:p-6">
+   741→                        {listItems.map((item) => (
+   742→                          <li
+   743→                            key={item}
+   744→                            className="flex items-start gap-3 text-sm leading-relaxed text-slate-700 sm:text-[15px]"
+   745→                          >
+   746→                            <span
+   747→                              className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-blue"
+   748→                              aria-hidden="true"
+   749→                            />
+   750→                            {item}
+   751→                          </li>
+   752→                        ))}
+   753→                      </ul>
+   754→                    )}
+   755→                  </section>
+   756→                </Reveal>
+   757→              );
+   758→            })}
+   759→          </div>
+   760→
+   761→          {/* Author box */}
+   762→          <Reveal className="mt-12">
+   763→            <div className="flex flex-col items-start gap-5 rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)] sm:flex-row sm:items-center sm:p-8">
+   764→              <Avatar className="h-16 w-16 border-4 border-blue-50">
+   765→                <AvatarFallback className="font-heading text-xl font-bold text-brand-navy">
+   766→                  {authorInitials}
+   767→                </AvatarFallback>
+   768→              </Avatar>
+   769→              <div className="flex-1">
+   770→                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   771→                  {t.authorLabel}
+   772→                </span>
+   773→                <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy">
+   774→                  {post.author}
+   775→                </h3>
+   776→                <p className="mt-1 text-sm text-slate-600">
+   777→                  {post.authorCredentials} @ Aristocrat Dental Care &amp;
+   778→                  Orthodontic Center, Uttara — Dhaka.
+   779→                </p>
+   780→              </div>
+   781→              <a
+   782→                href="#/appointment"
+   783→                onClick={(e) => {
+   784→                  e.preventDefault();
+   785→                  navigate("/appointment");
+   786→                }}
+   787→                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy"
+   788→              >
+   789→                {t.consult} {post.author.split(" ").slice(0, 2).join(" ")}
+   790→                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+   791→              </a>
+   792→            </div>
+   793→          </Reveal>
+   794→
+   795→          {/* Related treatments — curated cross-links to service pages */}
+   796→          {post.serviceRefs && post.serviceRefs.length > 0 && (
+   797→            <Reveal className="mt-8">
+   798→              <nav
+   799→                aria-label={d.shared.relatedTreatments}
+   800→                className="rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)] sm:p-6"
+   801→              >
+   802→                <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   803→                  <Stethoscope className="h-4 w-4" aria-hidden="true" />
+   804→                  {d.shared.relatedTreatments}
+   805→                </span>
+   806→                <p className="mt-2 text-sm text-slate-500">
+   807→                  {d.shared.relatedTreatmentsSub}
+   808→                </p>
+   809→                <div className="mt-4 flex flex-wrap gap-2.5">
+   810→                  {post.serviceRefs.map((serviceSlug) => {
+   811→                    const svc = services.find((s) => s.slug === serviceSlug);
+   812→                    if (!svc) return null;
+   813→                    const svcName = bn && svc.nameBn ? svc.nameBn : svc.name;
+   814→                    return (
+   815→                      <a
+   816→                        key={serviceSlug}
+   817→                        href={`#/services/${serviceSlug}`}
+   818→                        onClick={(e) => {
+   819→                          e.preventDefault();
+   820→                          navigate(`/services/${serviceSlug}`);
+   821→                        }}
+   822→                        aria-label={`${d.shared.relatedTreatments}: ${svcName}`}
+   823→                        className="group inline-flex items-center gap-2.5 rounded-full bg-blue-50 py-2 pl-2 pr-4 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   824→                      >
+   825→                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-blue ring-1 ring-blue-100">
+   826→                          <DynamicIcon name={svc.icon} className="h-4 w-4" />
+   827→                        </span>
+   828→                        <span className="leading-snug">{svcName}</span>
+   829→                        <ArrowRight
+   830→                          className="h-3.5 w-3.5 shrink-0 text-brand-blue/60 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-brand-blue"
+   831→                          aria-hidden="true"
+   832→                        />
+   833→                      </a>
+   834→                    );
+   835→                  })}
+   836→                </div>
+   837→              </nav>
+   838→            </Reveal>
+   839→          )}
+   840→
+   841→          {/* tags + share */}
+   842→          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+   843→            <div className="flex flex-wrap items-center gap-2">
+   844→              <Tag className="h-4 w-4 text-slate-400" aria-hidden="true" />
+   845→              {post.tags.map((tag) => (
+   846→                <Badge
+   847→                  key={tag}
+   848→                  variant="outline"
+   849→                  className="border-blue-100 bg-ice text-xs font-medium text-brand-navy"
+   850→                >
+   851→                  #{tag}
+   852→                </Badge>
+   853→              ))}
+   854→            </div>
+   855→            <div
+   856→              className="flex flex-wrap items-center gap-2"
+   857→              role="group"
+   858→              aria-label={t.share}
+   859→            >
+   860→              <span className="mr-1 hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:inline-flex">
+   861→                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+   862→                {t.share}
+   863→              </span>
+   864→              <a
+   865→                href={`https://wa.me/?text=${encodeURIComponent(`${bn && post.titleBn ? post.titleBn : post.title} — ${typeof window !== "undefined" ? `${window.location.origin}/#/blog/${slug}` : `https://aristocratdentalcarebd.com/#/blog/${slug}`}`)}`}
+   866→                target="_blank"
+   867→                rel="noopener noreferrer"
+   868→                onClick={(e) => {
+   869→                  /* let real users open the link naturally; keep href as the fallback */
+   870→                  e.preventDefault();
+   871→                  shareWhatsApp();
+   872→                }}
+   873→                aria-label={t.shareWa}
+   874→                className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+   875→              >
+   876→                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+   877→                <span className="hidden sm:inline">WhatsApp</span>
+   878→              </a>
+   879→              <a
+   880→                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/#/blog/${slug}` : "https://aristocratdentalcarebd.com/#/blog/" + slug)}`}
+   881→                target="_blank"
+   882→                rel="noopener noreferrer"
+   883→                onClick={(e) => {
+   884→                  e.preventDefault();
+   885→                  shareFacebook();
+   886→                }}
+   887→                aria-label={t.shareFb}
+   888→                className="inline-flex items-center gap-2 rounded-full bg-brand-blue-soft px-4 py-2.5 text-xs font-bold text-brand-blue ring-1 ring-blue-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+   889→              >
+   890→                <Facebook className="h-4 w-4" aria-hidden="true" />
+   891→                <span className="hidden sm:inline">Facebook</span>
+   892→              </a>
+   893→              <button
+   894→                type="button"
+   895→                onClick={copyLink}
+   896→                aria-label={t.shareCopy}
+   897→                className={cn(
+   898→                  "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold ring-1 transition-all duration-300 hover:-translate-y-0.5",
+   899→                  copied
+   900→                    ? "bg-brand-navy text-white ring-brand-navy"
+   901→                    : "bg-white text-brand-navy ring-blue-100 hover:bg-blue-50 hover:ring-brand-blue/30"
+   902→                )}
+   903→              >
+   904→                {copied ? (
+   905→                  <Check className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+   906→                ) : (
+   907→                  <Link2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+   908→                )}
+   909→                <span className="hidden sm:inline">{copied ? t.shareCopied : t.shareCopy}</span>
+   910→              </button>
+   911→            </div>
+   912→          </div>
+   913→        </div>
+   914→      </article>
+   915→
+   916→      {/* Related */}
+   917→      <section className="bg-ice py-14 sm:py-16" aria-labelledby="related-posts">
+   918→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   919→          <SectionHeading
+   920→            align="left"
+   921→            eyebrow={t.relatedEyebrow}
+   922→            title={t.relatedTitle}
+   923→          />
+   924→          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+   925→            {related.map((p, i) => (
+   926→              <motion.a
+   927→                key={p.slug}
+   928→                href={`#/blog/${p.slug}`}
+   929→                onClick={(e) => {
+   930→                  e.preventDefault();
+   931→                  navigate(`/blog/${p.slug}`);
+   932→                }}
+   933→                initial={{ opacity: 0, y: 20 }}
+   934→                whileInView={{ opacity: 1, y: 0 }}
+   935→                viewport={{ once: true, margin: "-30px" }}
+   936→                transition={{ duration: 0.5, delay: i * 0.07 }}
+   937→                className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
+   938→              >
+   939→                {p.image ? (
+   940→                  <div className="zoom-img relative h-36 w-full overflow-hidden">
+   941→                    <Image
+   942→                      src={p.image}
+   943→                      alt={p.imageAlt ?? p.title}
+   944→                      width={448}
+   945→                      height={256}
+   946→                      className="h-full w-full object-cover"
+   947→                    />
+   948→                    <span
+   949→                      className="absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+   950→                      aria-hidden="true"
+   951→                    />
+   952→                  </div>
+   953→                ) : null}
+   954→                <div className="flex flex-1 flex-col p-6">
+   955→                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
+   956→                  {d.blogCategories[p.category as keyof typeof d.blogCategories] ?? p.category}
+   957→                </span>
+   958→                <h3 className="font-heading mt-4 text-lg font-bold leading-snug text-brand-navy group-hover:text-brand-blue">
+   959→                  {bn && p.titleBn ? p.titleBn : p.title}
+   960→                </h3>
+   961→                <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
+   962→                  {bn && p.excerptBn ? p.excerptBn : p.excerpt}
+   963→                </p>
+   964→                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
+   965→                  {t.readMore}
+   966→                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+   967→                </span>
+   968→                </div>
+   969→              </motion.a>
+   970→            ))}
+   971→          </div>
+   972→        </div>
+   973→      </section>
+   974→
+   975→      <CtaBanner
+   976→        title={bn ? "এই আর্টিকেল নিয়ে প্রশ্ন আছে?" : "Have questions about this article?"}
+   977→        description={
+   978→          bn
+   979→            ? "আপনার নির্দিষ্ট পরিস্থিতি নিয়ে আলোচনায় আমাদের বিশেষজ্ঞরা আনন্দিত হবেন — আজই কনসালটেশন বুক করুন বা হটলাইনে কল করুন।"
+   980→            : "Our specialists are happy to discuss your specific situation — book a consultation or call our hotline today."
+   981→        }
+   982→      />
+   983→    </>
+   984→  );
+   985→}
+   986→

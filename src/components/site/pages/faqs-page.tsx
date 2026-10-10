@@ -121,7 +121,7 @@ export function FaqsPage() {
   usePageMeta({
     title: "Frequently Asked Questions — Dental FAQs | Aristocrat Dental Care",
     description:
-      "56+ answered dental questions: implant costs in Dhaka, braces duration, whitening safety, kids' first visit, emergencies, booking & pricing — answered by Aristocrat Dental Care specialists, Uttara.",
+      "56+ answered dental questions: braces duration, whitening safety, kids' first visit, emergencies, laser dentistry, booking & home care — answered by Aristocrat Dental Care specialists, Uttara.",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "FAQPage",

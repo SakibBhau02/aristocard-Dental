@@ -23,6 +23,8 @@ import { services } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
 import { site } from "@/lib/site";
 import { Reveal } from "@/components/site/motion";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { slidesForRoute } from "@/lib/data/hero-media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,7 +95,7 @@ export function AppointmentPage() {
     if (doctor && doctors.some((doc) => doc.slug === doctor)) {
       setForm((f) => ({ ...f, doctorSlug: doctor }));
     }
-    /* Deep-link note (e.g. from pricing estimator) — only fill empty notes */
+    /* Deep-link note (e.g. from smile assessment) — only fill empty notes */
     const note = query.get("note");
     if (note) {
       setForm((f) => (f.notes ? f : { ...f, notes: note.slice(0, 900) }));
@@ -338,10 +340,10 @@ export function AppointmentPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="hero-mesh-dark relative overflow-hidden">
-        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-12 text-center sm:px-6 sm:pt-16">
+      {/* Hero — centered over a sliding clinic backdrop */}
+      <section className="relative isolate overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={slidesForRoute("appointment")} overlay="deep" interval={8000} />
+        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -381,17 +383,6 @@ export function AppointmentPage() {
             </p>
           </motion.div>
         </div>
-        <svg
-          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
-          viewBox="0 0 1440 56"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
-            fill="currentColor"
-          />
-        </svg>
       </section>
 
       {/* Stepper */}

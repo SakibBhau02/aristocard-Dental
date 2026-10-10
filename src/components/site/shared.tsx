@@ -6,10 +6,13 @@ import { useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal } from "@/components/site/motion";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { slidesForRoute } from "@/lib/data/hero-media";
 import type { Service, Doctor } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
 /*  Page header (breadcrumb + eyebrow + title + subtitle)              */
@@ -26,51 +29,53 @@ export function PageHeader({
   description?: string;
   breadcrumb: { label: string; to?: string }[];
 }) {
-  const { navigate } = useRouter();
+  const { navigate, segments } = useRouter();
+  /* themed backdrop per route (sliding images + overlay) */
+  const slides = slidesForRoute(segments[0] ?? "");
   return (
-    <section className="hero-mesh-dark relative overflow-hidden">
-      <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-      <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16">
-        <nav aria-label="Breadcrumb" className="mb-6">
-          <ol className="flex flex-wrap items-center gap-1.5 text-xs text-blue-200/80">
-            {breadcrumb.map((item, i) => (
-              <li key={item.label} className="flex items-center gap-1.5">
-                {i > 0 && (
-                  <ChevronRight className="h-3 w-3 text-blue-300/50" aria-hidden="true" />
-                )}
-                {item.to ? (
-                  <a
-                    href={`#${item.to}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(item.to!);
-                    }}
-                    className="link-underline-gold transition-colors hover:text-white"
-                  >
-                    {item.label}
-                  </a>
-                ) : (
-                  <span className="text-white">{item.label}</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+    <section className="relative isolate overflow-hidden bg-brand-navy">
+      <HeroBackdrop slides={slides} overlay="deep" interval={8000} />
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+          <nav aria-label="Breadcrumb" className="mb-6">
+            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+              {breadcrumb.map((item, i) => (
+                <li key={item.label} className="flex items-center gap-1.5">
+                  {i > 0 && (
+                    <ChevronRight className="h-3 w-3 text-blue-300/50" aria-hidden="true" />
+                  )}
+                  {item.to ? (
+                    <a
+                      href={`#${item.to}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(item.to!);
+                      }}
+                      className="link-underline-gold transition-colors hover:text-white"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <span className="text-white">{item.label}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
             <span className="eyebrow-dot h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
             {eyebrow}
           </span>
-          <h1 className="font-heading mt-4 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">
+          <h1 className="font-heading mx-auto mt-4 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">
             {title}
           </h1>
           {description && (
             <>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
                 {description}
               </p>
               <span
@@ -81,18 +86,6 @@ export function PageHeader({
           )}
         </motion.div>
       </div>
-      {/* bottom wave */}
-      <svg
-        className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
-        viewBox="0 0 1440 56"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
-          fill="currentColor"
-        />
-      </svg>
     </section>
   );
 }
@@ -115,46 +108,73 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: (index % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="card-shine card-accent-top group relative flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.3)]"
+      className="card-shine card-accent-top group relative flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.3)]"
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* cover image */}
+      <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-blue-50">
+        {service.image ? (
+          <Image
+            src={service.image}
+            alt={name}
+            fill
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 380px"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+          />
+        ) : (
+          <div className={`flex h-full items-center justify-center ${colors.bg}`}>
+            <DynamicIcon name={service.icon} className={`h-12 w-12 ${colors.text}`} />
+          </div>
+        )}
+        {/* readability gradient */}
         <span
-          className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${colors.bg} ${colors.text} ring-1 ${colors.ring} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+          aria-hidden="true"
+        />
+        <Badge
+          variant="outline"
+          className="absolute right-3 top-3 border-0 bg-white/85 text-[10px] font-semibold uppercase tracking-wider text-brand-navy backdrop-blur-sm"
         >
-          <DynamicIcon name={service.icon} className="h-7 w-7" />
-        </span>
-        <Badge variant="outline" className={`${colors.bg} ${colors.text} border-0 text-[10px] font-semibold uppercase tracking-wider`}>
           {d.categories[service.category]}
         </Badge>
       </div>
 
-      <h3 className="font-heading mt-5 text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
-        {name}
-      </h3>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
-        {tagline}
-      </p>
-      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
-        {excerpt}
-      </p>
-
-      <div className="mt-5 flex items-center justify-between border-t border-blue-50 pt-4">
-        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-          <Clock3 className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
-          {lang === "bn" ? toBnDigits(service.duration) : service.duration}
-        </span>
-        <a
-          href={`#/services/${service.slug}`}
-          onClick={(e) => {
-            e.preventDefault();
-            navigate(`/services/${service.slug}`);
-          }}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
-          aria-label={`${d.shared.learnMore}: ${name}`}
+      {/* body */}
+      <div className="relative flex flex-1 flex-col p-6">
+        {/* icon tile overlapping the cover image */}
+        <span
+          className={`-mt-12 mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${colors.bg} ${colors.text} ring-4 ring-white transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
         >
-          {d.shared.learnMore}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </a>
+          <DynamicIcon name={service.icon} className="h-7 w-7" />
+        </span>
+
+        <h3 className="font-heading text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
+          {name}
+        </h3>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          {tagline}
+        </p>
+        <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
+          {excerpt}
+        </p>
+
+        <div className="mt-5 flex items-center justify-between border-t border-blue-50 pt-4">
+          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+            <Clock3 className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+            {lang === "bn" ? toBnDigits(service.duration) : service.duration}
+          </span>
+          <a
+            href={`#/services/${service.slug}`}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(`/services/${service.slug}`);
+            }}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
+            aria-label={`${d.shared.learnMore}: ${name}`}
+          >
+            {d.shared.learnMore}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
       </div>
     </motion.article>
   );

@@ -1,0 +1,825 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState, type FormEvent } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  BadgeCheck,
+     7→  CalendarCheck,
+     8→  CalendarDays,
+     9→  CheckCircle2,
+    10→  Clock,
+    11→  Loader2,
+    12→  Mail,
+    13→  Phone,
+    14→  Sparkles,
+    15→  UserRound,
+    16→} from "lucide-react";
+    17→import { useRouter, usePageMeta } from "@/lib/router";
+    18→import { services } from "@/lib/data/services";
+    19→import { doctors } from "@/lib/data/doctors";
+    20→import { site } from "@/lib/site";
+    21→import { Reveal } from "@/components/site/motion";
+    22→import { Button } from "@/components/ui/button";
+    23→import { Input } from "@/components/ui/input";
+    24→import { Label } from "@/components/ui/label";
+    25→import { Textarea } from "@/components/ui/textarea";
+    26→import { useToast } from "@/hooks/use-toast";
+    27→import { cn } from "@/lib/utils";
+    28→
+    29→/* ------------------------------------------------------------------ */
+    30→/*  APPOINTMENT PAGE — 3-step booking with validation                  */
+    31→/* ------------------------------------------------------------------ */
+    32→
+    33→const timeSlots = [
+    34→  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+    35→  "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM",
+    36→  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
+    37→  "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM",
+    38→  "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM",
+    39→];
+    40→
+    41→function todayISO(): string {
+    42→  const d = new Date();
+    43→  return d.toISOString().split("T")[0];
+    44→}
+    45→
+    46→function formatDateLabel(iso: string): string {
+    47→  if (!iso) return "";
+    48→  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
+    49→    weekday: "long",
+    50→    day: "numeric",
+    51→    month: "long",
+    52→    year: "numeric",
+    53→  });
+    54→}
+    55→
+    56→export function AppointmentPage() {
+    57→  const { navigate, query } = useRouter();
+    58→  const { toast } = useToast();
+    59→
+    60→  const [step, setStep] = useState(0);
+    61→  const [submitting, setSubmitting] = useState(false);
+    62→  const [confirmed, setConfirmed] = useState(false);
+    63→  const [confirmationId, setConfirmationId] = useState<string>("");
+    64→
+    65→  const [form, setForm] = useState({
+    66→    name: "",
+    67→    phone: "",
+    68→    email: "",
+    69→    date: todayISO(),
+    70→    time: "",
+    71→    doctorSlug: "",
+    72→    serviceSlug: "",
+    73→    notes: "",
+    74→  });
+    75→
+    76→  /* Pre-select from query params (?service=slug or ?doctor=slug) */
+    77→  useEffect(() => {
+    78→    const service = query.get("service");
+    79→    const doctor = query.get("doctor");
+    80→    if (service && services.some((s) => s.slug === service)) {
+    81→      setForm((f) => ({ ...f, serviceSlug: service }));
+    82→    }
+    83→    if (doctor && doctors.some((d) => d.slug === doctor)) {
+    84→      setForm((f) => ({ ...f, doctorSlug: doctor }));
+    85→    }
+    86→  }, [query]);
+    87→
+    88→  usePageMeta({
+    89→    title: "Book a Dental Appointment — Online Booking in Uttara, Dhaka",
+    90→    description:
+    91→      "Schedule your dental visit at Aristocrat Dental Care & Orthodontic Center in minutes. Choose your doctor, service, date & time — confirmation sent instantly. Hotline 01715-027522.",
+    92→    jsonLd: {
+    93→      "@context": "https://schema.org",
+    94→      "@type": "ReserveAction",
+    95→      name: "Book a Dental Appointment",
+    96→      target: {
+    97→        "@type": "EntryPoint",
+    98→        urlTemplate: "https://aristocratdentalcarebd.com/#/appointment",
+    99→        actionPlatform: "http://schema.org/DesktopWebPlatform",
+   100→      },
+   101→      result: { "@type": "Reservation", name: "Dental Consultation" },
+   102→    },
+   103→  });
+   104→
+   105→  const selectedService = useMemo(
+   106→    () => services.find((s) => s.slug === form.serviceSlug),
+   107→    [form.serviceSlug]
+   108→  );
+   109→  const selectedDoctor = useMemo(
+   110→    () => doctors.find((d) => d.slug === form.doctorSlug),
+   111→    [form.doctorSlug]
+   112→  );
+   113→
+   114→  const step1Valid =
+   115→    form.name.trim().length >= 2 &&
+   116→    /^01[3-9]\d{8}$/.test(form.phone.replace(/[-\s]/g, ""));
+   117→  const step2Valid = form.date !== "" && form.time !== "";
+   118→  const step3Valid = true;
+   119→
+   120→  const steps = [
+   121→    { label: "Patient & Treatment", valid: step1Valid },
+   122→    { label: "Date & Time", valid: step2Valid },
+   123→    { label: "Confirm", valid: step3Valid },
+   124→  ];
+   125→
+   126→  async function handleSubmit(e?: FormEvent) {
+   127→    e?.preventDefault();
+   128→    if (submitting) return;
+   129→    if (!step1Valid || !step2Valid) {
+   130→      toast({
+   131→        title: "Incomplete booking details",
+   132→        description: "Please complete patient info, date and time before confirming.",
+   133→        variant: "destructive",
+   134→      });
+   135→      return;
+   136→    }
+   137→
+   138→    setSubmitting(true);
+   139→    try {
+   140→      const res = await fetch("/api/appointments", {
+   141→        method: "POST",
+   142→        headers: { "Content-Type": "application/json" },
+   143→        body: JSON.stringify({
+   144→          name: form.name.trim(),
+   145→          phone: form.phone.trim(),
+   146→          email: form.email.trim() || undefined,
+   147→          date: form.date,
+   148→          time: form.time,
+   149→          doctorSlug: form.doctorSlug || undefined,
+   150→          serviceSlug: form.serviceSlug || undefined,
+   151→          notes: form.notes.trim() || undefined,
+   152→        }),
+   153→      });
+   154→      const data = await res.json();
+   155→      if (!res.ok) throw new Error(data.error || "Booking failed");
+   156→
+   157→      setConfirmationId(data.id ?? "");
+   158→      setConfirmed(true);
+   159→      toast({
+   160→        title: "Appointment booked!",
+   161→        description: "We'll call to confirm your slot shortly.",
+   162→      });
+   163→    } catch (err) {
+   164→      toast({
+   165→        title: "Booking failed",
+   166→        description:
+   167→          err instanceof Error
+   168→            ? err.message
+   169→            : "Please try again or call us directly.",
+   170→        variant: "destructive",
+   171→      });
+   172→    } finally {
+   173→      setSubmitting(false);
+   174→    }
+   175→  }
+   176→
+   177→  if (confirmed) {
+   178→    return (
+   179→      <section className="hero-mesh flex items-center justify-center px-4 py-24 sm:py-32" aria-label="Booking confirmation">
+   180→        <motion.div
+   181→          initial={{ opacity: 0, scale: 0.92, y: 24 }}
+   182→          animate={{ opacity: 1, scale: 1, y: 0 }}
+   183→          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   184→          className="w-full max-w-xl rounded-[2.5rem] border border-blue-100 bg-white p-8 text-center shadow-2xl shadow-navy-900/15 sm:p-12"
+   185→        >
+   186→          <span className="relative mx-auto inline-flex h-24 w-24 items-center justify-center rounded-full bg-emerald-50">
+   187→            <CheckCircle2 className="h-12 w-12 text-emerald-500" aria-hidden="true" />
+   188→            <span className="absolute inset-0 rounded-full bg-emerald-200/50 animate-pulse-ring" aria-hidden="true" />
+   189→          </span>
+   190→          <h1 className="font-heading mt-8 text-3xl font-bold text-brand-navy sm:text-4xl">
+   191→            Appointment Confirmed!
+   192→          </h1>
+   193→          <p className="mt-4 text-base leading-relaxed text-slate-600">
+   194→            Thank you, <strong className="text-brand-navy">{form.name}</strong>.
+   195→            Your appointment request has been received.
+   196→            {confirmationId && (
+   197→              <span className="mt-2 block text-sm text-slate-500">
+   198→                Reference:{" "}
+   199→                <span className="font-mono font-bold text-brand-blue">
+   200→                  {confirmationId}
+   201→                </span>
+   202→              </span>
+   203→            )}
+   204→          </p>
+   205→
+   206→          <div className="mt-8 rounded-3xl bg-ice p-6 text-left">
+   207→            <h2 className="font-heading text-sm font-bold uppercase tracking-[0.16em] text-brand-blue">
+   208→              Booking Summary
+   209→            </h2>
+   210→            <dl className="mt-4 space-y-3 text-sm">
+   211→              <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
+   212→                <dt className="text-slate-500">Patient</dt>
+   213→                <dd className="font-semibold text-brand-navy">{form.name}</dd>
+   214→              </div>
+   215→              <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
+   216→                <dt className="text-slate-500">Phone</dt>
+   217→                <dd className="font-semibold text-brand-navy">{form.phone}</dd>
+   218→              </div>
+   219→              <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
+   220→                <dt className="text-slate-500">Service</dt>
+   221→                <dd className="font-semibold text-brand-navy">
+   222→                  {selectedService?.name ?? "General Consultation"}
+   223→                </dd>
+   224→              </div>
+   225→              {selectedDoctor && (
+   226→                <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
+   227→                  <dt className="text-slate-500">Doctor</dt>
+   228→                  <dd className="font-semibold text-brand-navy">
+   229→                    {selectedDoctor.name}
+   230→                  </dd>
+   231→                </div>
+   232→              )}
+   233→              <div className="flex justify-between gap-4">
+   234→                <dt className="text-slate-500">Schedule</dt>
+   235→                <dd className="text-right font-semibold text-brand-navy">
+   236→                  {formatDateLabel(form.date)}
+   237→                  <span className="block text-xs text-brand-blue">
+   238→                    at {form.time}
+   239→                  </span>
+   240→                </dd>
+   241→              </div>
+   242→            </dl>
+   243→          </div>
+   244→
+   245→          <p className="mt-6 text-sm text-slate-500">
+   246→            Our team will call you on{" "}
+   247→            <span className="font-semibold text-brand-navy">{form.phone}</span>{" "}
+   248→            to confirm your slot. For urgent changes, call{" "}
+   249→            <a
+   250→              href={`tel:${site.phoneRaw}`}
+   251→              className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4"
+   252→            >
+   253→              {site.phone}
+   254→            </a>
+   255→            .
+   256→          </p>
+   257→
+   258→          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+   259→            <Button
+   260→              onClick={() => navigate("/")}
+   261→              className="rounded-full bg-brand-blue px-8 py-5 font-bold text-white shadow-xl shadow-blue-500/30 hover:bg-brand-navy"
+   262→            >
+   263→              Back to Home
+   264→            </Button>
+   265→            <Button
+   266→              variant="outline"
+   267→              onClick={() => {
+   268→                setConfirmed(false);
+   269→                setStep(0);
+   270→                setForm({
+   271→                  name: "",
+   272→                  phone: "",
+   273→                  email: "",
+   274→                  date: todayISO(),
+   275→                  time: "",
+   276→                  doctorSlug: "",
+   277→                  serviceSlug: "",
+   278→                  notes: "",
+   279→                });
+   280→              }}
+   281→              className="rounded-full border-brand-blue/30 px-8 py-5 font-bold text-brand-navy hover:bg-blue-50"
+   282→            >
+   283→              Book Another
+   284→            </Button>
+   285→          </div>
+   286→        </motion.div>
+   287→      </section>
+   288→    );
+   289→  }
+   290→
+   291→  return (
+   292→    <>
+   293→      {/* Hero */}
+   294→      <section className="hero-mesh-dark relative overflow-hidden">
+   295→        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+   296→        <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-12 text-center sm:px-6 sm:pt-16">
+   297→          <motion.div
+   298→            initial={{ opacity: 0, y: 24 }}
+   299→            animate={{ opacity: 1, y: 0 }}
+   300→            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   301→          >
+   302→            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+   303→              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+   304→              Book a Visit
+   305→            </span>
+   306→            <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">
+   307→              Schedule your appointment in minutes
+   308→            </h1>
+   309→            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+   310→              Three quick steps — patient details, preferred time and confirm.
+   311→              Our team will call to verify your slot.
+   312→            </p>
+   313→            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-blue-200/80">
+   314→              {[
+   315→                "No advance payment",
+   316→                "Free rescheduling",
+   317→                "Same-week availability",
+   318→              ].map((item) => (
+   319→                <span key={item} className="inline-flex items-center gap-1.5">
+   320→                  <BadgeCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
+   321→                  {item}
+   322→                </span>
+   323→              ))}
+   324→            </div>
+   325→          </motion.div>
+   326→        </div>
+   327→        <svg
+   328→          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
+   329→          viewBox="0 0 1440 56"
+   330→          preserveAspectRatio="none"
+   331→          aria-hidden="true"
+   332→        >
+   333→          <path
+   334→            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
+   335→            fill="currentColor"
+   336→          />
+   337→        </svg>
+   338→      </section>
+   339→
+   340→      {/* Stepper */}
+   341→      <section className="relative -mt-2 pb-4" aria-label="Booking progress">
+   342→        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+   343→          <Reveal>
+   344→            <ol className="flex items-center gap-2 rounded-3xl border border-blue-100/80 bg-white p-4 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)] sm:gap-4 sm:p-5">
+   345→              {steps.map((s, i) => {
+   346→                const state =
+   347→                  i < step ? "done" : i === step ? "active" : "todo";
+   348→                return (
+   349→                  <li key={s.label} className="flex flex-1 items-center gap-2 sm:gap-3">
+   350→                    <span
+   351→                      className={cn(
+   352→                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold transition-all duration-500 sm:h-10 sm:w-10",
+   353→                        state === "done" &&
+   354→                          "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30",
+   355→                        state === "active" &&
+   356→                          "bg-brand-blue text-white shadow-lg shadow-blue-500/40 ring-4 ring-blue-100",
+   357→                        state === "todo" && "bg-slate-100 text-slate-400"
+   358→                      )}
+   359→                      aria-current={state === "active" ? "step" : undefined}
+   360→                    >
+   361→                      {state === "done" ? (
+   362→                        <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+   363→                      ) : (
+   364→                        i + 1
+   365→                      )}
+   366→                    </span>
+   367→                    <span
+   368→                      className={cn(
+   369→                        "hidden text-xs font-semibold sm:block",
+   370→                        state === "active"
+   371→                          ? "text-brand-navy"
+   372→                          : state === "done"
+   373→                            ? "text-emerald-600"
+   374→                            : "text-slate-400"
+   375→                      )}
+   376→                    >
+   377→                      {s.label}
+   378→                    </span>
+   379→                    {i < steps.length - 1 && (
+   380→                      <span
+   381→                        className={cn(
+   382→                          "h-0.5 flex-1 rounded-full transition-colors duration-500",
+   383→                          i < step ? "bg-emerald-400" : "bg-slate-100"
+   384→                        )}
+   385→                        aria-hidden="true"
+   386→                      />
+   387→                    )}
+   388→                  </li>
+   389→                );
+   390→              })}
+   391→            </ol>
+   392→          </Reveal>
+   393→        </div>
+   394→      </section>
+   395→
+   396→      {/* Form */}
+   397→      <section className="py-10 sm:py-12" aria-label="Appointment booking form">
+   398→        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+   399→          <div className="rounded-[2rem] border border-blue-100/80 bg-white p-6 shadow-[0_16px_50px_-24px_rgba(0,32,96,0.25)] sm:p-10">
+   400→            <form onSubmit={handleSubmit} noValidate>
+   401→              <AnimatePresence mode="wait">
+   402→                {/* -------- STEP 1: patient & treatment -------- */}
+   403→                {step === 0 && (
+   404→                  <motion.div
+   405→                    key="step-1"
+   406→                    initial={{ opacity: 0, x: 40 }}
+   407→                    animate={{ opacity: 1, x: 0 }}
+   408→                    exit={{ opacity: 0, x: -40 }}
+   409→                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+   410→                    className="space-y-6"
+   411→                  >
+   412→                    <h2 className="flex items-center gap-3 font-heading text-xl font-bold text-brand-navy">
+   413→                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   414→                        <UserRound className="h-5 w-5" aria-hidden="true" />
+   415→                      </span>
+   416→                      Patient & Treatment Details
+   417→                    </h2>
+   418→
+   419→                    <div className="grid gap-5 sm:grid-cols-2">
+   420→                      <div className="space-y-2">
+   421→                        <Label htmlFor="appt-name" className="text-sm font-semibold text-brand-navy">
+   422→                          Patient Name <span className="text-rose-500">*</span>
+   423→                        </Label>
+   424→                        <Input
+   425→                          id="appt-name"
+   426→                          autoComplete="name"
+   427→                          value={form.name}
+   428→                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+   429→                          placeholder="Full name"
+   430→                          required
+   431→                          className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
+   432→                        />
+   433→                      </div>
+   434→                      <div className="space-y-2">
+   435→                        <Label htmlFor="appt-phone" className="text-sm font-semibold text-brand-navy">
+   436→                          Phone Number <span className="text-rose-500">*</span>
+   437→                        </Label>
+   438→                        <Input
+   439→                          id="appt-phone"
+   440→                          type="tel"
+   441→                          inputMode="tel"
+   442→                          autoComplete="tel"
+   443→                          value={form.phone}
+   444→                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+   445→                          placeholder="01XXXXXXXXX"
+   446→                          required
+   447→                          className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
+   448→                        />
+   449→                        {form.phone && !step1Valid && (
+   450→                          <p className="text-xs text-amber-600">
+   451→                            Enter a valid BD mobile number (e.g. 01712-345678)
+   452→                          </p>
+   453→                        )}
+   454→                      </div>
+   455→                    </div>
+   456→
+   457→                    <div className="space-y-2">
+   458→                      <Label htmlFor="appt-email" className="text-sm font-semibold text-brand-navy">
+   459→                        Email Address{" "}
+   460→                        <span className="text-xs font-normal text-slate-400">(optional)</span>
+   461→                      </Label>
+   462→                      <Input
+   463→                        id="appt-email"
+   464→                        type="email"
+   465→                        autoComplete="email"
+   466→                        value={form.email}
+   467→                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+   468→                        placeholder="you@example.com"
+   469→                        className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
+   470→                      />
+   471→                    </div>
+   472→
+   473→                    <div className="space-y-2">
+   474→                      <Label className="text-sm font-semibold text-brand-navy">
+   475→                        Healthcare Service
+   476→                      </Label>
+   477→                      <div className="grid max-h-64 gap-2 overflow-y-auto rounded-2xl border border-blue-100/70 bg-ice/40 p-3 scroll-area">
+   478→                        <button
+   479→                          type="button"
+   480→                          onClick={() => setForm({ ...form, serviceSlug: "" })}
+   481→                          className={cn(
+   482→                            "rounded-xl px-4 py-3 text-left text-sm font-medium transition-all duration-300",
+   483→                            !form.serviceSlug
+   484→                              ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   485→                              : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
+   486→                          )}
+   487→                        >
+   488→                          General Consultation (not sure yet)
+   489→                        </button>
+   490→                        {services.map((s) => (
+   491→                          <button
+   492→                            key={s.slug}
+   493→                            type="button"
+   494→                            onClick={() => setForm({ ...form, serviceSlug: s.slug })}
+   495→                            className={cn(
+   496→                              "rounded-xl px-4 py-3 text-left text-sm font-medium transition-all duration-300",
+   497→                              form.serviceSlug === s.slug
+   498→                                ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   499→                                : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
+   500→                            )}
+   501→                          >
+   502→                            {s.name}
+   503→                          </button>
+   504→                        ))}
+   505→                      </div>
+   506→                      {selectedService && (
+   507→                        <p className="mt-1 text-xs text-slate-500">
+   508→                          {selectedService.tagline} • {selectedService.duration}
+   509→                        </p>
+   510→                      )}
+   511→                    </div>
+   512→
+   513→                    <div className="space-y-2">
+   514→                      <Label className="text-sm font-semibold text-brand-navy">
+   515→                        Preferred Specialist{" "}
+   516→                        <span className="text-xs font-normal text-slate-400">
+   517→                          (optional)
+   518→                        </span>
+   519→                      </Label>
+   520→                      <div className="grid gap-2 sm:grid-cols-2">
+   521→                        <button
+   522→                          type="button"
+   523→                          onClick={() => setForm({ ...form, doctorSlug: "" })}
+   524→                          className={cn(
+   525→                            "rounded-xl px-4 py-3.5 text-left text-sm font-medium transition-all duration-300",
+   526→                            !form.doctorSlug
+   527→                              ? "bg-brand-navy text-white shadow-lg"
+   528→                              : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
+   529→                          )}
+   530→                        >
+   531→                          No preference — assign best match
+   532→                        </button>
+   533→                        {doctors.map((d) => (
+   534→                          <button
+   535→                            key={d.slug}
+   536→                            type="button"
+   537→                            onClick={() => setForm({ ...form, doctorSlug: d.slug })}
+   538→                            className={cn(
+   539→                              "flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-300",
+   540→                              form.doctorSlug === d.slug
+   541→                                ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   542→                                : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
+   543→                            )}
+   544→                          >
+   545→                            <span
+   546→                              className={cn(
+   547→                                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-heading text-xs font-bold",
+   548→                                form.doctorSlug === d.slug
+   549→                                  ? "bg-white/20 text-white"
+   550→                                  : "text-white"
+   551→                              )}
+   552→                              style={
+   553→                                form.doctorSlug === d.slug
+   554→                                  ? undefined
+   555→                                  : { background: d.accent }
+   556→                              }
+   557→                            >
+   558→                              {d.name
+   559→                                .replace("Dr. ", "")
+   560→                                .split(" ")
+   561→                                .map((n) => n[0])
+   562→                                .slice(0, 2)
+   563→                                .join("")}
+   564→                            </span>
+   565→                            <span className="min-w-0">
+   566→                              <span className="block truncate text-sm font-semibold">
+   567→                                {d.name}
+   568→                              </span>
+   569→                              <span
+   570→                                className={cn(
+   571→                                  "block truncate text-[11px]",
+   572→                                  form.doctorSlug === d.slug
+   573→                                    ? "text-blue-100"
+   574→                                    : "text-slate-500"
+   575→                                )}
+   576→                              >
+   577→                                {d.role}
+   578→                              </span>
+   579→                            </span>
+   580→                          </button>
+   581→                        ))}
+   582→                      </div>
+   583→                    </div>
+   584→                  </motion.div>
+   585→                )}
+   586→
+   587→                {/* -------- STEP 2: date & time -------- */}
+   588→                {step === 1 && (
+   589→                  <motion.div
+   590→                    key="step-2"
+   591→                    initial={{ opacity: 0, x: 40 }}
+   592→                    animate={{ opacity: 1, x: 0 }}
+   593→                    exit={{ opacity: 0, x: -40 }}
+   594→                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+   595→                    className="space-y-6"
+   596→                  >
+   597→                    <h2 className="flex items-center gap-3 font-heading text-xl font-bold text-brand-navy">
+   598→                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   599→                        <CalendarDays className="h-5 w-5" aria-hidden="true" />
+   600→                      </span>
+   601→                      Preferred Date & Time
+   602→                    </h2>
+   603→
+   604→                    <div className="space-y-2">
+   605→                      <Label htmlFor="appt-date" className="text-sm font-semibold text-brand-navy">
+   606→                        Appointment Date <span className="text-rose-500">*</span>
+   607→                      </Label>
+   608→                      <Input
+   609→                        id="appt-date"
+   610→                        type="date"
+   611→                        min={todayISO()}
+   612→                        value={form.date}
+   613→                        onChange={(e) => setForm({ ...form, date: e.target.value })}
+   614→                        required
+   615→                        className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
+   616→                      />
+   617→                      {form.date && (
+   618→                        <p className="text-xs font-medium text-brand-blue">
+   619→                          {formatDateLabel(form.date)}
+   620→                          {new Date(`${form.date}T00:00:00`).getDay() === 5 && (
+   621→                            <span className="ml-2 text-amber-600">
+   622→                              (Friday — emergency on call only)
+   623→                            </span>
+   624→                          )}
+   625→                        </p>
+   626→                      )}
+   627→                    </div>
+   628→
+   629→                    <div className="space-y-2">
+   630→                      <Label className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+   631→                        <Clock className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+   632→                        Preferred Time Slot <span className="text-rose-500">*</span>
+   633→                      </Label>
+   634→                      <div
+   635→                        className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100/70 bg-ice/40 p-3 sm:grid-cols-5"
+   636→                        role="radiogroup"
+   637→                        aria-label="Time slot selection"
+   638→                      >
+   639→                        {timeSlots.map((slot) => (
+   640→                          <button
+   641→                            key={slot}
+   642→                            type="button"
+   643→                            role="radio"
+   644→                            aria-checked={form.time === slot}
+   645→                            onClick={() => setForm({ ...form, time: slot })}
+   646→                            className={cn(
+   647→                              "rounded-xl px-2 py-2.5 text-xs font-semibold transition-all duration-300 sm:text-sm",
+   648→                              form.time === slot
+   649→                                ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   650→                                : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
+   651→                            )}
+   652→                          >
+   653→                            {slot}
+   654→                          </button>
+   655→                        ))}
+   656→                      </div>
+   657→                      <p className="text-xs text-slate-500">
+   658→                        Slots shown in clinic hours (10 AM – 9 PM, Sat–Thu).
+   659→                        Final time confirmed on call.
+   660→                      </p>
+   661→                    </div>
+   662→
+   663→                    <div className="space-y-2">
+   664→                      <Label htmlFor="appt-notes" className="text-sm font-semibold text-brand-navy">
+   665→                        Additional Notes{" "}
+   666→                        <span className="text-xs font-normal text-slate-400">
+   667→                          (optional)
+   668→                        </span>
+   669→                      </Label>
+   670→                      <Textarea
+   671→                        id="appt-notes"
+   672→                        rows={3}
+   673→                        value={form.notes}
+   674→                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+   675→                        placeholder="Tell us about your concern, dental anxiety, or anything we should know…"
+   676→                        className="resize-none rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
+   677→                      />
+   678→                    </div>
+   679→                  </motion.div>
+   680→                )}
+   681→
+   682→                {/* -------- STEP 3: review & confirm -------- */}
+   683→                {step === 2 && (
+   684→                  <motion.div
+   685→                    key="step-3"
+   686→                    initial={{ opacity: 0, x: 40 }}
+   687→                    animate={{ opacity: 1, x: 0 }}
+   688→                    exit={{ opacity: 0, x: -40 }}
+   689→                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+   690→                    className="space-y-6"
+   691→                  >
+   692→                    <h2 className="flex items-center gap-3 font-heading text-xl font-bold text-brand-navy">
+   693→                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   694→                        <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+   695→                      </span>
+   696→                      Review & Confirm
+   697→                    </h2>
+   698→
+   699→                    <div className="rounded-3xl bg-ice p-6 sm:p-7">
+   700→                      <dl className="space-y-3.5 text-sm">
+   701→                        {[
+   702→                          { label: "Patient", value: form.name },
+   703→                          { label: "Phone", value: form.phone },
+   704→                          {
+   705→                            label: "Email",
+   706→                            value: form.email || "Not provided",
+   707→                          },
+   708→                          {
+   709→                            label: "Service",
+   710→                            value: selectedService?.name ?? "General Consultation",
+   711→                          },
+   712→                          {
+   713→                            label: "Specialist",
+   714→                            value: selectedDoctor?.name ?? "Best available match",
+   715→                          },
+   716→                          {
+   717→                            label: "Date",
+   718→                            value: formatDateLabel(form.date),
+   719→                          },
+   720→                          { label: "Time", value: form.time },
+   721→                          { label: "Notes", value: form.notes || "—" },
+   722→                        ].map((row) => (
+   723→                          <div
+   724→                            key={row.label}
+   725→                            className="flex flex-col justify-between gap-1 border-b border-blue-100/60 pb-3 sm:flex-row sm:items-center"
+   726→                          >
+   727→                            <dt className="font-medium text-slate-500">{row.label}</dt>
+   728→                            <dd className="font-semibold text-brand-navy sm:text-right">
+   729→                              {row.value}
+   730→                            </dd>
+   731→                          </div>
+   732→                        ))}
+   733→                      </dl>
+   734→                      <button
+   735→                        type="button"
+   736→                        onClick={() => setStep(0)}
+   737→                        className="mt-4 text-xs font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
+   738→                      >
+   739→                        Edit patient & treatment details
+   740→                      </button>
+   741→                    </div>
+   742→
+   743→                    <div className="rounded-2xl border border-blue-100 bg-white p-5">
+   744→                      <p className="flex items-start gap-3 text-sm leading-relaxed text-slate-600">
+   745→                        <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand-blue" aria-hidden="true" />
+   746→                        After confirming, our reception team will call{" "}
+   747→                        <strong className="text-brand-navy">{form.phone}</strong>{" "}
+   748→                        to verify your slot. No payment is needed now.
+   749→                      </p>
+   750→                    </div>
+   751→                  </motion.div>
+   752→                )}
+   753→              </AnimatePresence>
+   754→
+   755→              {/* Nav buttons */}
+   756→              <div className="mt-8 flex items-center justify-between gap-3 border-t border-blue-50 pt-6">
+   757→                {step > 0 ? (
+   758→                  <Button
+   759→                    type="button"
+   760→                    variant="outline"
+   761→                    onClick={() => setStep((s) => s - 1)}
+   762→                    className="rounded-full border-blue-200 px-7 py-4 font-semibold text-brand-navy hover:bg-blue-50"
+   763→                  >
+   764→                    ← Back
+   765→                  </Button>
+   766→                ) : (
+   767→                  <span className="hidden sm:block" aria-hidden="true" />
+   768→                )}
+   769→
+   770→                {step < 2 ? (
+   771→                  <Button
+   772→                    type="button"
+   773→                    disabled={(step === 0 && !step1Valid) || (step === 1 && !step2Valid)}
+   774→                    onClick={() => setStep((s) => s + 1)}
+   775→                    className="rounded-full bg-brand-blue px-9 py-4 font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy disabled:cursor-not-allowed disabled:opacity-50"
+   776→                  >
+   777→                    Continue →
+   778→                  </Button>
+   779→                ) : (
+   780→                  <Button
+   781→                    type="submit"
+   782→                    disabled={submitting}
+   783→                    className="rounded-full bg-emerald-600 px-9 py-4 font-bold text-white shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 disabled:opacity-70"
+   784→                  >
+   785→                    {submitting ? (
+   786→                      <>
+   787→                        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+   788→                        Confirming…
+   789→                      </>
+   790→                    ) : (
+   791→                      <>
+   792→                        <CalendarCheck className="mr-2 h-5 w-5" aria-hidden="true" />
+   793→                        Confirm Appointment
+   794→                      </>
+   795→                    )}
+   796→                  </Button>
+   797→                )}
+   798→              </div>
+   799→            </form>
+   800→          </div>
+   801→
+   802→          {/* Help strip */}
+   803→          <Reveal className="mt-6">
+   804→            <div className="grid gap-3 sm:grid-cols-3">
+   805→              {[
+   806→                { icon: Phone, text: `Prefer calling? ${site.phone}` },
+   807→                { icon: Clock, text: "Open Sat–Thu, 10 AM – 9 PM" },
+   808→                { icon: Mail, text: site.email },
+   809→              ].map(({ icon: Icon, text }) => (
+   810→                <div
+   811→                  key={text}
+   812→                  className="flex items-center gap-3 rounded-2xl border border-blue-100/70 bg-white px-4 py-3.5 text-sm text-slate-600"
+   813→                >
+   814→                  <Icon className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+   815→                  <span className="break-all">{text}</span>
+   816→                </div>
+   817→              ))}
+   818→            </div>
+   819→          </Reveal>
+   820→        </div>
+   821→      </section>
+   822→    </>
+   823→  );
+   824→}
+   825→

@@ -3,7 +3,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
-  Calculator,
   CalendarCheck,
   CalendarClock,
   CircleHelp,
@@ -65,7 +64,6 @@ const ICONS: Record<string, LucideIcon> = {
   Images,
   Users,
   Newspaper,
-  Calculator,
   CircleHelp,
   ClipboardList,
   CalendarClock,
@@ -86,8 +84,8 @@ const RECENT_MAX = 6;
 /* Curated per-language query seeds — every one matches real index entries
    (services / doctors / articles), so a chip tap always yields results. */
 const POPULAR_QUERIES: Record<"en" | "bn", string[]> = {
-  en: ["Dental implants", "Braces cost", "Root canal", "Invisalign", "Kids dentist", "Teeth whitening"],
-  bn: ["ডেন্টাল ইমপ্ল্যান্ট", "ব্রেসের খরচ", "রুট ক্যানেল", "ইনভিজিলাইন", "শিশুদের ডেন্টিস্ট", "দাঁত সাদা করা"],
+  en: ["Dental implants", "Braces treatment", "Root canal", "Invisalign", "Kids dentist", "Teeth whitening"],
+  bn: ["ডেন্টাল ইমপ্ল্যান্ট", "ব্রেসেস", "রুট ক্যানেল", "ইনভিজিলাইন", "শিশুদের ডেন্টিস্ট", "দাঁত সাদা করা"],
 };
 
 function loadRecent(): string[] {
@@ -259,13 +257,6 @@ export function SiteSearch() {
         tileClass: "bg-blue-50 text-brand-blue ring-blue-100",
         label: t.actionBook,
         run: () => go("/appointment"),
-      },
-      {
-        id: "qa-estimate",
-        icon: Calculator,
-        tileClass: "bg-teal-50 text-teal-600 ring-teal-100",
-        label: t.actionEstimate,
-        run: () => go("/estimator"),
       },
       {
         id: "qa-quiz",

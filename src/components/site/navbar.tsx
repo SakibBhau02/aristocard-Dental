@@ -55,7 +55,6 @@ export function Navbar() {
     d.chrome.nav.gallery,
     d.chrome.nav.doctors,
     d.chrome.nav.blog,
-    d.chrome.nav.pricing,
     d.chrome.nav.contact,
   ];
 

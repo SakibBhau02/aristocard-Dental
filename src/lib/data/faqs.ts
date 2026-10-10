@@ -48,11 +48,11 @@ export const generalFaqs: FAQ[] = [
       "Aristocrat Dental Care & Orthodontic Center is located in Uttara, Dhaka, Bangladesh. You can call us at 01715-027522 or book online to schedule your visit — we're open Saturday through Thursday, 10:00 AM to 9:00 PM.",
   },
   {
-    question: "How much does a dental checkup cost in Dhaka?",
-    questionBn: "ঢাকায় ডেন্টাল চেকআপের খরচ কত?",
-    answerBn: "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ারে কনসালটেশন ও চেকআপের দাম সাশ্রয়ী, এবং যেকোনো চিকিৎসা শুরুর আগেই স্বচ্ছ অনুমান জানিয়ে দেওয়া হয়। রুটিন ক্লিনিং থেকে ইমপ্ল্যান্ট বা অর্থোডন্টিক্স — খরচ চিকিৎসাভেদে ভিন্ন। আপনার ব্যক্তিগত চিকিৎসা পরিকল্পনা ও মূল্য জানতে কনসালটেশন বুক করুন।",
+    question: "Is root canal treatment painful?",
+    questionBn: "রুট ক্যানেল চিকিৎসা কি ব্যথাদায়ক?",
+    answerBn: "না — আধুনিক রুট ক্যানেল চিকিৎসা আরামদায়ক। কার্যকর লোকাল অ্যানেস্থেসিয়ায় প্রসিডিউরটি ফিলিং করানোর মতোই লাগে, আর বেশিরভাগ রোগী একই দিনে স্বাভাবিক কাজে ফিরে যান। আমাদের রোটারি এন্ডোডন্টিক কৌশলে ভিজিট হয় দ্রুত ও কোমল।",
     answer:
-      "A consultation and checkup at Aristocrat Dental Care is affordably priced, with transparent estimates provided before any treatment begins. Costs vary by treatment — from routine cleaning to implants or orthodontics. Book a consultation for your personalized treatment plan and pricing.",
+      "No — modern root canal treatment is comfortable. With effective local anesthesia the procedure feels similar to getting a filling, and most patients return to their normal routine the same day. Our rotary endodontic techniques make visits shorter and gentler.",
   },
   {
     question: "Do you offer treatment for anxious patients and children?",
@@ -62,11 +62,11 @@ export const generalFaqs: FAQ[] = [
       "Yes. We specialise in anxiety-easing dentistry: gentle techniques, laser treatments that often need no needles, a dedicated kids' room, and specialists known for compassionate care. Tell us about your anxiety when booking — we pace every visit to your comfort.",
   },
   {
-    question: "How much do dental implants cost in Dhaka?",
-    questionBn: "ডেন্টাল ইমপ্ল্যান্টের খরচ কত, ঢাকায়?",
-    answerBn: "ইমপ্ল্যান্টের খরচ ইমপ্ল্যান্টের ধরন, হাড়ের অবস্থা ও ক্রাউনের উপাদানের ওপর নির্ভর করে। আমাদের ক্লিনিকে একক ইমপ্ল্যান্ট সাধারণত ৳৩৫,০০০–৳৮০,০০০ এর মধ্যে পড়ে। সঠিক অনুমান পেতে কনসালটেশনে আসুন — এক্স-রে দেখে আমরা নির্ধারিত খরচ জানাই।",
+    question: "Do you use laser dentistry in treatments?",
+    questionBn: "চিকিৎসায় কি লেজার ব্যবহার করা হয়?",
+    answerBn: "হ্যাঁ। ফিলিং, মাড়ির চিকিৎসা ও স্মাইল প্রসিডিউরে আমরা লেজার-সহায়ক ডেন্টিস্ট্রি ব্যবহার করি — ড্রিলিং কম, রক্তপাত প্রায় নেই, প্রায়ই সুই লাগে না, আর দ্রুত সেরে ওঠে। আপনার চিকিৎসা লেজার-সহায়ক হতে পারবে কি না, কনসালটেশনে জেনে নিন।",
     answer:
-      "Implant cost depends on the implant system, bone condition and crown material. At our clinic a single implant typically ranges from ৳35,000–৳80,000. Book a consultation — after reviewing your X-ray we give you a fixed, itemized estimate before anything begins.",
+      "Yes. We use laser-assisted dentistry for fillings, gum treatment and smile procedures — meaning less drilling, minimal bleeding, often no needles and faster healing. Ask at your consultation whether your treatment can be laser-assisted.",
   },
   {
     question: "When should my child first see a dentist?",

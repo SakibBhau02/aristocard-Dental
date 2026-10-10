@@ -444,29 +444,6 @@ html[lang="bn"] {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ---------- Mobile estimate-bar coordination ----------
-   When the estimator's sticky bottom bar is visible (< lg screens),
-   body gains .has-mobile-bar and the floating action stack + the
-   scroll-to-top button lift above the bar so nothing overlaps.      */
-@media (max-width: 1023.98px) {
-  body.has-mobile-bar .fab-stack,
-  body.has-mobile-bar .scroll-top-btn {
-    bottom: 5.75rem; /* 92px — clears the ~72px bar + breathing room */
-  }
-}
-/* Smooth lift for the FABs — transition list keeps the buttons' own
-   hover effects animating (unlayered rules replace transition-all,
-   so re-declare the properties the hover states use). */
-.fab-stack,
-.scroll-top-btn {
-  transition:
-    bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.3s ease,
-    background-color 0.3s ease,
-    color 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
 /* ---------- Image zoom wrapper ---------- */
 .zoom-img {
   overflow: hidden;
@@ -793,31 +770,6 @@ html[lang="bn"] {
   padding: 0.125rem 0.5rem;
 }
 
-/* ---------- EMI month chips (estimator summary) ---------- */
-.chip-month {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  color: #dbeafe;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  padding: 0.3rem 0.7rem;
-  white-space: nowrap;
-  transition:
-    background 0.25s ease,
-    box-shadow 0.25s ease,
-    color 0.25s ease;
-}
-.chip-month:hover {
-  background: rgba(245, 158, 11, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
-  color: #fde68a;
-}
-
 /* ---------- Keyboard key cap (⌘K hints) ---------- */
 /* Real key-cap feel: top highlight + bottom inner shadow, brand-tinted. */
 .kbd-key {
@@ -1025,3 +977,87 @@ html[lang="bn"] {
 }
 
 /* cache-bust r10 */
+/* cache-bust r11-a */
+
+/* ================= ROUND 11 — hero media redesign ================= */
+
+/* ---------- Hero Ken-Burns zoom (active hero slide) ---------- */
+@keyframes hero-kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.09) translate(-1.2%, 1%);
+  }
+}
+.hero-kenburns {
+  animation: hero-kenburns 9s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ---------- Hero YouTube video cover-fit ----------
+   The wrapper div gets container-type: size (inline style); the iframe
+   is sized with container-query units so a 16:9 video always COVERS
+   the hero box (never letterboxes): width = max(100cqw, 177.78cqh).
+   Configure video links in src/lib/data/hero-media.ts. */
+.hero-video-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 16 / 9;
+  width: max(100cqw, 177.78cqh);
+  height: auto;
+  max-width: none;
+  border: 0;
+  pointer-events: none;
+}
+
+/* ---------- Testimonial marquee (dual-direction continuous) ---------- */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee-x {
+  animation: marquee-x 48s linear infinite;
+}
+.marquee-reverse {
+  animation-direction: reverse;
+}
+.marquee-edge-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 6%,
+    black 94%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 6%,
+    black 94%,
+    transparent
+  );
+}
+.marquee-edge-fade:hover .animate-marquee-x {
+  animation-play-state: paused;
+}
+
+/* ---------- Reduced motion (round-11 additions) ----------
+   Motion-sensitive visitors get a static (but complete) hero image
+   and readable stationary testimonial rows. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-kenburns {
+    animation: none;
+  }
+  .animate-marquee-x {
+    animation: none;
+  }
+}
+
+/* cache-bust r11 */

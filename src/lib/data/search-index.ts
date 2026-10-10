@@ -9,7 +9,7 @@ import { site } from "@/lib/site";
 /* ------------------------------------------------------------------ */
 /*  Global search index — powers the ⌘K / Ctrl+K command palette       */
 /*  Flat, pre-localized list of everything searchable on the site:     */
-/*  11 pages + 11 services + 4 doctors + 6 blog posts + 45 FAQs        */
+/*  10 pages + 11 services + 4 doctors + 5 blog posts + 45 FAQs        */
 /* ------------------------------------------------------------------ */
 
 export type SearchGroup = "pages" | "services" | "doctors" | "blog" | "faqs";
@@ -32,18 +32,16 @@ export type SearchEntry = {
 };
 
 /* Curated cross-terms for articles whose useful search vocabulary lives in
-   the body, not the title/excerpt (e.g. "root canal cost" should surface the
-   implant cost guide — patients comparing tooth-replacement options). */
+   the body, not the title/excerpt (e.g. "ব্যথা" should surface the root
+   canal myths guide — patients looking for pain answers). */
 const BLOG_KEYWORDS: Record<string, string> = {
-  "dental-implants-cost-bangladesh":
-    "root canal cost bridge denture alternatives tooth replacement price রুট ক্যানেল খরচ ব্রিজ ডেনচার",
   "invisalign-vs-braces-guide":
-    "aligner braces price cost comparison ব্রেসেস দাম খরচ",
+    "aligner braces comparison ইনভিজিলাইন ব্রেসেস",
   "root-canal-myths-facts":
-    "cost price pain খরচ দাম ব্যথা",
+    "pain ব্যথা",
 };
 
-/* Lucide icon names for the 11 static pages (resolved in site-search.tsx;
+/* Lucide icon names for the 10 static pages (resolved in site-search.tsx;
    service icons come from services.ts and resolve via icon-map.tsx). */
 const PAGE_ICONS: Record<string, string> = {
   "/": "Home",
@@ -52,7 +50,6 @@ const PAGE_ICONS: Record<string, string> = {
   "/gallery": "Images",
   "/doctors": "Users",
   "/blog": "Newspaper",
-  "/estimator": "Calculator",
   "/faqs": "CircleHelp",
   "/assessment": "ClipboardList",
   "/status": "CalendarClock",
@@ -80,7 +77,6 @@ function pageEntries(lang: Lang): SearchEntry[] {
     ["/gallery", d.galleryPage.title, d.galleryPage.description, other.galleryPage.title],
     ["/doctors", d.doctorsPage.title, d.doctorsPage.description, other.doctorsPage.title],
     ["/blog", d.blogPage.title, d.blogPage.description, other.blogPage.title],
-    ["/estimator", d.estimatorPage.title, d.estimatorPage.description, other.estimatorPage.title],
     ["/faqs", d.faqsPage.title, d.faqsPage.description, other.faqsPage.title],
     ["/assessment", d.assessmentPage.title, d.assessmentPage.description, other.assessmentPage.title],
     ["/status", d.statusPage.title, d.statusPage.description, other.statusPage.title],

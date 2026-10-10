@@ -128,9 +128,6 @@ const organizationJsonLd = {
   image: "https://aristocratdentalcarebd.com/logo.png",
   telephone: "+8801715027522",
   email: "aristocratdentalcare01@gmail.com",
-  priceRange: "$$",
-  currenciesAccepted: "BDT",
-  paymentAccepted: "Cash, Credit Card, bKash",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Uttara",

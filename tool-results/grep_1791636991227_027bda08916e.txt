@@ -1,0 +1,219 @@
+/home/z/my-project/src/components/site/navbar.tsx:58:    d.chrome.nav.pricing,
+/home/z/my-project/src/components/site/navbar.tsx:79:            <span className="font-semibold tracking-wide text-amber-200">
+/home/z/my-project/src/components/site/navbar.tsx:140:                      "relative rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-300 xl:px-3.5 xl:text-sm",
+/home/z/my-project/src/components/site/navbar.tsx:191:              className="btn-press btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
+/home/z/my-project/src/components/site/navbar.tsx:319:                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+/home/z/my-project/src/components/site/navbar.tsx:329:                  className="w-full rounded-2xl bg-brand-blue py-6 text-base font-semibold text-white shadow-lg shadow-blue-500/25 hover:bg-brand-navy"
+/home/z/my-project/src/components/site/navbar.tsx:345:                  className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-brand-navy ring-1 ring-blue-100"
+/home/z/my-project/src/components/site/patient-reviews.tsx:334:                    <p className="truncate text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:339:                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/patient-reviews.tsx:415:                  <span id="review-rating-label" className="block text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:466:                    <Label htmlFor="review-name" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:481:                    <Label htmlFor="review-phone" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:500:                  <Label htmlFor="review-service" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:526:                  <Label htmlFor="review-title" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:541:                  <Label htmlFor="review-message" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/patient-reviews.tsx:564:                    className="rounded-full border-blue-200 px-6 font-semibold text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+/home/z/my-project/src/components/site/before-after-slider.tsx:81:      aria-valuemin={0}
+/home/z/my-project/src/components/site/clinic-status.tsx:92:        "inline-flex items-center gap-1.5 font-semibold",
+/home/z/my-project/src/components/site/site-search.tsx:89:  en: ["Dental implants", "Braces cost", "Root canal", "Invisalign", "Kids dentist", "Teeth whitening"],
+/home/z/my-project/src/components/site/site-search.tsx:148:     read — keeps SSR/hydration deterministic). queueMicrotask defers the
+/home/z/my-project/src/components/site/site-search.tsx:153:    queueMicrotask(() => setRecent(loadRecent()));
+/home/z/my-project/src/components/site/site-search.tsx:224:    let budget = MAX_TOTAL;
+/home/z/my-project/src/components/site/site-search.tsx:227:      if (budget <= 0) break;
+/home/z/my-project/src/components/site/site-search.tsx:229:        .slice(0, Math.min(MAX_PER_GROUP, budget))
+/home/z/my-project/src/components/site/site-search.tsx:233:        budget -= items.length;
+/home/z/my-project/src/components/site/site-search.tsx:333:                            <span className="block truncate text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/site-search.tsx:349:                  <span className="block text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/site-search.tsx:381:                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/site-search.tsx:407:                            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40"
+/home/z/my-project/src/components/site/pages/gallery-page.tsx:104:                    "relative rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+/home/z/my-project/src/components/site/pages/gallery-page.tsx:173:                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/motion.tsx:173:          "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]",
+/home/z/my-project/src/components/site/shared.tsx:64:          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/shared.tsx:126:        <Badge variant="outline" className={`${colors.bg} ${colors.text} border-0 text-[10px] font-semibold uppercase tracking-wider`}>
+/home/z/my-project/src/components/site/shared.tsx:134:      <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/shared.tsx:152:          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
+/home/z/my-project/src/components/site/shared.tsx:226:        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+/home/z/my-project/src/components/site/shared.tsx:235:        className="mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+/home/z/my-project/src/components/site/shared.tsx:245:        className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+/home/z/my-project/src/components/site/service-reviews.tsx:266:                    <p className="truncate text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/service-reviews.tsx:271:                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/footer.tsx:106:              <span className="ml-1 text-sm font-semibold text-white">
+/home/z/my-project/src/components/site/footer.tsx:135:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+/home/z/my-project/src/components/site/footer.tsx:162:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+/home/z/my-project/src/components/site/footer.tsx:191:                  className="text-sm font-semibold text-amber-300 hover:text-amber-200"
+/home/z/my-project/src/components/site/footer.tsx:201:            <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
+/home/z/my-project/src/components/site/footer.tsx:217:                    <span className="font-semibold">{site.phone}</span>
+/home/z/my-project/src/components/site/footer.tsx:407:            <p className="text-sm font-semibold text-emerald-200">
+/home/z/my-project/src/components/site/pages/home-page.tsx:20:  Wallet,
+/home/z/my-project/src/components/site/pages/home-page.tsx:104:              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100"
+/home/z/my-project/src/components/site/pages/home-page.tsx:233:                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/home-page.tsx:237:                <span className="inline-flex items-center gap-1 text-sm font-semibold text-white">
+/home/z/my-project/src/components/site/pages/home-page.tsx:388:              className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-brand-navy/70"
+/home/z/my-project/src/components/site/pages/home-page.tsx:407:                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/home-page.tsx:409:                      {d.home.why.premiumBadge}
+/home/z/my-project/src/components/site/pages/home-page.tsx:451:                  <span className="mt-1 block text-xs font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/home-page.tsx:656:                      <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
+/home/z/my-project/src/components/site/pages/home-page.tsx:794:                    <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+/home/z/my-project/src/components/site/pages/home-page.tsx:821:                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue hover:text-brand-navy"
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:22:  Wallet,
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:33:/*  PRICE ESTIMATOR — interactive treatment cost calculator (EN / বাংলা) */
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:54:  { slug: "root-canal", name: "Root Canal Treatment", icon: "Activity", category: "Restorative", min: 4000, max: 8000, unit: "per tooth", step: 1, maxQty: 8, note: "Molars may cost more" },
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:94:    const s = `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:98:  /* EMI — indicative monthly instalment from the lower end of the range,
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:99:     rounded up to the nearest ৳100. */
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:100:  const EMI_TENURES = [3, 6, 12] as const;
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:101:  const monthlyEmi = (months: number) =>
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:111:    title: "Treatment Cost Estimator — Dental Prices in Dhaka (2026)",
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:113:      "Estimate your dental treatment cost in Bangladesh before your visit. Transparent price ranges for implants, braces, Invisalign, root canals, veneers & more at Aristocrat Dental Care, Uttara Dhaka.",
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:117:      name: "Dental Treatment Cost Estimator",
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:123:        "Interactive estimator for dental treatment costs in Dhaka, Bangladesh.",
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:183:      `Online estimate: ${summary} — est. ৳${totals.min.toLocaleString("en-IN")}–৳${totals.max.toLocaleString("en-IN")}. Please confirm exact pricing at consultation.`
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:206:      <section className="py-14 sm:py-16" aria-label="Treatment cost estimator tool">
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:339:                              <Wallet className="mx-auto h-8 w-8 text-blue-300/60" aria-hidden="true" />
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:360:                              {/* EMI strip — indicative monthly instalments */}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:362:                                <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs font-semibold text-amber-200">
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:364:                                  {t.emiTitle}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:366:                                  {t.emiFrom} {formatBDT(monthlyEmi(12))}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:367:                              <span className="text-blue-200/70">{t.emiPerMonth}</span>
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:370:                                  {EMI_TENURES.map((m) => (
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:374:                                      title={t.emiMonths.replace(
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:381:                                      {formatBDT(monthlyEmi(m))}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:386:                                  {t.emiNote}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:413:                                <span className="shrink-0 font-semibold text-white">
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:460:                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white ring-1 ring-white/20 transition-all duration-300 hover:bg-white/15"
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:468:                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-semibold text-blue-200/80 ring-1 ring-white/20 transition-all duration-300 hover:bg-white/10 hover:text-white"
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:488:                      <span className="font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:489:                        {t.installments}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:497:                      <Wallet className="h-4.5 w-4.5 text-brand-blue" aria-hidden="true" />
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:505:                        { Icon: CalendarClock, label: t.payEmi },
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:514:                          <span className="text-[11px] font-semibold leading-tight text-slate-600">
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:526:          {/* How pricing works */}
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:532:                    <DynamicIcon name={["Sparkles", "BadgeCheck", "Wallet"][i]} className="h-5.5 w-5.5" />
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:568:              Treatment Cost Estimate<br />
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:610:              EMI available — from BDT {(Math.ceil(totals.min / 12 / 100) * 100).toLocaleString()} /month (3–12 months on major credit cards)
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:615:            Your personalized written plan with exact pricing is confirmed by our specialists after examination and digital
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:616:            diagnostics. Installments available. Book online at aristocratdentalcarebd.com or call 01715-027522
+/home/z/my-project/src/components/site/pages/estimator-page.tsx:643:                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-blue-200/80">
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:181:              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:242:                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:249:                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:256:                  <dd className="text-right font-semibold text-white">{service.anesthesia}</dd>
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:495:                        <dt className="font-semibold text-brand-navy">{c.patient}</dt>
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:535:                  <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+/home/z/my-project/src/components/site/pages/service-detail-page.tsx:584:                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-semibold text-brand-blue transition-all duration-300 hover:bg-brand-blue hover:text-white"
+/home/z/my-project/src/components/site/pages/admin-page.tsx:671:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:722:              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:737:            className="mt-3 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+/home/z/my-project/src/components/site/pages/admin-page.tsx:767:                      "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+/home/z/my-project/src/components/site/pages/admin-page.tsx:891:                <span className="font-semibold text-brand-navy">{range.label}</span>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:955:                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:956:                      <th scope="col" className="px-5 py-3.5 font-semibold">Service / Doctor</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:957:                      <th scope="col" className="px-5 py-3.5 font-semibold">Schedule</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:958:                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:959:                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:966:                          <p className="font-semibold text-brand-navy">{r.name}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:971:                          <p className="text-xs font-semibold text-slate-700">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:984:                          <p className="font-semibold tabular-nums text-slate-700">{r.date}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1061:                      <p className="font-semibold text-brand-navy">{r.name}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1081:                    <p className="col-span-2 font-semibold tabular-nums">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1291:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1342:              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1375:                        "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1451:                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1452:                      <th scope="col" className="px-5 py-3.5 font-semibold">Review</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1453:                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1454:                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1467:                          <p className="font-semibold text-brand-navy">{r.name}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1480:                            <p className="mt-1 text-xs font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1488:                            <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1559:                      <p className="font-semibold text-brand-navy">{r.name}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1586:                      <p className="mt-1 text-xs font-semibold text-brand-navy">{r.title}</p>
+/home/z/my-project/src/components/site/pages/admin-page.tsx:1592:                      <span className="mt-2 inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/pages/contact-page.tsx:243:                              "font-semibold",
+/home/z/my-project/src/components/site/pages/contact-page.tsx:299:                      className="mt-8 rounded-full border-brand-blue/30 px-7 font-semibold text-brand-navy hover:bg-blue-50"
+/home/z/my-project/src/components/site/pages/contact-page.tsx:324:                          <Label htmlFor="contact-name" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/contact-page.tsx:339:                          <Label htmlFor="contact-phone" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/contact-page.tsx:355:                        <Label htmlFor="contact-email" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/contact-page.tsx:371:                        <Label htmlFor="contact-subject" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/contact-page.tsx:384:                        <Label htmlFor="contact-message" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/blog-page.tsx:61:      "Evidence-based dental health guides from Aristocrat Dental Care specialists: checkup frequency, root canal facts, Invisalign vs braces, implant costs in Bangladesh, kids' dental care & more.",
+/home/z/my-project/src/components/site/pages/blog-page.tsx:129:                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/blog-page.tsx:256:                    "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
+/home/z/my-project/src/components/site/pages/blog-page.tsx:608:                  <span className="block font-semibold text-white">{post.author}</span>
+/home/z/my-project/src/components/site/pages/blog-page.tsx:696:                              ? "bg-blue-50 font-semibold text-brand-blue"
+/home/z/my-project/src/components/site/pages/blog-page.tsx:832:                        className="group inline-flex items-center gap-2.5 rounded-full bg-blue-50 py-2 pl-2 pr-4 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+/home/z/my-project/src/components/site/pages/blog-page.tsx:869:              <span className="mr-1 hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:inline-flex">
+/home/z/my-project/src/components/site/pages/blog-page.tsx:973:                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
+/home/z/my-project/src/components/site/pages/services-page.tsx:103:                  "relative shrink-0 rounded-full px-4 py-2.5 text-xs font-semibold transition-all duration-300",
+/home/z/my-project/src/components/site/pages/services-page.tsx:137:                    <span> — {t.inCategory} <span className="font-semibold text-brand-blue">{d.categories[category as keyof typeof d.categories]}</span></span>
+/home/z/my-project/src/components/site/pages/services-page.tsx:146:                    <span> {t.inCategory} <span className="font-semibold text-brand-blue">{category}</span></span>
+/home/z/my-project/src/components/site/pages/services-page.tsx:191:                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 ring-1 ring-amber-100">
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:263:                    className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-blue"
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:273:                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-brand-blue"
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:361:                              "flex min-h-12 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-all duration-300 sm:px-5",
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:392:                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50 disabled:pointer-events-none disabled:opacity-0"
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:418:                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:432:                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50"
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:441:              <p className="mt-9 text-center text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:596:        <p className="mt-1 text-[13px] font-semibold text-brand-blue">
+/home/z/my-project/src/components/site/pages/assessment-page.tsx:650:          className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
+/home/z/my-project/src/components/site/pages/faqs-page.tsx:124:      "56+ answered dental questions: implant costs in Dhaka, braces duration, whitening safety, kids' first visit, emergencies, booking & pricing — answered by Aristocrat Dental Care specialists, Uttara.",
+/home/z/my-project/src/components/site/pages/faqs-page.tsx:190:                    "relative rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-300",
+/home/z/my-project/src/components/site/pages/faqs-page.tsx:262:                          <AccordionTrigger className="py-4.5 text-left font-heading text-[15px] font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+/home/z/my-project/src/components/site/pages/faqs-page.tsx:268:                              <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-brand-blue ring-1 ring-blue-100">
+/home/z/my-project/src/components/site/pages/faqs-page.tsx:278:                                  className="text-[12px] font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 transition-colors hover:text-brand-navy"
+/home/z/my-project/src/components/site/pages/status-page.tsx:228:                      "relative flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-300",
+/home/z/my-project/src/components/site/pages/status-page.tsx:262:                        <Label htmlFor="ref-input" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:277:                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 font-mono text-base font-semibold tracking-wider text-brand-navy placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+/home/z/my-project/src/components/site/pages/status-page.tsx:282:                          <span className="font-mono font-semibold text-brand-blue">ADC-</span>
+/home/z/my-project/src/components/site/pages/status-page.tsx:288:                        <Label htmlFor="phone-input" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:303:                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base font-semibold text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+/home/z/my-project/src/components/site/pages/status-page.tsx:422:                                <p className="mt-0.5 text-sm font-semibold text-brand-blue">
+/home/z/my-project/src/components/site/pages/status-page.tsx:433:                                  <span className="font-semibold">{t.yourNote}</span> {appt.notes}
+/home/z/my-project/src/components/site/pages/status-page.tsx:443:                              <span className="ml-auto font-semibold text-brand-navy">{appt.name}</span>
+/home/z/my-project/src/components/site/pages/status-page.tsx:448:                              <span className="ml-auto text-right font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:459:                              <span className="ml-auto text-right font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:564:                    <span className="font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:573:                <Label htmlFor="cancel-phone" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/status-page.tsx:583:                  className="mt-2 h-12 rounded-2xl border-blue-100 bg-ice/60 text-base font-semibold tracking-wide text-brand-navy placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+/home/z/my-project/src/components/site/pages/about-page.tsx:86:                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/about-page.tsx:268:                      <span className="text-sm font-semibold text-white">{bn ? "৪.৯" : "4.9"}</span>
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:156:        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:169:          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:185:            className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:238:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:246:                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:263:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:285:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:311:                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:330:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:341:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:352:                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:584:              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:598:                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15"
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:771:                        <dd className="text-right font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/doctors-page.tsx:780:                        <dd className="text-right font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:96:    /* Deep-link note (e.g. from pricing estimator) — only fill empty notes */
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:261:                <dd className="font-semibold text-brand-navy">{form.name}</dd>
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:265:                <dd className="font-semibold text-brand-navy">{form.phone}</dd>
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:269:                <dd className="font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:276:                  <dd className="font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:283:                <dd className="text-right font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:350:            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:376:                className="inline-flex items-center gap-1 font-semibold text-white underline decoration-amber-400/70 decoration-2 underline-offset-4 transition-colors hover:text-amber-300"
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:426:                        "hidden text-xs font-semibold sm:block",
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:478:                        <Label htmlFor="appt-name" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:492:                        <Label htmlFor="appt-phone" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:515:                      <Label htmlFor="appt-email" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:531:                      <Label className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:571:                      <Label className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:621:                              <span className="block truncate text-sm font-semibold">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:660:                      <Label htmlFor="appt-date" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:685:                      <Label className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:702:                              "rounded-xl px-2 py-2.5 text-xs font-semibold transition-all duration-300 sm:text-sm",
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:718:                      <Label htmlFor="appt-notes" className="text-sm font-semibold text-brand-navy">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:780:                            <dd className="font-semibold text-brand-navy sm:text-right">
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:789:                        className="mt-4 text-xs font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
+/home/z/my-project/src/components/site/pages/appointment-page.tsx:812:                    className="rounded-full border-blue-200 px-7 py-4 font-semibold text-brand-navy hover:bg-blue-50"

@@ -29,7 +29,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/site/motion";
-import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
+import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -418,7 +418,7 @@ export function AboutPage() {
             title={t.trustTitle}
           />
           <Reveal className="mt-12">
-            <TestimonialCarousel testimonials={testimonials} />
+            <TestimonialMarquee testimonials={testimonials} />
           </Reveal>
         </div>
       </section>

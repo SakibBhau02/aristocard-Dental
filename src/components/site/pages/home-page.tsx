@@ -12,12 +12,10 @@ import {
   HelpCircle,
   Phone,
   PlayCircle,
-  ShieldCheck,
   Sparkles,
   Star,
   Stethoscope,
   Users,
-  Wallet,
 } from "lucide-react";
 import {
   Accordion,
@@ -41,9 +39,11 @@ import {
   StaggerItem,
 } from "@/components/site/motion";
 import { ServiceCard, DoctorCard, CtaBanner, QuizTeaser } from "@/components/site/shared";
-import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
+import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { homeHeroSlides } from "@/lib/data/hero-media";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -77,254 +77,112 @@ export function HomePage() {
 
   return (
     <>
-      {/* ============ HERO ============ */}
+      {/* ============ HERO — centered over sliding media backdrop ============ */}
       <section
-        className="hero-mesh relative overflow-hidden"
+        className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy"
         aria-labelledby="hero-heading"
       >
-        <div className="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
-        {/* ambient depth blobs (slow drift) */}
-        <span
-          className="animate-glow-drift pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
-          style={{ animationDelay: "0s" }}
-          aria-hidden="true"
-        />
-        <span
-          className="animate-glow-drift pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-brand-teal/10 blur-3xl"
-          style={{ animationDelay: "-8s" }}
-          aria-hidden="true"
-        />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8 lg:pb-28 lg:pt-20">
-          {/* Left copy */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100"
-            >
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              {d.home.hero.badge}
-            </motion.div>
+        {/* sliding background images (+ optional YouTube video) + navy overlay */}
+        <HeroBackdrop slides={homeHeroSlides} indicators priority overlay="deep" />
 
-            <motion.h1
-              id="hero-heading"
-              initial={{ opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="font-heading mt-6 text-4xl font-bold leading-[1.08] text-brand-navy text-balance sm:text-5xl lg:text-[3.6rem]"
-            >
-              {d.home.hero.titleA}{" "}
-              <span className="relative inline-block">
-                <span className="gradient-text text-shimmer">{d.home.hero.titleB}</span>
-                <svg
-                  className="absolute -bottom-2 left-0 w-full text-amber-400"
-                  viewBox="0 0 220 12"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 9C60 3 160 3 217 8"
-                    stroke="currentColor"
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg"
-            >
-              {d.home.hero.description}
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
-            >
-              <Button
-                asChild
-                size="lg"
-                className="btn-press btn-shine group relative overflow-hidden rounded-full bg-brand-blue px-8 py-6 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:shadow-2xl"
-              >
-                <a
-                  href="#/appointment"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/appointment");
-                  }}
-                  className="inline-flex items-center gap-2"
-                >
-                  <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                  {d.home.hero.ctaBook}
-                </a>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="rounded-full border-brand-blue/30 bg-white/70 px-8 py-6 text-base font-bold text-brand-navy backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-brand-blue hover:bg-blue-50"
-              >
-                <a
-                  href="#/services"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/services");
-                  }}
-                  className="inline-flex items-center gap-2"
-                >
-                  <PlayCircle className="h-5 w-5 text-brand-blue" aria-hidden="true" />
-                  {d.home.hero.ctaExplore}
-                </a>
-              </Button>
-            </motion.div>
-
-            {/* hero mini trust row */}
-            <motion.ul
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600"
-            >
-              {d.home.hero.trust.map((item) => (
-                <li key={item} className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
-                  {item}
-                </li>
-              ))}
-            </motion.ul>
-          </div>
-
-          {/* Right visual */}
+        {/* centered copy */}
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20 backdrop-blur-sm"
           >
-            {/* rotating accent ring */}
-            <span
-              className="animate-spin-slow pointer-events-none absolute -right-7 -top-7 z-10 h-20 w-20 rounded-full border-2 border-dashed border-brand-blue/30"
-              aria-hidden="true"
-            />
-            {/* main card */}
-            <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-navy-900/40 sm:p-10">
-              {/* clinic photo layer */}
-              <Image
-                src="/images/hero-clinic.png"
-                alt="Modern treatment room at Aristocrat Dental Care clinic"
-                fill
-                priority
-                sizes="(max-width: 1024px) 92vw, 512px"
-                className="object-cover opacity-35"
-              />
-              <span
-                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand-navy/60 via-brand-navy/80 to-brand-navy"
-                aria-hidden="true"
-              />
-              <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
-              <div className="relative flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
-                  <Stethoscope className="h-3.5 w-3.5" aria-hidden="true" />
-                  {d.home.hero.cardBadge}
-                </span>
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-white">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
-                  4.9
-                </span>
-              </div>
-
-              <div className="relative mt-8 space-y-4">
-                {d.home.hero.cardItems.map((item, i) => (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, x: 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex items-center justify-between rounded-2xl bg-white/8 px-5 py-4 ring-1 ring-white/12 backdrop-blur-sm transition-colors duration-300 hover:bg-white/14"
-                  >
-                    <span>
-                      <span className="block font-heading text-sm font-bold text-white sm:text-base">
-                        {item.title}
-                      </span>
-                      <span className="block text-xs text-blue-200/80">{item.note}</span>
-                    </span>
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-blue text-white shadow-lg shadow-blue-500/40">
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* doctor chip */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.05, duration: 0.5 }}
-                className="relative mt-8 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-400/15 to-transparent p-4 ring-1 ring-amber-300/20 backdrop-blur-sm"
-              >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/90 font-heading text-lg font-bold text-brand-navy">
-                  SK
-                </span>
-                <span>
-                  <span className="block font-heading text-sm font-bold text-white">
-                    Dr. Shazia Khanam
-                  </span>
-                  <span className="block text-xs text-blue-200/85">
-                    {d.home.hero.doctorRole}
-                  </span>
-                </span>
-              </motion.div>
-            </div>
-
-            {/* floating badges */}
-            <motion.div
-              className="animate-float-soft absolute -left-4 top-10 hidden rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:block lg:-left-10"
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2, duration: 0.5 }}
-            >
-              <span className="flex items-center gap-2.5">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span>
-                  <span className="block font-heading text-sm font-bold text-brand-navy">{d.home.hero.badge1Title}</span>
-                  <span className="block text-[11px] text-slate-500">{d.home.hero.badge1Note}</span>
-                </span>
-              </span>
-            </motion.div>
-
-            <motion.div
-              className="animate-float-soft absolute -bottom-6 -right-2 hidden rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:block lg:-right-8"
-              style={{ animationDelay: "1.4s" }}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.35, duration: 0.5 }}
-            >
-              <span className="flex items-center gap-2.5">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue">
-                  <Users className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <span>
-                  <span className="block font-heading text-sm font-bold text-brand-navy">{d.home.hero.badge2Title}</span>
-                  <span className="block text-[11px] text-slate-500">{d.home.hero.badge2Note}</span>
-                </span>
-              </span>
-            </motion.div>
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            {d.home.hero.badge}
           </motion.div>
+
+          <motion.h1
+            id="hero-heading"
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="font-heading mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.08] text-white text-balance sm:text-5xl sm:leading-[1.06] lg:text-[3.75rem]"
+          >
+            {d.home.hero.titleA}{" "}
+            <span className="gold-text text-shimmer">{d.home.hero.titleB}</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-blue-100/90 sm:text-lg"
+          >
+            {d.home.hero.description}
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="btn-press btn-shine group relative overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-9 py-6 text-base font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/40"
+            >
+              <a
+                href="#/appointment"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/appointment");
+                }}
+                className="inline-flex items-center gap-2"
+              >
+                <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+                {d.home.hero.ctaBook}
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-full border-white/30 bg-white/10 px-9 py-6 text-base font-bold text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/60 hover:bg-white/20"
+            >
+              <a
+                href="#/services"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/services");
+                }}
+                className="inline-flex items-center gap-2"
+              >
+                <PlayCircle className="h-5 w-5 text-amber-300" aria-hidden="true" />
+                {d.home.hero.ctaExplore}
+              </a>
+            </Button>
+          </motion.div>
+
+          {/* trust chips (centered) */}
+          <motion.ul
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5"
+          >
+            {d.home.hero.trust.map((item) => (
+              <li
+                key={item}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-4 py-1.5 text-sm text-blue-100/90 ring-1 ring-white/12 backdrop-blur-sm"
+              >
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </motion.ul>
         </div>
 
-        {/* scroll cue */}
+        {/* scroll cue (sits above the slide indicator bars) */}
         <motion.a
           href="#stats"
-          className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium text-slate-500 lg:flex"
+          className="absolute bottom-14 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium text-blue-100/70 transition-colors hover:text-white lg:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.6 }}
@@ -640,23 +498,6 @@ export function HomePage() {
                       {d.home.galleryPreview.ctaGallery}
                     </a>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="rounded-full border-brand-blue/25 bg-white px-7 py-4 text-sm font-bold text-brand-blue hover:bg-blue-50"
-                  >
-                    <a
-                      href="#/estimator"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate("/estimator");
-                      }}
-                      className="inline-flex items-center gap-2"
-                    >
-                      <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
-                      {d.home.galleryPreview.ctaEstimate}
-                    </a>
-                  </Button>
                 </div>
               </Reveal>
             </Reveal>
@@ -693,7 +534,7 @@ export function HomePage() {
             description={d.home.testimonials.description}
           />
           <Reveal className="mt-12">
-            <TestimonialCarousel testimonials={testimonials} />
+            <TestimonialMarquee testimonials={testimonials} />
           </Reveal>
         </div>
       </section>

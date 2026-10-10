@@ -56,7 +56,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "What Happens at a Checkup?",
         body: [
-          "A routine visit takes 30–45 minutes: a full examination of teeth, gums and soft tissue, digital X-rays when needed, professional scaling and polishing, and an oral cancer screening. Finding a small cavity today costs a fraction of the root canal it becomes in a year — prevention is always the cheaper, gentler path.",
+          "A routine visit takes 30–45 minutes: a full examination of teeth, gums and soft tissue, digital X-rays when needed, professional scaling and polishing, and an oral cancer screening. Finding a small cavity today is far simpler to treat than the root canal it becomes in a year — prevention is always the gentler path.",
         ],
       },
     ],
@@ -98,7 +98,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "চেকআপে মূলত কী হয়",
         body: [
-          "একটি নিয়মিত ভিজিটে ৩০–৪৫ মিনিট সময় লাগে: দাঁত, মাড়ি ও মুখের নরম টিস্যুর পূর্ণাঙ্গ পরীক্ষা; প্রয়োজনে ডিজিটাল এক্স-রে; প্রফেশনাল স্কেলিং ও পলিশিং; আর মুখের ক্যান্সার স্ক্রিনিং। আজ একটি ছোট ক্যাভিটি ধরা পড়লে খরচ হয় অনেক কম — এক বছর পর সেটাই রুট ক্যানেল হয়ে দাঁড়ালে খরচ বেড়ে যায় বহুগুণ। প্রতিরোধ সবসময়ই সস্তা ও কোমল পথ।",
+          "একটি নিয়মিত ভিজিটে ৩০–৪৫ মিনিট সময় লাগে: দাঁত, মাড়ি ও মুখের নরম টিস্যুর পূর্ণাঙ্গ পরীক্ষা; প্রয়োজনে ডিজিটাল এক্স-রে; প্রফেশনাল স্কেলিং ও পলিশিং; আর মুখের ক্যান্সার স্ক্রিনিং। আজ একটি ছোট ক্যাভিটি ধরা পড়লে চিকিৎসা অনেক সহজ — এক বছর পর সেটাই রুট ক্যানেল হয়ে দাঁড়ায়। প্রতিরোধই সবসময় সহজ ও কোমল পথ।",
         ],
       },
     ],
@@ -134,12 +134,12 @@ export const blogPosts: BlogPost[] = [
         body: ["Here are the myths we hear every week in our Uttara clinic, followed by the facts:"],
         list: [
           "Myth 1: Root canals are extremely painful → Fact: with modern anesthesia the procedure is painless; most patients compare it to a filling.",
-          "Myth 2: Extraction is a better option → Fact: nothing matches your natural tooth; extraction leads to bone loss, drifting teeth and costlier replacement.",
+          "Myth 2: Extraction is a better option → Fact: nothing matches your natural tooth; extraction leads to bone loss, drifting teeth and a harder-to-solve gap.",
           "Myth 3: Root canals take many visits → Fact: most cases complete in one 60–90 minute visit.",
           "Myth 4: Root canals cause illness → Fact: decades of research show properly treated teeth are safe and healthy.",
           "Myth 5: The tooth will darken and look dead → Fact: modern sealing materials and a protective crown keep your smile natural.",
           "Myth 6: If it doesn't hurt, I don't need treatment → Fact: infected nerves sometimes die quietly; X-rays reveal infection that pain doesn't.",
-          "Myth 7: Root canals are too expensive → Fact: saving a tooth costs far less than extraction plus implant or bridge.",
+          "Myth 7: The tooth will break soon after treatment → Fact: with a well-fitted crown, a root-canal-treated tooth often serves for many years — like any healthy tooth.",
         ],
       },
       {
@@ -176,12 +176,12 @@ export const blogPosts: BlogPost[] = [
         ],
         list: [
           "মিথ ১: রুট ক্যানেল ভীষণ ব্যথার → সত্য: আধুনিক অ্যানেস্থেসিয়ায় প্রক্রিয়াটি কার্যত ব্যথাহীন; বেশিরভাগ রোগী একে ফিলিংয়ের মতোই মনে করেন।",
-          "মিথ ২: দাঁত তুলে ফেলাই ভালো সমাধান → সত্য: নিজের দাঁতের বিকল্প নেই; তুলে ফেললে হাড় ক্ষয় হয়, পাশের দাঁত সরে যায়, আর নতুন দাঁত বসাতে খরচ পড়ে অনেক বেশি।",
+          "মিথ ২: দাঁত তুলে ফেলাই ভালো সমাধান → সত্য: নিজের দাঁতের বিকল্প নেই; তুলে ফেললে হাড় ক্ষয় হয়, পাশের দাঁত সরে যায়, আর ফাঁক পূরণ হয় আরও কঠিন।",
           "মিথ ৩: রুট ক্যানেলে অনেকগুলো ভিজিট লাগে → সত্য: বেশিরভাগ ক্ষেত্রে ৬০–৯০ মিনিটের একটি ভিজিটেই কাজ শেষ হয়।",
           "মিথ ৪: রুট ক্যানেল করলে শরীরে অন্য রোগ হয় → সত্য: দশকের পর দশকের গবেষণা বলছে, সঠিকভাবে চিকিৎসাকৃত দাঁত নিরাপদ ও সুস্থ থাকে।",
           "মিথ ৫: দাঁত কালচে হয়ে মৃত দেখাবে → সত্য: আধুনিক সিলিং উপাদান আর সুরক্ষামূলক ক্রাউন আপনার হাসি স্বাভাবিকই রাখে।",
           "মিথ ৬: ব্যথা না হলে চিকিৎসার দরকার নেই → সত্য: সংক্রমিত স্নায়ু কখনও কখনও নিঃশব্দে মরে যায়; এক্স-রেতেই ধরা পড়ে সেই সংক্রমণ, যা ব্যথা বলে দিতে পারে না।",
-          "মিথ ৭: রুট ক্যানেল অনেক ব্যয়বহুল → সত্য: দাঁত বাঁচানোর খরচ অনেক কম — দাঁত তোলা ও পরে ইমপ্ল্যান্ট বা ব্রিজের মোট খরচের তুলনায়।",
+          "মিথ ৭: চিকিৎসার পর দাঁত শিগগিরই ভেঙে যায় → সত্য: ঠিকমতো ক্রাউন বসালে রুট-ক্যানেল-করা দাঁত বছরের পর বছর সুস্থ দাঁতের মতোই কাজ করে।",
         ],
       },
       {
@@ -202,7 +202,7 @@ export const blogPosts: BlogPost[] = [
     slug: "invisalign-vs-braces-guide",
     title: "Invisalign vs Braces: Which Is Right for You? An Orthodontist's Honest Comparison",
     excerpt:
-      "Aligners or braces — the honest pros, cons and costs of each, from an Uttara clinic that provides both.",
+      "Aligners or braces — the honest pros and cons of each, from an Uttara clinic that provides both.",
     category: "Orthodontics",
     readTime: "7 min read",
     date: "2025-09-22",
@@ -214,7 +214,7 @@ export const blogPosts: BlogPost[] = [
     image: "/images/blog-aligners.png",
     imageAlt: "Clear aligners and metal braces compared in a dentist's hands at an orthodontic clinic",
     quickAnswer:
-      "Invisalign suits mild-to-moderate alignment issues and patients needing discretion — it's removable and invisible. Braces are more powerful for severe crowding and complex bite corrections. Both take 6–24 months. The right choice depends on your case complexity, lifestyle and budget.",
+      "Invisalign suits mild-to-moderate alignment issues and patients needing discretion — it's removable and invisible. Braces are more powerful for severe crowding and complex bite corrections. Both take 6–24 months. The right choice depends on your case complexity, lifestyle and priorities.",
     sections: [
       {
         heading: "What Invisalign Does Best",
@@ -240,7 +240,7 @@ export const blogPosts: BlogPost[] = [
           "Discipline required: Invisalign — 20–22 hrs/day wear; Braces — nothing to forget",
           "Hygiene: Invisalign — brush & floss normally; Braces — special threading required",
           "Diet: Invisalign — eat anything; Braces — avoid hard/sticky foods",
-          "Cost: comparable in Bangladesh; final quote depends on case complexity",
+          "Cleaning: aligners pop out for brushing; braces need careful cleaning around brackets",
         ],
       },
       {
@@ -253,9 +253,9 @@ export const blogPosts: BlogPost[] = [
     /* ---- বাংলা ---- */
     titleBn: "ইনভিজিলাইন না ব্রেসেস: কোনটি আপনার জন্য ঠিক? একজন অর্থোডন্টিস্টের সৎ তুলনা",
     excerptBn:
-      "অ্যালাইনার না ব্রেসেস — দুটির সৎ সুবিধা, অসুবিধা ও খরচ, উত্তরার এমন এক ক্লিনিক থেকে যেখানে দুটোই মেলে।",
+      "অ্যালাইনার না ব্রেসেস — দুটির সৎ সুবিধা ও অসুবিধা, উত্তরার এমন এক ক্লিনিক থেকে যেখানে দুটোই মেলে।",
     quickAnswerBn:
-      "হালকা থেকে মাঝারি মানের দাঁত সাজানোর সমস্যা এবং যাদের কাছে চিকিৎসা চোখে না পড়াটাই আসল — ইনভিজিলাইন তাদের জন্য উপযুক্ত, কারণ এটি খোলা যায় আর অদৃশ্য। তীব্র ভিড়ভাট্টা ও জটিল বাইট সংশোধনে ব্রেসেসই বেশি শক্তিশালী। দুটোতেই সময় লাগে ৬–২৪ মাস। সঠিক পছন্দ নির্ভর করে আপনার কেসের জটিলতা, জীবনযাত্রা ও বাজেটের ওপর।",
+      "হালকা থেকে মাঝারি মানের দাঁত সাজানোর সমস্যা এবং যাদের কাছে চিকিৎসা চোখে না পড়াটাই আসল — ইনভিজিলাইন তাদের জন্য উপযুক্ত, কারণ এটি খোলা যায় আর অদৃশ্য। তীব্র ভিড়ভাট্টা ও জটিল বাইট সংশোধনে ব্রেসেসই বেশি শক্তিশালী। দুটোতেই সময় লাগে ৬–২৪ মাস। সঠিক পছন্দ নির্ভর করে আপনার কেসের জটিলতা, জীবনযাত্রা ও প্রয়োজনের ওপর।",
     sectionsBn: [
       {
         heading: "ইনভিজিলাইন যেসব কাজে সেরা",
@@ -283,105 +283,13 @@ export const blogPosts: BlogPost[] = [
           "নিয়মানুবর্তিতা: ইনভিজিলাইন — দিনে ২০–২২ ঘণ্টা পরতে হবে; ব্রেসেস — ভুলে যাওয়ার কিছুই নেই",
           "পরিষ্কার-পরিচ্ছন্নতা: ইনভিজিলাইন — স্বাভাবিক ব্রাশ ও ফ্লস; ব্রেসেস — বিশেষ থ্রেডিং লাগে",
           "খাবার: ইনভিজিলাইন — যা খুশি; ব্রেসেস — শক্ত/আঠালো খাবার এড়িয়ে চলুন",
-          "খরচ: বাংলাদেশে দুটোই প্রায় সমান; চূড়ান্ত কোটেশন নির্ভর করে কেসের জটিলতার ওপর",
+          "পরিষ্কার-পরিচ্ছন্নতা: ব্রাশ করতে অ্যালাইনার খুলে নেওয়া যায়; ব্রেসেসে ব্র্যাকেটের চারপাশে সাবধানে পরিষ্কার করতে হয়",
         ],
       },
       {
         heading: "আমাদের পরামর্শ দেওয়ার প্রক্রিয়া",
         body: [
           "কনসালটেশনে আমরা ছবি, এক্স-রে ও ৩ডি স্ক্যান নিয়ে দেখাই — প্রতিটি অপশন আপনার হাসির জন্য কী অর্জন করবে; সাথে থাকে ইনভিজিলাইনের ডিজিটাল সিমুলেশনে চূড়ান্ত ফলাফল। অনেক রোগীই দুটোর জন্যই উপযুক্ত হন; তখন পছন্দটা হয় জীবনযাত্রা ও নিজের ইচ্ছার প্রশ্ন, ক্লিনিকাল বাধ্যবাধকতার নয়। নিজের সিমুলেশন দেখতে একটি অ্যাসেসমেন্ট বুক করুন।",
-        ],
-      },
-    ],
-  },
-  {
-    slug: "dental-implants-cost-bangladesh",
-    title: "Dental Implants in Bangladesh: What They Cost, How Long They Last & Who's a Candidate",
-    excerpt:
-      "A transparent, no-jargon guide to implant treatment in Dhaka — candidacy, timeline, cost factors and lifetime value.",
-    category: "Implantology",
-    readTime: "9 min read",
-    date: "2025-08-14",
-    updated: "2025-12-01",
-    author: "Dr. Abdur Rahim",
-    authorCredentials: "BDS, MDS — Senior Consultant",
-    tags: ["dental implant cost Bangladesh", "tooth replacement Dhaka", "implantology"],
-    serviceRefs: ["dental-implants", "crowns-bridges", "oral-maxillofacial-surgery"],
-    image: "/images/blog-implant.png",
-    imageAlt: "A titanium dental implant model with crown displayed in a clinical setting",
-    quickAnswer:
-      "A dental implant replaces a missing tooth with a titanium root and porcelain crown that lasts decades — often a lifetime for the implant itself. Costs in Dhaka vary with implant system, crown material and number of teeth replaced. Most healthy adults with missing teeth are candidates; a 3D scan confirms your bone suitability.",
-    sections: [
-      {
-        heading: "Why Implants Are Called the Gold Standard",
-        body: [
-          "A dental implant is a biocompatible titanium post placed in the jawbone, where it fuses with bone over 3–6 months (osseointegration). A custom crown then attaches, creating a replacement tooth that looks, feels and functions like the natural one it replaces.",
-          "Unlike bridges, implants don't require grinding healthy neighboring teeth. Unlike dentures, they never slip. And uniquely, the implant post stimulates the jawbone like a natural root — preventing the bone loss that makes long-term denture wearers look older.",
-        ],
-      },
-      {
-        heading: "Who Is a Candidate?",
-        body: [
-          "Most healthy adults with missing teeth qualify. We assess three things at consultation: bone density and volume (via 3D imaging), gum health, and medical factors like uncontrolled diabetes or smoking that affect healing. Even patients with low bone volume often qualify after grafting.",
-        ],
-        list: [
-          "Missing one, several or all teeth",
-          "Healthy gums free of active periodontal disease",
-          "Adequate jawbone (or willingness for grafting)",
-          "Commitment to oral hygiene and follow-up visits",
-        ],
-      },
-      {
-        heading: "Cost Factors: An Honest Breakdown",
-        body: [
-          "Implant pricing in Bangladesh reflects several variables: the implant system (internationally certified systems cost more than generic ones), the crown material (porcelain-fused-to-metal vs full zirconia), the number of implants, and whether bone grafting or sinus lifting is needed.",
-          "At Aristocrat Dental Care, we provide a written treatment plan with transparent pricing before beginning — no hidden costs. Compared to the alternatives, implants are lifetime-value: a bridge lasts 10–15 years and sacrifices two healthy teeth; dentures need replacement and reline cycles. An implant, maintained well, often serves for life.",
-        ],
-      },
-      {
-        heading: "The Treatment Timeline",
-        body: [
-          "After planning and placement (a comfortable procedure under local anesthesia), healing takes 3–6 months while the implant integrates. A temporary tooth keeps your smile complete meanwhile. The final crown is then attached — and you forget it isn't the tooth you were born with. Two to three reviews a year keep everything perfect.",
-        ],
-      },
-    ],
-    /* ---- বাংলা ---- */
-    titleBn: "বাংলাদেশে ডেন্টাল ইমপ্ল্যান্ট: খরচ কত, কত দিন টেকে, আর কারা করাতে পারবেন",
-    excerptBn:
-      "ঢাকায় ইমপ্ল্যান্ট চিকিৎসা নিয়ে জার্গনমুক্ত, সম্পূর্ণ স্বচ্ছ গাইড — যোগ্যতা, সময়রেখা, খরচের নির্ধারক আর আজীবনের মূল্য।",
-    quickAnswerBn:
-      "ডেন্টাল ইমপ্ল্যান্ট হারানো দাঁতের জায়গায় টাইটানিয়ামের শিকড় আর পোর্সেলেন ক্রাউন বসিয়ে দেয়, যা দশকের পর দশক টেকে — ইমপ্ল্যান্ট নিজে প্রায়ই আজীবন চলে। ঢাকায় খরচ নির্ভর করে ইমপ্ল্যান্ট সিস্টেম, ক্রাউনের উপাদান ও কতগুলো দাঁত বসাচ্ছেন তার ওপর। হারানো দাঁত আছে এমন বেশিরভাগ সুস্থ প্রাপ্তবয়স্কই যোগ্য; ৩ডি স্ক্যানে হাড়ের উপযুক্ততা নিশ্চিত হয়ে যায়।",
-    sectionsBn: [
-      {
-        heading: "ইমপ্ল্যান্টকে কেন গোল্ড স্ট্যান্ডার্ড বলা হয়",
-        body: [
-          "ডেন্টাল ইমপ্ল্যান্ট হলো চোয়ালের হাড়ে বসানো একটি টাইটানিয়াম পোস্ট — এমন উপাদান, যা শরীর প্রত্যাখ্যান করে না (বায়োকম্প্যাটিবল)। এটি ৩–৬ মাসে হাড়ের সাথে মিশে যায় (অসিওইন্টিগ্রেশন)। এরপর তার সাথে যুক্ত হয় কাস্টম-মেড ক্রাউন — তৈরি হয় এমন একটি বিকল্প দাঁত, যা দেখতে, অনুভবে ও কাজে প্রায় নিজের দাঁতের মতোই।",
-          "ব্রিজের মতো ইমপ্ল্যান্টে পাশের সুস্থ দাঁত ঘষে ছোট করতে হয় না। ডেনচারের মতো এটা কখনও সরে যায় না। আর একচেটিয়া ব্যাপার হলো — ইমপ্ল্যান্টের পোস্ট স্বাভাবিক শিকড়ের মতোই চোয়ালের হাড়কে সক্রিয় রাখে, ফলে দীর্ঘদিন ডেনচার ব্যবহারকারীদের যে হাড়-ক্ষয়জনিত বয়স্ক চেহারা আসে, তা আটকে যায়।",
-        ],
-      },
-      {
-        heading: "কারা ইমপ্ল্যান্ট করাতে পারবেন",
-        body: [
-          "হারানো দাঁত আছে এমন বেশিরভাগ সুস্থ প্রাপ্তবয়স্কই যোগ্য। কনসালটেশনে আমরা তিনটি বিষয় দেখি: হাড়ের ঘনত্ব ও পরিমাণ (৩ডি ইমেজিংয়ে), মাড়ির স্বাস্থ্য, আর নিরাময়ে প্রভাব ফেলে এমন শারীরিক বিষয় — যেমন নিয়ন্ত্রণহীন ডায়াবেটিস বা ধূমপান। হাড়ের পরিমাণ কম এমন রোগীরাও গ্রাফটিংয়ের পর প্রায়ই যোগ্য হয়ে ওঠেন।",
-        ],
-        list: [
-          "একটি, কয়েকটি বা সব দাঁত হারিয়েছেন",
-          "সক্রিয় পেরিওডন্টাল রোগমুক্ত সুস্থ মাড়ি",
-          "পর্যাপ্ত চোয়ালের হাড় (বা গ্রাফটিং করানোর প্রস্তুতি)",
-          "মুখের পরিচ্ছন্নতা ও ফলো-আপ ভিজিটের প্রতিশ্রুতি",
-        ],
-      },
-      {
-        heading: "খরচের নির্ধারকগুলো: একটি সৎ বিশ্লেষণ",
-        body: [
-          "বাংলাদেশে ইমপ্ল্যান্টের দাম কয়েকটি বিষয়ের ওপর দাঁড়িয়ে থাকে: কোন ইমপ্ল্যান্ট সিস্টেম (আন্তর্জাতিকভাবে সার্টিফায়েড সিস্টেম জেনেরিকের চেয়ে দামি), ক্রাউনের উপাদান (পোর্সেলেন-ফিউজড-টু-মেটাল না পুরো জিরকোনিয়া), কতগুলো ইমপ্ল্যান্ট, আর বোন গ্রাফটিং বা সাইনাস লিফটিং লাগবে কি না।",
-          "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ারে শুরুর আগেই লিখিত চিকিৎসা পরিকল্পনা ও স্বচ্ছ মূল্য দেওয়া হয় — কোনো লুকানো খরচ নেই। বিকল্পগুলোর সাথে তুলনা করলে ইমপ্ল্যান্ট আসলে আজীবনের বিনিয়োগ: ব্রিজ ১০–১৫ বছর টেকে আর দুটি সুস্থ দাঁতকে বলি দিতে হয়; ডেনচার বারবার বদলাতে ও ঠিক করাতে হয়। আর ভালো রক্ষণাবেক্ষণে একটি ইমপ্ল্যান্ট প্রায়ই আজীবন চলে।",
-        ],
-      },
-      {
-        heading: "চিকিৎসার সময়রেখা",
-        body: [
-          "পরিকল্পনা ও প্লেসমেন্টের (লোকাল অ্যানেস্থেসিয়ায় আরামদায়ক প্রক্রিয়া) পর ইমপ্ল্যান্ট হাড়ে মিশতে ৩–৬ মাস সময় নেয়। এই সময়টায় একটি অস্থায়ী দাঁত আপনার হাসিকে অক্ষুণ্ণ রাখে। এরপর বসানো হয় চূড়ান্ত ক্রাউন — আর আপনি ভুলেই যাবেন, এটি জন্মগত দাঁত নয়। বছরে দু-তিনবার চেকআপে সবকিছু নিখুঁত থাকে।",
         ],
       },
     ],

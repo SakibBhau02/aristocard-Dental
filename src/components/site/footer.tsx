@@ -46,11 +46,10 @@ export function Footer() {
     { label: d.footer.quickLinks[3], to: "/gallery" },
     { label: d.footer.quickLinks[4], to: "/doctors" },
     { label: d.footer.quickLinks[5], to: "/blog" },
-    { label: d.footer.quickLinks[6], to: "/estimator" },
-    { label: d.footer.quickLinks[7], to: "/contact" },
-    { label: d.footer.quickLinks[8], to: "/appointment" },
-    { label: d.footer.quickLinks[9], to: "/status" },
-    { label: d.footer.quickLinks[10], to: "/faqs" },
+    { label: d.footer.quickLinks[6], to: "/contact" },
+    { label: d.footer.quickLinks[7], to: "/appointment" },
+    { label: d.footer.quickLinks[8], to: "/status" },
+    { label: d.footer.quickLinks[9], to: "/faqs" },
   ];
 
   return (

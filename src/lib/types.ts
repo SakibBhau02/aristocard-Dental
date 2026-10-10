@@ -18,6 +18,8 @@ export type Service = {
   shortNameBn?: string;
   category: ServiceCategory;
   icon: string; // lucide icon key mapped in components
+  /* Relevant hero/cover image for cards + detail hero backdrop */
+  image?: string;
   tagline: string;
   taglineBn?: string;
   excerpt: string;

@@ -36,6 +36,8 @@ import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/compone
 import { ServiceCard, CtaBanner } from "@/components/site/shared";
 import { ServiceReviews } from "@/components/site/service-reviews";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
+import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import type { HeroSlide } from "@/lib/data/hero-media";
 import { site } from "@/lib/site";
 import Image from "next/image";
 
@@ -133,15 +135,24 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   const excerpt = bn && service.excerptBn ? service.excerptBn : service.excerpt;
   const categoryLabel = d.categories[service.category];
 
+  /* hero backdrop — the service's own image first, then supporting scenes */
+  const heroSlides: HeroSlide[] = [
+    ...(service.image
+      ? [{ type: "image", src: service.image, alt: `${name} at Aristocrat Dental Care` } as HeroSlide]
+      : []),
+    { type: "image", src: "/images/hero-slide-care.png", alt: "Dentist consulting a smiling patient" },
+    { type: "image", src: "/images/facility-tech.png", alt: "Advanced dental technology" },
+  ];
+
   return (
     <>
-      {/* ============ HERO ============ */}
-      <section className="hero-mesh-dark relative overflow-hidden">
-        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
-          {/* breadcrumb */}
+      {/* ============ HERO — centered over the service's own imagery ============ */}
+      <section className="relative isolate overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={heroSlides} overlay="deep" interval={7500} priority />
+        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+          {/* breadcrumb (centered) */}
           <nav aria-label="Breadcrumb" className="mb-8">
-            <ol className="flex flex-wrap items-center gap-1.5 text-xs text-blue-200/80">
+            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>
                 <a
                   href="#/"
@@ -172,115 +183,85 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             </ol>
           </nav>
 
-          <div className="grid items-start gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-                {t.accepting}
-              </span>
-              <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
-                {name}
-              </h1>
-              <p className="font-heading mt-3 text-lg font-medium text-amber-300">
-                {tagline}
-              </p>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
-                {excerpt}
-              </p>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+              {t.accepting}
+            </span>
+            <h1 className="font-heading mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
+              {name}
+            </h1>
+            <p className="font-heading mt-3 text-lg font-medium text-amber-300">
+              {tagline}
+            </p>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+              {excerpt}
+            </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/appointment?service=${service.slug}`)}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
-                >
-                  <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                  {t.bookFor.replace("{service}", shortName)}
-                </button>
-                <a
-                  href={`tel:${site.phoneRaw}`}
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10"
-                >
-                  <Phone className="h-4.5 w-4.5" aria-hidden="true" />
-                  {t.callWith.replace("{phone}", site.phone)}
-                </a>
-              </div>
-            </motion.div>
-
-            {/* quick facts card */}
-            <motion.aside
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-[1.75rem] bg-white/8 p-6 ring-1 ring-white/15 backdrop-blur"
-              aria-label="Service quick facts"
-            >
-              <div className="flex items-center gap-4">
-                <span className={`inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20`}>
-                  <DynamicIcon name={service.icon} className="h-8 w-8" />
-                </span>
-                <div>
-                  <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
-                    {t.categoryCare.replace("{category}", categoryLabel)}
-                  </span>
-                  <span className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-300">
-                    <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-                    {t.verified}
-                  </span>
-                </div>
-              </div>
-              <dl className="mt-6 space-y-4 text-sm">
-                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
-                  <dt className="flex items-center gap-2 text-blue-200/80">
-                    <Clock3 className="h-4 w-4" aria-hidden="true" />
-                    {t.duration}
-                  </dt>
-                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
-                </div>
-                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
-                  <dt className="flex items-center gap-2 text-blue-200/80">
-                    <Repeat className="h-4 w-4" aria-hidden="true" />
-                    {t.longevity}
-                  </dt>
-                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
-                </div>
-                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
-                  <dt className="flex items-center gap-2 text-blue-200/80">
-                    <Syringe className="h-4 w-4" aria-hidden="true" />
-                    {t.comfort}
-                  </dt>
-                  <dd className="text-right font-semibold text-white">{service.anesthesia}</dd>
-                </div>
-              </dl>
-              <a
-                href="#/appointment"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(`/appointment?service=${service.slug}`);
-                }}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/40 transition-all duration-300 hover:bg-brand-blue-light"
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/appointment?service=${service.slug}`)}
+                className="btn-press btn-shine inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-amber-500/40"
               >
-                {t.proceed}
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+                {t.bookFor.replace("{service}", shortName)}
+              </button>
+              <a
+                href={`tel:${site.phoneRaw}`}
+                className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
+              >
+                <Phone className="h-4.5 w-4.5" aria-hidden="true" />
+                {t.callWith.replace("{phone}", site.phone)}
               </a>
-            </motion.aside>
-          </div>
+            </div>
+
+            {/* quick facts strip (glassy, centered) */}
+            <dl className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3 rounded-[1.75rem] bg-white/8 px-6 py-4 ring-1 ring-white/15 backdrop-blur">
+              <div className="flex items-center gap-2.5">
+                <dt className="flex items-center gap-1.5 text-blue-200/80">
+                  <Clock3 className="h-4 w-4" aria-hidden="true" />
+                  {t.duration}
+                </dt>
+                <dd className="font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
+              </div>
+              <div className="hidden h-5 w-px bg-white/15 sm:block" aria-hidden="true" />
+              <div className="flex items-center gap-2.5">
+                <dt className="flex items-center gap-1.5 text-blue-200/80">
+                  <Repeat className="h-4 w-4" aria-hidden="true" />
+                  {t.longevity}
+                </dt>
+                <dd className="font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
+              </div>
+              <div className="hidden h-5 w-px bg-white/15 sm:block" aria-hidden="true" />
+              <div className="flex items-center gap-2.5">
+                <dt className="flex items-center gap-1.5 text-blue-200/80">
+                  <Syringe className="h-4 w-4" aria-hidden="true" />
+                  {t.comfort}
+                </dt>
+                <dd className="font-semibold text-white">{service.anesthesia}</dd>
+              </div>
+            </dl>
+
+            {/* category / verified / service icon */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+                {t.categoryCare.replace("{category}", categoryLabel)}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300">
+                <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                {t.verified}
+              </span>
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20">
+                <DynamicIcon name={service.icon} className="h-6 w-6" />
+              </span>
+            </div>
+          </motion.div>
         </div>
-        <svg
-          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
-          viewBox="0 0 1440 56"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
-            fill="currentColor"
-          />
-        </svg>
       </section>
 
       {/* ============ OVERVIEW + IDEAL FOR ============ */}
