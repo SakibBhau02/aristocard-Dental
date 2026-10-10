@@ -52,7 +52,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative mt-auto overflow-hidden bg-brand-navy text-white">
+    <footer className="relative mt-auto overflow-hidden bg-brand-navy pb-[env(safe-area-inset-bottom)] text-white">
       {/* decorative glow */}
       <div
         className="pointer-events-none absolute inset-0"

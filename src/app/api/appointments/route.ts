@@ -18,7 +18,7 @@ const TIME_SLOT_RE =
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const {
       name,
       phone,
@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
       serviceSlug,
       notes,
     } = body ?? {};
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "A valid JSON request body is required." },
+        { status: 400 }
+      );
+    }
 
     /* Validation */
     const errors: string[] = [];
@@ -66,7 +72,9 @@ export async function POST(req: NextRequest) {
     if (doctorSlug && !doctors.some((d) => d.slug === doctorSlug)) {
       errors.push("Unknown doctor selected.");
     }
-    if (notes && typeof notes !== "string" && notes.length > 1000) {
+    if (typeof notes !== "string" && notes !== undefined && notes !== null) {
+      errors.push("Notes must be plain text.");
+    } else if (typeof notes === "string" && notes.trim().length > 1000) {
       errors.push("Notes must be under 1000 characters.");
     }
 
@@ -102,12 +110,12 @@ export async function POST(req: NextRequest) {
         refCode: generateRefCode(),
         name: (name as string).trim(),
         phone: normalizedPhone,
-        email: email?.trim() || null,
+        email: typeof email === "string" ? email.trim() || null : null,
         date,
         time,
-        doctorSlug: doctorSlug || null,
-        serviceSlug: serviceSlug || null,
-        notes: notes?.trim() || null,
+        doctorSlug: typeof doctorSlug === "string" ? doctorSlug || null : null,
+        serviceSlug: typeof serviceSlug === "string" ? serviceSlug || null : null,
+        notes: typeof notes === "string" ? notes.trim() || null : null,
       },
     });
 

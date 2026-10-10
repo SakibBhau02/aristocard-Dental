@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock3,
+  Globe,
   HeartPulse,
   Info,
   Phone,
@@ -23,6 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { getService, services } from "@/lib/data/services";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
@@ -31,11 +33,14 @@ import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
-/*  SERVICE DETAIL PAGE — deep, rich, conversion-focused               */
+/*  SERVICE DETAIL PAGE — deep, rich, conversion-focused (EN / বাংলা)   */
 /* ------------------------------------------------------------------ */
 
 export function ServiceDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.serviceDetail;
   const service = getService(slug);
 
   usePageMeta({
@@ -105,6 +110,13 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   const colors = categoryColors[service.category] ?? categoryColors.Restorative;
   const related = services.filter((s) => service.related.includes(s.slug));
 
+  /* localized service naming */
+  const name = bn && service.nameBn ? service.nameBn : service.name;
+  const shortName = bn && service.shortNameBn ? service.shortNameBn : service.shortName;
+  const tagline = bn && service.taglineBn ? service.taglineBn : service.tagline;
+  const excerpt = bn && service.excerptBn ? service.excerptBn : service.excerpt;
+  const categoryLabel = d.categories[service.category];
+
   return (
     <>
       {/* ============ HERO ============ */}
@@ -123,7 +135,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   }}
                   className="transition-colors hover:text-white"
                 >
-                  Home
+                  {d.chrome.nav.home}
                 </a>
               </li>
               <li className="text-blue-300/50" aria-hidden="true">/</li>
@@ -136,11 +148,11 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   }}
                   className="transition-colors hover:text-white"
                 >
-                  Services
+                  {d.chrome.nav.services}
                 </a>
               </li>
               <li className="text-blue-300/50" aria-hidden="true">/</li>
-              <li className="font-medium text-white">{service.name}</li>
+              <li className="font-medium text-white">{name}</li>
             </ol>
           </nav>
 
@@ -152,16 +164,16 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             >
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-                Currently Accepting Patients
+                {t.accepting}
               </span>
               <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
-                {service.name}
+                {name}
               </h1>
               <p className="font-heading mt-3 text-lg font-medium text-amber-300">
-                {service.tagline}
+                {tagline}
               </p>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
-                {service.excerpt}
+                {excerpt}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -171,14 +183,14 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
                 >
                   <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                  Book for {service.shortName}
+                  {t.bookFor.replace("{service}", shortName)}
                 </button>
                 <a
                   href={`tel:${site.phoneRaw}`}
                   className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10"
                 >
                   <Phone className="h-4.5 w-4.5" aria-hidden="true" />
-                  Call {site.phone}
+                  {t.callWith.replace("{phone}", site.phone)}
                 </a>
               </div>
             </motion.div>
@@ -197,11 +209,11 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 </span>
                 <div>
                   <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
-                    {service.category} Care
+                    {t.categoryCare.replace("{category}", categoryLabel)}
                   </span>
                   <span className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-300">
                     <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-                    Verified Specialization
+                    {t.verified}
                   </span>
                 </div>
               </div>
@@ -209,21 +221,21 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
                   <dt className="flex items-center gap-2 text-blue-200/80">
                     <Clock3 className="h-4 w-4" aria-hidden="true" />
-                    Duration
+                    {t.duration}
                   </dt>
-                  <dd className="text-right font-semibold text-white">{service.duration}</dd>
+                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
                   <dt className="flex items-center gap-2 text-blue-200/80">
                     <Repeat className="h-4 w-4" aria-hidden="true" />
-                    Longevity
+                    {t.longevity}
                   </dt>
-                  <dd className="text-right font-semibold text-white">{service.longevity}</dd>
+                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
                   <dt className="flex items-center gap-2 text-blue-200/80">
                     <Syringe className="h-4 w-4" aria-hidden="true" />
-                    Comfort
+                    {t.comfort}
                   </dt>
                   <dd className="text-right font-semibold text-white">{service.anesthesia}</dd>
                 </div>
@@ -236,7 +248,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 }}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/40 transition-all duration-300 hover:bg-brand-blue-light"
               >
-                Proceed to Booking
+                {t.proceed}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </motion.aside>
@@ -262,9 +274,15 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             <div>
               <SectionHeading
                 align="left"
-                eyebrow="About this Service"
-                title={`Understanding ${service.name}`}
+                eyebrow={t.overviewEyebrow}
+                title={t.overviewTitle.replace("{service}", name)}
               />
+              {bn && (
+                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+                  <Globe className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+                  {t.contentNote}
+                </p>
+              )}
               <div className="mt-8 space-y-5">
                 {service.overview.map((para, i) => (
                   <Reveal key={i} delay={i * 0.06}>
@@ -282,10 +300,10 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-brand-blue">
                       <Info className="h-4.5 w-4.5" aria-hidden="true" />
                     </span>
-                    Is this treatment right for you?
+                    {t.idealTitle}
                   </h3>
                   <p className="mt-3 text-sm text-slate-600">
-                    {service.name} is ideal for patients experiencing:
+                    {t.idealText.replace("{service}", name)}
                   </p>
                   <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                     {service.ideal.map((item) => (
@@ -306,16 +324,10 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
                     <h3 className="font-heading flex items-center gap-2 text-base font-bold text-brand-navy">
                       <ShieldCheck className="h-5 w-5 text-brand-blue" aria-hidden="true" />
-                      The Aristocrat Standard
+                      {t.safetyTitle}
                     </h3>
                     <ul className="mt-4 space-y-3.5 text-sm text-slate-600">
-                      {[
-                        "Specialist dentists with BDS/MDS credentials",
-                        "Hospital-grade sterilization for every instrument",
-                        "Digital diagnostics — precise, low-radiation imaging",
-                        "Transparent pricing discussed before treatment",
-                        "Structured follow-up until full recovery",
-                      ].map((item) => (
+                      {t.safetyList.map((item) => (
                         <li key={item} className="flex items-start gap-2.5">
                           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
                           {item}
@@ -327,13 +339,10 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   <div className="rounded-3xl bg-gradient-to-br from-amber-50 to-amber-100/50 p-6 ring-1 ring-amber-200/60">
                     <h3 className="flex items-center gap-2 font-heading text-base font-bold text-amber-800">
                       <HeartPulse className="h-5 w-5" aria-hidden="true" />
-                      Anxious about treatment?
+                      {t.anxiousTitle}
                     </h3>
                     <p className="mt-2.5 text-sm leading-relaxed text-amber-900/80">
-                      You're not alone — and you're in safe hands. Our gentle
-                      techniques, laser options and calming approach have helped
-                      thousands of nervous patients relax. Tell us your fears
-                      when booking; we pace your visit to your comfort.
+                      {t.anxiousText}
                     </p>
                   </div>
                 </div>
@@ -347,14 +356,14 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
       <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="benefits-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="Key Benefits"
+            eyebrow={t.benefitsEyebrow}
             title={
               <>
-                What <span className="gradient-text">{service.shortName}</span>{" "}
-                does for you
+                {t.benefitsPre} <span className="gradient-text">{shortName}</span>
+                {t.benefitsPost}
               </>
             }
-            description={`The outcomes that matter — why patients choose ${service.name} at Aristocrat Dental Care.`}
+            description={t.benefitsText.replace("{service}", name)}
           />
           <StaggerContainer className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {service.benefits.map((benefit, i) => (
@@ -362,7 +371,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
                     <span className="font-heading text-sm font-bold">
-                      {String(i + 1).padStart(2, "0")}
+                      {bn ? toBnDigits(String(i + 1).padStart(2, "0")) : String(i + 1).padStart(2, "0")}
                     </span>
                   </span>
                   <h3 className="font-heading mt-4 text-base font-bold text-brand-navy group-hover:text-brand-blue">
@@ -382,9 +391,9 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
       <section className="relative py-16 sm:py-20" aria-labelledby="process-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="Treatment Journey"
-            title="Your step-by-step experience"
-            description="Know exactly what happens — from first consultation to final result. No surprises, ever."
+            eyebrow={t.processEyebrow}
+            title={t.processTitle}
+            description={t.processText}
           />
           <div className="relative mt-14">
             {/* connecting line */}
@@ -404,13 +413,13 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                       {/* node */}
                       <span className="absolute left-0 top-1 hidden h-14 w-14 sm:flex lg:left-1/2 lg:-translate-x-1/2" aria-hidden="true">
                         <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy font-heading text-base font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white">
-                          {step.step}
+                          {bn ? toBnDigits(step.step) : step.step}
                         </span>
                       </span>
                       <div className={`sm:pl-[76px] lg:w-[46%] lg:pl-0 ${i % 2 === 1 ? "lg:pl-0" : ""}`}>
                         <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:p-7">
                           <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
-                            Step {step.step}
+                            {t.step} {bn ? toBnDigits(step.step) : step.step}
                           </span>
                           <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
                             {step.title}
@@ -434,8 +443,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
       <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="service-faq-heading">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="Common Questions"
-            title={`${service.shortName} — your questions answered`}
+            eyebrow={t.faqEyebrow}
+            title={t.faqTitle.replace("{service}", shortName)}
           />
           <Reveal className="mt-10">
             <Accordion type="single" collapsible className="w-full">
@@ -460,7 +469,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-white p-6 text-center sm:flex-row sm:text-left">
               <p className="flex items-center gap-3 text-sm font-medium text-brand-navy">
                 <Sparkles className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
-                Have a question we didn't cover? Ask our specialists directly.
+                {t.faqCta}
               </p>
               <a
                 href={`tel:${site.phoneRaw}`}
@@ -481,8 +490,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionHeading
                 align="left"
-                eyebrow="Explore More"
-                title="Related treatments"
+                eyebrow={t.relatedEyebrow}
+                title={t.relatedTitle}
               />
               <Reveal>
                 <a
@@ -494,7 +503,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                   className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-semibold text-brand-blue transition-all duration-300 hover:bg-brand-blue hover:text-white"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                  All services
+                  {t.allServices}
                 </a>
               </Reveal>
             </div>
@@ -508,8 +517,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
       )}
 
       <CtaBanner
-        title={`Ready to start ${service.shortName.toLowerCase()}?`}
-        description={`Schedule a consultation for ${service.name} today — ${site.hours}. Our specialists will assess, explain and plan your treatment with complete transparency.`}
+        title={t.ctaTitle.replace("{service}", shortName)}
+        description={t.ctaDescription.replace("{serviceFull}", name).replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)}
       />
     </>
   );

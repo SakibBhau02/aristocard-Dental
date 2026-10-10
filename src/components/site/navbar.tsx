@@ -130,6 +130,7 @@ export function Navbar() {
                       e.preventDefault();
                       navigateAndClose(item.href.replace("#", ""));
                     }}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
                       "relative rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-300 xl:px-3.5 xl:text-sm",
                       active
@@ -250,6 +251,7 @@ export function Navbar() {
                         e.preventDefault();
                         navigateAndClose(item.href.replace("#", ""));
                       }}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       className={cn(
                         "flex items-center justify-between rounded-2xl px-5 py-4 text-base font-medium transition-colors",
                         isActive(item.href)

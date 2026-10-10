@@ -11,11 +11,13 @@ import {
   Loader2,
   Mail,
   MapPin,
+  MessageCircle,
   MessageSquare,
   Phone,
   Send,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang } from "@/lib/i18n";
 import { site } from "@/lib/site";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
@@ -26,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
 /* ------------------------------------------------------------------ */
-/*  CONTACT PAGE                                                       */
+/*  CONTACT PAGE (EN / বাংলা)                                          */
 /* ------------------------------------------------------------------ */
 
 const contactJsonLd = {
@@ -52,6 +54,9 @@ const contactJsonLd = {
 export function ContactPage() {
   const { navigate } = useRouter();
   const { toast } = useToast();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.contactPage;
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({
@@ -76,8 +81,8 @@ export function ContactPage() {
     // basic validation
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
       toast({
-        title: "Please fill in the required fields",
-        description: "Name, email and message are required.",
+        title: t.toastRequired,
+        description: t.toastRequiredDesc,
         variant: "destructive",
       });
       return;
@@ -95,16 +100,16 @@ export function ContactPage() {
       setSent(true);
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
       toast({
-        title: "Message sent successfully!",
-        description: "Our team will get back to you within a few hours.",
+        title: t.toastSent,
+        description: t.toastSentDesc,
       });
     } catch (err) {
       toast({
-        title: "Something went wrong",
+        title: t.toastFailed,
         description:
           err instanceof Error
             ? err.message
-            : "Please try again or call us directly.",
+            : t.toastFailedDesc,
         variant: "destructive",
       });
     } finally {
@@ -115,26 +120,38 @@ export function ContactPage() {
   const contactCards = [
     {
       icon: Phone,
-      label: "Call For Help",
+      label: t.callLabel,
       value: site.phone,
       href: `tel:${site.phoneRaw}`,
-      note: "Sat–Thu, 10 AM – 9 PM",
+      note: t.callNote,
       accent: "bg-brand-blue",
     },
     {
+      icon: MessageCircle,
+      label: t.waLabel,
+      value: t.waValue,
+      href: `https://wa.me/${site.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
+        lang === "bn"
+          ? "আসসালামু আলাইকুম, আমি Aristocrat Dental Care-এ অ্যাপয়েন্টমেন্ট নিতে চাই।"
+          : "Hello, I would like to book an appointment at Aristocrat Dental Care."
+      )}`,
+      note: t.waNote,
+      accent: "bg-emerald-500",
+    },
+    {
       icon: Mail,
-      label: "Send Email",
+      label: t.emailLabel,
       value: site.email,
       href: `mailto:${site.email}`,
-      note: "We reply within hours",
+      note: t.emailNote,
       accent: "bg-brand-navy",
     },
     {
       icon: MapPin,
-      label: "Visit Clinic",
-      value: "Uttara, Dhaka",
+      label: t.visitLabel,
+      value: t.visitValue,
       href: "https://maps.google.com/?q=aristocrat+dental+care+uttara",
-      note: "Easy parking & access",
+      note: t.visitNote,
       accent: "bg-teal-600",
     },
   ];
@@ -142,10 +159,10 @@ export function ContactPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Direct Communication"
-        title="We're here to listen — and to help"
-        description="Have questions about your dental health or need assistance booking? Reach out through any channel below and our specialists will guide you."
-        breadcrumb={[{ label: "Home", to: "/" }, { label: "Contact" }]}
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.contact }]}
       />
 
       <section className="py-14 sm:py-18" aria-label="Contact information and form">
@@ -155,13 +172,13 @@ export function ContactPage() {
             <div>
               <SectionHeading
                 align="left"
-                eyebrow="Contact Channels"
-                title="Talk to us today"
+                eyebrow={t.channelsEyebrow}
+                title={t.channelsTitle}
               />
 
               <div className="mt-8 space-y-4">
                 {contactCards.map((card, i) => (
-                  <Reveal key={card.label} delay={i * 0.07}>
+                  <Reveal key={i} delay={i * 0.07}>
                     <a
                       href={card.href}
                       target={card.href.startsWith("http") ? "_blank" : undefined}
@@ -194,16 +211,16 @@ export function ContactPage() {
                 <div className="rounded-3xl bg-brand-navy p-6 sm:p-7">
                   <h3 className="flex items-center gap-2.5 font-heading text-base font-bold text-white">
                     <Clock className="h-5 w-5 text-amber-300" aria-hidden="true" />
-                    Opening Hours
+                    {t.hoursTitle}
                   </h3>
                   <dl className="mt-4 space-y-2.5 text-sm">
                     <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                      <dt className="text-blue-200/80">Saturday – Thursday</dt>
-                      <dd className="font-semibold text-white">10:00 AM – 9:00 PM</dd>
+                      <dt className="text-blue-200/80">{t.daysSatThu}</dt>
+                      <dd className="font-semibold text-white">{t.timeSatThu}</dd>
                     </div>
                     <div className="flex items-center justify-between">
-                      <dt className="text-blue-200/80">Friday</dt>
-                      <dd className="font-semibold text-amber-300">Emergency on call</dd>
+                      <dt className="text-blue-200/80">{t.friday}</dt>
+                      <dd className="font-semibold text-amber-300">{t.fridayNote}</dd>
                     </div>
                   </dl>
                   <div className="mt-6 flex items-center gap-3">
@@ -241,25 +258,17 @@ export function ContactPage() {
                       <CheckCircle2 className="h-10 w-10 text-emerald-500" aria-hidden="true" />
                     </span>
                     <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
-                      Message received!
+                      {t.successTitle}
                     </h3>
                     <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-600">
-                      Thank you for reaching out. Our team will reply within a few
-                      hours during clinic time. For urgent dental issues, call{" "}
-                      <a
-                        href={`tel:${site.phoneRaw}`}
-                        className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4"
-                      >
-                        {site.phone}
-                      </a>
-                      .
+                      {t.successText.replace("{phone}", site.phone)}
                     </p>
                     <Button
                       variant="outline"
                       className="mt-8 rounded-full border-brand-blue/30 px-7 font-semibold text-brand-navy hover:bg-blue-50"
                       onClick={() => setSent(false)}
                     >
-                      Send another message
+                      {t.sendAnother}
                     </Button>
                   </motion.div>
                 ) : (
@@ -270,10 +279,10 @@ export function ContactPage() {
                       </span>
                       <div>
                         <h2 className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
-                          Drop us a line
+                          {t.formTitle}
                         </h2>
                         <p className="text-sm text-slate-500">
-                          We usually reply within a few hours
+                          {t.formNote}
                         </p>
                       </div>
                     </div>
@@ -282,7 +291,7 @@ export function ContactPage() {
                       <div className="grid gap-5 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="contact-name" className="text-sm font-semibold text-brand-navy">
-                            Full Name <span className="text-rose-500">*</span>
+                            {t.nameLabel} <span className="text-rose-500">*</span>
                           </Label>
                           <Input
                             id="contact-name"
@@ -291,13 +300,13 @@ export function ContactPage() {
                             required
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            placeholder="Your name"
+                            placeholder={t.namePlaceholder}
                             className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="contact-phone" className="text-sm font-semibold text-brand-navy">
-                            Phone Number
+                            {t.phoneLabel}
                           </Label>
                           <Input
                             id="contact-phone"
@@ -306,14 +315,14 @@ export function ContactPage() {
                             autoComplete="tel"
                             value={form.phone}
                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            placeholder="01XXX-XXXXXX"
+                            placeholder={t.phonePlaceholder}
                             className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="contact-email" className="text-sm font-semibold text-brand-navy">
-                          Email Address <span className="text-rose-500">*</span>
+                          {t.emailLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <Input
                           id="contact-email"
@@ -323,26 +332,26 @@ export function ContactPage() {
                           required
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
-                          placeholder="you@example.com"
+                          placeholder={t.emailPlaceholder}
                           className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="contact-subject" className="text-sm font-semibold text-brand-navy">
-                          Subject
+                          {t.subjectLabel}
                         </Label>
                         <Input
                           id="contact-subject"
                           name="subject"
                           value={form.subject}
                           onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                          placeholder="e.g. Inquiry about Invisalign"
+                          placeholder={t.subjectPlaceholder}
                           className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="contact-message" className="text-sm font-semibold text-brand-navy">
-                          Your Message <span className="text-rose-500">*</span>
+                          {t.messageLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <Textarea
                           id="contact-message"
@@ -351,7 +360,7 @@ export function ContactPage() {
                           rows={5}
                           value={form.message}
                           onChange={(e) => setForm({ ...form, message: e.target.value })}
-                          placeholder="Tell us about your dental concern or question…"
+                          placeholder={t.messagePlaceholder}
                           className="resize-none rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                         />
                       </div>
@@ -363,18 +372,17 @@ export function ContactPage() {
                         {submitting ? (
                           <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-                            Sending…
+                            {t.sending}
                           </>
                         ) : (
                           <>
                             <Send className="mr-2 h-5 w-5" aria-hidden="true" />
-                            Send Message
+                            {t.send}
                           </>
                         )}
                       </Button>
                       <p className="text-center text-xs text-slate-400">
-                        By sending, you agree to be contacted about your inquiry.
-                        We never share your information.
+                        {t.privacyNote}
                       </p>
                     </form>
                   </>
@@ -404,8 +412,8 @@ export function ContactPage() {
       </section>
 
       <CtaBanner
-        title="Ready to book instead?"
-        description="Skip the inbox — schedule your appointment directly online in under two minutes."
+        title={t.ctaTitle}
+        description={t.ctaDescription}
       />
     </>
   );

@@ -17,6 +17,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
+import type { Lang } from "@/lib/data/dictionary";
 import { services } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
 import { site } from "@/lib/site";
@@ -29,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  APPOINTMENT PAGE — 3-step booking with validation                  */
+/*  APPOINTMENT PAGE — 3-step booking with validation (EN / বাংলা)      */
 /* ------------------------------------------------------------------ */
 
 const timeSlots = [
@@ -45,19 +47,25 @@ function todayISO(): string {
   return d.toISOString().split("T")[0];
 }
 
-function formatDateLabel(iso: string): string {
+function formatDateLabel(iso: string, lang: Lang): string {
   if (!iso) return "";
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(
+    lang === "bn" ? "bn-BD" : "en-GB",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
 }
 
 export function AppointmentPage() {
   const { navigate, query } = useRouter();
   const { toast } = useToast();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.appointmentPage;
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -82,7 +90,7 @@ export function AppointmentPage() {
     if (service && services.some((s) => s.slug === service)) {
       setForm((f) => ({ ...f, serviceSlug: service }));
     }
-    if (doctor && doctors.some((d) => d.slug === doctor)) {
+    if (doctor && doctors.some((doc) => doc.slug === doctor)) {
       setForm((f) => ({ ...f, doctorSlug: doctor }));
     }
     /* Deep-link note (e.g. from pricing estimator) — only fill empty notes */
@@ -114,9 +122,20 @@ export function AppointmentPage() {
     [form.serviceSlug]
   );
   const selectedDoctor = useMemo(
-    () => doctors.find((d) => d.slug === form.doctorSlug),
+    () => doctors.find((doc) => doc.slug === form.doctorSlug),
     [form.doctorSlug]
   );
+
+  const serviceName = selectedService
+    ? bn && selectedService.nameBn
+      ? selectedService.nameBn
+      : selectedService.name
+    : null;
+  const serviceTagline = selectedService
+    ? bn && selectedService.taglineBn
+      ? selectedService.taglineBn
+      : selectedService.tagline
+    : "";
 
   const step1Valid =
     form.name.trim().length >= 2 &&
@@ -125,9 +144,9 @@ export function AppointmentPage() {
   const step3Valid = true;
 
   const steps = [
-    { label: "Patient & Treatment", valid: step1Valid },
-    { label: "Date & Time", valid: step2Valid },
-    { label: "Confirm", valid: step3Valid },
+    { label: t.steps[0], valid: step1Valid },
+    { label: t.steps[1], valid: step2Valid },
+    { label: t.steps[2], valid: step3Valid },
   ];
 
   async function handleSubmit(e?: FormEvent) {
@@ -135,8 +154,8 @@ export function AppointmentPage() {
     if (submitting) return;
     if (!step1Valid || !step2Valid) {
       toast({
-        title: "Incomplete booking details",
-        description: "Please complete patient info, date and time before confirming.",
+        title: t.toastIncomplete,
+        description: t.toastIncompleteDesc,
         variant: "destructive",
       });
       return;
@@ -164,16 +183,16 @@ export function AppointmentPage() {
       setConfirmationId(data.id ?? "");
       setConfirmed(true);
       toast({
-        title: "Appointment booked!",
-        description: "We'll call to confirm your slot shortly.",
+        title: t.toastBooked,
+        description: t.toastBookedDesc,
       });
     } catch (err) {
       toast({
-        title: "Booking failed",
+        title: t.toastFailed,
         description:
           err instanceof Error
             ? err.message
-            : "Please try again or call us directly.",
+            : t.toastFailedDesc,
         variant: "destructive",
       });
     } finally {
@@ -186,13 +205,13 @@ export function AppointmentPage() {
       try {
         await navigator.clipboard.writeText(confirmationId);
         toast({
-          title: "Reference copied",
-          description: `${confirmationId} is on your clipboard.`,
+          title: t.toastCopied,
+          description: t.toastCopiedDesc.replace("{ref}", confirmationId),
         });
       } catch {
         toast({
-          title: "Couldn't copy",
-          description: "Please note the reference down manually.",
+          title: t.toastCopyFail,
+          description: t.toastCopyFailDesc,
           variant: "destructive",
         });
       }
@@ -211,11 +230,10 @@ export function AppointmentPage() {
             <span className="absolute inset-0 rounded-full bg-emerald-200/50 animate-pulse-ring" aria-hidden="true" />
           </span>
           <h1 className="font-heading mt-8 text-3xl font-bold text-brand-navy sm:text-4xl">
-            Appointment Confirmed!
+            {t.successTitle}
           </h1>
           <p className="mt-4 text-base leading-relaxed text-slate-600">
-            Thank you, <strong className="text-brand-navy">{form.name}</strong>.
-            Your appointment request has been received.
+            {t.successText.replace("{name}", form.name)}
             {confirmationId && (
               <span className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-ice/70 py-2 pl-4 pr-2 text-sm text-slate-500">
                 <span className="font-mono font-bold tracking-wider text-brand-blue">
@@ -225,7 +243,7 @@ export function AppointmentPage() {
                   type="button"
                   onClick={copyRef}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-brand-navy/60 transition-colors hover:bg-white hover:text-brand-blue"
-                  aria-label="Copy reference code to clipboard"
+                  aria-label={t.copyLabel}
                 >
                   <Copy className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -235,37 +253,37 @@ export function AppointmentPage() {
 
           <div className="mt-8 rounded-3xl bg-ice p-6 text-left">
             <h2 className="font-heading text-sm font-bold uppercase tracking-[0.16em] text-brand-blue">
-              Booking Summary
+              {t.summaryTitle}
             </h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
-                <dt className="text-slate-500">Patient</dt>
+                <dt className="text-slate-500">{t.reviewPatient}</dt>
                 <dd className="font-semibold text-brand-navy">{form.name}</dd>
               </div>
               <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
-                <dt className="text-slate-500">Phone</dt>
+                <dt className="text-slate-500">{t.reviewPhone}</dt>
                 <dd className="font-semibold text-brand-navy">{form.phone}</dd>
               </div>
               <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
-                <dt className="text-slate-500">Service</dt>
+                <dt className="text-slate-500">{t.reviewService}</dt>
                 <dd className="font-semibold text-brand-navy">
-                  {selectedService?.name ?? "General Consultation"}
+                  {serviceName ?? t.general}
                 </dd>
               </div>
               {selectedDoctor && (
                 <div className="flex justify-between gap-4 border-b border-blue-100/60 pb-2.5">
-                  <dt className="text-slate-500">Doctor</dt>
+                  <dt className="text-slate-500">{t.reviewSpecialist}</dt>
                   <dd className="font-semibold text-brand-navy">
                     {selectedDoctor.name}
                   </dd>
                 </div>
               )}
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Schedule</dt>
+                <dt className="text-slate-500">{t.reviewDate}</dt>
                 <dd className="text-right font-semibold text-brand-navy">
-                  {formatDateLabel(form.date)}
+                  {formatDateLabel(form.date, lang)}
                   <span className="block text-xs text-brand-blue">
-                    at {form.time}
+                    {t.summaryScheduleAt} {form.time}
                   </span>
                 </dd>
               </div>
@@ -273,16 +291,9 @@ export function AppointmentPage() {
           </div>
 
           <p className="mt-6 text-sm text-slate-500">
-            Our team will call you on{" "}
-            <span className="font-semibold text-brand-navy">{form.phone}</span>{" "}
-            to confirm your slot. For urgent changes, call{" "}
-            <a
-              href={`tel:${site.phoneRaw}`}
-              className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4"
-            >
-              {site.phone}
-            </a>
-            .
+            {t.successCallNote
+              .replace("{phone}", form.phone)
+              .replace("{phone2}", site.phone)}
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -290,14 +301,14 @@ export function AppointmentPage() {
               onClick={() => navigate("/")}
               className="rounded-full bg-brand-blue px-8 py-5 font-bold text-white shadow-xl shadow-blue-500/30 hover:bg-brand-navy"
             >
-              Back to Home
+              {t.backHome}
             </Button>
             <Button
               onClick={() => navigate("/status")}
               className="rounded-full border border-blue-100 bg-ice px-8 py-5 font-bold text-brand-navy transition-all duration-300 hover:border-brand-blue/30 hover:bg-blue-50"
             >
               <Search className="h-4.5 w-4.5" aria-hidden="true" />
-              Check Status Anytime
+              {t.checkStatusAnytime}
             </Button>
             <Button
               variant="outline"
@@ -317,7 +328,7 @@ export function AppointmentPage() {
               }}
               className="rounded-full border-brand-blue/30 px-8 py-5 font-bold text-brand-navy hover:bg-blue-50"
             >
-              Book Another
+              {t.bookAnother}
             </Button>
           </div>
         </motion.div>
@@ -338,21 +349,16 @@ export function AppointmentPage() {
           >
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              Book a Visit
+              {t.heroBadge}
             </span>
             <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">
-              Schedule your appointment in minutes
+              {t.heroTitle}
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
-              Three quick steps — patient details, preferred time and confirm.
-              Our team will call to verify your slot.
+              {t.heroText}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-blue-200/80">
-              {[
-                "No advance payment",
-                "Free rescheduling",
-                "Same-week availability",
-              ].map((item) => (
+              {t.trust.map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5">
                   <BadgeCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
                   {item}
@@ -360,7 +366,7 @@ export function AppointmentPage() {
               ))}
             </div>
             <p className="mt-6 text-xs text-blue-200/70">
-              Already booked with us?{" "}
+              {t.alreadyBooked}{" "}
               <a
                 href="#/status"
                 onClick={(e) => {
@@ -370,7 +376,7 @@ export function AppointmentPage() {
                 className="inline-flex items-center gap-1 font-semibold text-white underline decoration-amber-400/70 decoration-2 underline-offset-4 transition-colors hover:text-amber-300"
               >
                 <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                Check your appointment status
+                {t.checkStatus}
               </a>
             </p>
           </motion.div>
@@ -412,7 +418,7 @@ export function AppointmentPage() {
                       {state === "done" ? (
                         <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                       ) : (
-                        i + 1
+                        bn ? toBnDigits(i + 1) : i + 1
                       )}
                     </span>
                     <span
@@ -464,27 +470,27 @@ export function AppointmentPage() {
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
                         <UserRound className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      Patient & Treatment Details
+                      {t.step1Heading}
                     </h2>
 
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="appt-name" className="text-sm font-semibold text-brand-navy">
-                          Patient Name <span className="text-rose-500">*</span>
+                          {t.nameLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <Input
                           id="appt-name"
                           autoComplete="name"
                           value={form.name}
                           onChange={(e) => setForm({ ...form, name: e.target.value })}
-                          placeholder="Full name"
+                          placeholder={t.namePlaceholder}
                           required
                           className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="appt-phone" className="text-sm font-semibold text-brand-navy">
-                          Phone Number <span className="text-rose-500">*</span>
+                          {t.phoneLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <Input
                           id="appt-phone"
@@ -499,7 +505,7 @@ export function AppointmentPage() {
                         />
                         {form.phone && !step1Valid && (
                           <p className="text-xs text-amber-600">
-                            Enter a valid BD mobile number (e.g. 01712-345678)
+                            {t.phoneHint}
                           </p>
                         )}
                       </div>
@@ -507,8 +513,8 @@ export function AppointmentPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="appt-email" className="text-sm font-semibold text-brand-navy">
-                        Email Address{" "}
-                        <span className="text-xs font-normal text-slate-400">(optional)</span>
+                        {t.emailLabel}{" "}
+                        <span className="text-xs font-normal text-slate-400">{t.optional}</span>
                       </Label>
                       <Input
                         id="appt-email"
@@ -516,14 +522,14 @@ export function AppointmentPage() {
                         autoComplete="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        placeholder="you@example.com"
+                        placeholder={bn ? "apnar@email.com" : "you@example.com"}
                         className="rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-brand-navy">
-                        Healthcare Service
+                        {t.serviceLabel}
                       </Label>
                       <div className="grid max-h-64 gap-2 overflow-y-auto rounded-2xl border border-blue-100/70 bg-ice/40 p-3 scroll-area">
                         <button
@@ -536,7 +542,7 @@ export function AppointmentPage() {
                               : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
                           )}
                         >
-                          General Consultation (not sure yet)
+                          {t.generalService}
                         </button>
                         {services.map((s) => (
                           <button
@@ -550,23 +556,21 @@ export function AppointmentPage() {
                                 : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
                             )}
                           >
-                            {s.name}
+                            {bn && s.nameBn ? s.nameBn : s.name}
                           </button>
                         ))}
                       </div>
                       {selectedService && (
                         <p className="mt-1 text-xs text-slate-500">
-                          {selectedService.tagline} • {selectedService.duration}
+                          {serviceTagline} • {bn ? toBnDigits(selectedService.duration) : selectedService.duration}
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-brand-navy">
-                        Preferred Specialist{" "}
-                        <span className="text-xs font-normal text-slate-400">
-                          (optional)
-                        </span>
+                        {t.doctorLabel}{" "}
+                        <span className="text-xs font-normal text-slate-400">{t.optional}</span>
                       </Label>
                       <div className="grid gap-2 sm:grid-cols-2">
                         <button
@@ -579,16 +583,16 @@ export function AppointmentPage() {
                               : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
                           )}
                         >
-                          No preference — assign best match
+                          {t.noPreference}
                         </button>
-                        {doctors.map((d) => (
+                        {doctors.map((doc) => (
                           <button
-                            key={d.slug}
+                            key={doc.slug}
                             type="button"
-                            onClick={() => setForm({ ...form, doctorSlug: d.slug })}
+                            onClick={() => setForm({ ...form, doctorSlug: doc.slug })}
                             className={cn(
                               "flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-300",
-                              form.doctorSlug === d.slug
+                              form.doctorSlug === doc.slug
                                 ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
                                 : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40"
                             )}
@@ -596,17 +600,17 @@ export function AppointmentPage() {
                             <span
                               className={cn(
                                 "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-heading text-xs font-bold",
-                                form.doctorSlug === d.slug
+                                form.doctorSlug === doc.slug
                                   ? "bg-white/20 text-white"
                                   : "text-white"
                               )}
                               style={
-                                form.doctorSlug === d.slug
+                                form.doctorSlug === doc.slug
                                   ? undefined
-                                  : { background: d.accent }
+                                  : { background: doc.accent }
                               }
                             >
-                              {d.name
+                              {doc.name
                                 .replace("Dr. ", "")
                                 .split(" ")
                                 .map((n) => n[0])
@@ -615,17 +619,17 @@ export function AppointmentPage() {
                             </span>
                             <span className="min-w-0">
                               <span className="block truncate text-sm font-semibold">
-                                {d.name}
+                                {doc.name}
                               </span>
                               <span
                                 className={cn(
                                   "block truncate text-[11px]",
-                                  form.doctorSlug === d.slug
+                                  form.doctorSlug === doc.slug
                                     ? "text-blue-100"
                                     : "text-slate-500"
                                 )}
                               >
-                                {d.role}
+                                {bn && doc.roleBn ? doc.roleBn : doc.role}
                               </span>
                             </span>
                           </button>
@@ -649,12 +653,12 @@ export function AppointmentPage() {
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
                         <CalendarDays className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      Preferred Date & Time
+                      {t.step2Heading}
                     </h2>
 
                     <div className="space-y-2">
                       <Label htmlFor="appt-date" className="text-sm font-semibold text-brand-navy">
-                        Appointment Date <span className="text-rose-500">*</span>
+                        {t.dateLabel} <span className="text-rose-500">*</span>
                       </Label>
                       <Input
                         id="appt-date"
@@ -667,10 +671,10 @@ export function AppointmentPage() {
                       />
                       {form.date && (
                         <p className="text-xs font-medium text-brand-blue">
-                          {formatDateLabel(form.date)}
+                          {formatDateLabel(form.date, lang)}
                           {new Date(`${form.date}T00:00:00`).getDay() === 5 && (
                             <span className="ml-2 text-amber-600">
-                              (Friday — emergency on call only)
+                              {t.fridayNote}
                             </span>
                           )}
                         </p>
@@ -680,7 +684,7 @@ export function AppointmentPage() {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
                         <Clock className="h-4 w-4 text-brand-blue" aria-hidden="true" />
-                        Preferred Time Slot <span className="text-rose-500">*</span>
+                        {t.timeLabel} <span className="text-rose-500">*</span>
                       </Label>
                       <div
                         className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100/70 bg-ice/40 p-3 sm:grid-cols-5"
@@ -706,24 +710,21 @@ export function AppointmentPage() {
                         ))}
                       </div>
                       <p className="text-xs text-slate-500">
-                        Slots shown in clinic hours (10 AM – 9 PM, Sat–Thu).
-                        Final time confirmed on call.
+                        {t.timeHint}
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="appt-notes" className="text-sm font-semibold text-brand-navy">
-                        Additional Notes{" "}
-                        <span className="text-xs font-normal text-slate-400">
-                          (optional)
-                        </span>
+                        {t.notesLabel}{" "}
+                        <span className="text-xs font-normal text-slate-400">{t.optional}</span>
                       </Label>
                       <Textarea
                         id="appt-notes"
                         rows={3}
                         value={form.notes}
                         onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                        placeholder="Tell us about your concern, dental anxiety, or anything we should know…"
+                        placeholder={t.notesPlaceholder}
                         className="resize-none rounded-xl border-blue-100 bg-ice/50 focus-visible:ring-brand-blue"
                       />
                     </div>
@@ -744,32 +745,32 @@ export function AppointmentPage() {
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
                         <CalendarCheck className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      Review & Confirm
+                      {t.step3Heading}
                     </h2>
 
                     <div className="rounded-3xl bg-ice p-6 sm:p-7">
                       <dl className="space-y-3.5 text-sm">
                         {[
-                          { label: "Patient", value: form.name },
-                          { label: "Phone", value: form.phone },
+                          { label: t.reviewPatient, value: form.name },
+                          { label: t.reviewPhone, value: form.phone },
                           {
-                            label: "Email",
-                            value: form.email || "Not provided",
+                            label: t.reviewEmail,
+                            value: form.email || t.notProvided,
                           },
                           {
-                            label: "Service",
-                            value: selectedService?.name ?? "General Consultation",
+                            label: t.reviewService,
+                            value: serviceName ?? t.general,
                           },
                           {
-                            label: "Specialist",
-                            value: selectedDoctor?.name ?? "Best available match",
+                            label: t.reviewSpecialist,
+                            value: selectedDoctor?.name ?? t.bestMatch,
                           },
                           {
-                            label: "Date",
-                            value: formatDateLabel(form.date),
+                            label: t.reviewDate,
+                            value: formatDateLabel(form.date, lang),
                           },
-                          { label: "Time", value: form.time },
-                          { label: "Notes", value: form.notes || "—" },
+                          { label: t.reviewTime, value: form.time },
+                          { label: t.reviewNotes, value: form.notes || "—" },
                         ].map((row) => (
                           <div
                             key={row.label}
@@ -787,16 +788,14 @@ export function AppointmentPage() {
                         onClick={() => setStep(0)}
                         className="mt-4 text-xs font-semibold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
                       >
-                        Edit patient & treatment details
+                        {t.editStep1}
                       </button>
                     </div>
 
                     <div className="rounded-2xl border border-blue-100 bg-white p-5">
                       <p className="flex items-start gap-3 text-sm leading-relaxed text-slate-600">
                         <Phone className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brand-blue" aria-hidden="true" />
-                        After confirming, our reception team will call{" "}
-                        <strong className="text-brand-navy">{form.phone}</strong>{" "}
-                        to verify your slot. No payment is needed now.
+                        {t.callNote.replace("{phone}", form.phone)}
                       </p>
                     </div>
                   </motion.div>
@@ -812,7 +811,7 @@ export function AppointmentPage() {
                     onClick={() => setStep((s) => s - 1)}
                     className="rounded-full border-blue-200 px-7 py-4 font-semibold text-brand-navy hover:bg-blue-50"
                   >
-                    ← Back
+                    ← {t.back}
                   </Button>
                 ) : (
                   <span className="hidden sm:block" aria-hidden="true" />
@@ -825,7 +824,7 @@ export function AppointmentPage() {
                     onClick={() => setStep((s) => s + 1)}
                     className="rounded-full bg-brand-blue px-9 py-4 font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Continue →
+                    {t.continue} →
                   </Button>
                 ) : (
                   <Button
@@ -836,12 +835,12 @@ export function AppointmentPage() {
                     {submitting ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-                        Confirming…
+                        {t.confirming}
                       </>
                     ) : (
                       <>
                         <CalendarCheck className="mr-2 h-5 w-5" aria-hidden="true" />
-                        Confirm Appointment
+                        {t.confirm}
                       </>
                     )}
                   </Button>
@@ -854,8 +853,8 @@ export function AppointmentPage() {
           <Reveal className="mt-6">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                { icon: Phone, text: `Prefer calling? ${site.phone}` },
-                { icon: Clock, text: "Open Sat–Thu, 10 AM – 9 PM" },
+                { icon: Phone, text: t.helpCall.replace("{phone}", site.phone) },
+                { icon: Clock, text: t.helpHours },
                 { icon: Mail, text: site.email },
               ].map(({ icon: Icon, text }) => (
                 <div

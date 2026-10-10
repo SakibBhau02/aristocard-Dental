@@ -42,6 +42,7 @@ import {
 import { ServiceCard, DoctorCard, CtaBanner } from "@/components/site/shared";
 import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
+import { PatientReviews } from "@/components/site/patient-reviews";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -670,6 +671,9 @@ export function HomePage() {
           </Reveal>
         </div>
       </section>
+
+      {/* ============ PATIENT REVIEWS (live, moderated) ============ */}
+      <PatientReviews />
 
       {/* ============ DOCTORS PREVIEW ============ */}
       <section className="relative bg-brand-navy py-20 sm:py-24" aria-labelledby="doctors-heading">

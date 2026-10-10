@@ -4,14 +4,16 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { services, serviceCategories } from "@/lib/data/services";
+import { site } from "@/lib/site";
 import { ServiceCard, PageHeader, CtaBanner } from "@/components/site/shared";
-import { Reveal, SectionHeading } from "@/components/site/motion";
+import { Reveal } from "@/components/site/motion";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  SERVICES PAGE — filter + search + full grid                        */
+/*  SERVICES PAGE — filter + search + full grid (EN / বাংলা)            */
 /* ------------------------------------------------------------------ */
 
 const servicesJsonLd = {
@@ -34,6 +36,9 @@ export function ServicesPage() {
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.servicesPage;
 
   usePageMeta({
     title: "Dental Services — Implants, Braces, Invisalign, Root Canal & More",
@@ -49,21 +54,22 @@ export function ServicesPage() {
       const matchSearch =
         !q ||
         s.name.toLowerCase().includes(q) ||
+        (bn && s.nameBn ? s.nameBn.includes(search.trim()) : false) ||
         s.tagline.toLowerCase().includes(q) ||
         s.excerpt.toLowerCase().includes(q);
       return matchCategory && matchSearch;
     });
-  }, [category, search]);
+  }, [category, search, bn]);
 
   return (
     <>
       <PageHeader
-        eyebrow="Excellence In Care"
-        title="Specialty dental services for every smile"
-        description="Eleven specialty services under one roof — combining advanced technology, specialist expertise and genuinely gentle care, right here in Uttara, Dhaka."
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
         breadcrumb={[
-          { label: "Home", to: "/" },
-          { label: "Services" },
+          { label: d.chrome.nav.home, to: "/" },
+          { label: d.chrome.nav.services },
         ]}
       />
 
@@ -79,8 +85,8 @@ export function ServicesPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search services…"
-              aria-label="Search services"
+              placeholder={t.searchPlaceholder}
+              aria-label={t.searchLabel}
               className="h-11 rounded-full border-blue-200/80 bg-white pl-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md"
             />
           </div>
@@ -100,7 +106,7 @@ export function ServicesPage() {
                     : "bg-blue-50 text-brand-navy/80 hover:bg-blue-100 hover:text-brand-navy"
                 )}
               >
-                {c.label}
+                {c.value === "all" ? t.allLabel : d.categories[c.value as keyof typeof d.categories]}
                 <span
                   className={cn(
                     "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold",
@@ -109,7 +115,7 @@ export function ServicesPage() {
                       : "bg-white text-brand-blue ring-1 ring-blue-100"
                   )}
                 >
-                  {c.count}
+                  {bn ? toBnDigits(c.count) : c.count}
                 </span>
               </button>
             ))}
@@ -122,11 +128,24 @@ export function ServicesPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between">
             <p className="text-sm text-slate-500" aria-live="polite">
-              Showing{" "}
-              <span className="font-bold text-brand-navy">{filtered.length}</span>{" "}
-              of {services.length} services
-              {category !== "all" && (
-                <span> in <span className="font-semibold text-brand-blue">{category}</span></span>
+              {bn ? (
+                <>
+                  {t.showing}{" "}
+                  <span className="font-bold text-brand-navy">{toBnDigits(filtered.length)}</span>{" "}
+                  {t.of} {toBnDigits(services.length)} {t.servicesWord}
+                  {category !== "all" && (
+                    <span> — {t.inCategory} <span className="font-semibold text-brand-blue">{d.categories[category as keyof typeof d.categories]}</span></span>
+                  )}
+                </>
+              ) : (
+                <>
+                  {t.showing}{" "}
+                  <span className="font-bold text-brand-navy">{filtered.length}</span>{" "}
+                  {t.of} {services.length} {t.servicesWord}
+                  {category !== "all" && (
+                    <span> {t.inCategory} <span className="font-semibold text-brand-blue">{category}</span></span>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -155,11 +174,10 @@ export function ServicesPage() {
               >
                 <Sparkles className="mx-auto h-10 w-10 text-brand-blue/50" aria-hidden="true" />
                 <h3 className="font-heading mt-4 text-lg font-bold text-brand-navy">
-                  No matching services
+                  {t.emptyTitle}
                 </h3>
                 <p className="mt-2 text-sm text-slate-500">
-                  Try a different search term or category — or call us at 01715-027522
-                  and we'll guide you to the right treatment.
+                  {t.emptyText.replace("{phone}", site.phone)}
                 </p>
               </motion.div>
             )}
@@ -171,16 +189,13 @@ export function ServicesPage() {
               <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
                 <div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600 ring-1 ring-amber-100">
-                    Not sure what you need?
+                    {t.unsureBadge}
                   </span>
                   <h3 className="font-heading mt-4 text-2xl font-bold text-brand-navy sm:text-3xl">
-                    Book a consultation — we'll guide you honestly
+                    {t.unsureTitle}
                   </h3>
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
-                    Sometimes the right treatment isn't obvious: a toothache could
-                    need a filling, a root canal or just a cleaning. Our specialists
-                    examine, diagnose with digital X-rays and explain every option —
-                    you decide with full transparency.
+                    {t.unsureText}
                   </p>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -189,14 +204,14 @@ export function ServicesPage() {
                     onClick={() => navigate("/appointment")}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-blue px-8 py-4 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy"
                   >
-                    Book a Consultation
+                    {t.unsureBook}
                     <ArrowRight className="h-5 w-5" aria-hidden="true" />
                   </button>
                   <a
                     href="tel:+8801715027522"
                     className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-bold text-brand-navy ring-2 ring-brand-blue/30 transition-all duration-300 hover:bg-blue-50"
                   >
-                    Call 01715-027522
+                    {t.unsureCall.replace("{phone}", site.phone)}
                   </a>
                 </div>
               </div>
@@ -209,3 +224,4 @@ export function ServicesPage() {
     </>
   );
 }
+

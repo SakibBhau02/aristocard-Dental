@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { DynamicIcon } from "@/components/site/icon-map";
@@ -24,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  PRICE ESTIMATOR PAGE — interactive treatment cost calculator       */
+/*  PRICE ESTIMATOR — interactive treatment cost calculator (EN / বাংলা) */
 /* ------------------------------------------------------------------ */
 
 type EstimatorItem = {
@@ -60,9 +61,6 @@ const estimatorItems: EstimatorItem[] = [
 
 type Selection = Record<string, number>;
 
-const formatBDT = (n: number) =>
-  `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-
 /* Map estimator items → real service slugs (for booking deep-link) */
 const serviceByEstimatorSlug: Record<string, string> = {
   scaling: "periodontal-gum-treatment",
@@ -82,7 +80,21 @@ const serviceByEstimatorSlug: Record<string, string> = {
 
 export function EstimatorPage() {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.estimatorPage;
   const [selection, setSelection] = useState<Selection>({});
+
+  const formatBDT = (n: number) => {
+    const s = `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+    return bn ? toBnDigits(s) : s;
+  };
+
+  /* localized item name */
+  const itemName = (item: EstimatorItem) =>
+    bn ? (t.items as Record<string, string>)[item.slug] ?? item.name : item.name;
+  const itemUnit = (item: EstimatorItem) =>
+    bn ? (t.units as Record<string, string>)[item.unit] ?? item.unit : item.unit;
 
   usePageMeta({
     title: "Treatment Cost Estimator — Dental Prices in Dhaka (2026)",
@@ -142,7 +154,7 @@ export function EstimatorPage() {
       .join(", ");
     params.set(
       "note",
-      `Online estimate: ${summary} — est. ${formatBDT(totals.min)}–${formatBDT(totals.max)}. Please confirm exact pricing at consultation.`
+      `Online estimate: ${summary} — est. ৳${totals.min.toLocaleString("en-IN")}–৳${totals.max.toLocaleString("en-IN")}. Please confirm exact pricing at consultation.`
     );
     navigate(`/appointment?${params.toString()}`);
   };
@@ -159,10 +171,10 @@ export function EstimatorPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Transparent Pricing"
-        title="Know your treatment cost — before you book"
-        description="Select the treatments you're considering and see honest estimated ranges instantly. No hidden charges, no surprises — ever."
-        breadcrumb={[{ label: "Home", to: "/" }, { label: "Cost Estimator" }]}
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: t.breadcrumb }]}
       />
 
       <section className="py-14 sm:py-16" aria-label="Treatment cost estimator tool">
@@ -172,9 +184,9 @@ export function EstimatorPage() {
             <div>
               <SectionHeading
                 align="left"
-                eyebrow="Step 1 — Select Treatments"
-                title="What are you considering?"
-                description="Tap + to add treatments and adjust quantities. Estimates update instantly."
+                eyebrow={t.stepEyebrow}
+                title={t.stepTitle}
+                description={t.stepText}
               />
 
               <div className="mt-10 space-y-10">
@@ -182,7 +194,7 @@ export function EstimatorPage() {
                   <div key={category}>
                     <h3 className="font-heading flex items-center gap-3 text-sm font-bold uppercase tracking-[0.16em] text-brand-blue">
                       <span className="h-px w-8 bg-brand-blue/40" aria-hidden="true" />
-                      {category}
+                      {d.categories[category as keyof typeof d.categories] ?? category}
                     </h3>
                     <StaggerContainer className="mt-4 grid gap-3 sm:grid-cols-2">
                       {items.map((item) => {
@@ -211,11 +223,11 @@ export function EstimatorPage() {
 
                               <div className="min-w-0 flex-1">
                                 <p className="font-heading text-sm font-bold leading-snug text-brand-navy">
-                                  {item.name}
+                                  {itemName(item)}
                                 </p>
                                 <p className="mt-0.5 text-xs text-slate-500">
                                   {formatBDT(item.min)}–{formatBDT(item.max)}{" "}
-                                  <span className="text-slate-400">{item.unit}</span>
+                                  <span className="text-slate-400">{itemUnit(item)}</span>
                                 </p>
                               </div>
 
@@ -225,7 +237,7 @@ export function EstimatorPage() {
                                   type="button"
                                   onClick={() => setQty(item.slug, Math.max(0, qty - item.step))}
                                   disabled={!active}
-                                  aria-label={`Remove one ${item.name}`}
+                                  aria-label={t.removeOne.replace("{item}", itemName(item))}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-100 disabled:opacity-30"
                                 >
                                   <Minus className="h-4 w-4" aria-hidden="true" />
@@ -239,14 +251,14 @@ export function EstimatorPage() {
                                     active ? "text-brand-blue" : "text-slate-300"
                                   )}
                                 >
-                                  {qty}
+                                  {bn ? toBnDigits(qty) : qty}
                                 </motion.span>
                                 <button
                                   type="button"
                                   onClick={() =>
                                     setQty(item.slug, Math.min(item.maxQty, qty + item.step))
                                   }
-                                  aria-label={`Add one ${item.name}`}
+                                  aria-label={t.addOne.replace("{item}", itemName(item))}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-blue text-white shadow-md shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy"
                                 >
                                   <Plus className="h-4 w-4" aria-hidden="true" />
@@ -275,12 +287,15 @@ export function EstimatorPage() {
                         </span>
                         <div>
                           <h2 className="font-heading text-lg font-bold text-white">
-                            Estimated Total
+                            {t.totalTitle}
                           </h2>
                           <p className="text-xs text-blue-200/80">
                             {totals.count > 0
-                              ? `${totals.count} item${totals.count > 1 ? "s" : ""} selected`
-                              : "Select treatments to begin"}
+                              ? (totals.count > 1 ? t.itemsSelected : t.itemSelected).replace(
+                                  "{count}",
+                                  bn ? toBnDigits(totals.count) : String(totals.count)
+                                )
+                              : t.selectToBegin}
                           </p>
                         </div>
                       </div>
@@ -297,8 +312,7 @@ export function EstimatorPage() {
                             >
                               <Wallet className="mx-auto h-8 w-8 text-blue-300/60" aria-hidden="true" />
                               <p className="mt-3 text-sm text-blue-200/80">
-                                Add treatments from the list and your honest
-                                price range will appear here.
+                                {t.emptyText}
                               </p>
                             </motion.div>
                           ) : (
@@ -315,8 +329,7 @@ export function EstimatorPage() {
                                 {formatBDT(totals.max)}
                               </p>
                               <p className="mt-2 text-center text-xs text-blue-200/80">
-                                Estimated range in BDT (৳) • Final price confirmed
-                                at consultation
+                                {t.rangeNote}
                               </p>
                             </motion.div>
                           )}
@@ -335,10 +348,10 @@ export function EstimatorPage() {
                                 className="flex items-center justify-between gap-3 rounded-xl bg-white/8 px-4 py-2.5 text-sm ring-1 ring-white/10"
                               >
                                 <span className="min-w-0 flex-1 truncate text-blue-100/90">
-                                  {item.name}
+                                  {itemName(item)}
                                   {qty > 1 && (
                                     <span className="ml-1.5 rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                      ×{qty}
+                                      ×{bn ? toBnDigits(qty) : qty}
                                     </span>
                                   )}
                                 </span>
@@ -348,7 +361,7 @@ export function EstimatorPage() {
                                 <button
                                   type="button"
                                   onClick={() => setQty(slug, 0)}
-                                  aria-label={`Remove ${item.name} from estimate`}
+                                  aria-label={t.removeItem.replace("{item}", itemName(item))}
                                   className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-blue-200/60 transition-colors hover:bg-rose-500/20 hover:text-rose-300"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -375,12 +388,12 @@ export function EstimatorPage() {
                               className="inline-flex items-center justify-center gap-2"
                             >
                               <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                              Book Consultation
+                              {t.book}
                             </a>
                           ) : (
                             <span className="inline-flex items-center justify-center gap-2">
                               <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                              Book with This Estimate
+                              {t.bookWithEstimate}
                             </span>
                           )}
                         </Button>
@@ -392,7 +405,7 @@ export function EstimatorPage() {
                               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white ring-1 ring-white/20 transition-all duration-300 hover:bg-white/15"
                             >
                               <Printer className="h-3.5 w-3.5" aria-hidden="true" />
-                              Print / Save Estimate
+                              {t.print}
                             </button>
                             <button
                               type="button"
@@ -400,7 +413,7 @@ export function EstimatorPage() {
                               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-semibold text-blue-200/80 ring-1 ring-white/20 transition-all duration-300 hover:bg-white/10 hover:text-white"
                             >
                               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                              Reset Estimate
+                              {t.reset}
                             </button>
                           </>
                         )}
@@ -412,18 +425,13 @@ export function EstimatorPage() {
                   <div className="mt-4 rounded-3xl border border-blue-100/80 bg-white p-5">
                     <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-brand-navy">
                       <BadgePercent className="h-4.5 w-4.5 text-brand-blue" aria-hidden="true" />
-                      Why a range, not one price?
+                      {t.whyRange}
                       <Receipt className="ml-auto h-4 w-4 text-slate-300" aria-hidden="true" />
                     </h3>
                     <p className="mt-2.5 text-xs leading-relaxed text-slate-600">
-                      Honest dentistry means honest pricing. The exact cost
-                      depends on materials chosen (e.g. zirconia vs PFM crowns),
-                      case complexity and clinical findings at your examination —
-                      which is why we show realistic ranges, not fake fixed
-                      prices. Your personalized written plan comes with an exact
-                      quote before any treatment begins.{" "}
+                      {t.whyRangeText}{" "}
                       <span className="font-semibold text-brand-navy">
-                        Installments available.
+                        {t.installments}
                       </span>
                     </p>
                   </div>
@@ -435,26 +443,10 @@ export function EstimatorPage() {
           {/* How pricing works */}
           <Reveal className="mt-16">
             <div className="grid gap-4 rounded-[2rem] border border-blue-100 bg-ice p-7 sm:grid-cols-3 sm:p-8">
-              {[
-                {
-                  icon: "Sparkles",
-                  title: "Transparent Quotes",
-                  text: "Written treatment plans with exact pricing — before any procedure begins. No hidden charges, ever.",
-                },
-                {
-                  icon: "BadgeCheck",
-                  title: "Verified Specialists",
-                  text: "BDS/MDS-qualified dentists. The price reflects expertise, sterile protocols and premium materials — not overheads.",
-                },
-                {
-                  icon: "Wallet",
-                  title: "Flexible Payment",
-                  text: "Cash, cards, bKash and installment plans for larger treatments like implants and orthodontics.",
-                },
-              ].map((item) => (
-                <div key={item.title} className="flex items-start gap-4">
+              {t.assurance.map((item, i) => (
+                <div key={i} className="flex items-start gap-4">
                   <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
-                    <DynamicIcon name={item.icon} className="h-5.5 w-5.5" />
+                    <DynamicIcon name={["Sparkles", "BadgeCheck", "Wallet"][i]} className="h-5.5 w-5.5" />
                   </span>
                   <span>
                     <span className="font-heading block text-sm font-bold text-brand-navy">
@@ -474,11 +466,7 @@ export function EstimatorPage() {
             <p className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs leading-relaxed text-amber-800">
               <Info className="mt-0.5 h-4.5 w-4.5 shrink-0" aria-hidden="true" />
               <span>
-                <strong>Please note:</strong> These estimates reflect typical
-                Dhaka market rates in 2026 and are provided for planning
-                purposes only — not a binding quote. Your actual treatment plan
-                and pricing are confirmed by our specialists after examination
-                and digital diagnostics.
+                <strong>{t.disclaimerTitle}</strong> {t.disclaimerText}
               </span>
             </p>
           </Reveal>
@@ -544,8 +532,8 @@ export function EstimatorPage() {
       </div>
 
       <CtaBanner
-        title="Get your exact, personalized quote"
-        description="Book a consultation — our specialists examine, diagnose with digital X-rays and hand you a written plan with transparent pricing."
+        title={t.ctaTitle}
+        description={t.ctaDescription}
       />
     </>
   );

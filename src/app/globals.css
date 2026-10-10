@@ -147,6 +147,23 @@
     outline-offset: 3px;
     border-radius: 6px;
   }
+  /* On dark navy sections a blue ring sinks into the background — switch to gold */
+  .bg-brand-navy:focus-visible,
+  .hero-mesh-dark:focus-visible,
+  .bg-brand-navy :focus-visible,
+  .hero-mesh-dark :focus-visible,
+  .noise-parent :focus-visible {
+    outline-color: var(--brand-gold);
+  }
+  /* Modern typography: avoid orphaned words in paragraphs (no-op where unsupported) */
+  p {
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
 }
 
 /* ---------- Custom scrollbar ---------- */
@@ -392,6 +409,41 @@ html[lang="bn"] {
   transform-origin: left;
 }
 
+/* Gold variant for links on dark navy surfaces (footer, dark CTAs) */
+.link-underline-gold {
+  position: relative;
+}
+.link-underline-gold::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s ease;
+}
+.link-underline-gold:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ---------- Zebra data tables (admin, lookups) ---------- */
+/* :not(.bg-amber-50\/50) keeps staff-highlighted rows (pending reviews) visible */
+.table-zebra tbody tr:nth-child(even):not(.bg-amber-50\/50) {
+  background: color-mix(in srgb, #f0f7ff 55%, transparent);
+}
+
+/* ---------- iOS safe-area helpers ---------- */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.safe-bottom-bar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* ---------- Image zoom wrapper ---------- */
 .zoom-img {
   overflow: hidden;
@@ -435,4 +487,3 @@ html[lang="bn"] {
     padding: 24px;
   }
 }
-

@@ -13,7 +13,7 @@ import { site } from "@/lib/site";
 
 export function FloatingContact() {
   const { navigate } = useRouter();
-  const { d } = useLang();
+  const { lang, d } = useLang();
   const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
@@ -34,7 +34,11 @@ export function FloatingContact() {
         transition={{ delay: 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <a
-          href={`https://wa.me/${site.phoneRaw.replace("+", "")}`}
+          href={`https://wa.me/${site.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
+            lang === "bn"
+              ? "আসসালামু আলাইকুম, আমি Aristocrat Dental Care-এ অ্যাপয়েন্টমেন্ট নিতে চাই।"
+              : "Hello, I would like to book an appointment at Aristocrat Dental Care."
+          )}`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp (opens in new tab)"

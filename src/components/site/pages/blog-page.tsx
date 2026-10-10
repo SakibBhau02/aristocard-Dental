@@ -8,12 +8,14 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Globe,
   Lightbulb,
   Share2,
   Tag,
   UserRound,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { blogPosts, blogCategories, getPost } from "@/lib/data/blog";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
@@ -24,12 +26,22 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
-/*  BLOG LIST PAGE                                                     */
+/*  BLOG LIST PAGE (EN / বাংলা)                                        */
 /* ------------------------------------------------------------------ */
+
+/* "8 min read" → "৮ মিনিট পাঠ" when Bangla */
+function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
+  if (!bn) return readTime;
+  const n = readTime.match(/\d+/)?.[0] ?? "";
+  return n ? `${toBnDigits(n)} ${minRead}` : readTime;
+}
 
 export function BlogPage() {
   const [category, setCategory] = useState("All");
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.blogPage;
 
   usePageMeta({
     title: "Dental Health Blog — Expert Advice from Uttara's Trusted Dentists",
@@ -57,10 +69,10 @@ export function BlogPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Health & Insights"
-        title="Expert dental advice, written by our dentists"
-        description="Straightforward, evidence-based guides on the dental topics our patients ask about most — from checkup schedules to implant costs in Dhaka."
-        breadcrumb={[{ label: "Home", to: "/" }, { label: "Blog" }]}
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.blog }]}
       />
 
       {/* Featured post */}
@@ -80,11 +92,11 @@ export function BlogPage() {
                 <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
                 <span className="relative inline-flex w-fit items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
                   <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
-                  Featured Guide
+                  {t.featured}
                 </span>
                 <div className="relative">
                   <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
-                    {featured.category}
+                    {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
                   </span>
                   <h2 className="font-heading mt-4 text-2xl font-bold leading-snug text-white sm:text-3xl">
                     {featured.title}
@@ -94,7 +106,7 @@ export function BlogPage() {
                   </p>
                 </div>
                 <span className="relative inline-flex w-fit items-center gap-2 text-sm font-bold text-white">
-                  Read the guide
+                  {t.readGuide}
                   <ArrowUpRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
                 </span>
               </div>
@@ -120,7 +132,7 @@ export function BlogPage() {
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
                     <span>
                       <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
-                        Quick answer
+                        {t.quickAnswer}
                       </span>
                       {featured.quickAnswer.slice(0, 140)}…
                     </span>
@@ -158,7 +170,7 @@ export function BlogPage() {
                   </div>
                   <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-xs text-slate-500 sm:flex">
                     <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {featured.readTime}
+                    {localizeReadTime(featured.readTime, bn, t.minRead)}
                   </span>
                 </div>
               </div>
@@ -185,11 +197,17 @@ export function BlogPage() {
                     : "bg-blue-50 text-brand-navy hover:bg-blue-100"
                 )}
               >
-                {c}
+                {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
                 <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
-                  {c === "All"
-                    ? blogPosts.length
-                    : blogPosts.filter((p) => p.category === c).length}
+                  {bn
+                    ? toBnDigits(
+                        c === "All"
+                          ? blogPosts.length
+                          : blogPosts.filter((p) => p.category === c).length
+                      )
+                    : c === "All"
+                      ? blogPosts.length
+                      : blogPosts.filter((p) => p.category === c).length}
                 </span>
               </button>
             ))}
@@ -235,12 +253,12 @@ export function BlogPage() {
                           aria-hidden="true"
                         />
                         <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue backdrop-blur">
-                          {post.category}
+                          {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
                         </span>
                       </div>
                     ) : (
                       <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
-                        {post.category}
+                        {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
                       </span>
                     )}
                     <div className="flex flex-1 flex-col p-6 pt-5">
@@ -260,7 +278,7 @@ export function BlogPage() {
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                        {post.readTime}
+                        {localizeReadTime(post.readTime, bn, t.minRead)}
                       </span>
                     </div>
                     </div>
@@ -273,15 +291,15 @@ export function BlogPage() {
       </section>
 
       <CtaBanner
-        title="Reading is great. A healthy smile is better."
-        description="Turn expert knowledge into action — book a checkup with our specialists and experience the care you've been reading about."
+        title={t.ctaTitle}
+        description={t.ctaDescription}
       />
     </>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  BLOG DETAIL PAGE — AEO format with quick answer                    */
+/*  BLOG DETAIL PAGE — AEO format with quick answer (EN / বাংলা)        */
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
@@ -323,6 +341,9 @@ function ReadingProgress() {
 
 export function BlogDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.blogPage;
   const post = getPost(slug);
 
   const shareArticle = async () => {
@@ -363,7 +384,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             "@type": "Organization",
             name: "Aristocrat Dental Care & Orthodontic Center",
           },
-          about: post.tags.map((t) => ({ "@type": "MedicalCondition", name: t })),
+          about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
           lastReviewed: post.updated,
         }
       : undefined,
@@ -397,7 +418,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                   }}
                   className="transition-colors hover:text-white"
                 >
-                  Home
+                  {d.chrome.nav.home}
                 </a>
               </li>
               <li className="text-blue-300/50" aria-hidden="true">/</li>
@@ -410,7 +431,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                   }}
                   className="transition-colors hover:text-white"
                 >
-                  Blog
+                  {d.chrome.nav.blog}
                 </a>
               </li>
               <li className="text-blue-300/50" aria-hidden="true">/</li>
@@ -426,11 +447,19 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
-              {post.category}
+              {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
             </span>
             <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
               {post.title}
             </h1>
+            <div className="mt-4">
+              {bn && (
+                <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-blue-100/90 ring-1 ring-white/15">
+                  <Globe className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                  {t.articleInEnglish}
+                </p>
+              )}
+            </div>
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
               <span className="inline-flex items-center gap-2">
                 <Avatar className="h-9 w-9 border-2 border-white/20">
@@ -445,11 +474,11 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                Updated {new Date(post.updated).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                {t.updated}: {new Date(post.updated).toLocaleDateString(bn ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" })}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 className="h-4 w-4" aria-hidden="true" />
-                {post.readTime}
+                {localizeReadTime(post.readTime, bn, t.minRead)}
               </span>
             </div>
           </motion.div>
@@ -495,7 +524,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             <div className="rounded-3xl border-l-4 border-brand-blue bg-ice p-6 sm:p-8">
               <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
                 <Lightbulb className="h-4 w-4" aria-hidden="true" />
-                Quick Answer
+                {t.quickAnswer}
               </span>
               <p className="mt-3 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
                 {post.quickAnswer}
@@ -555,13 +584,13 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               </Avatar>
               <div className="flex-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
-                  Written & medically reviewed by
+                  {t.authorLabel}
                 </span>
                 <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy">
                   {post.author}
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  {post.authorCredentials} at Aristocrat Dental Care &amp;
+                  {post.authorCredentials} @ Aristocrat Dental Care &amp;
                   Orthodontic Center, Uttara — Dhaka.
                 </p>
               </div>
@@ -573,7 +602,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 }}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy"
               >
-                Consult {post.author.split(" ").slice(0, 2).join(" ")}
+                {t.consult} {post.author.split(" ").slice(0, 2).join(" ")}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
@@ -599,7 +628,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50 hover:ring-brand-blue/30"
             >
               <Share2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
-              Share this article
+              {t.share}
             </button>
           </div>
         </div>
@@ -610,8 +639,8 @@ export function BlogDetailPage({ slug }: { slug: string }) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             align="left"
-            eyebrow="Keep Reading"
-            title="Related articles"
+            eyebrow={t.relatedEyebrow}
+            title={t.relatedTitle}
           />
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p, i) => (
@@ -645,7 +674,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 ) : null}
                 <div className="flex flex-1 flex-col p-6">
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
-                  {p.category}
+                  {d.blogCategories[p.category as keyof typeof d.blogCategories] ?? p.category}
                 </span>
                 <h3 className="font-heading mt-4 text-lg font-bold leading-snug text-brand-navy group-hover:text-brand-blue">
                   {p.title}
@@ -654,7 +683,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                   {p.excerpt}
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
-                  Read article
+                  {t.readMore}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                 </span>
                 </div>
@@ -665,8 +694,12 @@ export function BlogDetailPage({ slug }: { slug: string }) {
       </section>
 
       <CtaBanner
-        title="Have questions about this article?"
-        description="Our specialists are happy to discuss your specific situation — book a consultation or call our hotline today."
+        title={bn ? "এই আর্টিকেল নিয়ে প্রশ্ন আছে?" : "Have questions about this article?"}
+        description={
+          bn
+            ? "আপনার নির্দিষ্ট পরিস্থিতি নিয়ে আলোচনায় আমাদের বিশেষজ্ঞরা আনন্দিত হবেন — আজই কনসালটেশন বুক করুন বা হটলাইনে কল করুন।"
+            : "Our specialists are happy to discuss your specific situation — book a consultation or call our hotline today."
+        }
       />
     </>
   );

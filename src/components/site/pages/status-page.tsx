@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { services } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
 import { site } from "@/lib/site";
@@ -30,9 +31,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import type { Lang } from "@/lib/data/dictionary";
 
 /* ------------------------------------------------------------------ */
-/*  APPOINTMENT STATUS — lookup by reference code or phone             */
+/*  APPOINTMENT STATUS — lookup by reference code or phone (EN / বাংলা) */
 /* ------------------------------------------------------------------ */
 
 type AppointmentRecord = {
@@ -50,49 +52,56 @@ type AppointmentRecord = {
 
 const statusStyles: Record<
   AppointmentRecord["status"],
-  { label: string; badge: string; dot: string; icon: typeof Clock; blurb: string }
+  { badge: string; dot: string; icon: typeof Clock }
 > = {
   PENDING: {
-    label: "Awaiting confirmation",
     badge: "bg-amber-50 text-amber-700 ring-amber-200",
     dot: "bg-amber-500",
     icon: Clock,
-    blurb: "We've received your request — our team will call you shortly to confirm the slot.",
   },
   CONFIRMED: {
-    label: "Confirmed",
     badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     dot: "bg-emerald-500",
     icon: BadgeCheck,
-    blurb: "You're all set! Please arrive 10 minutes early with any previous X-rays or prescriptions.",
   },
   COMPLETED: {
-    label: "Completed",
     badge: "bg-blue-50 text-brand-blue ring-blue-200",
     dot: "bg-brand-blue",
     icon: CheckCircle2,
-    blurb: "This visit is complete. Follow-up care instructions were shared at the clinic.",
   },
   CANCELLED: {
-    label: "Cancelled",
     badge: "bg-rose-50 text-rose-600 ring-rose-200",
     dot: "bg-rose-400",
     icon: XCircle,
-    blurb: "This appointment was cancelled. Book again anytime — we'd love to see you.",
   },
 };
 
-function formatDateLabel(iso: string): string {
+function formatDateLabel(iso: string, lang: Lang): string {
   if (!iso) return "";
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
-    weekday: "long",
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(
+    lang === "bn" ? "bn-BD" : "en-GB",
+    {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
+}
+
+function formatShortDate(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
   });
 }
 
 export function StatusPage() {
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.statusPage;
+
   usePageMeta({
     title: "Check Your Appointment Status",
     description:
@@ -125,19 +134,15 @@ export function StatusPage() {
       const res = await fetch(`/api/appointments?${params}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not look up your appointment. Please try again.");
+        setError(data.error ?? t.lookupFailed);
       } else {
         setResults(data.appointments as AppointmentRecord[]);
         if ((data.appointments as AppointmentRecord[]).length === 0) {
-          setError(
-            mode === "phone"
-              ? "No appointments found for that phone number."
-              : "No appointments found for that reference code."
-          );
+          setError(mode === "phone" ? t.notFoundPhone : t.notFoundRef);
         }
       }
     } catch {
-      setError("Network error — please check your connection and try again.");
+      setError(t.networkError);
     } finally {
       setLoading(false);
     }
@@ -156,15 +161,15 @@ export function StatusPage() {
       const data = await res.json();
       if (!res.ok) {
         toast({
-          title: "Couldn't cancel",
-          description: data.error ?? "Please try again or call us for help.",
+          title: t.toastCancelFail,
+          description: data.error ?? t.toastCancelFailDesc,
           variant: "destructive",
         });
         return;
       }
       toast({
-        title: "Appointment cancelled",
-        description: "Your slot has been released. Book again anytime.",
+        title: t.toastCancelled,
+        description: t.toastCancelledDesc,
       });
       setCancelTarget(null);
       setCancelPhone("");
@@ -176,8 +181,8 @@ export function StatusPage() {
       );
     } catch {
       toast({
-        title: "Network error",
-        description: "Please check your connection and try again.",
+        title: t.toastNetwork,
+        description: t.toastNetworkDesc,
         variant: "destructive",
       });
     } finally {
@@ -188,12 +193,12 @@ export function StatusPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Booking Tools"
-        title="Check your appointment status"
-        description="Enter your booking reference or the phone number you booked with — see the live status, cancel or plan your visit in seconds."
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
         breadcrumb={[
-          { label: "Home", to: "/" },
-          { label: "Appointment Status" },
+          { label: d.chrome.nav.home, to: "/" },
+          { label: t.breadcrumb },
         ]}
       />
 
@@ -237,7 +242,7 @@ export function StatusPage() {
                       ) : (
                         <Phone className="h-4 w-4" aria-hidden="true" />
                       )}
-                      {m === "ref" ? "Reference Code" : "Phone Number"}
+                      {m === "ref" ? t.modeRef : t.modePhone}
                     </span>
                   </button>
                 ))}
@@ -255,7 +260,7 @@ export function StatusPage() {
                     {mode === "ref" ? (
                       <div className="space-y-2">
                         <Label htmlFor="ref-input" className="text-sm font-semibold text-brand-navy">
-                          Booking reference <span className="text-rose-500">*</span>
+                          {t.refLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <div className="relative">
                           <Hash
@@ -273,14 +278,15 @@ export function StatusPage() {
                           />
                         </div>
                         <p className="text-xs text-slate-500">
-                          Found in your booking confirmation — it starts with{" "}
+                          {t.refHintA}
                           <span className="font-mono font-semibold text-brand-blue">ADC-</span>
+                          {t.refHintB}
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         <Label htmlFor="phone-input" className="text-sm font-semibold text-brand-navy">
-                          Phone number used at booking <span className="text-rose-500">*</span>
+                          {t.phoneLabel} <span className="text-rose-500">*</span>
                         </Label>
                         <div className="relative">
                           <Phone
@@ -297,9 +303,7 @@ export function StatusPage() {
                             className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base font-semibold text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
                           />
                         </div>
-                        <p className="text-xs text-slate-500">
-                          We'll show up to 10 recent appointments linked to this number.
-                        </p>
+                        <p className="text-xs text-slate-500">{t.phoneHint}</p>
                       </div>
                     )}
                   </motion.div>
@@ -316,12 +320,12 @@ export function StatusPage() {
                   {loading ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                      Searching…
+                      {t.searching}
                     </>
                   ) : (
                     <>
                       <Search className="h-5 w-5" aria-hidden="true" />
-                      Find My Appointment
+                      {t.find}
                     </>
                   )}
                 </Button>
@@ -357,13 +361,17 @@ export function StatusPage() {
                 aria-live="polite"
               >
                 <h2 className="font-heading text-xl font-bold text-brand-navy">
-                  {results.length === 1 ? "Your appointment" : `Your appointments (${results.length})`}
+                  {results.length === 1
+                    ? t.yourAppointment
+                    : t.yourAppointments.replace("{count}", bn ? toBnDigits(results.length) : String(results.length))}
                 </h2>
                 {results.map((appt, i) => {
                   const style = statusStyles[appt.status] ?? statusStyles.PENDING;
+                  const label = t.status[appt.status]?.label ?? appt.status;
+                  const blurb = t.status[appt.status]?.blurb ?? "";
                   const StatusIcon = style.icon;
                   const service = services.find((s) => s.slug === appt.serviceSlug);
-                  const doctor = doctors.find((d) => d.slug === appt.doctorSlug);
+                  const doctor = doctors.find((doc) => doc.slug === appt.doctorSlug);
                   const cancellable = appt.status === "PENDING" || appt.status === "CONFIRMED";
                   const isPast = new Date(`${appt.date}T23:59:59`) < new Date();
 
@@ -393,7 +401,7 @@ export function StatusPage() {
                               )}
                             >
                               <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                              {style.label}
+                              {label}
                             </span>
                           </div>
                           <span className="font-mono text-sm font-bold tracking-wider text-brand-navy/70">
@@ -409,12 +417,12 @@ export function StatusPage() {
                               </span>
                               <div>
                                 <p className="font-heading text-lg font-bold leading-snug text-brand-navy">
-                                  {formatDateLabel(appt.date)}
+                                  {formatDateLabel(appt.date, lang)}
                                 </p>
                                 <p className="mt-0.5 text-sm font-semibold text-brand-blue">
-                                  {isPast ? "Was scheduled" : "Scheduled"} at {appt.time}
+                                  {isPast ? t.wasScheduledAt : t.scheduledAt} {appt.time}
                                 </p>
-                                <p className="mt-2 text-sm leading-relaxed text-slate-600">{style.blurb}</p>
+                                <p className="mt-2 text-sm leading-relaxed text-slate-600">{blurb}</p>
                               </div>
                             </div>
 
@@ -422,7 +430,7 @@ export function StatusPage() {
                               <div className="flex items-start gap-2.5 rounded-2xl bg-ice/70 px-4 py-3 text-xs leading-relaxed text-brand-navy/80 ring-1 ring-blue-100/60">
                                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
                                 <span>
-                                  <span className="font-semibold">Your note:</span> {appt.notes}
+                                  <span className="font-semibold">{t.yourNote}</span> {appt.notes}
                                 </span>
                               </div>
                             )}
@@ -431,26 +439,30 @@ export function StatusPage() {
                           <div className="space-y-3 rounded-2xl bg-ice/50 p-5 ring-1 ring-blue-100/50">
                             <div className="flex items-center gap-2.5 text-sm">
                               <UserRound className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
-                              <span className="text-slate-500">Patient</span>
+                              <span className="text-slate-500">{t.patient}</span>
                               <span className="ml-auto font-semibold text-brand-navy">{appt.name}</span>
                             </div>
                             <div className="flex items-center gap-2.5 text-sm">
                               <Stethoscope className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
-                              <span className="text-slate-500">Service</span>
+                              <span className="text-slate-500">{t.service}</span>
                               <span className="ml-auto text-right font-semibold text-brand-navy">
-                                {service?.name ?? "General Consultation"}
+                                {service
+                                  ? bn && service.nameBn
+                                    ? service.nameBn
+                                    : service.name
+                                  : t.general}
                               </span>
                             </div>
                             <div className="flex items-center gap-2.5 text-sm">
                               <BadgeCheck className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
-                              <span className="text-slate-500">Specialist</span>
+                              <span className="text-slate-500">{t.specialist}</span>
                               <span className="ml-auto text-right font-semibold text-brand-navy">
-                                {doctor?.name ?? "Assigned at confirmation"}
+                                {doctor?.name ?? t.assignedLater}
                               </span>
                             </div>
                             <div className="flex items-center gap-2.5 border-t border-blue-100/70 pt-3 text-xs text-slate-500">
                               <Clock className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
-                              Requested {new Date(appt.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              {t.requested} {formatShortDate(appt.createdAt, lang)}
                             </div>
                           </div>
                         </div>
@@ -458,11 +470,7 @@ export function StatusPage() {
                         {cancellable && !isPast && (
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-blue-50/80 bg-slate-50/60 px-6 py-4 sm:px-8">
                             <p className="text-xs leading-relaxed text-slate-500">
-                              Can't make it? Cancel online for free — or call{" "}
-                              <a href={`tel:${site.phoneRaw}`} className="font-semibold text-brand-blue hover:underline">
-                                {site.phone}
-                              </a>{" "}
-                              to reschedule.
+                              {t.cantMakeIt.replace("{phone}", site.phone)}
                             </p>
                             <Button
                               type="button"
@@ -474,7 +482,7 @@ export function StatusPage() {
                               className="rounded-xl border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                             >
                               <CalendarX2 className="h-4 w-4" aria-hidden="true" />
-                              Cancel appointment
+                              {t.cancel}
                             </Button>
                           </div>
                         )}
@@ -492,18 +500,20 @@ export function StatusPage() {
               {[
                 {
                   icon: Hash,
-                  title: "Lost your reference?",
-                  text: `Check the confirmation screen or call us on ${site.phone} — we'll find your booking by name or phone.`,
+                  title: t.help[0].title,
+                  text: t.help[0].text.replace("{phone}", site.phone),
                 },
                 {
                   icon: RefreshCw,
-                  title: "Need to reschedule?",
-                  text: "Cancellations are free. Simply cancel here and book a fresh slot that suits you — takes under a minute.",
+                  title: t.help[1].title,
+                  text: t.help[1].text,
                 },
                 {
                   icon: Phone,
-                  title: "Prefer talking?",
-                  text: `Our front desk answers ${site.hours}. Call ${site.phone} and we'll handle everything for you.`,
+                  title: t.help[2].title,
+                  text: t.help[2].text
+                    .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)
+                    .replace("{phone}", site.phone),
                 },
               ].map((item) => (
                 <div
@@ -549,19 +559,19 @@ export function StatusPage() {
                   <CalendarX2 className="h-6 w-6" aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-brand-navy">Cancel this appointment?</h2>
+                  <h2 className="font-heading text-lg font-bold text-brand-navy">{t.cancelTitle}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-slate-600">
                     <span className="font-semibold text-brand-navy">
-                      {formatDateLabel(cancelTarget.date)} at {cancelTarget.time}
+                      {formatDateLabel(cancelTarget.date, lang)} — {cancelTarget.time}
                     </span>{" "}
-                    ({cancelTarget.refCode}). To keep your booking safe, please confirm the phone number you booked with.
+                    {t.cancelText.replace("{ref}", cancelTarget.refCode)}
                   </p>
                 </div>
               </div>
 
               <form onSubmit={performCancel} className="mt-5">
                 <Label htmlFor="cancel-phone" className="text-sm font-semibold text-brand-navy">
-                  Booking phone number <span className="text-rose-500">*</span>
+                  {t.cancelPhoneLabel} <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   id="cancel-phone"
@@ -579,7 +589,7 @@ export function StatusPage() {
                     onClick={() => setCancelTarget(null)}
                     className="h-12 flex-1 rounded-2xl border-blue-100 bg-white text-brand-navy hover:bg-ice"
                   >
-                    Keep my booking
+                    {t.keepBooking}
                   </Button>
                   <Button
                     type="submit"
@@ -589,7 +599,7 @@ export function StatusPage() {
                     {cancelling ? (
                       <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
                     ) : (
-                      "Yes, cancel it"
+                      t.yesCancel
                     )}
                   </Button>
                 </div>

@@ -7,8 +7,14 @@ import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const { name, email, phone, subject, message } = body ?? {};
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "A valid JSON request body is required." },
+        { status: 400 }
+      );
+    }
 
     const errors: string[] = [];
 
@@ -31,7 +37,9 @@ export async function POST(req: NextRequest) {
     if (message && typeof message === "string" && message.length > 2000) {
       errors.push("Message must be under 2000 characters.");
     }
-    if (subject && typeof subject !== "string" && subject.length > 200) {
+    if (typeof subject !== "string" && subject !== undefined && subject !== null) {
+      errors.push("Subject must be plain text.");
+    } else if (typeof subject === "string" && subject.length > 200) {
       errors.push("Subject must be under 200 characters.");
     }
 
@@ -43,8 +51,8 @@ export async function POST(req: NextRequest) {
       data: {
         name: (name as string).trim(),
         email: (email as string).trim(),
-        phone: phone?.trim() || null,
-        subject: subject?.trim() || null,
+        phone: typeof phone === "string" ? phone.trim() || null : null,
+        subject: typeof subject === "string" ? subject.trim() || null : null,
         message: (message as string).trim(),
       },
     });

@@ -44,3 +44,15 @@ model NewsletterSubscriber {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+model Review {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String? // optional, for verification
+  rating      Int // 1-5
+  serviceSlug String? // optional treatment
+  title       String?
+  message     String
+  approved    Boolean  @default(false) // moderation: only approved shown publicly
+  createdAt   DateTime @default(now())
+}

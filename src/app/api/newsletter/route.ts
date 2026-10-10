@@ -7,8 +7,14 @@ import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const { email } = body ?? {};
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "A valid JSON request body is required." },
+        { status: 400 }
+      );
+    }
 
     if (
       !email ||

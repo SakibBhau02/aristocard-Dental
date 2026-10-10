@@ -8,20 +8,22 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock3,
+  Globe,
   Info,
   Sparkles,
   Star,
   UserRound,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
-import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
+import { Reveal, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  GALLERY PAGE — Smile transformations with before/after sliders     */
+/*  GALLERY PAGE — Smile transformations (EN / বাংলা)                   */
 /* ------------------------------------------------------------------ */
 
 type SmileCase = {
@@ -114,17 +116,14 @@ const cases: SmileCase[] = [
   },
 ];
 
-const filterCategories = [
-  { key: "All", label: "All Cases" },
-  { key: "Cosmetic", label: "Cosmetic" },
-  { key: "Orthodontics", label: "Orthodontics" },
-  { key: "Preventive", label: "Gum Care" },
-] as const;
-
-type FilterKey = (typeof filterCategories)[number]["key"];
+const filterCategories = ["All", "Cosmetic", "Orthodontics", "Preventive"] as const;
+type FilterKey = (typeof filterCategories)[number];
 
 export function GalleryPage() {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.galleryPage;
   const [filter, setFilter] = useState<FilterKey>("All");
 
   const visibleCases = useMemo(
@@ -152,10 +151,10 @@ export function GalleryPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Smile Gallery"
-        title="Real transformations — slide to believe"
-        description="Drag the handle on each case to compare before and after. Every smile below was designed, treated and cared for right here in Uttara."
-        breadcrumb={[{ label: "Home", to: "/" }, { label: "Gallery" }]}
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.gallery }]}
       />
 
       {/* Hint banner */}
@@ -167,11 +166,7 @@ export function GalleryPage() {
                 <Camera className="h-6 w-6" aria-hidden="true" />
               </span>
               <p className="flex-1 text-sm leading-relaxed text-slate-600">
-                <strong className="text-brand-navy">How to compare:</strong> drag
-                the circular handle across each photo (or use arrow keys when
-                focused) to reveal the transformation. Photos are representative
-                clinical examples — individual results vary and are confirmed at
-                consultation.
+                <strong className="text-brand-navy">{t.howTo}</strong> {t.howToText}
               </p>
             </div>
           </Reveal>
@@ -182,17 +177,17 @@ export function GalleryPage() {
       <section className="pb-4" aria-label="Filter cases by treatment type">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {filterCategories.map((cat) => {
+            {filterCategories.map((key) => {
               const count =
-                cat.key === "All"
+                key === "All"
                   ? cases.length
-                  : cases.filter((c) => c.category === cat.key).length;
-              const active = filter === cat.key;
+                  : cases.filter((c) => c.category === key).length;
+              const active = filter === key;
               return (
                 <button
-                  key={cat.key}
+                  key={key}
                   type="button"
-                  onClick={() => setFilter(cat.key)}
+                  onClick={() => setFilter(key)}
                   aria-pressed={active}
                   className={cn(
                     "relative rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300",
@@ -201,14 +196,14 @@ export function GalleryPage() {
                       : "border border-blue-100 bg-white text-slate-600 hover:border-brand-blue/40 hover:text-brand-blue"
                   )}
                 >
-                  {cat.label}
+                  {t.filters[key]}
                   <span
                     className={cn(
                       "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums",
                       active ? "bg-white/20 text-white" : "bg-blue-50 text-brand-blue"
                     )}
                   >
-                    {count}
+                    {bn ? toBnDigits(count) : count}
                   </span>
                 </button>
               );
@@ -250,7 +245,7 @@ export function GalleryPage() {
                     {c.featured && (
                       <span className="absolute -bottom-3 right-4 inline-flex items-center gap-1 rounded-full bg-amber-400 px-3.5 py-1.5 text-[11px] font-bold text-brand-navy shadow-lg">
                         <Star className="h-3.5 w-3.5 fill-brand-navy" aria-hidden="true" />
-                        Featured Case
+                        {t.featured}
                       </span>
                     )}
                   </div>
@@ -266,7 +261,7 @@ export function GalleryPage() {
                   >
                     <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100">
                       <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-                      Case Study {String(i + 1).padStart(2, "0")}
+                      {t.caseStudy} {bn ? toBnDigits(String(i + 1).padStart(2, "0")) : String(i + 1).padStart(2, "0")}
                     </span>
                     <h2
                       id={`${c.id}-title`}
@@ -277,7 +272,7 @@ export function GalleryPage() {
                     <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
                       <span className="inline-flex items-center gap-1.5">
                         <UserRound className="h-4 w-4 text-brand-blue" aria-hidden="true" />
-                        {c.patient} • {c.age} yrs
+                        {c.patient} • {bn ? toBnDigits(c.age) : c.age} {d.shared.yrs}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Clock3 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
@@ -303,6 +298,13 @@ export function GalleryPage() {
                       ))}
                     </StaggerContainer>
 
+                    {bn && (
+                      <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+                        <Globe className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+                        {t.contentNote}
+                      </p>
+                    )}
+
                     <div className="mt-7 flex flex-wrap gap-3">
                       <Button
                         asChild
@@ -317,7 +319,7 @@ export function GalleryPage() {
                           className="inline-flex items-center gap-2"
                         >
                           <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                          Get This Treatment
+                          {t.getTreatment}
                         </a>
                       </Button>
                       <Button
@@ -333,7 +335,7 @@ export function GalleryPage() {
                           }}
                           className="inline-flex items-center gap-2"
                         >
-                          About {c.treatment}
+                          {t.aboutTreatment.replace("{treatment}", c.treatment)}
                           <ArrowRight className="h-4 w-4" aria-hidden="true" />
                         </a>
                       </Button>
@@ -354,11 +356,7 @@ export function GalleryPage() {
             <p className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs leading-relaxed text-amber-800">
               <Info className="mt-0.5 h-4.5 w-4.5 shrink-0" aria-hidden="true" />
               <span>
-                <strong>Important:</strong> Images shown are representative
-                examples of treatment outcomes. Every smile is unique — your
-                result depends on your oral health, anatomy and treatment plan,
-                which our specialists confirm during consultation before any
-                procedure begins.
+                <strong>{t.disclaimerTitle}</strong> {t.disclaimerText}
               </span>
             </p>
           </Reveal>
@@ -366,8 +364,8 @@ export function GalleryPage() {
       </section>
 
       <CtaBanner
-        title="Your smile transformation starts here"
-        description="Book a Digital Smile Design consultation and preview YOUR new smile before any treatment — just like the patients above."
+        title={t.ctaTitle}
+        description={t.ctaDescription}
       />
     </>
   );
