@@ -1,0 +1,596 @@
+     1→"use client";
+     2→
+     3→import { motion } from "framer-motion";
+     4→import {
+     5→  ArrowLeft,
+     6→  ArrowRight,
+     7→  BadgeCheck,
+     8→  CalendarCheck,
+     9→  Camera,
+    10→  CheckCircle2,
+    11→  Clock3,
+    12→  Globe,
+    13→  HeartPulse,
+    14→  Info,
+    15→  Phone,
+    16→  Repeat,
+    17→  ShieldCheck,
+    18→  Sparkles,
+    19→  Syringe,
+    20→} from "lucide-react";
+    21→import {
+    22→  Accordion,
+    23→  AccordionContent,
+    24→  AccordionItem,
+    25→  AccordionTrigger,
+    26→} from "@/components/ui/accordion";
+    27→import { useRouter, usePageMeta } from "@/lib/router";
+    28→import { useLang, toBnDigits } from "@/lib/i18n";
+    29→import { getService, services } from "@/lib/data/services";
+    30→import { getCasesForService } from "@/lib/data/smile-cases";
+    31→import { BeforeAfterSlider } from "@/components/site/before-after-slider";
+    32→import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
+    33→import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
+    34→import { ServiceCard, CtaBanner } from "@/components/site/shared";
+    35→import { ServiceReviews } from "@/components/site/service-reviews";
+    36→import { NotFoundPage } from "@/components/site/pages/not-found-page";
+    37→import { site } from "@/lib/site";
+    38→
+    39→/* ------------------------------------------------------------------ */
+    40→/*  SERVICE DETAIL PAGE — deep, rich, conversion-focused (EN / বাংলা)   */
+    41→/* ------------------------------------------------------------------ */
+    42→
+    43→export function ServiceDetailPage({ slug }: { slug: string }) {
+    44→  const { navigate } = useRouter();
+    45→  const { lang, d } = useLang();
+    46→  const bn = lang === "bn";
+    47→  const t = d.serviceDetail;
+    48→  const service = getService(slug);
+    49→
+    50→  usePageMeta({
+    51→    title: service
+    52→      ? `${service.name} in Uttara, Dhaka — Aristocrat Dental Care`
+    53→      : "Service Not Found",
+    54→    description: service?.excerpt,
+    55→    jsonLd: service
+    56→      ? [
+    57→          {
+    58→            "@context": "https://schema.org",
+    59→            "@type": "MedicalTherapy",
+    60→            name: service.name,
+    61→            description: service.excerpt,
+    62→            url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+    63→            provider: {
+    64→              "@type": "Dentist",
+    65→              name: site.name,
+    66→              telephone: site.phoneRaw,
+    67→              address: {
+    68→                "@type": "PostalAddress",
+    69→                addressLocality: "Uttara",
+    70→                addressRegion: "Dhaka",
+    71→                addressCountry: "BD",
+    72→              },
+    73→            },
+    74→          },
+    75→          {
+    76→            "@context": "https://schema.org",
+    77→            "@type": "FAQPage",
+    78→            mainEntity: service.faqs.map((f) => ({
+    79→              "@type": "Question",
+    80→              name: f.question,
+    81→              acceptedAnswer: { "@type": "Answer", text: f.answer },
+    82→            })),
+    83→          },
+    84→          {
+    85→            "@context": "https://schema.org",
+    86→            "@type": "BreadcrumbList",
+    87→            itemListElement: [
+    88→              {
+    89→                "@type": "ListItem",
+    90→                position: 1,
+    91→                name: "Home",
+    92→                item: "https://aristocratdentalcarebd.com/",
+    93→              },
+    94→              {
+    95→                "@type": "ListItem",
+    96→                position: 2,
+    97→                name: "Services",
+    98→                item: "https://aristocratdentalcarebd.com/#/services",
+    99→              },
+   100→              {
+   101→                "@type": "ListItem",
+   102→                position: 3,
+   103→                name: service.name,
+   104→                item: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+   105→              },
+   106→            ],
+   107→          },
+   108→        ]
+   109→      : undefined,
+   110→  });
+   111→
+   112→  if (!service) return <NotFoundPage />;
+   113→
+   114→  const colors = categoryColors[service.category] ?? categoryColors.Restorative;
+   115→  const related = services.filter((s) => service.related.includes(s.slug));
+   116→  const serviceCases = getCasesForService(service.slug);
+   117→
+   118→  /* localized service naming */
+   119→  const name = bn && service.nameBn ? service.nameBn : service.name;
+   120→  const shortName = bn && service.shortNameBn ? service.shortNameBn : service.shortName;
+   121→  const tagline = bn && service.taglineBn ? service.taglineBn : service.tagline;
+   122→  const excerpt = bn && service.excerptBn ? service.excerptBn : service.excerpt;
+   123→  const categoryLabel = d.categories[service.category];
+   124→
+   125→  return (
+   126→    <>
+   127→      {/* ============ HERO ============ */}
+   128→      <section className="hero-mesh-dark relative overflow-hidden">
+   129→        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+   130→        <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
+   131→          {/* breadcrumb */}
+   132→          <nav aria-label="Breadcrumb" className="mb-8">
+   133→            <ol className="flex flex-wrap items-center gap-1.5 text-xs text-blue-200/80">
+   134→              <li>
+   135→                <a
+   136→                  href="#/"
+   137→                  onClick={(e) => {
+   138→                    e.preventDefault();
+   139→                    navigate("/");
+   140→                  }}
+   141→                  className="transition-colors hover:text-white"
+   142→                >
+   143→                  {d.chrome.nav.home}
+   144→                </a>
+   145→              </li>
+   146→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   147→              <li>
+   148→                <a
+   149→                  href="#/services"
+   150→                  onClick={(e) => {
+   151→                    e.preventDefault();
+   152→                    navigate("/services");
+   153→                  }}
+   154→                  className="transition-colors hover:text-white"
+   155→                >
+   156→                  {d.chrome.nav.services}
+   157→                </a>
+   158→              </li>
+   159→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   160→              <li className="font-medium text-white">{name}</li>
+   161→            </ol>
+   162→          </nav>
+   163→
+   164→          <div className="grid items-start gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+   165→            <motion.div
+   166→              initial={{ opacity: 0, y: 24 }}
+   167→              animate={{ opacity: 1, y: 0 }}
+   168→              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   169→            >
+   170→              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+   171→                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+   172→                {t.accepting}
+   173→              </span>
+   174→              <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
+   175→                {name}
+   176→              </h1>
+   177→              <p className="font-heading mt-3 text-lg font-medium text-amber-300">
+   178→                {tagline}
+   179→              </p>
+   180→              <p className="mt-5 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+   181→                {excerpt}
+   182→              </p>
+   183→
+   184→              <div className="mt-8 flex flex-wrap gap-3">
+   185→                <button
+   186→                  type="button"
+   187→                  onClick={() => navigate(`/appointment?service=${service.slug}`)}
+   188→                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+   189→                >
+   190→                  <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   191→                  {t.bookFor.replace("{service}", shortName)}
+   192→                </button>
+   193→                <a
+   194→                  href={`tel:${site.phoneRaw}`}
+   195→                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10"
+   196→                >
+   197→                  <Phone className="h-4.5 w-4.5" aria-hidden="true" />
+   198→                  {t.callWith.replace("{phone}", site.phone)}
+   199→                </a>
+   200→              </div>
+   201→            </motion.div>
+   202→
+   203→            {/* quick facts card */}
+   204→            <motion.aside
+   205→              initial={{ opacity: 0, x: 30 }}
+   206→              animate={{ opacity: 1, x: 0 }}
+   207→              transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+   208→              className="rounded-[1.75rem] bg-white/8 p-6 ring-1 ring-white/15 backdrop-blur"
+   209→              aria-label="Service quick facts"
+   210→            >
+   211→              <div className="flex items-center gap-4">
+   212→                <span className={`inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20`}>
+   213→                  <DynamicIcon name={service.icon} className="h-8 w-8" />
+   214→                </span>
+   215→                <div>
+   216→                  <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+   217→                    {t.categoryCare.replace("{category}", categoryLabel)}
+   218→                  </span>
+   219→                  <span className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-300">
+   220→                    <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+   221→                    {t.verified}
+   222→                  </span>
+   223→                </div>
+   224→              </div>
+   225→              <dl className="mt-6 space-y-4 text-sm">
+   226→                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
+   227→                  <dt className="flex items-center gap-2 text-blue-200/80">
+   228→                    <Clock3 className="h-4 w-4" aria-hidden="true" />
+   229→                    {t.duration}
+   230→                  </dt>
+   231→                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
+   232→                </div>
+   233→                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
+   234→                  <dt className="flex items-center gap-2 text-blue-200/80">
+   235→                    <Repeat className="h-4 w-4" aria-hidden="true" />
+   236→                    {t.longevity}
+   237→                  </dt>
+   238→                  <dd className="text-right font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
+   239→                </div>
+   240→                <div className="flex items-start justify-between gap-4 border-t border-white/10 pt-4">
+   241→                  <dt className="flex items-center gap-2 text-blue-200/80">
+   242→                    <Syringe className="h-4 w-4" aria-hidden="true" />
+   243→                    {t.comfort}
+   244→                  </dt>
+   245→                  <dd className="text-right font-semibold text-white">{service.anesthesia}</dd>
+   246→                </div>
+   247→              </dl>
+   248→              <a
+   249→                href="#/appointment"
+   250→                onClick={(e) => {
+   251→                  e.preventDefault();
+   252→                  navigate(`/appointment?service=${service.slug}`);
+   253→                }}
+   254→                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/40 transition-all duration-300 hover:bg-brand-blue-light"
+   255→              >
+   256→                {t.proceed}
+   257→                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+   258→              </a>
+   259→            </motion.aside>
+   260→          </div>
+   261→        </div>
+   262→        <svg
+   263→          className="absolute bottom-0 left-0 right-0 h-10 w-full text-white sm:h-14"
+   264→          viewBox="0 0 1440 56"
+   265→          preserveAspectRatio="none"
+   266→          aria-hidden="true"
+   267→        >
+   268→          <path
+   269→            d="M0,32 C240,64 480,0 720,16 C960,32 1200,64 1440,24 L1440,56 L0,56 Z"
+   270→            fill="currentColor"
+   271→          />
+   272→        </svg>
+   273→      </section>
+   274→
+   275→      {/* ============ OVERVIEW + IDEAL FOR ============ */}
+   276→      <section className="py-16 sm:py-20" aria-labelledby="overview-heading">
+   277→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   278→          <div className="grid gap-12 lg:grid-cols-[1.25fr_0.75fr]">
+   279→            <div>
+   280→              <SectionHeading
+   281→                align="left"
+   282→                eyebrow={t.overviewEyebrow}
+   283→                title={t.overviewTitle.replace("{service}", name)}
+   284→              />
+   285→              {bn && (
+   286→                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+   287→                  <Globe className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   288→                  {t.contentNote}
+   289→                </p>
+   290→              )}
+   291→              <div className="mt-8 space-y-5">
+   292→                {service.overview.map((para, i) => (
+   293→                  <Reveal key={i} delay={i * 0.06}>
+   294→                    <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base">
+   295→                      {para}
+   296→                    </p>
+   297→                  </Reveal>
+   298→                ))}
+   299→              </div>
+   300→
+   301→              {/* ideal for */}
+   302→              <Reveal className="mt-10">
+   303→                <div className="rounded-3xl border border-blue-100/80 bg-ice p-7 sm:p-8">
+   304→                  <h3 className="flex items-center gap-2.5 font-heading text-lg font-bold text-brand-navy">
+   305→                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-brand-blue">
+   306→                      <Info className="h-4.5 w-4.5" aria-hidden="true" />
+   307→                    </span>
+   308→                    {t.idealTitle}
+   309→                  </h3>
+   310→                  <p className="mt-3 text-sm text-slate-600">
+   311→                    {t.idealText.replace("{service}", name)}
+   312→                  </p>
+   313→                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+   314→                    {service.ideal.map((item) => (
+   315→                      <li key={item} className="flex items-start gap-2.5 text-sm text-slate-700">
+   316→                        <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500" aria-hidden="true" />
+   317→                        {item}
+   318→                      </li>
+   319→                    ))}
+   320→                  </ul>
+   321→                </div>
+   322→              </Reveal>
+   323→            </div>
+   324→
+   325→            {/* safety sidebar */}
+   326→            <div>
+   327→              <Reveal delay={0.1}>
+   328→                <div className="sticky top-28 space-y-4">
+   329→                  <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
+   330→                    <h3 className="font-heading flex items-center gap-2 text-base font-bold text-brand-navy">
+   331→                      <ShieldCheck className="h-5 w-5 text-brand-blue" aria-hidden="true" />
+   332→                      {t.safetyTitle}
+   333→                    </h3>
+   334→                    <ul className="mt-4 space-y-3.5 text-sm text-slate-600">
+   335→                      {t.safetyList.map((item) => (
+   336→                        <li key={item} className="flex items-start gap-2.5">
+   337→                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   338→                          {item}
+   339→                        </li>
+   340→                      ))}
+   341→                    </ul>
+   342→                  </div>
+   343→
+   344→                  <div className="rounded-3xl bg-gradient-to-br from-amber-50 to-amber-100/50 p-6 ring-1 ring-amber-200/60">
+   345→                    <h3 className="flex items-center gap-2 font-heading text-base font-bold text-amber-800">
+   346→                      <HeartPulse className="h-5 w-5" aria-hidden="true" />
+   347→                      {t.anxiousTitle}
+   348→                    </h3>
+   349→                    <p className="mt-2.5 text-sm leading-relaxed text-amber-900/80">
+   350→                      {t.anxiousText}
+   351→                    </p>
+   352→                  </div>
+   353→                </div>
+   354→              </Reveal>
+   355→            </div>
+   356→          </div>
+   357→        </div>
+   358→      </section>
+   359→
+   360→      {/* ============ BENEFITS ============ */}
+   361→      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="benefits-heading">
+   362→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   363→          <SectionHeading
+   364→            eyebrow={t.benefitsEyebrow}
+   365→            title={
+   366→              <>
+   367→                {t.benefitsPre} <span className="gradient-text">{shortName}</span>
+   368→                {t.benefitsPost}
+   369→              </>
+   370→            }
+   371→            description={t.benefitsText.replace("{service}", name)}
+   372→          />
+   373→          <StaggerContainer className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+   374→            {service.benefits.map((benefit, i) => (
+   375→              <StaggerItem key={benefit.title}>
+   376→                <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
+   377→                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   378→                    <span className="font-heading text-sm font-bold">
+   379→                      {bn ? toBnDigits(String(i + 1).padStart(2, "0")) : String(i + 1).padStart(2, "0")}
+   380→                    </span>
+   381→                  </span>
+   382→                  <h3 className="font-heading mt-4 text-base font-bold text-brand-navy group-hover:text-brand-blue">
+   383→                    {benefit.title}
+   384→                  </h3>
+   385→                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+   386→                    {benefit.description}
+   387→                  </p>
+   388→                </div>
+   389→              </StaggerItem>
+   390→            ))}
+   391→          </StaggerContainer>
+   392→        </div>
+   393→      </section>
+   394→
+   395→      {/* ============ PROCESS ============ */}
+   396→      <section className="relative py-16 sm:py-20" aria-labelledby="process-heading">
+   397→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   398→          <SectionHeading
+   399→            eyebrow={t.processEyebrow}
+   400→            title={t.processTitle}
+   401→            description={t.processText}
+   402→          />
+   403→          <div className="relative mt-14">
+   404→            {/* connecting line */}
+   405→            <span
+   406→              className="absolute left-[27px] top-4 hidden h-[calc(100%-32px)] w-0.5 bg-gradient-to-b from-brand-blue via-brand-blue/40 to-transparent sm:block lg:left-1/2 lg:-translate-x-1/2"
+   407→              aria-hidden="true"
+   408→            />
+   409→            <ol className="space-y-10">
+   410→              {service.process.map((step, i) => (
+   411→                <li key={step.step}>
+   412→                  <Reveal delay={i * 0.05}>
+   413→                    <div
+   414→                      className={`relative flex flex-col gap-5 sm:flex-row sm:items-start ${
+   415→                        i % 2 === 1 ? "lg:flex-row-reverse" : ""
+   416→                      } lg:justify-between`}
+   417→                    >
+   418→                      {/* node */}
+   419→                      <span className="absolute left-0 top-1 hidden h-14 w-14 sm:flex lg:left-1/2 lg:-translate-x-1/2" aria-hidden="true">
+   420→                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy font-heading text-base font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white">
+   421→                          {bn ? toBnDigits(step.step) : step.step}
+   422→                        </span>
+   423→                      </span>
+   424→                      <div className={`sm:pl-[76px] lg:w-[46%] lg:pl-0 ${i % 2 === 1 ? "lg:pl-0" : ""}`}>
+   425→                        <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:p-7">
+   426→                          <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+   427→                            {t.step} {bn ? toBnDigits(step.step) : step.step}
+   428→                          </span>
+   429→                          <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
+   430→                            {step.title}
+   431→                          </h3>
+   432→                          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+   433→                            {step.description}
+   434→                          </p>
+   435→                        </div>
+   436→                      </div>
+   437→                      <div className="hidden lg:block lg:w-[46%]" aria-hidden="true" />
+   438→                    </div>
+   439→                  </Reveal>
+   440→                </li>
+   441→              ))}
+   442→            </ol>
+   443→          </div>
+   444→        </div>
+   445→      </section>
+   446→
+   447→      {/* ============ REAL RESULTS (gallery cross-link) ============ */}
+   448→      {serviceCases.length > 0 && (
+   449→        <section className="section-wash relative py-16 sm:py-20" aria-labelledby="service-gallery-heading">
+   450→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   451→            <SectionHeading
+   452→              eyebrow={t.galleryEyebrow}
+   453→              title={t.galleryTitle.replace("{service}", shortName)}
+   454→              description={t.galleryText}
+   455→            />
+   456→            <div className="mt-12 grid items-center gap-10 lg:grid-cols-2">
+   457→              {serviceCases.slice(0, 1).map((c) => (
+   458→                <Reveal key={c.id}>
+   459→                  <div className="relative mx-auto w-full max-w-md">
+   460→                    <BeforeAfterSlider
+   461→                      beforeSrc={c.beforeSrc}
+   462→                      afterSrc={c.afterSrc}
+   463→                      beforeAlt={c.beforeAlt}
+   464→                      afterAlt={c.afterAlt}
+   465→                    />
+   466→                    <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-navy px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+   467→                      <Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+   468→                      {c.treatment}
+   469→                    </span>
+   470→                  </div>
+   471→                </Reveal>
+   472→              ))}
+   473→              <Reveal delay={0.1}>
+   474→                {serviceCases.slice(0, 1).map((c) => (
+   475→                  <div key={c.id} className="lg:pl-4">
+   476→                    <h3 className="font-heading text-2xl font-bold leading-snug text-brand-navy text-balance">
+   477→                      {c.title}
+   478→                    </h3>
+   479→                    <p className="mt-4 text-[15px] leading-relaxed text-slate-600">
+   480→                      {c.result}
+   481→                    </p>
+   482→                    <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+   483→                      <div className="flex items-center gap-2 text-slate-500">
+   484→                        <dt className="font-semibold text-brand-navy">{c.patient}</dt>
+   485→                        <dd>• {bn ? toBnDigits(c.age) : c.age} {d.shared.yrs}</dd>
+   486→                      </div>
+   487→                      <div className="flex items-center gap-2 text-slate-500">
+   488→                        <Clock3 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+   489→                        <dt className="sr-only">{t.galleryDuration}</dt>
+   490→                        <dd>{c.duration}</dd>
+   491→                      </div>
+   492→                    </dl>
+   493→                    <button
+   494→                      type="button"
+   495→                      onClick={() => navigate("/gallery")}
+   496→                      className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-lg hover:shadow-blue-500/30"
+   497→                    >
+   498→                      <Camera className="h-4 w-4" aria-hidden="true" />
+   499→                      {t.galleryCta}
+   500→                    </button>
+   501→                  </div>
+   502→                ))}
+   503→              </Reveal>
+   504→            </div>
+   505→          </div>
+   506→        </section>
+   507→      )}
+   508→
+   509→      {/* ============ FAQ ============ */}
+   510→      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="service-faq-heading">
+   511→        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+   512→          <SectionHeading
+   513→            eyebrow={t.faqEyebrow}
+   514→            title={t.faqTitle.replace("{service}", shortName)}
+   515→          />
+   516→          <Reveal className="mt-10">
+   517→            <Accordion type="single" collapsible className="w-full">
+   518→              {service.faqs.map((faq, i) => (
+   519→                <AccordionItem
+   520→                  key={faq.question}
+   521→                  value={`s-faq-${i}`}
+   522→                  className="border-b border-blue-100"
+   523→                >
+   524→                  <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+   525→                    {faq.question}
+   526→                  </AccordionTrigger>
+   527→                  <AccordionContent className="pb-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+   528→                    {faq.answer}
+   529→                  </AccordionContent>
+   530→                </AccordionItem>
+   531→              ))}
+   532→            </Accordion>
+   533→          </Reveal>
+   534→
+   535→          <Reveal className="mt-8">
+   536→            <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-white p-6 text-center sm:flex-row sm:text-left">
+   537→              <p className="flex items-center gap-3 text-sm font-medium text-brand-navy">
+   538→                <Sparkles className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+   539→                {t.faqCta}
+   540→              </p>
+   541→              <a
+   542→                href={`tel:${site.phoneRaw}`}
+   543→                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-brand-blue"
+   544→              >
+   545→                <Phone className="h-4 w-4" aria-hidden="true" />
+   546→                {site.phone}
+   547→              </a>
+   548→            </div>
+   549→          </Reveal>
+   550→        </div>
+   551→      </section>
+   552→
+   553→      {/* ============ PATIENT REVIEWS (this treatment) ============ */}
+   554→      <ServiceReviews serviceSlug={service.slug} />
+   555→
+   556→      {/* ============ RELATED SERVICES ============ */}
+   557→      {related.length > 0 && (
+   558→        <section className="relative py-16 sm:py-20" aria-labelledby="related-heading">
+   559→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   560→            <div className="flex flex-wrap items-end justify-between gap-4">
+   561→              <SectionHeading
+   562→                align="left"
+   563→                eyebrow={t.relatedEyebrow}
+   564→                title={t.relatedTitle}
+   565→              />
+   566→              <Reveal>
+   567→                <a
+   568→                  href="#/services"
+   569→                  onClick={(e) => {
+   570→                    e.preventDefault();
+   571→                    navigate("/services");
+   572→                  }}
+   573→                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-semibold text-brand-blue transition-all duration-300 hover:bg-brand-blue hover:text-white"
+   574→                >
+   575→                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+   576→                  {t.allServices}
+   577→                </a>
+   578→              </Reveal>
+   579→            </div>
+   580→            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+   581→              {related.map((s, i) => (
+   582→                <ServiceCard key={s.slug} service={s} index={i} />
+   583→              ))}
+   584→            </div>
+   585→          </div>
+   586→        </section>
+   587→      )}
+   588→
+   589→      <CtaBanner
+   590→        title={t.ctaTitle.replace("{service}", shortName)}
+   591→        description={t.ctaDescription.replace("{serviceFull}", name).replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)}
+   592→      />
+   593→    </>
+   594→  );
+   595→}
+   596→

@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  BookOpen,
   CalendarCheck,
   Camera,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { getService, services } from "@/lib/data/services";
+import { relatedPostsForService } from "@/lib/data/blog";
 import { getCasesForService } from "@/lib/data/smile-cases";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
@@ -35,10 +37,18 @@ import { ServiceCard, CtaBanner } from "@/components/site/shared";
 import { ServiceReviews } from "@/components/site/service-reviews";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { site } from "@/lib/site";
+import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
 /*  SERVICE DETAIL PAGE — deep, rich, conversion-focused (EN / বাংলা)   */
 /* ------------------------------------------------------------------ */
+
+/* "8 min read" → "৮ মিনিট পাঠ" when Bangla (mirrors blog page) */
+function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
+  if (!bn) return readTime;
+  const n = readTime.match(/\d+/)?.[0] ?? "";
+  return n ? `${toBnDigits(n)} ${minRead}` : readTime;
+}
 
 export function ServiceDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
@@ -114,6 +124,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   const colors = categoryColors[service.category] ?? categoryColors.Restorative;
   const related = services.filter((s) => service.related.includes(s.slug));
   const serviceCases = getCasesForService(service.slug);
+  const relatedPosts = relatedPostsForService(service.slug);
 
   /* localized service naming */
   const name = bn && service.nameBn ? service.nameBn : service.name;
@@ -581,6 +592,79 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
               {related.map((s, i) => (
                 <ServiceCard key={s.slug} service={s} index={i} />
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ============ RECOMMENDED READING (blog cross-link) ============ */}
+      {relatedPosts.length > 0 && (
+        <section
+          className="relative bg-ice py-16 sm:py-20"
+          aria-labelledby="service-reading-heading"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <Reveal className="max-w-3xl">
+              <h2
+                id="service-reading-heading"
+                className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue"
+              >
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
+                {d.shared.relatedReading}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500 sm:text-base">
+                {d.shared.relatedReadingSub}
+              </p>
+            </Reveal>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedPosts.map((post, i) => {
+                const postTitle = bn && post.titleBn ? post.titleBn : post.title;
+                return (
+                  <Reveal key={post.slug} delay={i * 0.06} className="h-full">
+                    <a
+                      href={`#/blog/${post.slug}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/blog/${post.slug}`);
+                      }}
+                      aria-label={`${d.blogPage.readMore}: ${postTitle}`}
+                      className="group flex h-full items-center gap-4 rounded-2xl border border-blue-100/80 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+                    >
+                      {post.image ? (
+                        <span className="zoom-img relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100">
+                          <Image
+                            src={post.image}
+                            alt={post.imageAlt ?? post.title}
+                            width={128}
+                            height={128}
+                            className="h-full w-full object-cover"
+                          />
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+                          <DynamicIcon name={service.icon} className="h-7 w-7" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
+                          {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+                        </span>
+                        <span className="font-heading mt-1 block line-clamp-2 text-sm font-bold leading-snug text-brand-navy transition-colors duration-300 group-hover:text-brand-blue">
+                          {postTitle}
+                        </span>
+                        <span className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+                          <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                          {localizeReadTime(post.readTime, bn, d.blogPage.minRead)}
+                        </span>
+                      </span>
+                      <ArrowRight
+                        className="h-4 w-4 shrink-0 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-brand-blue"
+                        aria-hidden="true"
+                      />
+                    </a>
+                  </Reveal>
+                );
+              })}
             </div>
           </div>
         </section>

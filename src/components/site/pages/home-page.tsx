@@ -151,7 +151,7 @@ export function HomePage() {
               <Button
                 asChild
                 size="lg"
-                className="btn-shine group relative overflow-hidden rounded-full bg-brand-blue px-8 py-6 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:shadow-2xl"
+                className="btn-press btn-shine group relative overflow-hidden rounded-full bg-brand-blue px-8 py-6 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:shadow-2xl"
               >
                 <a
                   href="#/appointment"

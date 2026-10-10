@@ -59,6 +59,11 @@ const en = {
     quizTeaserTitle: "Not sure which treatment you need?",
     quizTeaserText: "Answer 5 quick questions and get a personalized starting plan in 60 seconds.",
     quizTeaserCta: "Take the Smile Check",
+    relatedTreatments: "Explore related treatments",
+    relatedTreatmentsSub:
+      "Written about this topic — jump straight to the treatment pages",
+    relatedReading: "Recommended reading",
+    relatedReadingSub: "Learn more before your visit",
   },
 
   /* ---------------- Home page ---------------- */
@@ -484,6 +489,17 @@ const en = {
     ],
     ctaTitle: "Consult our specialists this week",
     ctaDescription: "Same-week appointments available — book online in two minutes or call our hotline.",
+    viewProfile: "View full profile",
+    hideProfile: "Hide profile",
+    aboutTitle: "About {name}",
+    credentialsTitle: "Credentials",
+    specializationsTitle: "Specializations",
+    languagesTitle: "Languages",
+    consultationTitle: "Consultation days",
+    bookWith: "Book with {name}",
+    yearsExp: "{count}+ years experience",
+    patientsTreatedLabel: "Patients treated",
+    ratingLabel: "Rating",
   },
 
   doctorDetail: {
@@ -1010,6 +1026,9 @@ const en = {
     hintNavigate: "to open",
     hintClose: "to close",
     resultsCount: "{count} results",
+    recentSearches: "Recent searches",
+    clearRecent: "Clear recent searches",
+    popularSearches: "Popular right now",
   },
 };
 
@@ -1069,6 +1088,11 @@ const bn: Dictionary = {
     quizTeaserTitle: "কোন চিকিৎসাটি আপনার দরকার বুঝতে পারছেন না?",
     quizTeaserText: "৫টি ছোট প্রশ্নের উত্তর দিন — ৬০ সেকেন্ডে পেয়ে যান আপনার জন্য প্রস্তাবিত শুরুর পরিকল্পনা।",
     quizTeaserCta: "স্মাইল চেক নিন",
+    relatedTreatments: "সম্পর্কিত চিকিৎসা দেখুন",
+    relatedTreatmentsSub:
+      "আর্টিকেলে যেসব চিকিৎসার কথা বলা হয়েছে — সরাসরি সেই সেবার পেজে যান",
+    relatedReading: "পড়ার পরামর্শ",
+    relatedReadingSub: "ভিজিটের আগে আরও জানুন",
   },
 
   /* ---------------- Home page ---------------- */
@@ -1493,6 +1517,17 @@ const bn: Dictionary = {
     ],
     ctaTitle: "এই সপ্তাহেই আমাদের বিশেষজ্ঞদের কনসালটেশন নিন",
     ctaDescription: "একই সপ্তাহে অ্যাপয়েন্টমেন্ট পাওয়া যায় — দুই মিনিটে অনলাইনে বুক করুন বা হটলাইনে কল করুন।",
+    viewProfile: "প্রোফাইল দেখুন",
+    hideProfile: "প্রোফাইল বন্ধ করুন",
+    aboutTitle: "{name}-এর পরিচিতি",
+    credentialsTitle: "ডিগ্রি ও যোগ্যতা",
+    specializationsTitle: "বিশেষত্বের ক্ষেত্রসমূহ",
+    languagesTitle: "ভাষা",
+    consultationTitle: "কনসালটেশন দিবস",
+    bookWith: "{name}-এর সাথে বুক করুন",
+    yearsExp: "{count}+ বছরের অভিজ্ঞতা",
+    patientsTreatedLabel: "রোগী সেবা",
+    ratingLabel: "রেটিং",
   },
 
   doctorDetail: {
@@ -2018,6 +2053,9 @@ const bn: Dictionary = {
     hintNavigate: "দিয়ে খুলুন",
     hintClose: "দিয়ে বন্ধ করুন",
     resultsCount: "{count}টি ফলাফল",
+    recentSearches: "সাম্প্রতিক অনুসন্ধান",
+    clearRecent: "সাম্প্রতিক অনুসন্ধান মুছে ফেলুন",
+    popularSearches: "এখন জনপ্রিয়",
   },
 };
 

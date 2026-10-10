@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, CalendarCheck, MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "@/lib/router";
@@ -9,18 +9,42 @@ import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
 /*  Floating quick-contact buttons (mobile-first) + scroll-to-top      */
+/*  Scroll-to-top carries a gradient progress ring that fills as the   */
+/*  page scrolls — position feedback at a glance.                       */
 /* ------------------------------------------------------------------ */
+
+/* Ring geometry: 48×48 viewBox, r=21 → circumference ≈ 131.9 */
+const RING_R = 21;
+const RING_C = 2 * Math.PI * RING_R;
 
 export function FloatingContact() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
   const [showTop, setShowTop] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const ticking = useRef(false);
 
   useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 700);
-    onScroll();
+    const measure = () => {
+      ticking.current = false;
+      const max =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const y = window.scrollY;
+      setShowTop(y > 700);
+      setProgress(max > 0 ? Math.min(1, Math.max(0, y / max)) : 1);
+    };
+    const onScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(measure);
+    };
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
@@ -78,7 +102,8 @@ export function FloatingContact() {
         </button>
       </motion.div>
 
-      {/* Scroll-to-top (bottom-left, away from the contact stack) */}
+      {/* Scroll-to-top (bottom-left, away from the contact stack) —
+          gradient progress ring fills as the page scrolls */}
       <AnimatePresence>
         {showTop && (
           <motion.button
@@ -91,7 +116,39 @@ export function FloatingContact() {
             exit={{ opacity: 0, y: 16, scale: 0.85 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <ArrowUp className="h-5 w-5" aria-hidden="true" />
+            {/* ring sits just inside the button edge; arrow above it */}
+            <svg
+              viewBox="0 0 48 48"
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="adc-scroll-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#002060" />
+                  <stop offset="55%" stopColor="#1e7dff" />
+                  <stop offset="100%" stopColor="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <circle
+                className="scroll-ring-track"
+                cx="24"
+                cy="24"
+                r={RING_R}
+                fill="none"
+                strokeWidth="2.5"
+              />
+              <circle
+                className="scroll-ring-fill"
+                cx="24"
+                cy="24"
+                r={RING_R}
+                fill="none"
+                strokeWidth="2.5"
+                strokeDasharray={RING_C}
+                strokeDashoffset={RING_C * (1 - progress)}
+              />
+            </svg>
+            <ArrowUp className="relative h-5 w-5" aria-hidden="true" />
           </motion.button>
         )}
       </AnimatePresence>

@@ -82,6 +82,8 @@ export type BlogPost = {
   authorCredentials: string;
   featured?: boolean;
   tags: string[];
+  /* Curated related-treatment slugs for cross-linking (must exist in services.ts) */
+  serviceRefs?: string[];
   /* Cover image path in /public */
   image?: string;
   imageAlt?: string;

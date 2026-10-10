@@ -6,7 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 /* ------------------------------------------------------------------ */
@@ -30,35 +30,67 @@ function parseHash(hash: string): { path: string; query: URLSearchParams } {
   return { path: path.replace(/\/+$/, "") || "/", query };
 }
 
+/* --- module-level external route store --------------------------------
+   SSR renders the home route; on the client the store initializes from
+   location.hash BEFORE hydration. useSyncExternalStore then hydrates
+   against the SERVER snapshot (home — byte-identical to the server HTML,
+   so deep-link full loads no longer throw hydration mismatches) and
+   re-renders with the real route immediately after hydration — the same
+   pattern the LanguageProvider uses for the saved language.            */
+type RouteSnapshot = { path: string; query: URLSearchParams };
+
+const HOME_SNAPSHOT: RouteSnapshot = {
+  path: "/",
+  query: new URLSearchParams(),
+};
+
+let currentRoute: RouteSnapshot =
+  typeof window === "undefined" ? HOME_SNAPSHOT : parseHash(window.location.hash);
+
+const routeListeners = new Set<() => void>();
+
+function subscribeRoute(listener: () => void) {
+  routeListeners.add(listener);
+  return () => {
+    routeListeners.delete(listener);
+  };
+}
+
+function getRouteSnapshot(): RouteSnapshot {
+  return currentRoute;
+}
+
+function getRouteServerSnapshot(): RouteSnapshot {
+  return HOME_SNAPSHOT;
+}
+
+function setRoute(next: RouteSnapshot) {
+  if (
+    next.path === currentRoute.path &&
+    next.query.toString() === currentRoute.query.toString()
+  ) {
+    return;
+  }
+  currentRoute = next;
+  routeListeners.forEach((fn) => fn());
+}
+
 export function RouterProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState(() => {
-    if (typeof window === "undefined") {
-      return { path: "/", query: new URLSearchParams() };
-    }
-    return parseHash(window.location.hash);
-  });
+  const state = useSyncExternalStore(
+    subscribeRoute,
+    getRouteSnapshot,
+    getRouteServerSnapshot
+  );
 
   useEffect(() => {
-    const onHashChange = () => {
-      setState(parseHash(window.location.hash));
-    };
-    window.addEventListener("hashchange", onHashChange);
+    const sync = () => setRoute(parseHash(window.location.hash));
+    window.addEventListener("hashchange", sync);
     /* Catch a hash that arrived during the hydration window (between
-       HTML load and this effect attaching the listener) — e.g. deep-link
-       fragments applied before hydration, or very slow connections where
-       the user changes the hash first. No-op when already in sync.
-       Deferred to a microtask: syncs external state without a cascading
-       synchronous render inside the effect body. */
-    queueMicrotask(() => {
-      setState((prev) => {
-        const current = parseHash(window.location.hash);
-        return current.path === prev.path &&
-          current.query.toString() === prev.query.toString()
-          ? prev
-          : current;
-      });
-    });
-    return () => window.removeEventListener("hashchange", onHashChange);
+       HTML load and this listener attaching) — deep-link fragments
+       applied pre-hydration or slow connections where the user changes
+       the hash first. No-op when already in sync. */
+    sync();
+    return () => window.removeEventListener("hashchange", sync);
   }, []);
 
   const navigate = useCallback((to: string, opts?: { replace?: boolean }) => {
@@ -69,7 +101,7 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
     }
     if (opts?.replace) {
       window.history.replaceState(null, "", target);
-      setState(parseHash(target));
+      setRoute(parseHash(target));
     } else {
       window.location.hash = target;
     }
@@ -83,7 +115,7 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
       query: state.query,
       navigate,
     };
-  }, [state.path, state.query, navigate]);
+  }, [state, navigate]);
 
   /* Scroll to top on path change */
   useEffect(() => {

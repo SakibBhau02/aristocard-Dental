@@ -19,6 +19,7 @@ export const blogPosts: BlogPost[] = [
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     featured: true,
     tags: ["dental checkup", "preventive dentistry", "oral health Bangladesh"],
+    serviceRefs: ["pediatric-dentistry", "periodontal-gum-treatment", "laser-assisted-fillings"],
     image: "/images/blog-checkup.png",
     imageAlt: "A happy family with healthy smiles in a bright modern dental clinic waiting area",
     quickAnswer:
@@ -115,6 +116,7 @@ export const blogPosts: BlogPost[] = [
     authorCredentials: "BDS (DU), PGT — Restorative & Surgical Dentistry",
     featured: true,
     tags: ["root canal", "toothache", "endodontics Dhaka"],
+    serviceRefs: ["root-canal-treatment", "crowns-bridges", "laser-assisted-fillings"],
     image: "/images/blog-rootcanal.png",
     imageAlt: "Modern root canal treatment being performed with advanced rotary instruments",
     quickAnswer:
@@ -208,6 +210,7 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Shazia Khanam",
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     tags: ["Invisalign Bangladesh", "braces Dhaka", "orthodontics", "clear aligners"],
+    serviceRefs: ["invisalign-clear-aligners", "traditional-braces-orthodontics", "digital-smile-design"],
     image: "/images/blog-aligners.png",
     imageAlt: "Clear aligners and metal braces compared in a dentist's hands at an orthodontic clinic",
     quickAnswer:
@@ -303,6 +306,7 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Abdur Rahim",
     authorCredentials: "BDS, MDS — Senior Consultant",
     tags: ["dental implant cost Bangladesh", "tooth replacement Dhaka", "implantology"],
+    serviceRefs: ["dental-implants", "crowns-bridges", "oral-maxillofacial-surgery"],
     image: "/images/blog-implant.png",
     imageAlt: "A titanium dental implant model with crown displayed in a clinical setting",
     quickAnswer:
@@ -394,6 +398,7 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Israt Jahan Rimi",
     authorCredentials: "BDS (DU), PGT (OMFS) — Consultant Dental Surgeon",
     tags: ["kids dentist Dhaka", "first dental visit", "pediatric dentistry"],
+    serviceRefs: ["pediatric-dentistry", "laser-assisted-fillings", "traditional-braces-orthodontics"],
     image: "/images/blog-child.png",
     imageAlt: "A smiling child giving thumbs up in a dental chair with a friendly pediatric dentist",
     quickAnswer:
@@ -483,6 +488,7 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Shazia Khanam",
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     tags: ["teeth whitening Dhaka", "cosmetic dentistry", "smile makeover"],
+    serviceRefs: ["porcelain-veneers", "digital-smile-design", "periodontal-gum-treatment"],
     image: "/images/blog-whitening.png",
     imageAlt: "A radiant white smile with a dental mirror in a bright cosmetic dentistry studio",
     quickAnswer:
@@ -560,6 +566,11 @@ export const blogPosts: BlogPost[] = [
 
 export function getPost(slug: string): BlogPost | undefined {
   return blogPosts.find((p) => p.slug === slug);
+}
+
+/* Blog posts whose curated serviceRefs mention this service (blog.ts order) */
+export function relatedPostsForService(serviceSlug: string): BlogPost[] {
+  return blogPosts.filter((p) => (p.serviceRefs ?? []).includes(serviceSlug));
 }
 
 export const blogCategories = [

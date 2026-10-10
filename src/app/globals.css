@@ -454,10 +454,17 @@ html[lang="bn"] {
     bottom: 5.75rem; /* 92px — clears the ~72px bar + breathing room */
   }
 }
-/* Smooth lift for the FABs (they animate via CSS transition) */
+/* Smooth lift for the FABs — transition list keeps the buttons' own
+   hover effects animating (unlayered rules replace transition-all,
+   so re-declare the properties the hover states use). */
 .fab-stack,
 .scroll-top-btn {
-  transition: bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.3s ease,
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* ---------- Image zoom wrapper ---------- */
@@ -939,3 +946,82 @@ html[lang="bn"] {
 /* cache-bust r8 */
 
 /* cache-bust r9 */
+
+/* ================= ROUND 10 — styling polish ================= */
+
+/* ---------- Light-surface selection tint ----------
+   Gold ::selection already covers navy/dark surfaces (round 8); this
+   gives the light 95% of the site a branded blue-tinted selection. */
+::selection {
+  background: rgba(30, 125, 255, 0.18);
+  color: inherit;
+}
+
+/* ---------- Button press feedback ----------
+   Springy tactile scale on pointer-down for primary CTAs. The transition
+   list mirrors the properties these CTAs already animate on hover
+   (transform/bg/shadow/color) so the unlayered rule doesn't cancel
+   Tailwind's transition-all — only transform gets the fast spring. */
+.btn-press {
+  transition:
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.3s ease;
+}
+.btn-press:active {
+  transform: scale(0.965);
+}
+
+/* ---------- Expanded profile seam ----------
+   Gold-to-transparent hairline across the top of an expanded detail
+   panel (doctor full-profile) — a quiet "unfolded drawer" cue. */
+.profile-seam {
+  position: relative;
+}
+.profile-seam::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(245, 158, 11, 0.55) 18%,
+    rgba(245, 158, 11, 0.9) 50%,
+    rgba(245, 158, 11, 0.55) 82%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ---------- Scroll-progress ring (scroll-to-top button) ----------
+   SVG ring around the button fill: navy→blue→gold gradient stroke that
+   fills clockwise as the page scrolls. */
+.scroll-ring-track {
+  stroke: rgba(0, 32, 96, 0.1);
+}
+.scroll-ring-fill {
+  stroke: url(#adc-scroll-gradient);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.18s linear;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* ---------- Reduced motion (round-10 additions) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn-press,
+  .btn-press:active {
+    transition: none;
+    transform: none;
+  }
+  .scroll-ring-fill {
+    transition: none;
+  }
+}
+
+/* cache-bust r10 */

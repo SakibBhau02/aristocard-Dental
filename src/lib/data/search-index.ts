@@ -253,6 +253,9 @@ export const SEARCH_GROUP_ORDER: SearchGroup[] = [
   "faqs",
 ];
 
+/** Scored result (relevance-ranked search hit). */
+export type ScoredEntry = { entry: SearchEntry; score: number };
+
 /**
  * Multi-word, order-independent, case-insensitive matching.
  * EVERY whitespace-separated word must appear somewhere in the entry's
@@ -264,10 +267,13 @@ export const SEARCH_GROUP_ORDER: SearchGroup[] = [
  * canal treatment page first, not a crown that merely references it).
  * Ties keep index order (sort is stable).
  */
-export function filterEntries(entries: SearchEntry[], query: string): SearchEntry[] {
+export function filterEntriesScored(
+  entries: SearchEntry[],
+  query: string
+): ScoredEntry[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return entries;
-  const scored: { entry: SearchEntry; score: number }[] = [];
+  if (words.length === 0) return entries.map((entry) => ({ entry, score: 0 }));
+  const scored: ScoredEntry[] = [];
   for (const entry of entries) {
     const title = entry.title.toLowerCase();
     const titleAlt = (entry.titleAlt ?? "").toLowerCase();
@@ -282,5 +288,10 @@ export function filterEntries(entries: SearchEntry[], query: string): SearchEntr
     scored.push({ entry, score });
   }
   scored.sort((a, b) => b.score - a.score);
-  return scored.map((s) => s.entry);
+  return scored;
+}
+
+/** Un-scored convenience wrapper (kept for any future callers). */
+export function filterEntries(entries: SearchEntry[], query: string): SearchEntry[] {
+  return filterEntriesScored(entries, query).map((s) => s.entry);
 }

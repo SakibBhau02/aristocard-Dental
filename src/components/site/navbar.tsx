@@ -188,7 +188,7 @@ export function Navbar() {
 
             <Button
               asChild
-              className="btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
+              className="btn-press btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
             >
               <a
                 href="#/appointment"

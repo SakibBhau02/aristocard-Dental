@@ -830,7 +830,7 @@ export function AppointmentPage() {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="rounded-full bg-emerald-600 px-9 py-4 font-bold text-white shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 disabled:opacity-70"
+                    className="btn-press rounded-full bg-emerald-600 px-9 py-4 font-bold text-white shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-700 disabled:opacity-70"
                   >
                     {submitting ? (
                       <>
