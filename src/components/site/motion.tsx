@@ -98,16 +98,28 @@ export function AnimatedCounter({
   suffix = "",
   decimals = 0,
   className,
+  formatBn,
 }: {
   value: number;
   suffix?: string;
   decimals?: number;
   className?: string;
+  /** When provided, renders Bangla digits with this suffix */
+  formatBn?: { suffix?: string };
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const motionValue = useMotionValue(0);
   const spring = useSpring(motionValue, { damping: 32, stiffness: 90 });
+
+  const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  const render = (v: number) => {
+    const fixed = v.toFixed(decimals);
+    if (formatBn) {
+      return fixed.replace(/[0-9]/g, (dg) => bnDigits[Number(dg)]) + (formatBn.suffix ?? "");
+    }
+    return fixed + suffix;
+  };
 
   useEffect(() => {
     if (inView) motionValue.set(value);
@@ -116,15 +128,15 @@ export function AnimatedCounter({
   useEffect(() => {
     const unsub = spring.on("change", (latest) => {
       if (ref.current) {
-        ref.current.textContent = latest.toFixed(decimals) + suffix;
+        ref.current.textContent = render(latest);
       }
     });
     return unsub;
-  }, [spring, decimals, suffix]);
+  }, [spring, decimals, suffix, formatBn]);
 
   return (
     <span ref={ref} className={cn("tabular-nums", className)}>
-      {(0).toFixed(decimals) + suffix}
+      {render(0)}
     </span>
   );
 }

@@ -12,11 +12,16 @@ export type ServiceCategory =
 export type Service = {
   slug: string;
   name: string;
+  /* Bangla variants (optional — falls back to English) */
+  nameBn?: string;
   shortName: string;
+  shortNameBn?: string;
   category: ServiceCategory;
   icon: string; // lucide icon key mapped in components
   tagline: string;
+  taglineBn?: string;
   excerpt: string;
+  excerptBn?: string;
   overview: string[];
   benefits: { title: string; description: string }[];
   process: { step: string; title: string; description: string }[];
@@ -35,7 +40,9 @@ export type Doctor = {
   name: string;
   credentials: string[];
   role: string;
+  roleBn?: string;
   department: string;
+  departmentBn?: string;
   bio: string;
   experienceYears: number;
   patientsTreated: number;
@@ -59,6 +66,8 @@ export type Testimonial = {
 export type FAQ = {
   question: string;
   answer: string;
+  questionBn?: string;
+  answerBn?: string;
 };
 
 export type BlogPost = {

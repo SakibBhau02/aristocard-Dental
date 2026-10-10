@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Poppins } from "next/font/google";
+import { Inter, Noto_Sans_Bengali, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -14,6 +14,14 @@ const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+});
+
+const notoBengali = Noto_Sans_Bengali({
+  variable: "--font-bangla",
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -207,7 +215,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${poppins.variable} font-sans min-h-screen flex flex-col`}
+        className={`${inter.variable} ${poppins.variable} ${notoBengali.variable} font-sans min-h-screen flex flex-col`}
       >
         {children}
         <Toaster />

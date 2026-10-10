@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -284,6 +284,43 @@ export function BlogPage() {
 /*  BLOG DETAIL PAGE — AEO format with quick answer                    */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  Reading progress bar — top of viewport while reading an article    */
+/* ------------------------------------------------------------------ */
+
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const el = document.documentElement;
+      const total = el.scrollHeight - el.clientHeight;
+      setProgress(total > 0 ? Math.min(1, el.scrollTop / total) : 0);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return (
+    <div
+      className="reading-progress"
+      style={{ transform: `scaleX(${progress})` }}
+      aria-hidden="true"
+    />
+  );
+}
+
 export function BlogDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
   const post = getPost(slug);
@@ -344,6 +381,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
 
   return (
     <>
+      <ReadingProgress />
       {/* Article hero */}
       <section className="hero-mesh-dark relative overflow-hidden">
         <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />

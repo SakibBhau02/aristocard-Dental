@@ -179,6 +179,27 @@
   font-family: var(--font-heading), var(--font-sans), sans-serif;
 }
 
+/* ---------- Bangla (বাংলা) typography ---------- */
+html[lang="bn"] body {
+  font-family: var(--font-bangla), var(--font-sans), sans-serif;
+  letter-spacing: 0;
+}
+html[lang="bn"] .font-heading {
+  font-family: var(--font-bangla), var(--font-heading), sans-serif;
+  letter-spacing: 0;
+}
+/* Bangla doesn't use ALL-CAPS tracking — relax wide letter-spacing */
+html[lang="bn"] .uppercase,
+html[lang="bn"] .tracking-\[0\.16em\],
+html[lang="bn"] .tracking-\[0\.18em\],
+html[lang="bn"] .tracking-wider {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+html[lang="bn"] {
+  line-height: 1.15; /* Bangla glyphs need a touch more room */
+}
+
 .text-balance {
   text-wrap: balance;
 }
@@ -209,6 +230,34 @@
   background: rgba(0, 32, 96, 0.55);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* ---------- Film-grain noise overlay (subtle premium texture) ---------- */
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* ---------- Reading progress bar (blog article) ---------- */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 60;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #1e7dff, #f59e0b);
+  transition: transform 120ms linear;
+}
+
+/* ---------- Marquee pause on hover (a11y nicety) ---------- */
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 /* ---------- Mesh hero background ---------- */

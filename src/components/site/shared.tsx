@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarCheck, ChevronRight, Clock3 } from "lucide-react";
 import { useRouter } from "@/lib/router";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal } from "@/components/site/motion";
 import type { Service, Doctor } from "@/lib/types";
@@ -96,7 +97,11 @@ export function PageHeader({
 
 export function ServiceCard({ service, index = 0 }: { service: Service; index?: number }) {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
   const colors = categoryColors[service.category] ?? categoryColors.Restorative;
+  const name = lang === "bn" && service.nameBn ? service.nameBn : service.name;
+  const tagline = lang === "bn" && service.taglineBn ? service.taglineBn : service.tagline;
+  const excerpt = lang === "bn" && service.excerptBn ? service.excerptBn : service.excerpt;
 
   return (
     <motion.article
@@ -113,24 +118,24 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
           <DynamicIcon name={service.icon} className="h-7 w-7" />
         </span>
         <Badge variant="outline" className={`${colors.bg} ${colors.text} border-0 text-[10px] font-semibold uppercase tracking-wider`}>
-          {service.category}
+          {d.categories[service.category]}
         </Badge>
       </div>
 
       <h3 className="font-heading mt-5 text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
-        {service.name}
+        {name}
       </h3>
       <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
-        {service.tagline}
+        {tagline}
       </p>
       <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
-        {service.excerpt}
+        {excerpt}
       </p>
 
       <div className="mt-5 flex items-center justify-between border-t border-blue-50 pt-4">
         <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
           <Clock3 className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
-          {service.duration}
+          {lang === "bn" ? toBnDigits(service.duration) : service.duration}
         </span>
         <a
           href={`#/services/${service.slug}`}
@@ -139,9 +144,9 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
             navigate(`/services/${service.slug}`);
           }}
           className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue transition-all duration-300 hover:gap-2.5"
-          aria-label={`Learn more about ${service.name}`}
+          aria-label={`${d.shared.learnMore}: ${name}`}
         >
-          Learn more
+          {d.shared.learnMore}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </a>
       </div>
@@ -155,12 +160,14 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
 
 export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: number }) {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
   const initials = doctor.name
     .replace("Dr. ", "")
     .split(" ")
     .map((n) => n[0])
     .slice(0, 2)
     .join("");
+  const role = lang === "bn" && doctor.roleBn ? doctor.roleBn : doctor.role;
 
   return (
     <motion.article
@@ -199,7 +206,7 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
       <h3 className="font-heading mt-5 text-lg font-bold text-brand-navy">
         {doctor.name}
       </h3>
-      <p className="mt-1 text-sm font-medium text-brand-blue">{doctor.role}</p>
+      <p className="mt-1 text-sm font-medium text-brand-blue">{role}</p>
       <p className="mt-2 flex flex-wrap justify-center gap-1.5">
         {doctor.credentials.slice(0, 3).map((c) => (
           <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
@@ -212,7 +219,7 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
         <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
         <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
         <span className="text-xs text-slate-400">
-          • {doctor.experienceYears}+ yrs • {doctor.patientsTreated.toLocaleString()}+ patients
+          • {toBnDigitsIfBn(lang, doctor.experienceYears)}+ {d.shared.yrs} • {localizedCount(lang, doctor.patientsTreated)}+ {d.shared.patients}
         </span>
       </div>
 
@@ -221,7 +228,7 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
         onClick={() => navigate(`/doctors/${doctor.slug}`)}
         className="mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
       >
-        View Profile
+        {d.shared.viewProfile}
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </button>
     </motion.article>
@@ -233,18 +240,19 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
 /* ------------------------------------------------------------------ */
 
 export function CtaBanner({
-  title = "Ready for a healthier, brighter smile?",
-  description = "Book your consultation with our specialist dentists today — modern technology, pain-free care and transparent pricing, all under one roof in Uttara.",
+  title,
+  description,
 }: {
   title?: string;
   description?: string;
 }) {
   const { navigate } = useRouter();
+  const { d } = useLang();
   return (
     <section className="relative overflow-hidden" aria-labelledby="cta-heading">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
         <Reveal>
-          <div className="hero-mesh-dark relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center shadow-2xl shadow-navy-900/30 sm:px-12">
+          <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center shadow-2xl shadow-navy-900/30 sm:px-12">
             <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
             <span
               className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-blue/25 blur-3xl"
@@ -259,10 +267,10 @@ export function CtaBanner({
                 id="cta-heading"
                 className="font-heading mx-auto max-w-2xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl"
               >
-                {title}
+                {title ?? d.shared.ctaTitle}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-100/85">
-                {description}
+                {description ?? d.shared.ctaDescription}
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <button
@@ -271,17 +279,17 @@ export function CtaBanner({
                   className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
                 >
                   <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                  Book Appointment Now
+                  {d.shared.ctaBook}
                 </button>
                 <a
                   href="tel:+8801715027522"
                   className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
                 >
-                  Call 01715-027522
+                  {d.shared.ctaCall} 01715-027522
                 </a>
               </div>
               <p className="mt-6 text-xs text-blue-200/70">
-                Open Saturday–Thursday, 10:00 AM – 9:00 PM • Same-week appointments available
+                {d.shared.ctaHours}
               </p>
             </div>
           </div>
@@ -289,4 +297,13 @@ export function CtaBanner({
       </div>
     </section>
   );
+}
+
+/* helpers for localized numerals */
+function toBnDigitsIfBn(lang: "en" | "bn", v: string | number) {
+  return lang === "bn" ? toBnDigits(v) : String(v);
+}
+function localizedCount(lang: "en" | "bn", v: number) {
+  const s = v.toLocaleString("en-US");
+  return lang === "bn" ? toBnDigits(s) : s;
 }

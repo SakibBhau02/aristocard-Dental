@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, CalendarCheck, MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "@/lib/router";
+import { useLang } from "@/lib/i18n";
 import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
@@ -12,6 +13,7 @@ import { site } from "@/lib/site";
 
 export function FloatingContact() {
   const { navigate } = useRouter();
+  const { d } = useLang();
   const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function FloatingContact() {
           />
           <MessageCircle className="relative h-5.5 w-5.5" aria-hidden="true" />
           <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-brand-navy px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-300 group-hover:opacity-100 sm:block">
-            WhatsApp us
+            {d.fab.whatsapp}
           </span>
         </a>
 
@@ -67,7 +69,7 @@ export function FloatingContact() {
         >
           <CalendarCheck className="h-5.5 w-5.5" aria-hidden="true" />
           <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-brand-navy px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-300 group-hover:opacity-100 sm:block">
-            Book appointment
+            {d.fab.book}
           </span>
         </button>
       </motion.div>

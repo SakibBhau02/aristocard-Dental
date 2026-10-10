@@ -21,6 +21,7 @@ import {
   Star,
 } from "lucide-react";
 import { useRouter } from "@/lib/router";
+import { useLang } from "@/lib/i18n";
 import { services } from "@/lib/data/services";
 import { site } from "@/lib/site";
 import { useToast } from "@/hooks/use-toast";
@@ -31,22 +32,23 @@ import { useToast } from "@/hooks/use-toast";
 
 export function Footer() {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [email, setEmail] = useState("");
 
   const quickLinks = [
-    { label: "Home", to: "/" },
-    { label: "About Us", to: "/about" },
-    { label: "Our Services", to: "/services" },
-    { label: "Smile Gallery", to: "/gallery" },
-    { label: "Our Doctors", to: "/doctors" },
-    { label: "Health Blog", to: "/blog" },
-    { label: "Cost Estimator", to: "/estimator" },
-    { label: "Contact", to: "/contact" },
-    { label: "Book Appointment", to: "/appointment" },
-    { label: "Check Appointment Status", to: "/status" },
+    { label: d.footer.quickLinks[0], to: "/" },
+    { label: d.footer.quickLinks[1], to: "/about" },
+    { label: d.footer.quickLinks[2], to: "/services" },
+    { label: d.footer.quickLinks[3], to: "/gallery" },
+    { label: d.footer.quickLinks[4], to: "/doctors" },
+    { label: d.footer.quickLinks[5], to: "/blog" },
+    { label: d.footer.quickLinks[6], to: "/estimator" },
+    { label: d.footer.quickLinks[7], to: "/contact" },
+    { label: d.footer.quickLinks[8], to: "/appointment" },
+    { label: d.footer.quickLinks[9], to: "/status" },
   ];
 
   return (
@@ -74,9 +76,10 @@ export function Footer() {
               className="h-11 w-auto object-contain"
             />
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-blue-100/85">
-              {site.name} — a modern, well-equipped dental clinic in Uttara,
-              Dhaka combining advanced technology, strict sterilization and
-              specialist care. {site.tagline}
+              {site.name} — {lang === "bn"
+                ? "উত্তরা, ঢাকার একটি আধুনিক, সুসজ্জিত ডেন্টাল ক্লিনিক — অত্যাধুনিক প্রযুক্তি, কঠোর জীবাণুমুক্তকরণ ও বিশেষজ্ঞ চিকিৎসার সমন্বয়ে।"
+                : "a modern, well-equipped dental clinic in Uttara, Dhaka combining advanced technology, strict sterilization and specialist care."}{" "}
+              {d.chrome.tagline}
             </p>
             <div className="mt-5 flex items-center gap-2" aria-label="Rated 4.9 out of 5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -90,7 +93,7 @@ export function Footer() {
                 4.9/5
               </span>
               <span className="text-xs text-blue-200/70">
-                (3,200+ patient reviews)
+                {d.footer.reviews}
               </span>
             </div>
             <div className="mt-6 flex items-center gap-3">
@@ -116,7 +119,7 @@ export function Footer() {
           {/* Quick links */}
           <nav aria-label="Footer quick links">
             <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
-              Quick Links
+              {d.footer.quickLinksTitle}
             </h3>
             <ul className="mt-5 space-y-3">
               {quickLinks.map((link) => (
@@ -143,7 +146,7 @@ export function Footer() {
           {/* Services */}
           <nav aria-label="Footer services">
             <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
-              Our Services
+              {d.footer.servicesTitle}
             </h3>
             <ul className="mt-5 space-y-3">
               {services.slice(0, 8).map((s) => (
@@ -160,7 +163,7 @@ export function Footer() {
                       className="h-px w-3 bg-amber-400/70 transition-all duration-300 group-hover:w-5"
                       aria-hidden="true"
                     />
-                    {s.shortName}
+                    {lang === "bn" && s.shortNameBn ? s.shortNameBn : s.shortName}
                   </a>
                 </li>
               ))}
@@ -173,7 +176,7 @@ export function Footer() {
                   }}
                   className="text-sm font-semibold text-amber-300 hover:text-amber-200"
                 >
-                  View all 11 services →
+                  {d.footer.viewAllServices}
                 </a>
               </li>
             </ul>
@@ -182,7 +185,7 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h3 className="font-heading text-sm font-semibold uppercase tracking-[0.16em] text-blue-200">
-              Get In Touch
+              {d.footer.contactTitle}
             </h3>
             <ul className="mt-5 space-y-4 text-sm">
               <li>
@@ -195,7 +198,7 @@ export function Footer() {
                   </span>
                   <span>
                     <span className="block text-xs text-blue-200/70">
-                      Hotline (Call or WhatsApp)
+                      {d.footer.hotlineLabel}
                     </span>
                     <span className="font-semibold">{site.phone}</span>
                   </span>
@@ -210,7 +213,7 @@ export function Footer() {
                     <Mail className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="break-all">
-                    <span className="block text-xs text-blue-200/70">Email</span>
+                    <span className="block text-xs text-blue-200/70">{d.footer.emailLabel}</span>
                     {site.email}
                   </span>
                 </a>
@@ -220,7 +223,7 @@ export function Footer() {
                   <MapPin className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block text-xs text-blue-200/70">Location</span>
+                  <span className="block text-xs text-blue-200/70">{d.footer.locationLabel}</span>
                   {site.addressShort}
                 </span>
               </li>
@@ -229,8 +232,8 @@ export function Footer() {
                   <Clock className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block text-xs text-blue-200/70">Opening Hours</span>
-                  {site.hours}
+                  <span className="block text-xs text-blue-200/70">{d.footer.hoursLabel}</span>
+                  {d.footer.hours}
                 </span>
               </li>
             </ul>
@@ -250,29 +253,27 @@ export function Footer() {
 
         {/* Trust strip */}
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4">
-          {[
-            { Icon: ShieldCheck, label: "Strict Sterilization Protocols" },
-            { Icon: CalendarCheck, label: "Same-Week Appointments" },
-            { Icon: MessageCircle, label: "Bilingual Care: বাংলা & English" },
-          ].map(({ Icon, label }) => (
-            <span
-              key={label}
-              className="inline-flex items-center gap-2 text-xs font-medium text-blue-100/90"
-            >
-              <Icon className="h-4 w-4 text-amber-400" aria-hidden="true" />
-              {label}
-            </span>
-          ))}
+          {[0, 1, 2].map((i) => {
+            const icons = [ShieldCheck, CalendarCheck, MessageCircle];
+            const Icon = icons[i];
+            return (
+              <span
+                key={i}
+                className="inline-flex items-center gap-2 text-xs font-medium text-blue-100/90"
+              >
+                <Icon className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                {d.footer.trust[i]}
+              </span>
+            );
+          })}
         </div>
 
         {/* Bottom bar */}
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-blue-200/70 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {site.name}. All rights reserved.
+            © {new Date().getFullYear()} {site.name}. {d.footer.rights}
           </p>
-          <p className="text-center sm:text-right">
-            Excellence in Every Smile — Uttara, Dhaka, Bangladesh
-          </p>
+          <p className="text-center sm:text-right">{d.footer.credit}</p>
         </div>
       </div>
 
@@ -283,12 +284,13 @@ export function Footer() {
 }
 
 function BackToTop() {
+  const { d } = useLang();
   const [visible, setVisible] = useStateSafe(false);
   return (
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top"
+      aria-label={d.footer.backToTop}
       className={`fixed bottom-24 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand-navy text-white shadow-xl shadow-navy-900/30 ring-1 ring-white/20 transition-all duration-500 hover:bg-brand-blue ${
         visible
           ? "translate-y-0 opacity-100"
@@ -327,14 +329,16 @@ function NewsletterSignup({
   setSubscribing: (v: boolean) => void;
   toast: ToastFn;
 }) {
+  const { d } = useLang();
+
   async function handleSubscribe(e: FormEvent) {
     e.preventDefault();
     if (subscribing) return;
     const trimmed = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
+        title: d.footer.newsletter.invalid,
+        description: d.footer.newsletter.invalidDesc,
         variant: "destructive",
       });
       return;
@@ -350,12 +354,12 @@ function NewsletterSignup({
       if (!res.ok) throw new Error(data.error || "Subscription failed");
       setSubscribed(true);
       toast({
-        title: "Subscribed!",
-        description: data.message ?? "Dental health tips are on their way.",
+        title: d.footer.newsletter.success,
+        description: data.message ?? d.footer.newsletter.successDesc,
       });
     } catch (err) {
       toast({
-        title: "Subscription failed",
+        title: d.footer.newsletter.failed,
         description:
           err instanceof Error ? err.message : "Please try again later.",
         variant: "destructive",
@@ -375,11 +379,10 @@ function NewsletterSignup({
         <div>
           <h3 className="flex items-center gap-2.5 font-heading text-lg font-bold text-white">
             <Sparkles className="h-5 w-5 text-amber-400" aria-hidden="true" />
-            Dental health tips, worth reading
+            {d.footer.newsletter.title}
           </h3>
           <p className="mt-2 max-w-lg text-sm leading-relaxed text-blue-100/80">
-            One short, genuinely useful email a month — seasonal care reminders,
-            clinic offers and new expert guides from our blog. No spam, ever.
+            {d.footer.newsletter.description}
           </p>
         </div>
 
@@ -387,7 +390,7 @@ function NewsletterSignup({
           <div className="flex items-center justify-center gap-3 rounded-2xl bg-emerald-500/15 p-5 ring-1 ring-emerald-400/30">
             <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" aria-hidden="true" />
             <p className="text-sm font-semibold text-emerald-200">
-              You&apos;re on the list — welcome aboard!
+              {d.footer.newsletter.subscribed}
             </p>
           </div>
         ) : (
@@ -405,7 +408,7 @@ function NewsletterSignup({
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={d.footer.newsletter.placeholder}
               className="h-12 flex-1 rounded-2xl border-0 bg-white/10 px-5 text-sm text-white placeholder:text-blue-200/50 ring-1 ring-white/15 backdrop-blur transition-all duration-300 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             <button
@@ -418,7 +421,7 @@ function NewsletterSignup({
               ) : (
                 <Send className="h-4.5 w-4.5" aria-hidden="true" />
               )}
-              Subscribe
+              {d.footer.newsletter.subscribe}
             </button>
           </form>
         )}

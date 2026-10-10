@@ -5,16 +5,19 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Clock, Menu, Phone, X } from "lucide-react";
 import { useRouter } from "@/lib/router";
+import { useLang } from "@/lib/i18n";
 import { navItems, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LanguageToggle } from "@/components/site/language-toggle";
 
 /* ------------------------------------------------------------------ */
-/*  Navbar — sticky, glass on scroll, mobile drawer                    */
+/*  Navbar — sticky, glass on scroll, mobile drawer, EN/বাংলা toggle   */
 /* ------------------------------------------------------------------ */
 
 export function Navbar() {
   const { path, navigate } = useRouter();
+  const { d } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -43,6 +46,18 @@ export function Navbar() {
     navigate(to);
   };
 
+  /* localized nav labels — order matches navItems in site.ts */
+  const navLabels = [
+    d.chrome.nav.home,
+    d.chrome.nav.about,
+    d.chrome.nav.services,
+    d.chrome.nav.gallery,
+    d.chrome.nav.doctors,
+    d.chrome.nav.blog,
+    d.chrome.nav.pricing,
+    d.chrome.nav.contact,
+  ];
+
   return (
     <>
       {/* Top info bar */}
@@ -51,17 +66,19 @@ export function Navbar() {
           <div className="flex items-center gap-5 text-blue-100/90">
             <span className="inline-flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-              {site.hours}
+              {d.chrome.hours}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Phone className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-              Hotline: {site.phone}
+              {d.chrome.hotline} {site.phone}
             </span>
           </div>
-          <div className="flex items-center gap-4 text-blue-100/90">
+          <div className="flex items-center gap-4">
             <span className="font-semibold tracking-wide text-amber-200">
-              {site.tagline}
+              {d.chrome.tagline}
             </span>
+            <span className="h-3.5 w-px bg-white/20" aria-hidden="true" />
+            <LanguageToggle variant="pill" />
           </div>
         </div>
       </div>
@@ -96,17 +113,14 @@ export function Navbar() {
                 width={176}
                 height={39}
                 priority
-                className={cn(
-                  "h-full w-auto object-contain transition-opacity duration-300",
-                  scrolled ? "opacity-100" : "opacity-100"
-                )}
+                className="h-full w-auto object-contain transition-opacity duration-300"
               />
             </div>
           </a>
 
           {/* Desktop nav */}
           <ul className="hidden items-center gap-0.5 lg:flex">
-            {navItems.map((item) => {
+            {navItems.map((item, i) => {
               const active = isActive(item.href);
               return (
                 <li key={item.href}>
@@ -130,7 +144,7 @@ export function Navbar() {
                         transition={{ type: "spring", stiffness: 380, damping: 32 }}
                       />
                     )}
-                    {item.label}
+                    {navLabels[i]}
                     <span
                       className={cn(
                         "absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-brand-gold transition-all duration-300",
@@ -144,11 +158,11 @@ export function Navbar() {
             })}
           </ul>
 
-          {/* CTA */}
-          <div className="hidden items-center gap-3 lg:flex">
+          {/* CTA + mobile lang toggle */}
+          <div className="flex items-center gap-2">
             <Button
               asChild
-              className="relative overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25"
+              className="relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
             >
               <a
                 href="#/appointment"
@@ -159,25 +173,28 @@ export function Navbar() {
                 className="inline-flex items-center gap-2"
               >
                 <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-                Book Appointment
+                {d.chrome.book}
               </a>
             </Button>
-          </div>
 
-          {/* Mobile toggle */}
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-brand-navy ring-1 ring-blue-100 transition-colors hover:bg-blue-50 lg:hidden"
-            aria-expanded={open}
-            aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? (
-              <X className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
+            {/* Mobile language toggle */}
+            <LanguageToggle variant="compact" className="lg:hidden" />
+
+            {/* Mobile menu toggle */}
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-brand-navy ring-1 ring-blue-100 transition-colors hover:bg-blue-50 lg:hidden"
+              aria-expanded={open}
+              aria-label={open ? d.chrome.closeMenu : d.chrome.openMenu}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? (
+                <X className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -214,7 +231,7 @@ export function Navbar() {
                   type="button"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 ring-1 ring-blue-100"
                   onClick={() => setOpen(false)}
-                  aria-label="Close menu"
+                  aria-label={d.chrome.closeMenu}
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
                 </button>
@@ -240,13 +257,22 @@ export function Navbar() {
                           : "text-slate-700 hover:bg-blue-50/60 hover:text-brand-blue"
                       )}
                     >
-                      {item.label}
+                      {navLabels[i]}
                       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-40" aria-hidden="true" />
                     </a>
                   </motion.li>
                 ))}
               </ul>
               <div className="space-y-3 border-t border-blue-50 p-5">
+                <div className="flex items-center justify-between rounded-2xl bg-ice px-4 py-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {d.chrome.langLabel}
+                  </span>
+                  <LanguageToggle
+                    variant="pill"
+                    className="bg-white ring-blue-100"
+                  />
+                </div>
                 <Button
                   asChild
                   className="w-full rounded-2xl bg-brand-blue py-6 text-base font-semibold text-white shadow-lg shadow-blue-500/25 hover:bg-brand-navy"
@@ -260,7 +286,7 @@ export function Navbar() {
                     className="inline-flex items-center justify-center gap-2"
                   >
                     <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                    Book Appointment
+                    {d.chrome.book}
                   </a>
                 </Button>
                 <a

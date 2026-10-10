@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { RouterProvider, useRouter } from "@/lib/router";
+import { LanguageProvider } from "@/lib/i18n";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FloatingContact } from "@/components/site/floating-contact";
@@ -16,6 +17,7 @@ import { AppointmentPage } from "@/components/site/pages/appointment-page";
 import { GalleryPage } from "@/components/site/pages/gallery-page";
 import { EstimatorPage } from "@/components/site/pages/estimator-page";
 import { StatusPage } from "@/components/site/pages/status-page";
+import { AdminPage } from "@/components/site/pages/admin-page";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 
 /* ------------------------------------------------------------------ */
@@ -57,6 +59,8 @@ function PageRouter() {
     page = <EstimatorPage />;
   } else if (segments[0] === "status") {
     page = <StatusPage />;
+  } else if (segments[0] === "admin") {
+    page = <AdminPage />;
   } else {
     page = <NotFoundPage />;
   }
@@ -82,19 +86,21 @@ function PageRouter() {
 export function SiteShell() {
   return (
     <RouterProvider>
-      <div className="flex min-h-screen flex-col bg-white">
-        {/* Accessibility: skip link */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-navy focus:px-4 focus:py-2 focus:text-sm focus:text-white"
-        >
-          Skip to main content
-        </a>
-        <Navbar />
-        <PageRouter />
-        <Footer />
-        <FloatingContact />
-      </div>
+      <LanguageProvider>
+        <div className="flex min-h-screen flex-col bg-white">
+          {/* Accessibility: skip link */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-navy focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+          >
+            Skip to main content
+          </a>
+          <Navbar />
+          <PageRouter />
+          <Footer />
+          <FloatingContact />
+        </div>
+      </LanguageProvider>
     </RouterProvider>
   );
 }

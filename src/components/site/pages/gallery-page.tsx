@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Camera,
@@ -17,6 +18,7 @@ import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  GALLERY PAGE — Smile transformations with before/after sliders     */
@@ -25,6 +27,7 @@ import { Button } from "@/components/ui/button";
 type SmileCase = {
   id: string;
   treatment: string;
+  category: "Cosmetic" | "Orthodontics" | "Restorative" | "Preventive";
   serviceSlug: string;
   beforeSrc: string;
   afterSrc: string;
@@ -43,6 +46,7 @@ const cases: SmileCase[] = [
   {
     id: "case-whitening",
     treatment: "Teeth Whitening",
+    category: "Cosmetic",
     serviceSlug: "digital-smile-design",
     beforeSrc: "/images/case-before-whitening.png",
     afterSrc: "/images/case-after-whitening.png",
@@ -60,6 +64,7 @@ const cases: SmileCase[] = [
   {
     id: "case-braces",
     treatment: "Orthodontics",
+    category: "Orthodontics",
     serviceSlug: "traditional-braces-orthodontics",
     beforeSrc: "/images/case-before-braces.png",
     afterSrc: "/images/case-after-braces.png",
@@ -76,6 +81,7 @@ const cases: SmileCase[] = [
   {
     id: "case-veneers",
     treatment: "Porcelain Veneers",
+    category: "Cosmetic",
     serviceSlug: "porcelain-veneers",
     beforeSrc: "/images/case-before-veneers.png",
     afterSrc: "/images/case-after-veneers.png",
@@ -89,10 +95,42 @@ const cases: SmileCase[] = [
     result:
       "Chips, discoloration and uneven shapes corrected with hand-layered porcelain. She approved the exact design in her DSD simulation before we began.",
   },
+  {
+    id: "case-gum",
+    treatment: "Gum Treatment & Scaling",
+    category: "Preventive",
+    serviceSlug: "periodontal-gum-treatment",
+    beforeSrc: "/images/case-before-gum.png",
+    afterSrc: "/images/case-after-gum.png",
+    beforeAlt: "Teeth with tartar buildup and red swollen gums before periodontal treatment",
+    afterAlt: "Clean white teeth with healthy pink gums after scaling and periodontal therapy",
+    title: "From bleeding gums to a healthy foundation",
+    patient: "M. Rahman",
+    age: 38,
+    duration: "2 visits over 2 weeks",
+    procedures: ["Ultrasonic scaling & deep cleaning", "Localized gum therapy", "Home-care coaching & follow-up"],
+    result:
+      "Years of tartar and early gum disease reversed — gums firm and pink again, bleeding gone within days. The foundation for every healthy smile starts here.",
+  },
 ];
+
+const filterCategories = [
+  { key: "All", label: "All Cases" },
+  { key: "Cosmetic", label: "Cosmetic" },
+  { key: "Orthodontics", label: "Orthodontics" },
+  { key: "Preventive", label: "Gum Care" },
+] as const;
+
+type FilterKey = (typeof filterCategories)[number]["key"];
 
 export function GalleryPage() {
   const { navigate } = useRouter();
+  const [filter, setFilter] = useState<FilterKey>("All");
+
+  const visibleCases = useMemo(
+    () => (filter === "All" ? cases : cases.filter((c) => c.category === filter)),
+    [filter]
+  );
 
   usePageMeta({
     title: "Smile Gallery — Before & After Dental Transformations",
@@ -140,13 +178,58 @@ export function GalleryPage() {
         </div>
       </section>
 
+      {/* Category filter */}
+      <section className="pb-4" aria-label="Filter cases by treatment type">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {filterCategories.map((cat) => {
+              const count =
+                cat.key === "All"
+                  ? cases.length
+                  : cases.filter((c) => c.category === cat.key).length;
+              const active = filter === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setFilter(cat.key)}
+                  aria-pressed={active}
+                  className={cn(
+                    "relative rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300",
+                    active
+                      ? "bg-brand-navy text-white shadow-lg shadow-navy-900/25"
+                      : "border border-blue-100 bg-white text-slate-600 hover:border-brand-blue/40 hover:text-brand-blue"
+                  )}
+                >
+                  {cat.label}
+                  <span
+                    className={cn(
+                      "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums",
+                      active ? "bg-white/20 text-white" : "bg-blue-50 text-brand-blue"
+                    )}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* Cases */}
       <section className="pb-16 sm:pb-20" aria-label="Smile transformation cases">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-16">
-            {cases.map((c, i) => (
-              <article
+            <AnimatePresence mode="popLayout">
+              {visibleCases.map((c, i) => (
+              <motion.article
                 key={c.id}
+                layout
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="grid items-center gap-10 lg:grid-cols-2"
                 aria-labelledby={`${c.id}-title`}
               >
@@ -257,8 +340,9 @@ export function GalleryPage() {
                     </div>
                   </motion.div>
                 </div>
-              </article>
-            ))}
+              </motion.article>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       </section>

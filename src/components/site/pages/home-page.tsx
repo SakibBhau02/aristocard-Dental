@@ -25,7 +25,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
-import { site, clinicStats, highlights } from "@/lib/site";
+import { useLang } from "@/lib/i18n";
+import { site } from "@/lib/site";
 import { services, getFeaturedServices } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
 import { testimonials } from "@/lib/data/doctors";
@@ -44,7 +45,7 @@ import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
-/*  HOME PAGE                                                          */
+/*  HOME PAGE (EN / বাংলা)                                             */
 /* ------------------------------------------------------------------ */
 
 const heroFaqsJsonLd = {
@@ -59,6 +60,7 @@ const heroFaqsJsonLd = {
 
 export function HomePage() {
   const { navigate } = useRouter();
+  const { lang, d } = useLang();
 
   usePageMeta({
     title:
@@ -69,6 +71,7 @@ export function HomePage() {
   });
 
   const featured = getFeaturedServices();
+  const bn = lang === "bn";
 
   return (
     <>
@@ -97,7 +100,7 @@ export function HomePage() {
               className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100"
             >
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              Advanced Dental Care in Uttara, Dhaka
+              {d.home.hero.badge}
             </motion.div>
 
             <motion.h1
@@ -107,9 +110,9 @@ export function HomePage() {
               transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
               className="font-heading mt-6 text-4xl font-bold leading-[1.08] text-brand-navy text-balance sm:text-5xl lg:text-[3.6rem]"
             >
-              Excellence in{" "}
+              {d.home.hero.titleA}{" "}
               <span className="relative inline-block">
-                <span className="gradient-text">Every Smile</span>
+                <span className="gradient-text">{d.home.hero.titleB}</span>
                 <svg
                   className="absolute -bottom-2 left-0 w-full text-amber-400"
                   viewBox="0 0 220 12"
@@ -132,9 +135,7 @@ export function HomePage() {
               transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
               className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg"
             >
-              A modern & well-equipped dental clinic combining advanced
-              technology, strict sterilization and truly gentle care — from
-              routine checkups to complete smile makeovers, all under one roof.
+              {d.home.hero.description}
             </motion.p>
 
             <motion.div
@@ -157,7 +158,7 @@ export function HomePage() {
                   className="inline-flex items-center gap-2"
                 >
                   <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                  Book Appointment Now
+                  {d.home.hero.ctaBook}
                 </a>
               </Button>
               <Button
@@ -175,7 +176,7 @@ export function HomePage() {
                   className="inline-flex items-center gap-2"
                 >
                   <PlayCircle className="h-5 w-5 text-brand-blue" aria-hidden="true" />
-                  Explore Services
+                  {d.home.hero.ctaExplore}
                 </a>
               </Button>
             </motion.div>
@@ -187,12 +188,7 @@ export function HomePage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600"
             >
-              {[
-                "Pain-free treatment",
-                "Strict sterilization",
-                "Kids-friendly rooms",
-                "Transparent pricing",
-              ].map((item) => (
+              {d.home.hero.trust.map((item) => (
                 <li key={item} className="inline-flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden="true" />
                   {item}
@@ -209,7 +205,7 @@ export function HomePage() {
             className="relative mx-auto w-full max-w-lg"
           >
             {/* main card */}
-            <div className="hero-mesh-dark relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-navy-900/40 sm:p-10">
+            <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-navy-900/40 sm:p-10">
               {/* clinic photo layer */}
               <Image
                 src="/images/hero-clinic.png"
@@ -227,7 +223,7 @@ export function HomePage() {
               <div className="relative flex items-center justify-between">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
                   <Stethoscope className="h-3.5 w-3.5" aria-hidden="true" />
-                  Specialist Team
+                  {d.home.hero.cardBadge}
                 </span>
                 <span className="inline-flex items-center gap-1 text-sm font-semibold text-white">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
@@ -236,12 +232,7 @@ export function HomePage() {
               </div>
 
               <div className="relative mt-8 space-y-4">
-                {[
-                  { title: "Digital Smile Design", note: "Preview your new smile" },
-                  { title: "Invisalign® Clear Aligners", note: "Invisible orthodontics" },
-                  { title: "Laser Pain-Free Fillings", note: "Often no injection needed" },
-                  { title: "Dental Implants", note: "Lifetime tooth replacement" },
-                ].map((item, i) => (
+                {d.home.hero.cardItems.map((item, i) => (
                   <motion.div
                     key={item.title}
                     initial={{ opacity: 0, x: 40 }}
@@ -277,7 +268,7 @@ export function HomePage() {
                     Dr. Shazia Khanam
                   </span>
                   <span className="block text-xs text-blue-200/85">
-                    BDS, MDS — Chief Dental Surgeon
+                    {d.home.hero.doctorRole}
                   </span>
                 </span>
               </motion.div>
@@ -295,8 +286,8 @@ export function HomePage() {
                   <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block font-heading text-sm font-bold text-brand-navy">100% Sterile</span>
-                  <span className="block text-[11px] text-slate-500">Hospital-grade protocol</span>
+                  <span className="block font-heading text-sm font-bold text-brand-navy">{d.home.hero.badge1Title}</span>
+                  <span className="block text-[11px] text-slate-500">{d.home.hero.badge1Note}</span>
                 </span>
               </span>
             </motion.div>
@@ -313,8 +304,8 @@ export function HomePage() {
                   <Users className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block font-heading text-sm font-bold text-brand-navy">50,000+</span>
-                  <span className="block text-[11px] text-slate-500">Happy patients served</span>
+                  <span className="block font-heading text-sm font-bold text-brand-navy">{d.home.hero.badge2Title}</span>
+                  <span className="block text-[11px] text-slate-500">{d.home.hero.badge2Note}</span>
                 </span>
               </span>
             </motion.div>
@@ -330,7 +321,7 @@ export function HomePage() {
           transition={{ delay: 1.6 }}
           aria-label="Scroll to statistics"
         >
-          Scroll
+          {d.home.hero.scroll}
           <ChevronDown className="h-4 w-4 animate-bounce" aria-hidden="true" />
         </motion.a>
       </section>
@@ -339,17 +330,23 @@ export function HomePage() {
       <section id="stats" className="relative -mt-2 bg-white" aria-label="Clinic statistics">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <StaggerContainer className="grid grid-cols-2 gap-4 rounded-[2rem] border border-blue-100/70 bg-white/80 p-6 shadow-[0_20px_60px_-30px_rgba(0,32,96,0.25)] backdrop-blur sm:p-8 lg:grid-cols-4">
-            {clinicStats.map((stat) => (
-              <StaggerItem key={stat.label} className="text-center">
+            {[
+              { value: 50000, suffix: "+", decimals: 0 },
+              { value: 11, suffix: "+", decimals: 0 },
+              { value: 4, suffix: "+", decimals: 0 },
+              { value: 4.9, suffix: "/5", decimals: 1 },
+            ].map((stat, i) => (
+              <StaggerItem key={i} className="text-center">
                 <span className="font-heading block text-3xl font-bold text-brand-navy sm:text-4xl">
                   <AnimatedCounter
                     value={stat.value}
-                    suffix={stat.suffix}
-                    decimals={"decimals" in stat ? stat.decimals : 0}
+                    suffix={bn ? undefined : stat.suffix}
+                    decimals={stat.decimals}
+                    formatBn={bn ? { suffix: stat.suffix } : undefined}
                   />
                 </span>
                 <span className="mt-1 block text-xs font-medium uppercase tracking-wider text-slate-500 sm:text-sm">
-                  {stat.label}
+                  {d.home.stats[i].label}
                 </span>
               </StaggerItem>
             ))}
@@ -369,7 +366,7 @@ export function HomePage() {
               className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-brand-navy/70"
             >
               <DynamicIcon name={s.icon} className="h-4 w-4 text-brand-blue" />
-              {s.name}
+              {bn && s.shortNameBn ? s.shortNameBn : s.name}
               <span className="ml-6 h-1 w-1 rounded-full bg-brand-blue/40" />
             </span>
           ))}
@@ -384,28 +381,27 @@ export function HomePage() {
             <Reveal className="relative order-2 lg:order-1">
               <div className="relative mx-auto max-w-md">
                 <div className="overflow-hidden rounded-[2rem] shadow-2xl shadow-navy-900/20 ring-1 ring-blue-100">
-                  <div className="hero-mesh-dark flex aspect-[4/5] flex-col justify-between p-8">
+                  <div className="hero-mesh-dark noise flex aspect-[4/5] flex-col justify-between p-8">
                     <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
                       <Award className="h-3.5 w-3.5" aria-hidden="true" />
-                      Premium Facility
+                      {d.home.why.premiumBadge}
                     </span>
                     <div>
                       <p className="font-heading text-2xl font-bold leading-snug text-white">
-                        &ldquo;A healthy smile is a gateway to overall
-                        well-being.&rdquo;
+                        {d.home.why.quote}
                       </p>
                       <p className="mt-3 text-sm text-blue-200/85">
-                        — Dr. Shazia Khanam, Chief Dental Surgeon
+                        {d.home.why.quoteBy}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      {doctors.slice(0, 4).map((d) => (
+                      {doctors.slice(0, 4).map((doc) => (
                         <span
-                          key={d.slug}
+                          key={doc.slug}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/12 text-xs font-bold text-white ring-2 ring-white/25"
-                          title={d.name}
+                          title={doc.name}
                         >
-                          {d.name
+                          {doc.name
                             .replace("Dr. ", "")
                             .split(" ")
                             .map((n) => n[0])
@@ -414,7 +410,7 @@ export function HomePage() {
                         </span>
                       ))}
                       <span className="text-xs text-blue-200/80">
-                        + 4 specialists
+                        {d.home.why.plusSpecialists}
                       </span>
                     </div>
                   </div>
@@ -431,7 +427,7 @@ export function HomePage() {
                     ))}
                   </span>
                   <span className="mt-1 block text-xs font-semibold text-brand-navy">
-                    4.9/5 • 3,200+ reviews
+                    {d.home.why.ratingNote}
                   </span>
                 </div>
               </div>
@@ -441,21 +437,24 @@ export function HomePage() {
             <div className="order-1 lg:order-2">
               <SectionHeading
                 align="left"
-                eyebrow="Why Choose Us"
+                eyebrow={d.home.why.eyebrow}
                 title={
                   <>
-                    Why patients trust us with
-                    <span className="gradient-text"> their smiles</span>
+                    {d.home.why.titleA}
+                    <span className="gradient-text">{d.home.why.titleB}</span>
                   </>
                 }
-                description="Choosing a dentist is a big decision. Here's what makes Aristocrat Dental Care the preferred dental destination in Uttara."
+                description={d.home.why.description}
               />
               <StaggerContainer className="mt-10 grid gap-4 sm:grid-cols-2">
-                {highlights.map((h) => (
+                {d.home.why.highlights.map((h, i) => (
                   <StaggerItem key={h.title}>
                     <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
                       <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-brand-blue ring-1 ring-blue-100 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
-                        <DynamicIcon name={h.icon} className="h-6 w-6" />
+                        <DynamicIcon
+                          name={["ShieldCheck", "Microscope", "HeartHandshake", "BadgeCheck"][i]}
+                          className="h-6 w-6"
+                        />
                       </span>
                       <h3 className="font-heading mt-4 text-base font-bold text-brand-navy">
                         {h.title}
@@ -476,15 +475,16 @@ export function HomePage() {
       <section className="relative bg-ice py-20 sm:py-24" aria-labelledby="services-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="Our Services"
+            eyebrow={d.home.services.eyebrow}
             title={
               <>
-                Personalized dental care,
-                <span className="gradient-text"> designed around you</span>
+                {d.home.services.titleA}
+                <span className="gradient-text">{d.home.services.titleB}</span>
               </>
             }
-            description="From preventive checkups to complete smile makeovers — 11 specialty services under one roof, delivered with modern technology and gentle hands."
+            description={d.home.services.description}
           />
+
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.slice(0, 6).map((service, i) => (
               <ServiceCard key={service.slug} service={service} index={i} />
@@ -505,7 +505,7 @@ export function HomePage() {
                 }}
                 className="inline-flex items-center gap-2"
               >
-                View All 11 Services
+                {d.home.services.viewAll}
                 <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </a>
             </Button>
@@ -519,14 +519,14 @@ export function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             dark
-            eyebrow="Inside Our Clinic"
+            eyebrow={d.home.facility.eyebrow}
             title={
               <>
-                A facility designed around
-                <span className="gold-text"> your comfort</span>
+                {d.home.facility.titleA}
+                <span className="gold-text">{d.home.facility.titleB}</span>
               </>
             }
-            description="Step inside — modern operatories, hospital-grade sterilization and a kids' room that turns fear into friendship."
+            description={d.home.facility.description}
           />
 
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
@@ -534,24 +534,18 @@ export function HomePage() {
               {
                 src: "/images/facility-tech.png",
                 alt: "Treatment room with digital X-ray and intraoral scanner at Aristocrat Dental Care",
-                title: "Digital Diagnostics",
-                text: "Intraoral scanners, low-radiation digital X-rays and chairside screens — see exactly what we see.",
               },
               {
                 src: "/images/facility-kids.png",
                 alt: "Cheerful pediatric dental room designed for children at Aristocrat Dental Care",
-                title: "Kids' Happy Room",
-                text: "A specially designed children's room where fear melts into curiosity — visit by visit.",
               },
               {
                 src: "/images/facility-sterile.png",
                 alt: "Sterilization room with autoclave and sealed instrument pouches",
-                title: "Sterilization Suite",
-                text: "Autoclave-sterilized, pouch-sealed instruments opened in front of you — every single patient.",
               },
-            ].map((card, i) => (
+            ].map((img, i) => (
               <motion.article
-                key={card.title}
+                key={img.src}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
@@ -560,8 +554,8 @@ export function HomePage() {
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <Image
-                    src={card.src}
-                    alt={card.alt}
+                    src={img.src}
+                    alt={img.alt}
                     fill
                     sizes="(max-width: 1024px) 92vw, 440px"
                     className="object-cover"
@@ -573,10 +567,10 @@ export function HomePage() {
                 </div>
                 <div className="p-6">
                   <h3 className="font-heading text-lg font-bold text-white transition-colors group-hover:text-amber-300">
-                    {card.title}
+                    {d.home.facility.cards[i].title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-blue-100/80">
-                    {card.text}
+                    {d.home.facility.cards[i].text}
                   </p>
                 </div>
               </motion.article>
@@ -592,14 +586,14 @@ export function HomePage() {
             <Reveal>
               <SectionHeading
                 align="left"
-                eyebrow="Smile Gallery"
+                eyebrow={d.home.galleryPreview.eyebrow}
                 title={
                   <>
-                    See real transformations,
-                    <span className="gradient-text"> slide to compare</span>
+                    {d.home.galleryPreview.titleA}
+                    <span className="gradient-text">{d.home.galleryPreview.titleB}</span>
                   </>
                 }
-                description="Whitening, orthodontics and veneer cases from our clinic — drag the slider handle to reveal each before & after."
+                description={d.home.galleryPreview.description}
               />
               <Reveal delay={0.15} className="mt-8">
                 <div className="flex flex-wrap gap-3">
@@ -616,7 +610,7 @@ export function HomePage() {
                       className="inline-flex items-center gap-2"
                     >
                       <Camera className="h-4.5 w-4.5" aria-hidden="true" />
-                      Explore Smile Gallery
+                      {d.home.galleryPreview.ctaGallery}
                     </a>
                   </Button>
                   <Button
@@ -633,7 +627,7 @@ export function HomePage() {
                       className="inline-flex items-center gap-2"
                     >
                       <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
-                      Estimate Treatment Cost
+                      {d.home.galleryPreview.ctaEstimate}
                     </a>
                   </Button>
                 </div>
@@ -650,7 +644,7 @@ export function HomePage() {
                 />
                 <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-navy px-4 py-1.5 text-xs font-bold text-white shadow-lg">
                   <Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                  Teeth Whitening — drag me
+                  {d.home.galleryPreview.sliderChip}
                 </span>
               </div>
             </Reveal>
@@ -662,14 +656,14 @@ export function HomePage() {
       <section className="section-wash relative py-20 sm:py-24" aria-labelledby="testimonials-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="Patient Stories"
+            eyebrow={d.home.testimonials.eyebrow}
             title={
               <>
-                Our happy patients
-                <span className="gradient-text"> say it best</span>
+                {d.home.testimonials.titleA}
+                <span className="gradient-text">{d.home.testimonials.titleB}</span>
               </>
             }
-            description="Real reviews from real patients across Uttara and greater Dhaka — in both Bangla and English."
+            description={d.home.testimonials.description}
           />
           <Reveal className="mt-12">
             <TestimonialCarousel testimonials={testimonials} />
@@ -683,14 +677,14 @@ export function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             dark
-            eyebrow="Meet Our Experts"
+            eyebrow={d.home.doctors.eyebrow}
             title={
               <>
-                Specialists in
-                <span className="gold-text"> personalized dental care</span>
+                {d.home.doctors.titleA}
+                <span className="gold-text">{d.home.doctors.titleB}</span>
               </>
             }
-            description="BDS & MDS qualified consultants in orthodontics, endodontics, oral surgery and cosmetic dentistry."
+            description={d.home.doctors.description}
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {doctors.map((doctor, i) => (
@@ -706,7 +700,7 @@ export function HomePage() {
               }}
               className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-bold text-white ring-2 ring-white/30 transition-all duration-300 hover:bg-white/10 hover:ring-white"
             >
-              View Medical Board
+              {d.home.doctors.viewBoard}
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </a>
           </Reveal>
@@ -720,28 +714,28 @@ export function HomePage() {
             <div>
               <SectionHeading
                 align="left"
-                eyebrow="Frequently Asked Questions"
+                eyebrow={d.home.faq.eyebrow}
                 title={
                   <>
-                    Answers to the questions
-                    <span className="gradient-text"> patients ask most</span>
+                    {d.home.faq.titleA}
+                    <span className="gradient-text">{d.home.faq.titleB}</span>
                   </>
                 }
-                description="Straightforward, expert answers about dental care — from checkup frequency to implant costs."
+                description={d.home.faq.description}
               />
               <Reveal className="mt-8">
                 <div className="rounded-2xl border border-blue-100 bg-ice p-6">
                   <p className="flex items-start gap-3 text-sm leading-relaxed text-slate-700">
                     <Phone className="mt-0.5 h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
                     <span>
-                      Still have questions? Call us at{" "}
+                      {d.home.faq.stillTitle}{" "}
                       <a
                         href={`tel:${site.phoneRaw}`}
                         className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
                       >
                         {site.phone}
                       </a>{" "}
-                      or{" "}
+                      {d.home.faq.or}{" "}
                       <a
                         href="#/contact"
                         onClick={(e) => {
@@ -750,9 +744,9 @@ export function HomePage() {
                         }}
                         className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
                       >
-                        send a message
+                        {d.home.faq.sendMsg}
                       </a>{" "}
-                      — our team replies within hours.
+                      {d.home.faq.replyNote}
                     </span>
                   </p>
                 </div>
@@ -768,10 +762,10 @@ export function HomePage() {
                     className="border-b border-blue-100/80 data-[state=open]:border-brand-blue/30"
                   >
                     <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
-                      {faq.question}
+                      {bn && faq.questionBn ? faq.questionBn : faq.question}
                     </AccordionTrigger>
                     <AccordionContent className="pb-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
-                      {faq.answer}
+                      {bn && faq.answerBn ? faq.answerBn : faq.answer}
                     </AccordionContent>
                   </AccordionItem>
                 ))}
@@ -785,7 +779,7 @@ export function HomePage() {
                   }}
                   className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue hover:text-brand-navy"
                 >
-                  Read more expert answers in our blog
+                  {d.home.faq.readMore}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
               </Reveal>
