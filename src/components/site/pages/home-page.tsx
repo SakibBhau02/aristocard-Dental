@@ -82,13 +82,15 @@ export function HomePage() {
         aria-labelledby="hero-heading"
       >
         <div className="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
-        {/* ambient depth blobs */}
+        {/* ambient depth blobs (slow drift) */}
         <span
-          className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
+          className="animate-glow-drift pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
+          style={{ animationDelay: "0s" }}
           aria-hidden="true"
         />
         <span
-          className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-brand-teal/10 blur-3xl"
+          className="animate-glow-drift pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-brand-teal/10 blur-3xl"
+          style={{ animationDelay: "-8s" }}
           aria-hidden="true"
         />
         <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8 lg:pb-28 lg:pt-20">
@@ -148,7 +150,7 @@ export function HomePage() {
               <Button
                 asChild
                 size="lg"
-                className="group relative overflow-hidden rounded-full bg-brand-blue px-8 py-6 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:shadow-2xl"
+                className="btn-shine group relative overflow-hidden rounded-full bg-brand-blue px-8 py-6 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-navy hover:shadow-2xl"
               >
                 <a
                   href="#/appointment"
@@ -205,6 +207,11 @@ export function HomePage() {
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="relative mx-auto w-full max-w-lg"
           >
+            {/* rotating accent ring */}
+            <span
+              className="animate-spin-slow pointer-events-none absolute -right-7 -top-7 z-10 h-20 w-20 rounded-full border-2 border-dashed border-brand-blue/30"
+              aria-hidden="true"
+            />
             {/* main card */}
             <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-navy-900/40 sm:p-10">
               {/* clinic photo layer */}
@@ -330,14 +337,20 @@ export function HomePage() {
       {/* ============ STATS ============ */}
       <section id="stats" className="relative -mt-2 bg-white" aria-label="Clinic statistics">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <StaggerContainer className="grid grid-cols-2 gap-4 rounded-[2rem] border border-blue-100/70 bg-white/80 p-6 shadow-[0_20px_60px_-30px_rgba(0,32,96,0.25)] backdrop-blur sm:p-8 lg:grid-cols-4">
+          <StaggerContainer className="card-accent-top relative grid grid-cols-2 gap-4 rounded-[2rem] border border-blue-100/70 bg-white/80 p-6 shadow-[0_20px_60px_-30px_rgba(0,32,96,0.25)] backdrop-blur sm:p-8 lg:grid-cols-4">
             {[
-              { value: 50000, suffix: "+", decimals: 0 },
-              { value: 11, suffix: "+", decimals: 0 },
-              { value: 4, suffix: "+", decimals: 0 },
-              { value: 4.9, suffix: "/5", decimals: 1 },
+              { icon: Users, value: 50000, suffix: "+", decimals: 0, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
+              { icon: Sparkles, value: 11, suffix: "+", decimals: 0, tone: "text-brand-teal bg-teal-50 ring-teal-100" },
+              { icon: Stethoscope, value: 4, suffix: "+", decimals: 0, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+              { icon: Star, value: 4.9, suffix: "/5", decimals: 1, tone: "text-amber-500 bg-amber-50 ring-amber-100" },
             ].map((stat, i) => (
               <StaggerItem key={i} className="text-center">
+                <span
+                  className={`mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${stat.tone}`}
+                  aria-hidden="true"
+                >
+                  <stat.icon className="h-5 w-5" />
+                </span>
                 <span className="font-heading block text-3xl font-bold text-brand-navy sm:text-4xl">
                   <AnimatedCounter
                     value={stat.value}
@@ -349,6 +362,13 @@ export function HomePage() {
                 <span className="mt-1 block text-xs font-medium uppercase tracking-wider text-slate-500 sm:text-sm">
                   {d.home.stats[i].label}
                 </span>
+                {i > 0 && (
+                  <span
+                    className="absolute top-1/2 hidden h-14 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-100 to-transparent lg:block"
+                    style={{ left: `${(i / 4) * 100}%` }}
+                    aria-hidden="true"
+                  />
+                )}
               </StaggerItem>
             ))}
           </StaggerContainer>
@@ -357,7 +377,7 @@ export function HomePage() {
 
       {/* ============ SERVICES MARQUEE ============ */}
       <section
-        className="mt-10 overflow-hidden border-y border-blue-100/60 bg-ice py-4"
+        className="marquee-fade mt-10 overflow-hidden border-y border-blue-100/60 bg-ice py-4"
         aria-hidden="true"
       >
         <div className="animate-marquee flex w-max items-center gap-8">
@@ -763,7 +783,7 @@ export function HomePage() {
                   <AccordionItem
                     key={faq.question}
                     value={`faq-${i}`}
-                    className="border-b border-blue-100/80 data-[state=open]:border-brand-blue/30"
+                    className="faq-row border-b border-blue-100/80 data-[state=open]:border-brand-blue/30"
                   >
                     <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
                       {bn && faq.questionBn ? faq.questionBn : faq.question}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { services } from "@/lib/data/services";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /* ------------------------------------------------------------------ */
 /*  /api/reviews — public patient reviews                              */
@@ -14,6 +15,18 @@ const SERVICE_SLUGS = new Set(services.map((s) => s.slug));
 /* POST — public submission. Created with approved:false (moderation). */
 export async function POST(req: NextRequest) {
   try {
+    /* Rate limit FIRST so 429s never leak validation info */
+    const rl = checkRateLimit(`review:${getClientIp(req)}`, 3, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many requests. Please wait a few minutes and try again, or call us at 01715-027522.",
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json(

@@ -52,7 +52,19 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative mt-auto overflow-hidden bg-brand-navy pb-[env(safe-area-inset-bottom)] text-white">
+    <footer className="relative mt-auto bg-brand-navy pb-[env(safe-area-inset-bottom)] text-white">
+      {/* top wave divider — melts the page into the navy footer */}
+      <svg
+        className="pointer-events-none absolute -top-7 left-0 right-0 h-8 w-full text-brand-navy sm:-top-9 sm:h-10"
+        viewBox="0 0 1440 44"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,44 L0,26 C180,2 360,40 540,22 C700,7 820,38 980,26 C1140,14 1300,36 1440,16 L1440,44 Z"
+          fill="currentColor"
+        />
+      </svg>
       {/* decorative glow */}
       <div
         className="pointer-events-none absolute inset-0"

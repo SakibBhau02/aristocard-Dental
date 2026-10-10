@@ -455,12 +455,181 @@ html[lang="bn"] {
   transform: scale(1.06);
 }
 
+/* ---------- Button shine sweep (primary CTAs) ---------- */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.38) 46%,
+    rgba(255, 255, 255, 0.62) 50%,
+    rgba(255, 255, 255, 0.38) 54%,
+    transparent 68%
+  );
+  transform: translateX(-130%) skewX(-8deg);
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.btn-shine:hover::before,
+.btn-shine:focus-visible::before {
+  transform: translateX(130%) skewX(-8deg);
+}
+.btn-shine > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- Gradient top hairline for cards ---------- */
+.card-accent-top {
+  position: relative;
+  overflow: hidden;
+}
+.card-accent-top::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1e7dff, #4194ff 45%, #f59e0b);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.card-accent-top:hover::before,
+.card-accent-top:focus-within::before {
+  transform: scaleX(1);
+}
+
+/* ---------- Ambient glow drift (hero blobs) ---------- */
+@keyframes glow-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(26px, -18px) scale(1.08);
+  }
+  66% {
+    transform: translate(-18px, 14px) scale(0.94);
+  }
+}
+.animate-glow-drift {
+  animation: glow-drift 16s ease-in-out infinite;
+}
+
+/* ---------- Slow decorative spin (hero ring accent) ---------- */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 26s linear infinite;
+}
+
+/* ---------- Marquee edge fade ---------- */
+.marquee-fade {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+
+/* ---------- FAQ row hover sheen ---------- */
+.faq-row {
+  transition: background-color 0.35s ease, border-radius 0.35s ease;
+}
+.faq-row:hover {
+  background-color: color-mix(in srgb, #f0f7ff 70%, transparent);
+}
+
+/* ---------- Section heading underline flourish ---------- */
+.heading-flourish {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.heading-flourish::before {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 46px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1e7dff, #4194ff);
+}
+.heading-flourish::after {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: #f59e0b;
+}
+.heading-flourish--gold::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+.heading-flourish--gold::after {
+  background: #4194ff;
+}
+
+/* ---------- Navbar gradient hairline ---------- */
+.nav-hairline {
+  position: relative;
+}
+.nav-hairline::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(30, 125, 255, 0.45) 30%,
+    rgba(245, 158, 11, 0.55) 70%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.nav-hairline.is-scrolled::after {
+  opacity: 1;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .animate-float-soft,
-  .animate-pulse-ring {
+  .animate-pulse-ring,
+  .animate-glow-drift,
+  .animate-spin-slow {
     animation: none;
+  }
+  .btn-shine::before,
+  .card-accent-top::before {
+    transition: none;
+    display: none;
   }
   html {
     scroll-behavior: auto;

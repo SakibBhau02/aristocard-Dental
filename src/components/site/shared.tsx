@@ -109,7 +109,7 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: (index % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="card-shine group relative flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.3)]"
+      className="card-shine card-accent-top group relative flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.3)]"
     >
       <div className="flex items-start justify-between gap-3">
         <span
@@ -255,11 +255,12 @@ export function CtaBanner({
           <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center shadow-2xl shadow-navy-900/30 sm:px-12">
             <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
             <span
-              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-blue/25 blur-3xl"
+              className="animate-glow-drift pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-blue/25 blur-3xl"
               aria-hidden="true"
             />
             <span
-              className="pointer-events-none absolute -bottom-20 -left-16 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl"
+              className="animate-glow-drift pointer-events-none absolute -bottom-20 -left-16 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl"
+              style={{ animationDelay: "-7s" }}
               aria-hidden="true"
             />
             <div className="relative">
@@ -276,7 +277,7 @@ export function CtaBanner({
                 <button
                   type="button"
                   onClick={() => navigate("/appointment")}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  className="btn-shine inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
                 >
                   <CalendarCheck className="h-5 w-5" aria-hidden="true" />
                   {d.shared.ctaBook}

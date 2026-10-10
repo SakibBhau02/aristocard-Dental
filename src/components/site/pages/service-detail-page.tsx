@@ -29,6 +29,7 @@ import { getService, services } from "@/lib/data/services";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { ServiceCard, CtaBanner } from "@/components/site/shared";
+import { ServiceReviews } from "@/components/site/service-reviews";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { site } from "@/lib/site";
 
@@ -482,6 +483,9 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
           </Reveal>
         </div>
       </section>
+
+      {/* ============ PATIENT REVIEWS (this treatment) ============ */}
+      <ServiceReviews serviceSlug={service.slug} />
 
       {/* ============ RELATED SERVICES ============ */}
       {related.length > 0 && (

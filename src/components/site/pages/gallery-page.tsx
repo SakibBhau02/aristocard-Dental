@@ -114,9 +114,51 @@ const cases: SmileCase[] = [
     result:
       "Years of tartar and early gum disease reversed — gums firm and pink again, bleeding gone within days. The foundation for every healthy smile starts here.",
   },
+  {
+    id: "case-implant",
+    treatment: "Dental Implant & Crown",
+    category: "Restorative",
+    serviceSlug: "dental-implants",
+    beforeSrc: "/images/case-before-implant.png",
+    afterSrc: "/images/case-after-implant.png",
+    beforeAlt: "Smile with a missing lateral incisor and stained teeth before dental implant treatment",
+    afterAlt: "Complete bright smile with a natural implant crown after dental implant treatment",
+    title: "A missing tooth — replaced like it was never gone",
+    patient: "A. Chowdhury",
+    age: 45,
+    duration: "3 visits over 3 months",
+    procedures: [
+      "Single titanium implant placement",
+      "Porcelain-fused-to-zirconia crown",
+      "Professional cleaning & polish",
+    ],
+    result:
+      "A missing lateral incisor restored with a titanium implant and hand-finished crown that matches its neighbours in shape, shade and light reflection. Bone preserved, chewing restored, no damage to adjacent teeth.",
+  },
+  {
+    id: "case-kids",
+    treatment: "Pediatric Fillings & Care",
+    category: "Restorative",
+    serviceSlug: "pediatric-dentistry",
+    beforeSrc: "/images/case-before-kids.png",
+    afterSrc: "/images/case-after-kids.png",
+    beforeAlt: "Child's front baby teeth with brown decay spots before pediatric dental treatment",
+    afterAlt: "Child's front baby teeth restored with white fillings after pediatric dental treatment",
+    title: "Little smile, big rescue",
+    patient: "Z. Ahmed",
+    age: 8,
+    duration: "2 gentle visits",
+    procedures: [
+      "Tooth-colored composite fillings",
+      "Fluoride varnish & sealants",
+      "Brushing coaching for parents & child",
+    ],
+    result:
+      "Early childhood decay arrested and restored with white fillings that blend invisibly. Sealants and fluoride guard the adult teeth waiting underneath — and she now asks for her brushing timer.",
+  },
 ];
 
-const filterCategories = ["All", "Cosmetic", "Orthodontics", "Preventive"] as const;
+const filterCategories = ["All", "Cosmetic", "Orthodontics", "Restorative", "Preventive"] as const;
 type FilterKey = (typeof filterCategories)[number];
 
 export function GalleryPage() {

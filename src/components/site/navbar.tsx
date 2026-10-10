@@ -86,14 +86,17 @@ export function Navbar() {
       {/* Main navbar */}
       <header
         className={cn(
-          "sticky top-0 z-50 transition-all duration-500",
+          "nav-hairline sticky top-0 z-50 transition-all duration-500",
           scrolled
-            ? "glass border-b border-blue-100/70 shadow-[0_8px_30px_-12px_rgba(0,32,96,0.25)]"
+            ? "glass is-scrolled border-b border-blue-100/70 shadow-[0_8px_30px_-12px_rgba(0,32,96,0.25)]"
             : "bg-white"
         )}
       >
         <nav
-          className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6"
+          className={cn(
+            "mx-auto flex max-w-7xl items-center justify-between px-4 transition-all duration-500 sm:px-6",
+            scrolled ? "py-2" : "py-3"
+          )}
           aria-label="Main navigation"
         >
           {/* Logo */}
@@ -106,7 +109,7 @@ export function Navbar() {
             className="group flex items-center gap-3"
             aria-label="Aristocrat Dental Care & Orthodontic Center — Home"
           >
-            <div className="relative h-11 w-auto">
+            <div className={cn("w-auto transition-all duration-500", scrolled ? "h-9" : "h-11")}>
               <Image
                 src="/logo.png"
                 alt="Aristocrat Dental Care & Orthodontic Center logo"
@@ -163,7 +166,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <Button
               asChild
-              className="relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
+              className="btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
             >
               <a
                 href="#/appointment"

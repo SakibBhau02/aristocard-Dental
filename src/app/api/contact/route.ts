@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/contact — save a contact message                         */
@@ -7,6 +8,18 @@ import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
+    /* Rate limit FIRST so 429s never leak validation info */
+    const rl = checkRateLimit(`contact:${getClientIp(req)}`, 3, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many requests. Please wait a few minutes and try again, or call us at 01715-027522.",
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     const { name, email, phone, subject, message } = body ?? {};
     if (!body || typeof body !== "object") {

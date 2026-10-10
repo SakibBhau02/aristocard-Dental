@@ -10,9 +10,11 @@ import {
   Clock3,
   Globe,
   Lightbulb,
+  Search,
   Share2,
   Tag,
   UserRound,
+  X,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
@@ -22,6 +24,7 @@ import { Reveal, SectionHeading } from "@/components/site/motion";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -38,6 +41,7 @@ function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
 
 export function BlogPage() {
   const [category, setCategory] = useState("All");
+  const [search, setSearch] = useState("");
   const { navigate } = useRouter();
   const { lang, d } = useLang();
   const bn = lang === "bn";
@@ -56,15 +60,31 @@ export function BlogPage() {
     },
   });
 
-  const filtered = useMemo(
-    () =>
-      category === "All"
-        ? blogPosts
-        : blogPosts.filter((p) => p.category === category),
-    [category]
-  );
+  const searching = search.trim().length > 0;
+
+  /* Category filter combined with text search (title / excerpt / category) */
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return blogPosts.filter((p) => {
+      const matchCategory = category === "All" || p.category === category;
+      const matchSearch =
+        !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.excerpt.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
+      return matchCategory && matchSearch;
+    });
+  }, [category, search]);
   const featured = blogPosts.find((p) => p.featured) ?? blogPosts[0];
-  const rest = filtered.filter((p) => p.slug !== featured.slug || category !== "All");
+  /* While searching, the hero is hidden and every match goes into the grid */
+  const rest = searching
+    ? filtered
+    : filtered.filter((p) => p.slug !== featured.slug || category !== "All");
+
+  const resultCountText = t.searchResults.replace(
+    "{count}",
+    bn ? toBnDigits(rest.length) : String(rest.length)
+  );
 
   return (
     <>
@@ -75,153 +95,190 @@ export function BlogPage() {
         breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.blog }]}
       />
 
-      {/* Featured post */}
-      <section className="py-14 sm:py-16" aria-label="Featured article">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <Reveal>
-            <a
-              href={`#/blog/${featured.slug}`}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(`/blog/${featured.slug}`);
-              }}
-              className="group grid overflow-hidden rounded-[2rem] border border-blue-100/80 bg-white shadow-[0_16px_50px_-24px_rgba(0,32,96,0.25)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_28px_60px_-24px_rgba(30,125,255,0.35)] lg:grid-cols-[1.1fr_0.9fr]"
-              aria-label={`Read featured article: ${featured.title}`}
-            >
-              <div className="hero-mesh-dark relative flex min-h-[260px] flex-col justify-between p-8 sm:p-10">
-                <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
-                <span className="relative inline-flex w-fit items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
-                  <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t.featured}
-                </span>
-                <div className="relative">
-                  <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
-                    {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
+      {/* Featured post — hidden while searching */}
+      {!searching && (
+        <section className="py-14 sm:py-16" aria-label="Featured article">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <Reveal>
+              <a
+                href={`#/blog/${featured.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/blog/${featured.slug}`);
+                }}
+                className="group grid overflow-hidden rounded-[2rem] border border-blue-100/80 bg-white shadow-[0_16px_50px_-24px_rgba(0,32,96,0.25)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_28px_60px_-24px_rgba(30,125,255,0.35)] lg:grid-cols-[1.1fr_0.9fr]"
+                aria-label={`Read featured article: ${featured.title}`}
+              >
+                <div className="hero-mesh-dark relative flex min-h-[260px] flex-col justify-between p-8 sm:p-10">
+                  <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+                  <span className="relative inline-flex w-fit items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
+                    <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
+                    {t.featured}
                   </span>
-                  <h2 className="font-heading mt-4 text-2xl font-bold leading-snug text-white sm:text-3xl">
-                    {featured.title}
-                  </h2>
-                  <p className="mt-3 text-sm leading-relaxed text-blue-100/85">
-                    {featured.excerpt}
-                  </p>
+                  <div className="relative">
+                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
+                      {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
+                    </span>
+                    <h2 className="font-heading mt-4 text-2xl font-bold leading-snug text-white sm:text-3xl">
+                      {featured.title}
+                    </h2>
+                    <p className="mt-3 text-sm leading-relaxed text-blue-100/85">
+                      {featured.excerpt}
+                    </p>
+                  </div>
+                  <span className="relative inline-flex w-fit items-center gap-2 text-sm font-bold text-white">
+                    {t.readGuide}
+                    <ArrowUpRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
+                  </span>
                 </div>
-                <span className="relative inline-flex w-fit items-center gap-2 text-sm font-bold text-white">
-                  {t.readGuide}
-                  <ArrowUpRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
-                </span>
-              </div>
 
-              <div className="flex flex-col justify-between bg-white p-8 sm:p-10">
-                <div>
-                  {featured.image && (
-                    <div className="zoom-img relative mb-6 overflow-hidden rounded-2xl ring-1 ring-blue-100">
-                      <Image
-                        src={featured.image}
-                        alt={featured.imageAlt ?? featured.title}
-                        width={672}
-                        height={384}
-                        className="h-44 w-full object-cover sm:h-48"
-                      />
-                      <span
-                        className="absolute inset-0 bg-gradient-to-t from-brand-navy/35 via-transparent to-transparent"
-                        aria-hidden="true"
-                      />
-                    </div>
-                  )}
-                  <span className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm leading-relaxed text-brand-navy ring-1 ring-blue-100">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
-                    <span>
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
-                        {t.quickAnswer}
+                <div className="flex flex-col justify-between bg-white p-8 sm:p-10">
+                  <div>
+                    {featured.image && (
+                      <div className="zoom-img relative mb-6 overflow-hidden rounded-2xl ring-1 ring-blue-100">
+                        <Image
+                          src={featured.image}
+                          alt={featured.imageAlt ?? featured.title}
+                          width={672}
+                          height={384}
+                          className="h-44 w-full object-cover sm:h-48"
+                        />
+                        <span
+                          className="absolute inset-0 bg-gradient-to-t from-brand-navy/35 via-transparent to-transparent"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    )}
+                    <span className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm leading-relaxed text-brand-navy ring-1 ring-blue-100">
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+                      <span>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
+                          {t.quickAnswer}
+                        </span>
+                        {featured.quickAnswer.slice(0, 140)}…
                       </span>
-                      {featured.quickAnswer.slice(0, 140)}…
                     </span>
-                  </span>
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {featured.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="border-blue-100 bg-ice text-[11px] font-medium text-brand-navy"
-                      >
-                        #{tag}
-                      </Badge>
-                    ))}
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      {featured.tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="border-blue-100 bg-ice text-[11px] font-medium text-brand-navy"
+                        >
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-8 flex items-center gap-4 border-t border-blue-50 pt-6">
+                    <Avatar className="h-11 w-11 border-2 border-amber-200">
+                      <AvatarFallback className="font-heading text-sm font-bold text-brand-navy">
+                        {featured.author
+                          .replace("Dr. ", "")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-brand-navy">
+                        {featured.author}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {featured.authorCredentials}
+                      </span>
+                    </div>
+                    <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-xs text-slate-500 sm:flex">
+                      <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {localizeReadTime(featured.readTime, bn, t.minRead)}
+                    </span>
                   </div>
                 </div>
-                <div className="mt-8 flex items-center gap-4 border-t border-blue-50 pt-6">
-                  <Avatar className="h-11 w-11 border-2 border-amber-200">
-                    <AvatarFallback className="font-heading text-sm font-bold text-brand-navy">
-                      {featured.author
-                        .replace("Dr. ", "")
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-brand-navy">
-                      {featured.author}
-                    </span>
-                    <span className="block truncate text-xs text-slate-500">
-                      {featured.authorCredentials}
-                    </span>
-                  </div>
-                  <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-xs text-slate-500 sm:flex">
-                    <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {localizeReadTime(featured.readTime, bn, t.minRead)}
-                  </span>
-                </div>
-              </div>
-            </a>
-          </Reveal>
-        </div>
-      </section>
+              </a>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
-      {/* Category filter + grid */}
+      {/* Category filter + search + grid */}
       <section className="pb-16 sm:pb-20" aria-label="All articles">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="scroll-area flex items-center gap-2 overflow-x-auto pb-2">
-            <Tag className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-            {blogCategories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                aria-pressed={category === c}
-                className={cn(
-                  "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
-                  category === c
-                    ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
-                    : "bg-blue-50 text-brand-navy hover:bg-blue-100"
-                )}
-              >
-                {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
-                <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
-                  {bn
-                    ? toBnDigits(
-                        c === "All"
-                          ? blogPosts.length
-                          : blogPosts.filter((p) => p.category === c).length
-                      )
-                    : c === "All"
-                      ? blogPosts.length
-                      : blogPosts.filter((p) => p.category === c).length}
-                </span>
-              </button>
-            ))}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Search — filters by title, excerpt and category (EN content) */}
+            <div className="relative w-full sm:w-64">
+              <Search
+                className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                aria-label={t.searchPlaceholder}
+                className="h-11 rounded-full border-blue-200/80 bg-white pl-11 pr-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label={t.searchClear}
+                  title={t.searchClear}
+                  className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            <div className="scroll-area flex flex-1 items-center gap-2 overflow-x-auto pb-2">
+              <Tag className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+              {blogCategories.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(c)}
+                  aria-pressed={category === c}
+                  className={cn(
+                    "shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
+                    category === c
+                      ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+                      : "bg-blue-50 text-brand-navy hover:bg-blue-100"
+                  )}
+                >
+                  {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+                  <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
+                    {bn
+                      ? toBnDigits(
+                          c === "All"
+                            ? blogPosts.length
+                            : blogPosts.filter((p) => p.category === c).length
+                        )
+                      : c === "All"
+                        ? blogPosts.length
+                        : blogPosts.filter((p) => p.category === c).length}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
+          {searching && rest.length > 0 && (
+            <p className="mt-6 text-sm text-slate-500" aria-live="polite">
+              {resultCountText}
+            </p>
+          )}
+
           <AnimatePresence mode="wait">
-            <motion.div
-              key={category}
-              className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-            >
+            {rest.length > 0 ? (
+              <motion.div
+                key={`${category}-${search}`}
+                className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+              >
               {rest.map((post, i) => (
                 <motion.article
                   key={post.slug}
@@ -285,7 +342,21 @@ export function BlogPage() {
                   </a>
                 </motion.article>
               ))}
-            </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                className="mx-auto mt-8 max-w-md rounded-3xl border border-dashed border-blue-200 bg-ice p-12 text-center"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <Search className="mx-auto h-10 w-10 text-brand-blue/50" aria-hidden="true" />
+                <p className="mt-4 text-sm leading-relaxed text-slate-500">
+                  {t.noResults}
+                </p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </section>

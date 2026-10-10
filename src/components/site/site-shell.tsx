@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { LanguageProvider } from "@/lib/i18n";
+import { ScrollProgress } from "@/components/site/motion";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FloatingContact } from "@/components/site/floating-contact";
@@ -95,6 +96,7 @@ export function SiteShell() {
           >
             Skip to main content
           </a>
+          <ScrollProgress />
           <Navbar />
           <PageRouter />
           <Footer />

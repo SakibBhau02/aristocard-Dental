@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
+import { motion, useInView, useMotionValue, useScroll, useSpring } from "framer-motion";
 import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -142,7 +142,7 @@ export function AnimatedCounter({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Section heading — eyebrow + title + description                    */
+/*  Section heading — eyebrow + title + flourish + description         */
 /* ------------------------------------------------------------------ */
 
 export function SectionHeading({
@@ -193,6 +193,14 @@ export function SectionHeading({
       >
         {title}
       </h2>
+      <span
+        className={cn(
+          "heading-flourish mt-5",
+          align === "center" ? "justify-center" : "",
+          dark ? "heading-flourish--gold" : ""
+        )}
+        aria-hidden="true"
+      />
       {description ? (
         <p
           className={cn(
@@ -204,5 +212,26 @@ export function SectionHeading({
         </p>
       ) : null}
     </Reveal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Global scroll progress bar — slim brand gradient under the navbar  */
+/* ------------------------------------------------------------------ */
+
+export function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 26,
+    restDelta: 0.001,
+  });
+
+  return (
+    <motion.div
+      aria-hidden="true"
+      className="fixed inset-x-0 top-0 z-[70] h-[3px] origin-left bg-gradient-to-r from-brand-blue via-brand-blue-light to-brand-gold"
+      style={{ scaleX }}
+    />
   );
 }

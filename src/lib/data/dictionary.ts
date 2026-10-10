@@ -432,6 +432,19 @@ const en = {
     allServices: "All services",
     ctaTitle: "Ready to start {service}?",
     ctaDescription: "Schedule a consultation for {serviceFull} today — {hours}. Our specialists will assess, explain and plan your treatment with complete transparency.",
+    reviews: {
+      reviewsEyebrow: "Patient Reviews",
+      reviewsTitle: "What patients say about {service}",
+      reviewsText:
+        "Real experiences from patients who chose this treatment at our clinic — every review is verified by our team before it appears.",
+      noReviews: "No reviews for this treatment yet — be the first to share your experience.",
+      beFirst: "Write the first review",
+      writeReview: "Write a review",
+      verified: "Verified patient",
+      siteAverage: "Clinic-wide average",
+      fromCount: "from {count} patient reviews",
+      loadError: "Couldn't load reviews right now. Please try again shortly.",
+    },
   },
 
   /* ---------------- Doctors pages ---------------- */
@@ -738,6 +751,10 @@ const en = {
     relatedTitle: "Related articles",
     ctaTitle: "Reading is great. A healthy smile is better.",
     ctaDescription: "Turn expert knowledge into action — book a checkup with our specialists and experience the care you've been reading about.",
+    searchPlaceholder: "Search articles…",
+    searchResults: "Showing {count} articles",
+    searchClear: "Clear search",
+    noResults: "No articles match your search — try a different keyword or category.",
   },
 
   /* ---------------- Contact page ---------------- */
@@ -1266,6 +1283,19 @@ const bn: Dictionary = {
     allServices: "সব সেবা",
     ctaTitle: "{service} শুরু করতে প্রস্তুত?",
     ctaDescription: "আজই {serviceFull}-এর কনসালটেশন নিন — {hours}। আমাদের বিশেষজ্ঞরা পরীক্ষা করে, বুঝিয়ে বলে পরিকল্পনা করবেন — পূর্ণ স্বচ্ছতায়।",
+    reviews: {
+      reviewsEyebrow: "রোগীর মতামত",
+      reviewsTitle: "{service} নিয়ে রোগীরা যা বলেন",
+      reviewsText:
+        "এই চিকিৎসা নিয়ে আমাদের ক্লিনিকে যারা এসেছেন, তাঁদের সত্যিকারের অভিজ্ঞতা — প্রতিটি রিভিউ প্রকাশের আগে আমাদের টিম যাচাই করে।",
+      noReviews: "এই চিকিৎসা নিয়ে এখনও কোনো মতামত নেই — আপনিই প্রথম অভিজ্ঞতা শেয়ার করুন।",
+      beFirst: "প্রথম রিভিউ লিখুন",
+      writeReview: "রিভিউ লিখুন",
+      verified: "যাচাইকৃত রোগী",
+      siteAverage: "ক্লিনিকের সামগ্রিক রেটিং",
+      fromCount: "{count}টি রোগীর মতামত থেকে",
+      loadError: "এখন রিভিউ লোড করা যাচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।",
+    },
   },
 
   /* ---------------- Doctors pages ---------------- */
@@ -1572,6 +1602,10 @@ const bn: Dictionary = {
     relatedTitle: "সম্পর্কিত আর্টিকেল",
     ctaTitle: "পড়া ভালো, সুস্থ হাসি আরও ভালো।",
     ctaDescription: "বিশেষজ্ঞ জ্ঞানকে কাজে লাগান — আমাদের বিশেষজ্ঞদের চেকআপ বুক করুন, যে যত্নের কথা পড়ছেন তা নিজে অনুভব করুন।",
+    searchPlaceholder: "আর্টিকেল খুঁজুন…",
+    searchResults: "{count}টি আর্টিকেল দেখানো হচ্ছে",
+    searchClear: "সার্চ মুছুন",
+    noResults: "আপনার খোঁজার সাথে কোনো আর্টিকেল মেলেনি — অন্য শব্দ বা ক্যাটাগরি দিয়ে চেষ্টা করুন।",
   },
 
   /* ---------------- Contact page ---------------- */

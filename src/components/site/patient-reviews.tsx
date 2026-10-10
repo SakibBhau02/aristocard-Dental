@@ -210,7 +210,8 @@ export function PatientReviews() {
 
   return (
     <section
-      className="section-wash relative py-20 sm:py-24"
+      id="reviews"
+      className="section-wash relative scroll-mt-24 py-20 sm:py-24"
       aria-labelledby="patient-reviews-heading"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">

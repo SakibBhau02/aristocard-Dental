@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { services } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/appointments — create a new appointment booking          */
@@ -18,6 +19,18 @@ const TIME_SLOT_RE =
 
 export async function POST(req: NextRequest) {
   try {
+    /* Rate limit FIRST so 429s never leak validation info */
+    const rl = checkRateLimit(`apt:${getClientIp(req)}`, 5, 10 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many requests. Please wait a few minutes and try again, or call us at 01715-027522.",
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const body = await req.json().catch(() => null);
     const {
       name,
