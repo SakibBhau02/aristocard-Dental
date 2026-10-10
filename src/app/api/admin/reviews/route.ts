@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminCode } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { reviewsToCsv } from "@/lib/admin-csv";
 
@@ -11,15 +12,12 @@ import { reviewsToCsv } from "@/lib/admin-csv";
 /*  Auth: x-admin-code header must match ADMIN_PASSCODE                 */
 /* ------------------------------------------------------------------ */
 
-/* Demo passcode — override with ADMIN_PASSCODE env var in production. */
-const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE ?? "aristocrat-2026";
-
 const VALID_ACTIONS = ["approve", "reject", "delete"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
 
 function isAuthorized(req: NextRequest): boolean {
-  const code = req.headers.get("x-admin-code") ?? "";
-  return code.length > 0 && code === ADMIN_PASSCODE;
+  /* Timing-safe check via shared helper (src/lib/admin-auth.ts). */
+  return verifyAdminCode(req.headers.get("x-admin-code"));
 }
 
 /* GET — list every review (newest first) + moderation stats. */

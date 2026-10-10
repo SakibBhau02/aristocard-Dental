@@ -188,6 +188,7 @@ const en = {
       sendMsg: "send a message",
       replyNote: "— our team replies within hours.",
       readMore: "Read more expert answers in our blog",
+      viewAll: "Browse all FAQs",
     },
   },
 
@@ -207,6 +208,7 @@ const en = {
       "Contact",
       "Book Appointment",
       "Check Appointment Status",
+      "FAQs",
     ],
     viewAllServices: "View all 11 services →",
     reviews: "(3,200+ patient reviews)",
@@ -445,6 +447,11 @@ const en = {
       fromCount: "from {count} patient reviews",
       loadError: "Couldn't load reviews right now. Please try again shortly.",
     },
+    galleryEyebrow: "Real Results",
+    galleryTitle: "See what {service} did for our patients",
+    galleryText: "Drag the handle to compare — real before & after outcomes from our Uttara clinic.",
+    galleryCta: "View full Smile Gallery",
+    galleryDuration: "Treatment time",
   },
 
   /* ---------------- Doctors pages ---------------- */
@@ -516,6 +523,23 @@ const en = {
     disclaimerText: "Images shown are representative examples of treatment outcomes. Every smile is unique — your result depends on your oral health, anatomy and treatment plan, which our specialists confirm during consultation before any procedure begins.",
     ctaTitle: "Your smile transformation starts here",
     ctaDescription: "Book a Digital Smile Design consultation and preview YOUR new smile before any treatment — just like the patients above.",
+  },
+
+  /* ---------------- FAQs hub page ---------------- */
+  faqsPage: {
+    eyebrow: "Knowledge Center",
+    title: "Every question, answered by our dentists",
+    description: "Browse answers about booking, pricing, treatments and home care — straight from the specialists at our Uttara clinic.",
+    searchPlaceholder: "Search questions… (e.g. implant, whitening, kids)",
+    searchResults: "Showing {count} answers",
+    searchClear: "Clear search",
+    noResults: "No answers match your search.",
+    noResultsHint: "Try a different keyword — or call us, we love questions.",
+    groupClinic: "Clinic, Booking & Costs",
+    contentNote: "Treatment-specific answers are shown in English",
+    countLabel: "questions",
+    askTitle: "Didn't find your answer?",
+    askText: "Our patient desk answers calls and messages within hours — no question is too small.",
   },
 
   /* ---------------- Status page ---------------- */
@@ -740,6 +764,7 @@ const en = {
     featured: "Featured Guide",
     readGuide: "Read the guide",
     quickAnswer: "Quick answer",
+    onThisPage: "On this page",
     readMore: "Read article",
     minRead: "min read",
     updated: "Updated",
@@ -1039,6 +1064,7 @@ const bn: Dictionary = {
       sendMsg: "মেসেজ পাঠান",
       replyNote: "— আমাদের টিম ঘণ্টার মধ্যে উত্তর দেয়।",
       readMore: "আরও বিশেষজ্ঞ উত্তর পড়ুন আমাদের ব্লগে",
+      viewAll: "সব প্রশ্নোত্তর দেখুন",
     },
   },
 
@@ -1058,6 +1084,7 @@ const bn: Dictionary = {
       "যোগাযোগ",
       "অ্যাপয়েন্টমেন্ট বুক",
       "অ্যাপয়েন্টমেন্ট স্ট্যাটাস",
+      "সাধারণ জিজ্ঞাসা",
     ],
     viewAllServices: "সব ১১টি সেবা দেখুন →",
     reviews: "(৩,২০০+ রোগীর রিভিউ)",
@@ -1296,6 +1323,11 @@ const bn: Dictionary = {
       fromCount: "{count}টি রোগীর মতামত থেকে",
       loadError: "এখন রিভিউ লোড করা যাচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।",
     },
+    galleryEyebrow: "সত্যিকারের ফলাফল",
+    galleryTitle: "{service} আমাদের রোগীদের জন্য কী করেছে দেখুন",
+    galleryText: "হ্যান্ডেল টেনে আগে-পরে মিলিয়ে নিন — আমাদের উত্তরা ক্লিনিকের সত্যিকারের ফলাফল।",
+    galleryCta: "সম্পূর্ণ স্মাইল গ্যালারি দেখুন",
+    galleryDuration: "চিকিৎসার সময়",
   },
 
   /* ---------------- Doctors pages ---------------- */
@@ -1342,6 +1374,23 @@ const bn: Dictionary = {
     viewAll: "সব দেখুন",
     ctaTitle: "এই সপ্তাহেই {doctor}-এর কনসালটেশন নিন",
     ctaDescription: "{doctor}-এর কনসালটেশন বুক করুন — {hours}। একই সপ্তাহের স্লট পাওয়া যায়।",
+  },
+
+  /* ---------------- FAQs hub page ---------------- */
+  faqsPage: {
+    eyebrow: "জ্ঞানকেন্দ্র",
+    title: "প্রতিটি প্রশ্নের উত্তর, সরাসরি আমাদের ডেন্টিস্টদের কাছ থেকে",
+    description: "বুকিং, খরচ, চিকিৎসা ও ঘরোয়া যত্ন নিয়ে উত্তর খুঁজুন — সরাসরি আমাদের উত্তরা ক্লিনিকের বিশেষজ্ঞদের কাছ থেকে।",
+    searchPlaceholder: "প্রশ্ন খুঁজুন… (যেমন: ইমপ্ল্যান্ট, হোয়াইটেনিং, শিশু)",
+    searchResults: "{count} টি উত্তর দেখানো হচ্ছে",
+    searchClear: "সার্চ মুছুন",
+    noResults: "আপনার সার্চের সঙ্গে কোনো উত্তর মেলেনি।",
+    noResultsHint: "অন্য শব্দ দিয়ে চেষ্টা করুন — অথবা কল করুন, প্রশ্ন ছোট-বড় আমাদের কাছে সবাই সমান।",
+    groupClinic: "ক্লিনিক, বুকিং ও খরচ",
+    contentNote: "চিকিৎসা-সংক্রান্ত উত্তরগুলো ইংরেজিতে দেখানো হচ্ছে",
+    countLabel: "প্রশ্ন",
+    askTitle: "উত্তর খুঁজে পাননি?",
+    askText: "আমাদের পেশেন্ট ডেস্ক ঘণ্টার মধ্যেই কল ও মেসেজের উত্তর দেয় — কোনো প্রশ্নই ছোট নয়।",
   },
 
   /* ---------------- Gallery page ---------------- */
@@ -1591,6 +1640,7 @@ const bn: Dictionary = {
     featured: "ফিচার্ড গাইড",
     readGuide: "গাইড পড়ুন",
     quickAnswer: "দ্রুত উত্তর",
+    onThisPage: "এই পৃষ্ঠায়",
     readMore: "আর্টিকেল পড়ুন",
     minRead: "মিনিট পাঠ",
     updated: "আপডেট",

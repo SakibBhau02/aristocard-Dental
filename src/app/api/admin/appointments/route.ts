@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminCode } from "@/lib/admin-auth";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
@@ -18,15 +19,12 @@ import {
 /*  Auth: x-admin-code header must match ADMIN_PASSCODE                 */
 /* ------------------------------------------------------------------ */
 
-/* Demo passcode — override with ADMIN_PASSCODE env var in production. */
-const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE ?? "aristocrat-2026";
-
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
 type Status = (typeof VALID_STATUSES)[number];
 
 function isAuthorized(req: NextRequest): boolean {
-  const code = req.headers.get("x-admin-code") ?? "";
-  return code.length > 0 && code === ADMIN_PASSCODE;
+  /* Timing-safe check via shared helper (src/lib/admin-auth.ts). */
+  return verifyAdminCode(req.headers.get("x-admin-code"));
 }
 
 /* GET — list appointments (newest first) + summary stats.

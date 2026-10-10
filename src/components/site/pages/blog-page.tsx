@@ -8,8 +8,8 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Globe,
   Lightbulb,
+  ListTree,
   Search,
   Share2,
   Tag,
@@ -62,7 +62,7 @@ export function BlogPage() {
 
   const searching = search.trim().length > 0;
 
-  /* Category filter combined with text search (title / excerpt / category) */
+  /* Category filter combined with text search (EN + BN content) */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return blogPosts.filter((p) => {
@@ -71,7 +71,9 @@ export function BlogPage() {
         !q ||
         p.title.toLowerCase().includes(q) ||
         p.excerpt.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
+        p.category.toLowerCase().includes(q) ||
+        (p.titleBn?.toLowerCase().includes(q) ?? false) ||
+        (p.excerptBn?.toLowerCase().includes(q) ?? false);
       return matchCategory && matchSearch;
     });
   }, [category, search]);
@@ -107,7 +109,7 @@ export function BlogPage() {
                   navigate(`/blog/${featured.slug}`);
                 }}
                 className="group grid overflow-hidden rounded-[2rem] border border-blue-100/80 bg-white shadow-[0_16px_50px_-24px_rgba(0,32,96,0.25)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_28px_60px_-24px_rgba(30,125,255,0.35)] lg:grid-cols-[1.1fr_0.9fr]"
-                aria-label={`Read featured article: ${featured.title}`}
+                aria-label={`Read featured article: ${bn && featured.titleBn ? featured.titleBn : featured.title}`}
               >
                 <div className="hero-mesh-dark relative flex min-h-[260px] flex-col justify-between p-8 sm:p-10">
                   <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
@@ -120,10 +122,10 @@ export function BlogPage() {
                       {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
                     </span>
                     <h2 className="font-heading mt-4 text-2xl font-bold leading-snug text-white sm:text-3xl">
-                      {featured.title}
+                      {bn && featured.titleBn ? featured.titleBn : featured.title}
                     </h2>
                     <p className="mt-3 text-sm leading-relaxed text-blue-100/85">
-                      {featured.excerpt}
+                      {bn && featured.excerptBn ? featured.excerptBn : featured.excerpt}
                     </p>
                   </div>
                   <span className="relative inline-flex w-fit items-center gap-2 text-sm font-bold text-white">
@@ -155,7 +157,10 @@ export function BlogPage() {
                         <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
                           {t.quickAnswer}
                         </span>
-                        {featured.quickAnswer.slice(0, 140)}…
+                        {bn && featured.quickAnswerBn
+                          ? featured.quickAnswerBn.slice(0, 140)
+                          : featured.quickAnswer.slice(0, 140)}
+                        …
                       </span>
                     </span>
                     <div className="mt-6 flex flex-wrap gap-2">
@@ -294,7 +299,7 @@ export function BlogPage() {
                       navigate(`/blog/${post.slug}`);
                     }}
                     className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
-                    aria-label={`Read article: ${post.title}`}
+                    aria-label={`Read article: ${bn && post.titleBn ? post.titleBn : post.title}`}
                   >
                     {post.image ? (
                       <div className="zoom-img relative h-44 w-full overflow-hidden">
@@ -323,10 +328,10 @@ export function BlogPage() {
                       "font-heading text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue",
                       !post.image && "mt-4"
                     )}>
-                      {post.title}
+                      {bn && post.titleBn ? post.titleBn : post.title}
                     </h3>
                     <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
-                      {post.excerpt}
+                      {bn && post.excerptBn ? post.excerptBn : post.excerpt}
                     </p>
                     <div className="mt-5 flex items-center justify-between border-t border-blue-50 pt-4 text-xs text-slate-500">
                       <span className="inline-flex items-center gap-1.5">
@@ -410,12 +415,49 @@ function ReadingProgress() {
   );
 }
 
+/* Active-section tracking for the article table of contents */
+function useActiveSection(count: number) {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (count < 2) return;
+    const headings = Array.from({ length: count }, (_, i) =>
+      document.getElementById(`section-${i}`)
+    );
+    const visible = headings.filter(Boolean) as HTMLElement[];
+    if (visible.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = Number(entry.target.id.replace("section-", ""));
+            setActive(idx);
+          }
+        });
+      },
+      { rootMargin: "-25% 0px -65% 0px", threshold: 0 }
+    );
+    visible.forEach((h) => observer.observe(h));
+    return () => observer.disconnect();
+  }, [count]);
+  return [active, setActive] as const;
+}
+
 export function BlogDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.blogPage;
   const post = getPost(slug);
+  const [activeSection, setActiveSection] = useActiveSection(post?.sections.length ?? 0);
+
+  const goToSection = (i: number) => {
+    /* NOTE: never use href="#section-x" — it would hijack the hash router */
+    setActiveSection(i);
+    const el = document.getElementById(`section-${i}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    el?.focus({ preventScroll: true });
+  };
 
   const shareArticle = async () => {
     const url = `${window.location.origin}/#/blog/${slug}`;
@@ -436,8 +478,12 @@ export function BlogDetailPage({ slug }: { slug: string }) {
   };
 
   usePageMeta({
-    title: post ? post.title : "Article Not Found",
-    description: post?.excerpt,
+    title: post
+      ? bn && post.titleBn
+        ? post.titleBn
+        : post.title
+      : "Article Not Found",
+    description: post ? (bn && post.excerptBn ? post.excerptBn : post.excerpt) : undefined,
     jsonLd: post
       ? {
           "@context": "https://schema.org",
@@ -507,7 +553,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               </li>
               <li className="text-blue-300/50" aria-hidden="true">/</li>
               <li className="max-w-[220px] truncate font-medium text-white">
-                {post.title}
+                {bn && post.titleBn ? post.titleBn : post.title}
               </li>
             </ol>
           </nav>
@@ -521,16 +567,8 @@ export function BlogDetailPage({ slug }: { slug: string }) {
               {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
             </span>
             <h1 className="font-heading mt-5 text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
-              {post.title}
+              {bn && post.titleBn ? post.titleBn : post.title}
             </h1>
-            <div className="mt-4">
-              {bn && (
-                <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-blue-100/90 ring-1 ring-white/15">
-                  <Globe className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                  {t.articleInEnglish}
-                </p>
-              )}
-            </div>
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
               <span className="inline-flex items-center gap-2">
                 <Avatar className="h-9 w-9 border-2 border-white/20">
@@ -598,51 +636,104 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 {t.quickAnswer}
               </span>
               <p className="mt-3 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
-                {post.quickAnswer}
+                {bn && post.quickAnswerBn ? post.quickAnswerBn : post.quickAnswer}
               </p>
             </div>
           </Reveal>
 
-          {/* Sections */}
-          <div className="mt-10 space-y-10">
-            {post.sections.map((section, i) => (
-              <Reveal key={section.heading} delay={i * 0.03}>
-                <section aria-labelledby={`section-${i}`}>
-                  <h2
-                    id={`section-${i}`}
-                    className="font-heading text-xl font-bold text-brand-navy sm:text-2xl"
-                  >
-                    {section.heading}
-                  </h2>
-                  <div className="mt-4 space-y-4">
-                    {section.body.map((para, j) => (
-                      <p
-                        key={j}
-                        className="text-[15px] leading-relaxed text-slate-600 sm:text-base"
-                      >
-                        {para}
-                      </p>
-                    ))}
-                  </div>
-                  {section.list && (
-                    <ul className="mt-4 space-y-2.5 rounded-2xl border border-blue-100/80 bg-white p-5 sm:p-6">
-                      {section.list.map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-start gap-3 text-sm leading-relaxed text-slate-700 sm:text-[15px]"
+          {/* Table of contents */}
+          {post.sections.length >= 3 && (
+            <Reveal className="mt-6">
+              <nav
+                aria-label={t.onThisPage}
+                className="rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)] sm:p-6"
+              >
+                <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+                  <ListTree className="h-4 w-4" aria-hidden="true" />
+                  {t.onThisPage}
+                </span>
+                <ol className="mt-3 space-y-1">
+                  {post.sections.map((section, i) => {
+                    const label = bn ? post.sectionsBn?.[i]?.heading ?? section.heading : section.heading;
+                    const isActive = activeSection === i;
+                    return (
+                      <li key={section.heading}>
+                        <button
+                          type="button"
+                          onClick={() => goToSection(i)}
+                          aria-current={isActive ? "location" : undefined}
+                          className={cn(
+                            "flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left text-sm transition-all duration-300",
+                            isActive
+                              ? "bg-blue-50 font-semibold text-brand-blue"
+                              : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+                          )}
                         >
                           <span
-                            className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-blue"
-                            aria-hidden="true"
-                          />
-                          {item}
-                        </li>
+                            className={cn(
+                              "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold tabular-nums transition-colors",
+                              isActive
+                                ? "bg-brand-blue text-white"
+                                : "bg-blue-50 text-brand-blue"
+                            )}
+                          >
+                            {bn ? toBnDigits(i + 1) : i + 1}
+                          </span>
+                          <span className="leading-snug">{label}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </nav>
+            </Reveal>
+          )}
+
+          {/* Sections */}
+          <div className="mt-10 space-y-10">
+            {post.sections.map((section, i) => {
+              const bnSection = bn ? post.sectionsBn?.[i] : undefined;
+              const listItems = bnSection?.list ?? section.list;
+              return (
+                <Reveal key={section.heading} delay={i * 0.03}>
+                  <section aria-labelledby={`section-${i}`}>
+                    <h2
+                      id={`section-${i}`}
+                      tabIndex={-1}
+                      className="font-heading text-xl font-bold text-brand-navy outline-none focus-visible:rounded-lg sm:text-2xl"
+                    >
+                      {bnSection?.heading ?? section.heading}
+                    </h2>
+                    <div className="mt-4 space-y-4">
+                      {(bnSection?.body ?? section.body).map((para, j) => (
+                        <p
+                          key={j}
+                          className="text-[15px] leading-relaxed text-slate-600 sm:text-base"
+                        >
+                          {para}
+                        </p>
                       ))}
-                    </ul>
-                  )}
-                </section>
-              </Reveal>
-            ))}
+                    </div>
+                    {listItems && (
+                      <ul className="mt-4 space-y-2.5 rounded-2xl border border-blue-100/80 bg-white p-5 sm:p-6">
+                        {listItems.map((item) => (
+                          <li
+                            key={item}
+                            className="flex items-start gap-3 text-sm leading-relaxed text-slate-700 sm:text-[15px]"
+                          >
+                            <span
+                              className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-blue"
+                              aria-hidden="true"
+                            />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </Reveal>
+              );
+            })}
           </div>
 
           {/* Author box */}
@@ -748,10 +839,10 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                   {d.blogCategories[p.category as keyof typeof d.blogCategories] ?? p.category}
                 </span>
                 <h3 className="font-heading mt-4 text-lg font-bold leading-snug text-brand-navy group-hover:text-brand-blue">
-                  {p.title}
+                  {bn && p.titleBn ? p.titleBn : p.title}
                 </h3>
                 <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
-                  {p.excerpt}
+                  {bn && p.excerptBn ? p.excerptBn : p.excerpt}
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue">
                   {t.readMore}

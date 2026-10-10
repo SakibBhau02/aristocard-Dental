@@ -92,6 +92,16 @@ export type BlogPost = {
     body: string[];
     list?: string[];
   }[];
+  /* Bangla variants (optional — falls back to English).
+     sectionsBn must mirror sections 1:1 (same length, order, paragraph counts). */
+  titleBn?: string;
+  excerptBn?: string;
+  quickAnswerBn?: string;
+  sectionsBn?: {
+    heading: string;
+    body: string[];
+    list?: string[];
+  }[];
 };
 
 export type AppointmentPayload = {

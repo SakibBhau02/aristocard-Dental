@@ -6,6 +6,7 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarCheck,
+  Camera,
   CheckCircle2,
   Clock3,
   Globe,
@@ -26,6 +27,8 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { getService, services } from "@/lib/data/services";
+import { getCasesForService } from "@/lib/data/smile-cases";
+import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { ServiceCard, CtaBanner } from "@/components/site/shared";
@@ -110,6 +113,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
 
   const colors = categoryColors[service.category] ?? categoryColors.Restorative;
   const related = services.filter((s) => service.related.includes(s.slug));
+  const serviceCases = getCasesForService(service.slug);
 
   /* localized service naming */
   const name = bn && service.nameBn ? service.nameBn : service.name;
@@ -439,6 +443,68 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
           </div>
         </div>
       </section>
+
+      {/* ============ REAL RESULTS (gallery cross-link) ============ */}
+      {serviceCases.length > 0 && (
+        <section className="section-wash relative py-16 sm:py-20" aria-labelledby="service-gallery-heading">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <SectionHeading
+              eyebrow={t.galleryEyebrow}
+              title={t.galleryTitle.replace("{service}", shortName)}
+              description={t.galleryText}
+            />
+            <div className="mt-12 grid items-center gap-10 lg:grid-cols-2">
+              {serviceCases.slice(0, 1).map((c) => (
+                <Reveal key={c.id}>
+                  <div className="relative mx-auto w-full max-w-md">
+                    <BeforeAfterSlider
+                      beforeSrc={c.beforeSrc}
+                      afterSrc={c.afterSrc}
+                      beforeAlt={c.beforeAlt}
+                      afterAlt={c.afterAlt}
+                    />
+                    <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-navy px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                      {c.treatment}
+                    </span>
+                  </div>
+                </Reveal>
+              ))}
+              <Reveal delay={0.1}>
+                {serviceCases.slice(0, 1).map((c) => (
+                  <div key={c.id} className="lg:pl-4">
+                    <h3 className="font-heading text-2xl font-bold leading-snug text-brand-navy text-balance">
+                      {c.title}
+                    </h3>
+                    <p className="mt-4 text-[15px] leading-relaxed text-slate-600">
+                      {c.result}
+                    </p>
+                    <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <dt className="font-semibold text-brand-navy">{c.patient}</dt>
+                        <dd>• {bn ? toBnDigits(c.age) : c.age} {d.shared.yrs}</dd>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Clock3 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+                        <dt className="sr-only">{t.galleryDuration}</dt>
+                        <dd>{c.duration}</dd>
+                      </div>
+                    </dl>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/gallery")}
+                      className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-lg hover:shadow-blue-500/30"
+                    >
+                      <Camera className="h-4 w-4" aria-hidden="true" />
+                      {t.galleryCta}
+                    </button>
+                  </div>
+                ))}
+              </Reveal>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ============ FAQ ============ */}
       <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="service-faq-heading">

@@ -49,6 +49,7 @@ export function Footer() {
     { label: d.footer.quickLinks[7], to: "/contact" },
     { label: d.footer.quickLinks[8], to: "/appointment" },
     { label: d.footer.quickLinks[9], to: "/status" },
+    { label: d.footer.quickLinks[10], to: "/faqs" },
   ];
 
   return (
@@ -110,17 +111,17 @@ export function Footer() {
             </div>
             <div className="mt-6 flex items-center gap-3">
               {[
-                { label: "Facebook", href: site.social.facebook, Icon: Facebook },
-                { label: "Instagram", href: site.social.instagram, Icon: Instagram },
-                { label: "LinkedIn", href: site.social.linkedin, Icon: Linkedin },
-              ].map(({ label, href, Icon }) => (
+                { label: "Facebook", href: site.social.facebook, Icon: Facebook, hover: "hover:bg-[#1877F2] hover:ring-[#1877F2]" },
+                { label: "Instagram", href: site.social.instagram, Icon: Instagram, hover: "hover:bg-[#E1306C] hover:ring-[#E1306C]" },
+                { label: "LinkedIn", href: site.social.linkedin, Icon: Linkedin, hover: "hover:bg-[#0A66C2] hover:ring-[#0A66C2]" },
+              ].map(({ label, href, Icon, hover }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${label} (opens in new tab)`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-blue hover:shadow-lg hover:shadow-blue-500/30"
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/30 ${hover}`}
                 >
                   <Icon className="h-4.5 w-4.5" aria-hidden="true" />
                 </a>

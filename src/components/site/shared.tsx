@@ -231,6 +231,18 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
         {d.shared.viewProfile}
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </button>
+
+      {/* hover-reveal quick book */}
+      <button
+        type="button"
+        onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
+        className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+        style={{ backgroundColor: "#002060" }}
+      >
+        <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+        {d.shared.ctaBook}
+        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
     </motion.article>
   );
 }

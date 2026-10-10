@@ -16,6 +16,7 @@ import { BlogPage, BlogDetailPage } from "@/components/site/pages/blog-page";
 import { ContactPage } from "@/components/site/pages/contact-page";
 import { AppointmentPage } from "@/components/site/pages/appointment-page";
 import { GalleryPage } from "@/components/site/pages/gallery-page";
+import { FaqsPage } from "@/components/site/pages/faqs-page";
 import { EstimatorPage } from "@/components/site/pages/estimator-page";
 import { StatusPage } from "@/components/site/pages/status-page";
 import { AdminPage } from "@/components/site/pages/admin-page";
@@ -56,6 +57,8 @@ function PageRouter() {
     page = <AppointmentPage />;
   } else if (segments[0] === "gallery") {
     page = <GalleryPage />;
+  } else if (segments[0] === "faqs") {
+    page = <FaqsPage />;
   } else if (segments[0] === "estimator") {
     page = <EstimatorPage />;
   } else if (segments[0] === "status") {
@@ -71,9 +74,9 @@ function PageRouter() {
       <motion.main
         key={key}
         id="main-content"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="flex-1"
         tabIndex={-1}

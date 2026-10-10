@@ -9,6 +9,7 @@ import {
   Camera,
   CheckCircle2,
   ChevronDown,
+  HelpCircle,
   Phone,
   PlayCircle,
   ShieldCheck,
@@ -794,7 +795,18 @@ export function HomePage() {
                   </AccordionItem>
                 ))}
               </Accordion>
-              <Reveal className="mt-6">
+              <Reveal className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+                <a
+                  href="#/faqs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/faqs");
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+                >
+                  <HelpCircle className="h-4 w-4" aria-hidden="true" />
+                  {d.home.faq.viewAll}
+                </a>
                 <a
                   href="#/blog"
                   onClick={(e) => {
