@@ -10,8 +10,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/", priority: 1.0, changeFrequency: "weekly" },
     { path: "/#/about", priority: 0.8, changeFrequency: "monthly" },
     { path: "/#/services", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/#/gallery", priority: 0.85, changeFrequency: "monthly" },
     { path: "/#/doctors", priority: 0.8, changeFrequency: "monthly" },
     { path: "/#/blog", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/#/estimator", priority: 0.85, changeFrequency: "monthly" },
     { path: "/#/contact", priority: 0.7, changeFrequency: "yearly" },
     { path: "/#/appointment", priority: 0.9, changeFrequency: "monthly" },
   ].map(({ path, priority, changeFrequency }) => ({

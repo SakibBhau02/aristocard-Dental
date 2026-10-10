@@ -1,23 +1,29 @@
 "use client";
 
+import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import {
   ArrowUp,
   CalendarCheck,
+  CheckCircle2,
   Clock,
   Facebook,
   Instagram,
   Linkedin,
+  Loader2,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
+  Send,
   ShieldCheck,
+  Sparkles,
   Star,
 } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { services } from "@/lib/data/services";
 import { site } from "@/lib/site";
+import { useToast } from "@/hooks/use-toast";
 
 /* ------------------------------------------------------------------ */
 /*  Footer — sticky bottom, rich links, trust signals                  */
@@ -25,13 +31,19 @@ import { site } from "@/lib/site";
 
 export function Footer() {
   const { navigate } = useRouter();
+  const { toast } = useToast();
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [email, setEmail] = useState("");
 
   const quickLinks = [
     { label: "Home", to: "/" },
     { label: "About Us", to: "/about" },
     { label: "Our Services", to: "/services" },
+    { label: "Smile Gallery", to: "/gallery" },
     { label: "Our Doctors", to: "/doctors" },
     { label: "Health Blog", to: "/blog" },
+    { label: "Cost Estimator", to: "/estimator" },
     { label: "Contact", to: "/contact" },
     { label: "Book Appointment", to: "/appointment" },
   ];
@@ -224,6 +236,17 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Newsletter */}
+        <NewsletterSignup
+          email={email}
+          setEmail={setEmail}
+          subscribed={subscribed}
+          setSubscribed={setSubscribed}
+          subscribing={subscribing}
+          setSubscribing={setSubscribing}
+          toast={toast}
+        />
+
         {/* Trust strip */}
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4">
           {[
@@ -276,8 +299,134 @@ function BackToTop() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Newsletter signup — uses POST /api/newsletter                      */
+/* ------------------------------------------------------------------ */
+
+type ToastFn = (opts: {
+  title: string;
+  description?: string;
+  variant?: "default" | "destructive" | null | undefined;
+}) => void;
+
+function NewsletterSignup({
+  email,
+  setEmail,
+  subscribed,
+  setSubscribed,
+  subscribing,
+  setSubscribing,
+  toast,
+}: {
+  email: string;
+  setEmail: (v: string) => void;
+  subscribed: boolean;
+  setSubscribed: (v: boolean) => void;
+  subscribing: boolean;
+  setSubscribing: (v: boolean) => void;
+  toast: ToastFn;
+}) {
+  async function handleSubscribe(e: FormEvent) {
+    e.preventDefault();
+    if (subscribing) return;
+    const trimmed = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Subscription failed");
+      setSubscribed(true);
+      toast({
+        title: "Subscribed!",
+        description: data.message ?? "Dental health tips are on their way.",
+      });
+    } catch (err) {
+      toast({
+        title: "Subscription failed",
+        description:
+          err instanceof Error ? err.message : "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
+  return (
+    <div className="relative mt-12 overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-7 sm:p-9">
+      <span
+        className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-brand-blue/20 blur-3xl"
+        aria-hidden="true"
+      />
+      <div className="relative grid items-center gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <h3 className="flex items-center gap-2.5 font-heading text-lg font-bold text-white">
+            <Sparkles className="h-5 w-5 text-amber-400" aria-hidden="true" />
+            Dental health tips, worth reading
+          </h3>
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-blue-100/80">
+            One short, genuinely useful email a month — seasonal care reminders,
+            clinic offers and new expert guides from our blog. No spam, ever.
+          </p>
+        </div>
+
+        {subscribed ? (
+          <div className="flex items-center justify-center gap-3 rounded-2xl bg-emerald-500/15 p-5 ring-1 ring-emerald-400/30">
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" aria-hidden="true" />
+            <p className="text-sm font-semibold text-emerald-200">
+              You&apos;re on the list — welcome aboard!
+            </p>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubscribe}
+            className="flex flex-col gap-3 sm:flex-row"
+            noValidate
+          >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address for newsletter
+            </label>
+            <input
+              id="newsletter-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="h-12 flex-1 rounded-2xl border-0 bg-white/10 px-5 text-sm text-white placeholder:text-blue-200/50 ring-1 ring-white/15 backdrop-blur transition-all duration-300 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <button
+              type="submit"
+              disabled={subscribing}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-amber-400 px-6 text-sm font-bold text-brand-navy shadow-lg shadow-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-amber-300 disabled:translate-y-0 disabled:opacity-70"
+            >
+              {subscribing ? (
+                <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Send className="h-4.5 w-4.5" aria-hidden="true" />
+              )}
+              Subscribe
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* tiny safe state helper to avoid SSR hydration issues */
-import { useEffect, useState } from "react";
 function useStateSafe(initial: boolean) {
   const [value, setValue] = useState(initial);
   useEffect(() => {

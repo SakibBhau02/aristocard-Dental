@@ -13,6 +13,8 @@ import { DoctorsPage, DoctorDetailPage } from "@/components/site/pages/doctors-p
 import { BlogPage, BlogDetailPage } from "@/components/site/pages/blog-page";
 import { ContactPage } from "@/components/site/pages/contact-page";
 import { AppointmentPage } from "@/components/site/pages/appointment-page";
+import { GalleryPage } from "@/components/site/pages/gallery-page";
+import { EstimatorPage } from "@/components/site/pages/estimator-page";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +50,10 @@ function PageRouter() {
     page = <ContactPage />;
   } else if (segments[0] === "appointment") {
     page = <AppointmentPage />;
+  } else if (segments[0] === "gallery") {
+    page = <GalleryPage />;
+  } else if (segments[0] === "estimator") {
+    page = <EstimatorPage />;
   } else {
     page = <NotFoundPage />;
   }

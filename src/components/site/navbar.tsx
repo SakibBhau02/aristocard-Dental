@@ -115,7 +115,7 @@ export function Navbar() {
                     navigateAndClose(item.href.replace("#", ""));
                   }}
                   className={cn(
-                    "relative rounded-full px-4 py-2 text-sm font-medium transition-colors duration-300",
+                    "relative rounded-full px-3 text-[13px] font-medium transition-colors duration-300 xl:px-3.5 xl:text-sm",
                     isActive(item.href)
                       ? "text-brand-blue"
                       : "text-slate-700 hover:text-brand-blue"

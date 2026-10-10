@@ -1,6 +1,34 @@
 # Project Worklog — Aristocrat Dental Care & Orthodontic Center (Redesign)
 
 ---
+Task ID: 2
+Agent: Z.ai Code (webDevReview cron round 1)
+Task: QA testing + bug fixes + new features (gallery, price estimator, newsletter, hero imagery)
+
+Work Log:
+- QA via agent-browser: all 12 routes tested (titles, h1, overflow, console) — found 404 page kept stale title (fixed by adding usePageMeta to NotFoundPage)
+- API validation tested: invalid phone (400), duplicate slot (409), past date (400), newsletter (201) — all working
+- Mobile drawer tested: opens, navigates, body scroll restores correctly
+- **CRITICAL BUG FOUND & FIXED: Turbopack stale CSS cache.** globals.css edits were NOT compiled — served CSS still contained the ORIGINAL scaffold (`var(--font-geist-sans)` instead of my fonts, ZERO brand-* utilities, no hero-mesh/dot-grid/card-shine/font-heading/gradient-text classes, no custom keyframes). All `bg-brand-navy` sections rendered TRANSPARENT with white text = invisible content. Fix: appended a cache-bust comment to globals.css which forced Turbopack recompilation; then removed the comment. After fix verified: `.bg-brand-navy{background-color:var(--brand-navy)}`, `.hero-mesh-dark{background:radial-gradient(...)}`, computed style `rgb(0,32,96)` on navy sections. **IMPORTANT for future rounds: if CSS edits don't visually apply, append+remove a cache-bust comment (`/* cache-bust-test-<ts> */`) to src/app/globals.css to force recompile.**
+- Generated 10 AI images via image-generation skill: hero-clinic.png, 3 before/after pairs (whitening, braces, veneers), 3 facility photos (tech room, kids room, sterilization suite)
+- NEW FEATURE: BeforeAfterSlider component (clip-path based, pointer drag + keyboard arrows, ARIA slider role, pointer-capture). First version used ref-in-render (lint error) — rewritten with clip-path + draggingRef pattern
+- NEW PAGE: #/gallery — Smile Gallery with 3 case studies, before/after sliders, treatment chips, procedures list, CTAs, medical disclaimer, ImageGallery JSON-LD
+- NEW PAGE: #/estimator — Treatment Cost Estimator with 15 treatments grouped by category, quantity steppers (+/-), live BDT total range (৳min–৳max), sticky dark summary panel with item list + remove buttons, reset, "why a range" card, WebApplication JSON-LD
+- NEW FEATURE: Newsletter signup in footer (uses existing /api/newsletter API, email validation, loading state, success state, toast feedback) — verified saves to DB
+- STYLING: hero card now has AI-generated clinic photo layer (opacity-35 + navy gradient overlay); new "Inside Our Clinic" facility showcase section on home (dark navy, 3 image cards); new Smile Gallery preview section on home with live before/after slider + estimator CTA
+- Navbar: added Gallery + Pricing links (8 items, compact 13px sizing); footer quick links + services updated with new pages
+- sitemap.ts updated with #/gallery and #/estimator routes
+- Fixed duplicate `useState` import in footer.tsx (broke whole site render — caught via console "the name useState is defined multiple times")
+- E2E re-verified: all pages render with navy/mesh working, no console errors, no mobile overflow (390px) on home/gallery/estimator/appointment/services, appointment booking flow completes (ADC-XYHBRQ3Y), newsletter subscription works, lint passes clean
+- VLM design reviews: fixed design rated 9/10 professionalism; color harmony Excellent; white-on-navy readability High
+
+Stage Summary:
+- Critical CSS cache bug fixed — brand design system (navy #002060, blue #1e7dff, gold) now fully renders
+- 2 new pages (#/gallery, #/estimator) + newsletter + hero/facility imagery + 10 AI images
+- All QA green: lint clean, no console errors, no overflow, booking+newsletter flows verified in DB
+- Unresolved/next: (1) Turbopack CSS cache may recur — use cache-bust comment trick; (2) LCP warning on homepage gallery preview image (minor); (3) next-phase ideas: Bangla language toggle, blog cover images, before/after more cases with real clinic photos when available, patient booking lookup UI, price estimator deep-linking to booking with preselected items, smile-gallery before/after per-service filtering
+
+---
 Task ID: 1
 Agent: Z.ai Code (main agent)
 Task: Redesign aristocratdentalcarebd.com as a professional multi-page Next.js website keeping brand logo, logo colors & brand guidelines. Interactive transitions, SEO/AEO/AGIO-friendly. Special focus on the Services pages.

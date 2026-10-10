@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Award,
   CalendarCheck,
+  Camera,
   CheckCircle2,
   ChevronDown,
   Phone,
@@ -15,6 +16,7 @@ import {
   Star,
   Stethoscope,
   Users,
+  Wallet,
 } from "lucide-react";
 import {
   Accordion,
@@ -38,6 +40,7 @@ import {
 } from "@/components/site/motion";
 import { ServiceCard, DoctorCard, CtaBanner } from "@/components/site/shared";
 import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
+import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -198,7 +201,20 @@ export function HomePage() {
           >
             {/* main card */}
             <div className="hero-mesh-dark relative overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-navy-900/40 sm:p-10">
-              <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+              {/* clinic photo layer */}
+              <Image
+                src="/images/hero-clinic.png"
+                alt="Modern treatment room at Aristocrat Dental Care clinic"
+                fill
+                priority
+                sizes="(max-width: 1024px) 92vw, 512px"
+                className="object-cover opacity-35"
+              />
+              <span
+                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand-navy/60 via-brand-navy/80 to-brand-navy"
+                aria-hidden="true"
+              />
+              <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
               <div className="relative flex items-center justify-between">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
                   <Stethoscope className="h-3.5 w-3.5" aria-hidden="true" />
@@ -242,7 +258,7 @@ export function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.05, duration: 0.5 }}
-                className="relative mt-8 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-400/15 to-transparent p-4 ring-1 ring-amber-300/20"
+                className="relative mt-8 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-400/15 to-transparent p-4 ring-1 ring-amber-300/20 backdrop-blur-sm"
               >
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/90 font-heading text-lg font-bold text-brand-navy">
                   SK
@@ -485,6 +501,151 @@ export function HomePage() {
               </a>
             </Button>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ============ FACILITY SHOWCASE ============ */}
+      <section className="relative bg-brand-navy py-20 sm:py-24" aria-labelledby="facility-heading">
+        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+          <SectionHeading
+            dark
+            eyebrow="Inside Our Clinic"
+            title={
+              <>
+                A facility designed around
+                <span className="gold-text"> your comfort</span>
+              </>
+            }
+            description="Step inside — modern operatories, hospital-grade sterilization and a kids' room that turns fear into friendship."
+          />
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            {[
+              {
+                src: "/images/facility-tech.png",
+                alt: "Treatment room with digital X-ray and intraoral scanner at Aristocrat Dental Care",
+                title: "Digital Diagnostics",
+                text: "Intraoral scanners, low-radiation digital X-rays and chairside screens — see exactly what we see.",
+              },
+              {
+                src: "/images/facility-kids.png",
+                alt: "Cheerful pediatric dental room designed for children at Aristocrat Dental Care",
+                title: "Kids' Happy Room",
+                text: "A specially designed children's room where fear melts into curiosity — visit by visit.",
+              },
+              {
+                src: "/images/facility-sterile.png",
+                alt: "Sterilization room with autoclave and sealed instrument pouches",
+                title: "Sterilization Suite",
+                text: "Autoclave-sterilized, pouch-sealed instruments opened in front of you — every single patient.",
+              },
+            ].map((card, i) => (
+              <motion.article
+                key={card.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="zoom-img group overflow-hidden rounded-[1.75rem] bg-white/5 ring-1 ring-white/12 transition-all duration-500 hover:-translate-y-1.5 hover:ring-amber-300/30"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <Image
+                    src={card.src}
+                    alt={card.alt}
+                    fill
+                    sizes="(max-width: 1024px) 92vw, 440px"
+                    className="object-cover"
+                  />
+                  <span
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-navy via-transparent to-transparent"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="font-heading text-lg font-bold text-white transition-colors group-hover:text-amber-300">
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-blue-100/80">
+                    {card.text}
+                  </p>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ SMILE GALLERY PREVIEW ============ */}
+      <section className="relative py-20 sm:py-24" aria-labelledby="gallery-preview-heading">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+            <Reveal>
+              <SectionHeading
+                align="left"
+                eyebrow="Smile Gallery"
+                title={
+                  <>
+                    See real transformations,
+                    <span className="gradient-text"> slide to compare</span>
+                  </>
+                }
+                description="Whitening, orthodontics and veneer cases from our clinic — drag the slider handle to reveal each before & after."
+              />
+              <Reveal delay={0.15} className="mt-8">
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    asChild
+                    className="rounded-full bg-brand-blue px-7 py-4 text-sm font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy"
+                  >
+                    <a
+                      href="#/gallery"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate("/gallery");
+                      }}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <Camera className="h-4.5 w-4.5" aria-hidden="true" />
+                      Explore Smile Gallery
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="rounded-full border-brand-blue/25 bg-white px-7 py-4 text-sm font-bold text-brand-blue hover:bg-blue-50"
+                  >
+                    <a
+                      href="#/estimator"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate("/estimator");
+                      }}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
+                      Estimate Treatment Cost
+                    </a>
+                  </Button>
+                </div>
+              </Reveal>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="relative mx-auto w-full max-w-md">
+                <BeforeAfterSlider
+                  beforeSrc="/images/case-before-whitening.png"
+                  afterSrc="/images/case-after-whitening.png"
+                  beforeAlt="Smile before professional teeth whitening — stained teeth"
+                  afterAlt="Smile after professional teeth whitening — bright radiant teeth"
+                />
+                <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-navy px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                  Teeth Whitening — drag me
+                </span>
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 

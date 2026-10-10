@@ -1,11 +1,18 @@
 "use client";
 
 import { Compass, Home } from "lucide-react";
-import { useRouter } from "@/lib/router";
+import { useRouter, usePageMeta } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 
 export function NotFoundPage() {
   const { navigate } = useRouter();
+
+  usePageMeta({
+    title: "Page Not Found (404)",
+    description:
+      "The page you're looking for doesn't exist or has moved. Explore our dental services, doctors or book an appointment instead.",
+  });
+
   return (
     <section className="hero-mesh flex flex-col items-center justify-center px-4 py-32 text-center">
       <span className="relative inline-flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 ring-8 ring-blue-50/50">
