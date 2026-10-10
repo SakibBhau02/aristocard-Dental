@@ -4,15 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BadgePercent,
+  Banknote,
   CalendarCheck,
+  CalendarClock,
   Calculator,
   ChevronUp,
+  CreditCard,
   Info,
   Minus,
   Plus,
   Printer,
   Receipt,
   RotateCcw,
+  Smartphone,
   Sparkles,
   Trash2,
   Wallet,
@@ -90,6 +94,12 @@ export function EstimatorPage() {
     const s = `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
     return bn ? toBnDigits(s) : s;
   };
+
+  /* EMI — indicative monthly instalment from the lower end of the range,
+     rounded up to the nearest ৳100. */
+  const EMI_TENURES = [3, 6, 12] as const;
+  const monthlyEmi = (months: number) =>
+    Math.ceil(totals.min / months / 100) * 100;
 
   /* localized item name */
   const itemName = (item: EstimatorItem) =>
@@ -347,6 +357,35 @@ export function EstimatorPage() {
                               <p className="mt-2 text-center text-xs text-blue-200/80">
                                 {t.rangeNote}
                               </p>
+                              {/* EMI strip — indicative monthly instalments */}
+                              <div className="mt-4 rounded-xl bg-white/5 p-3.5 ring-1 ring-white/10">
+                                <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs font-semibold text-amber-200">
+                                  <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+                                  {t.emiTitle}
+                                  <span className="text-blue-200/60">—</span>
+                                  {t.emiFrom} {formatBDT(monthlyEmi(12))}
+                              <span className="text-blue-200/70">{t.emiPerMonth}</span>
+                                </p>
+                                <div className="mt-2.5 flex items-center justify-center gap-2">
+                                  {EMI_TENURES.map((m) => (
+                                    <span
+                                      key={m}
+                                      className="chip-month"
+                                      title={t.emiMonths.replace(
+                                        "{n}",
+                                        bn ? toBnDigits(m) : String(m)
+                                      )}
+                                    >
+                                      {bn ? toBnDigits(m) : m}
+                                      <span className="opacity-60">·</span>
+                                      {formatBDT(monthlyEmi(m))}
+                                    </span>
+                                  ))}
+                                </div>
+                                <p className="mt-2.5 text-center text-[10.5px] leading-relaxed text-blue-200/60">
+                                  {t.emiNote}
+                                </p>
+                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -451,6 +490,34 @@ export function EstimatorPage() {
                       </span>
                     </p>
                   </div>
+
+                  {/* payment options card */}
+                  <div className="mt-4 rounded-3xl border border-blue-100/80 bg-white p-5">
+                    <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-brand-navy">
+                      <Wallet className="h-4.5 w-4.5 text-brand-blue" aria-hidden="true" />
+                      {t.payTitle}
+                    </h3>
+                    <div className="mt-3.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                      {[
+                        { Icon: Banknote, label: t.payCash },
+                        { Icon: CreditCard, label: t.payCard },
+                        { Icon: Smartphone, label: t.payMobile },
+                        { Icon: CalendarClock, label: t.payEmi },
+                      ].map(({ Icon, label }) => (
+                        <div
+                          key={label}
+                          className="flex flex-col items-center gap-2 rounded-2xl bg-ice/60 px-2 py-4 text-center ring-1 ring-blue-50 transition-transform duration-300 hover:-translate-y-0.5"
+                        >
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
+                            <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+                          </span>
+                          <span className="text-[11px] font-semibold leading-tight text-slate-600">
+                            {label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </Reveal>
             </div>
@@ -536,6 +603,11 @@ export function EstimatorPage() {
           <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
             <div style={{ background: "#f0f7ff", borderRadius: 10, padding: "10px 18px", fontSize: 15, fontWeight: 700 }}>
               Estimated Total: BDT {totals.min.toLocaleString()} – {totals.max.toLocaleString()}
+            </div>
+          </div>
+          <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ fontSize: 12, color: "#1e7dff", fontWeight: 600 }}>
+              EMI available — from BDT {(Math.ceil(totals.min / 12 / 100) * 100).toLocaleString()} /month (3–12 months on major credit cards)
             </div>
           </div>
           <p style={{ marginTop: 16, fontSize: 11, color: "#475569", lineHeight: 1.6 }}>

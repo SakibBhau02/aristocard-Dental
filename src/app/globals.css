@@ -720,6 +720,161 @@ html[lang="bn"] {
   color: #002060;
 }
 
+/* ---------- Live clinic status dot ---------- */
+/* Pulsing green when open, steady amber when closed. */
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.status-dot[data-open="true"] {
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+}
+.status-dot[data-open="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(52, 211, 153, 0.75);
+  animation: status-ping 1.9s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.status-dot[data-open="false"] {
+  background: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.16);
+}
+@keyframes status-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  80%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* ---------- Weekly hours list (contact page) ---------- */
+.hours-week {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.hours-week li:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.hours-week li.is-today {
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: inset 2.5px 0 0 var(--brand-gold);
+}
+
+/* ---------- "Today" chip ---------- */
+.today-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: var(--brand-gold);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.125rem 0.5rem;
+}
+
+/* ---------- EMI month chips (estimator summary) ---------- */
+.chip-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  color: #dbeafe;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.3rem 0.7rem;
+  white-space: nowrap;
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    color 0.25s ease;
+}
+.chip-month:hover {
+  background: rgba(245, 158, 11, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+}
+
+/* ---------- Keyboard key cap (⌘K hints) ---------- */
+/* Real key-cap feel: top highlight + bottom inner shadow, brand-tinted. */
+.kbd-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(30, 125, 255, 0.22);
+  border-bottom-width: 2px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fd 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 32, 96, 0.08);
+  color: #475569;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  white-space: nowrap;
+  user-select: none;
+}
+.on-dark .kbd-key,
+.kbd-key.on-dark {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  color: #dbeafe;
+}
+
+/* ---------- Branded dialog overlay ---------- */
+/* Navy-tinted, softly blurred — replaces the default flat black/50 for
+   every dialog on the site (search palette, review form, admin). */
+[data-slot="dialog-overlay"] {
+  background: rgba(0, 24, 72, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* ---------- Eyebrow dot — gentle heartbeat ---------- */
+.eyebrow-dot {
+  animation: eyebrow-pulse 2.6s ease-in-out infinite;
+}
+@keyframes eyebrow-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.75;
+  }
+}
+
+/* ---------- Firefox scrollbars (WebKit covered above) ---------- */
+.scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: #b9d4ff transparent;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
@@ -738,6 +893,13 @@ html[lang="bn"] {
   .gold-text.text-shimmer {
     animation: none;
     background-size: 100% 100%;
+  }
+  .status-dot[data-open="true"]::after {
+    animation: none;
+    opacity: 0;
+  }
+  .eyebrow-dot {
+    animation: none;
   }
   .card-lift,
   .card-lift:hover {
@@ -775,3 +937,5 @@ html[lang="bn"] {
 }
 
 /* cache-bust r8 */
+
+/* cache-bust r9 */

@@ -7,6 +7,7 @@ import { ScrollProgress } from "@/components/site/motion";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FloatingContact } from "@/components/site/floating-contact";
+import { SiteSearch } from "@/components/site/site-search";
 import { HomePage } from "@/components/site/pages/home-page";
 import { AboutPage } from "@/components/site/pages/about-page";
 import { ServicesPage } from "@/components/site/pages/services-page";
@@ -107,6 +108,7 @@ export function SiteShell() {
           <PageRouter />
           <Footer />
           <FloatingContact />
+          <SiteSearch />
         </div>
       </LanguageProvider>
     </RouterProvider>

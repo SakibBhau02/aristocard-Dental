@@ -1,0 +1,1176 @@
+     1→import type { Service } from "@/lib/types";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Aristocrat Dental Care — Complete Service Catalogue (11 services)  */
+     5→/* ------------------------------------------------------------------ */
+     6→
+     7→export const services: Service[] = [
+     8→  {
+     9→    slug: "crowns-bridges",
+    10→    nameBn: "ক্রাউন ও ব্রিজ",
+    11→    shortNameBn: "ক্রাউন ও ব্রিজ",
+    12→    taglineBn: "শক্তি ফিরিয়ে আনুন। ফাঁক পূরণ করুন।",
+    13→    excerptBn: "দাঁত ভেঙে গেছে, ক্ষয় হয়ে গেছে বা বড় ফিলিং দুর্বল হয়ে পড়েছে? কাস্টম-ক্রাফটেড পোর্সেলেন ক্রাউন ও ব্রিজ আপনার দাঁতের স্বাভাবিক শক্তি, আকৃতি ও সৌন্দর্য ফিরিয়ে দেয় — যেন নিজের দাঁতই ছিল।",
+    14→    name: "Crowns & Bridges",
+    15→    shortName: "Crowns & Bridges",
+    16→    category: "Restorative",
+    17→    icon: "Crown",
+    18→    tagline: "Restore strength. Bridge the gaps.",
+    19→    excerpt:
+    20→      "High-quality crowns protect and strengthen damaged teeth, while custom bridges replace missing teeth — restoring function, bite alignment and your natural facial contours.",
+    21→    overview: [
+    22→      "Crowns & Bridges offer a reliable, long-lasting solution for restoring damaged teeth and replacing missing ones, combining strength, function, and natural aesthetics in one treatment. A dental crown, often called a \u201Ccap\u201D, is a custom-made restoration that fits securely over a weakened, cracked, or heavily decayed tooth, protecting it from further damage while restoring its original size, shape, and strength.",
+    23→      "Crafted from high-quality, tooth-colored materials, our crowns blend seamlessly with your natural smile while providing the durability needed for everyday biting and chewing. For patients missing one or more teeth, dental bridges provide an effective, fixed alternative to close the gap without the need for surgery. A bridge consists of a custom-made replacement tooth (or teeth) anchored securely by crowns on either side of the gap.",
+    24→      "Beyond simply filling a space, bridges play an important structural role — preventing surrounding teeth from shifting out of position, maintaining proper bite alignment, and preserving the natural contours of your face. Whether you need a single crown to save a vulnerable tooth or a bridge to restore a complete, confident smile, these restorations are built to last for many years with proper care.",
+    25→    ],
+    26→    benefits: [
+    27→      {
+    28→        title: "Protection & Strength",
+    29→        description:
+    30→          "A crown shields a weakened or cracked tooth from fracture, letting you bite and chew with full confidence again.",
+    31→      },
+    32→      {
+    33→        title: "Natural Aesthetics",
+    34→        description:
+    35→          "Tooth-colored porcelain and zirconia matched to your exact shade — restorations that are virtually indistinguishable.",
+    36→      },
+    37→      {
+    38→        title: "Preserves Alignment",
+    39→        description:
+    40→          "Bridges stop neighboring teeth from drifting into the gap, protecting your bite and facial structure.",
+    41→      },
+    42→      {
+    43→        title: "Fixed & Permanent",
+    44→        description:
+    45→          "Unlike removable dentures, bridges stay firmly in place — no slipping, no nightly removal.",
+    46→      },
+    47→      {
+    48→        title: "Fast Results",
+    49→        description:
+    50→          "Most crowns and bridges are completed in just two comfortable visits.",
+    51→      },
+    52→      {
+    53→        title: "Long-Term Value",
+    54→        description:
+    55→          "With good oral hygiene, quality restorations serve you for 10–15 years or more.",
+    56→      },
+    57→    ],
+    58→    process: [
+    59→      {
+    60→        step: "01",
+    61→        title: "Consultation & Digital Scan",
+    62→        description:
+    63→          "We examine your tooth, take digital X-rays and scan the area to design your restoration.",
+    64→      },
+    65→      {
+    66→        step: "02",
+    67→        title: "Tooth Preparation",
+    68→        description:
+    69→          "The tooth is gently reshaped under local anesthesia and a temporary crown protects it.",
+    70→      },
+    71→      {
+    72→        step: "03",
+    73→        title: "Custom Fabrication",
+    74→        description:
+    75→          "Our dental lab crafts your crown or bridge from premium porcelain or zirconia, shade-matched to your smile.",
+    76→      },
+    77→      {
+    78→        step: "04",
+    79→        title: "Fitting & Bonding",
+    80→        description:
+    81→          "We check fit, bite and aesthetics, then permanently cement the restoration in place.",
+    82→      },
+    83→    ],
+    84→    ideal: [
+    85→      "A cracked, chipped or severely decayed tooth",
+    86→      "A tooth that has undergone root canal treatment",
+    87→      "One or more missing teeth with healthy adjacent teeth",
+    88→      "Worn-down or misshapen teeth needing full coverage",
+    89→    ],
+    90→    duration: "2 visits • ~60 min each",
+    91→    longevity: "10–15+ years with good care",
+    92→    anesthesia: "Local anesthesia, painless procedure",
+    93→    faqs: [
+    94→      {
+    95→        question: "Does getting a crown hurt?",
+    96→        answer:
+    97→          "No. The procedure is performed under effective local anesthesia, so you feel no pain during treatment. Mild sensitivity for a few days afterward is normal and settles quickly.",
+    98→      },
+    99→      {
+   100→        question: "How do I care for my crown or bridge?",
+   101→        answer:
+   102→          "Brush twice daily, floss (including under the bridge with a floss threader), and visit us every six months. Avoid chewing very hard objects like ice to extend its life.",
+   103→      },
+   104→      {
+   105→        question: "Will my crown look natural?",
+   106→        answer:
+   107→          "Yes. We match the porcelain shade, translucency and shape to your surrounding teeth so precisely that most people cannot tell which tooth is restored.",
+   108→      },
+   109→    ],
+   110→    related: ["dental-implants", "root-canal-treatment", "porcelain-veneers"],
+   111→    featured: true,
+   112→  },
+   113→  {
+   114→    slug: "dental-implants",
+   115→    nameBn: "ডেন্টাল ইমপ্ল্যান্ট",
+   116→    shortNameBn: "ইমপ্ল্যান্ট",
+   117→    taglineBn: "দাঁত পুনরুদ্ধারের সবচেয়ে নির্ভরযোগ্য পদ্ধতি।",
+   118→    excerptBn: "হারানো দাঁতের স্থায়ী সমাধান — টাইটানিয়াম ইমপ্ল্যান্ট যা আপনার চোয়ালের হাড়ের সাথে মিশে যায় এবং দেখতে-অনুভবে স্বাভাবিক দাঁতের মতোই কাজ করে। কথা বলুন, হাসুন আর খান — কোনো দ্বিধা ছাড়াই।",
+   119→    name: "Dental Implants",
+   120→    shortName: "Implants",
+   121→    category: "Surgical",
+   122→    icon: "Anchor",
+   123→    tagline: "The gold standard in tooth replacement.",
+   124→    excerpt:
+   125→      "Permanent, stable titanium implants that look, feel and function like natural teeth — preventing bone loss and restoring your freedom to eat, speak and smile.",
+   126→    overview: [
+   127→      "Dental Implants are widely regarded as the gold standard for tooth replacement, offering a permanent, stable, and remarkably natural-looking solution for missing teeth. Each implant consists of a biocompatible titanium post that is surgically placed into the jawbone, acting as an artificial tooth root that fuses with the bone over time to create a strong, durable foundation.",
+   128→      "A custom-crafted crown is then attached, designed to match the shape, size, and shade of your natural teeth for a seamless, lifelike result. Unlike bridges or dentures, dental implants stand on their own without relying on adjacent teeth for support, preserving the health and structure of your surrounding natural teeth.",
+   129→      "Because the implant integrates directly with the jawbone, it also stimulates and preserves bone density, preventing the bone loss and facial changes that commonly occur after tooth loss — a benefit no other replacement option can fully provide. With proper care, dental implants can last a lifetime, giving you the freedom to eat, speak, and smile with total confidence.",
+   130→    ],
+   131→    benefits: [
+   132→      {
+   133→        title: "Lifetime Solution",
+   134→        description:
+   135→          "With good hygiene, the titanium post can last a lifetime — only the crown may need replacement after 10–15 years.",
+   136→      },
+   137→      {
+   138→        title: "Preserves Jawbone",
+   139→        description:
+   140→          "Implants stimulate bone like natural roots, preventing the bone loss that causes facial sagging after tooth loss.",
+   141→      },
+   142→      {
+   143→        title: "Fully Independent",
+   144→        description:
+   145→          "No grinding down of healthy neighboring teeth, unlike traditional bridges.",
+   146→      },
+   147→      {
+   148→        title: "Natural Function",
+   149→        description:
+   150→          "Eat, speak and laugh with complete stability — no slipping like removable dentures.",
+   151→      },
+   152→      {
+   153→        title: "Natural Appearance",
+   154→        description:
+   155→          "Custom crowns matched to your natural shade and shape blend invisibly into your smile.",
+   156→      },
+   157→      {
+   158→        title: "Improves Quality of Life",
+   159→        description:
+   160→          "Patients report renewed confidence in social and professional settings.",
+   161→      },
+   162→    ],
+   163→    process: [
+   164→      {
+   165→        step: "01",
+   166→        title: "3D Assessment & Planning",
+   167→        description:
+   168→          "Digital X-rays and a cone-beam CT scan let us evaluate bone density and plan precise placement.",
+   169→      },
+   170→      {
+   171→        step: "02",
+   172→        title: "Implant Placement",
+   173→        description:
+   174→          "Under sterile conditions and comfortable anesthesia, the titanium post is placed in the jawbone.",
+   175→      },
+   176→      {
+   177→        step: "03",
+   178→        title: "Healing & Integration",
+   179→        description:
+   180→          "Over 3–6 months the implant fuses with your bone (osseointegration). A temporary tooth keeps your smile intact.",
+   181→      },
+   182→      {
+   183→        step: "04",
+   184→        title: "Crown Attachment",
+   185→        description:
+   186→          "A custom porcelain crown is fixed onto the implant — your new tooth is complete.",
+   187→      },
+   188→    ],
+   189→    ideal: [
+   190→      "One or more missing teeth with adequate jawbone",
+   191→      "Patients who want a fixed alternative to dentures",
+   192→      "Those unwilling to alter healthy adjacent teeth for a bridge",
+   193→      "Anyone seeking the most natural, long-lasting replacement",
+   194→    ],
+   195→    duration: "3–6 months total (implant + healing + crown)",
+   196→    longevity: "Post: lifetime • Crown: 10–15 years",
+   197→    anesthesia: "Local anesthesia; sedation available",
+   198→    faqs: [
+   199→      {
+   200→        question: "Are dental implants painful?",
+   201→        answer:
+   202→          "Most patients report the procedure is more comfortable than a tooth extraction. With local anesthesia you feel nothing during surgery, and mild soreness for a few days is managed with standard painkillers.",
+   203→      },
+   204→      {
+   205→        question: "Am I a candidate for implants?",
+   206→        answer:
+   207→          "Most healthy adults with missing teeth qualify. We assess bone density, gum health and medical history at your consultation. Even patients with low bone volume often qualify with grafting.",
+   208→      },
+   209→      {
+   210→        question: "How much do dental implants cost in Dhaka?",
+   211→        answer:
+   212→          "Cost depends on the number of implants and crown material. Aristocrat Dental Care offers transparent, competitive pricing with installment options — book a consultation for your personalized treatment plan.",
+   213→      },
+   214→    ],
+   215→    related: ["crowns-bridges", "oral-maxillofacial-surgery", "porcelain-veneers"],
+   216→    featured: true,
+   217→  },
+   218→  {
+   219→    slug: "digital-smile-design",
+   220→    nameBn: "ডিজিটাল স্মাইল ডিজাইন (DSD)",
+   221→    shortNameBn: "স্মাইল ডিজাইন",
+   222→    taglineBn: "চিকিৎসা শুরুর আগেই দেখে নিন নতুন হাসি।",
+   223→    excerptBn: "আপনার মুখের ছবি ও ভিডিও বিশ্লেষণ করে আমরা ডিজিটালি ডিজাইন করি নিখুঁত হাসি — চিকিৎসা শুরুর আগেই আপনি দেখে নিতে পারবেন ফলাফল কেমন হবে।",
+   224→    name: "Digital Smile Design (DSD)",
+   225→    shortName: "Smile Design",
+   226→    category: "Cosmetic",
+   227→    icon: "Sparkles",
+   228→    tagline: "See your new smile before treatment begins.",
+   229→    excerpt:
+   230→      "Advanced imaging software analyzes your facial structure and creates a digital simulation of your new smile — visualize and approve your transformation before any treatment starts.",
+   231→    overview: [
+   232→      "Digital Smile Design (DSD) is an advanced, technology-driven approach to smile transformation that lets you see and approve your new smile before any treatment ever begins. Using state-of-the-art facial and dental imaging software, our team carefully analyzes your unique facial structure, lip line, tooth proportions, and smile symmetry to build a personalized digital simulation of your ideal smile.",
+   233→      "Instead of relying on guesswork or verbal descriptions, DSD combines high-resolution photographs and video with precision design software to map exactly how your teeth, gums, lips, and facial features work together in harmony. This gives you a realistic, accurate preview of your transformation — customized entirely around your own face, not a generic template.",
+   234→      "During your DSD consultation, you review this digital simulation side-by-side with your current smile, with the freedom to request adjustments to tooth shape, size, color, or alignment, and fully understand your treatment plan before committing to any procedure. Once you approve the design, it becomes the exact blueprint your dentist follows — whether your treatment involves veneers, crowns, whitening, orthodontics, or a complete smile makeover — ensuring your final results closely match what you envisioned from the start.",
+   235→    ],
+   236→    benefits: [
+   237→      {
+   238→        title: "Preview Your Result",
+   239→        description:
+   240→          "See a photo-accurate simulation of your new smile before any work is done — no surprises.",
+   241→      },
+   242→      {
+   243→        title: "Truly Personalized",
+   244→        description:
+   245→          "Design is mapped to YOUR face, lip line and personality — never a one-size-fits-all template.",
+   246→      },
+   247→      {
+   248→        title: "Co-Design With Your Dentist",
+   249→        description:
+   250→          "Adjust tooth shape, shade and proportion until the smile feels unmistakably you.",
+   251→      },
+   252→      {
+   253→        title: "Predictable Outcomes",
+   254→        description:
+   255→          "Your approved design becomes the clinical blueprint, aligning every treatment step.",
+   256→      },
+   257→      {
+   258→        title: "Confidence in Decisions",
+   259→        description:
+   260→          "Understand exactly what treatment you are committing to — time, steps and result.",
+   261→      },
+   262→      {
+   263→        title: "Combines Any Treatments",
+   264→        description:
+   265→          "DSD plans veneers, whitening, orthodontics and implants together in one blueprint.",
+   266→      },
+   267→    ],
+   268→    process: [
+   269→      {
+   270→        step: "01",
+   271→        title: "Facial & Dental Photography",
+   272→        description:
+   273→          "High-resolution photos and video capture your smile dynamics from every angle.",
+   274→      },
+   275→      {
+   276→        step: "02",
+   277→        title: "Digital Analysis",
+   278→        description:
+   279→          "We analyze facial proportion, lip line, gum display and tooth symmetry in the DSD software.",
+   280→      },
+   281→      {
+   282→        step: "03",
+   283→        title: "Your Smile Simulation",
+   284→        description:
+   285→          "A personalized simulation of your new smile is prepared for your review — side-by-side with your current smile.",
+   286→      },
+   287→      {
+   288→        step: "04",
+   289→        title: "Approval & Treatment",
+   290→        description:
+   291→          "You fine-tune and approve the design; it becomes the precise blueprint for your smile makeover.",
+   292→      },
+   293→    ],
+   294→    ideal: [
+   295→      "Anyone considering veneers, crowns or a complete smile makeover",
+   296→      "Patients wanting to preview results before committing",
+   297→      "Those unhappy with tooth shape, size or shade",
+   298→      "Wedding, graduation or professional smile makeovers",
+   299→    ],
+   300→    duration: "Consultation: 60–90 min",
+   301→    longevity: "Design blueprint guides all treatment",
+   302→    anesthesia: "Non-invasive — photography & software only",
+   303→    faqs: [
+   304→      {
+   305→        question: "Is Digital Smile Design painful?",
+   306→        answer:
+   307→          "Not at all. DSD itself is completely non-invasive — it uses photography, video and software. Any discomfort would only come from the treatments you later choose.",
+   308→      },
+   309→      {
+   310→        question: "How accurate is the simulation?",
+   311→        answer:
+   312→          "Very accurate. The final result closely matches the approved simulation because it serves as the exact blueprint for your veneers, crowns or other restorations.",
+   313→      },
+   314→      {
+   315→        question: "Can I change the design after seeing it?",
+   316→        answer:
+   317→          "Absolutely — that is the whole point of DSD. You can request changes to shape, shade and proportion until you are completely happy before treatment begins.",
+   318→      },
+   319→    ],
+   320→    related: ["porcelain-veneers", "teeth-whitening", "invisalign-clear-aligners"],
+   321→    featured: true,
+   322→  },
+   323→  {
+   324→    slug: "invisalign-clear-aligners",
+   325→    nameBn: "ইনভিজিলাইন® (ক্লিয়ার অ্যালাইনার)",
+   326→    shortNameBn: "ইনভিজিলাইন®",
+   327→    taglineBn: "হাসি সোজা করুন — প্রায় অদৃশ্যভাবে।",
+   328→    excerptBn: "কার্যত অদৃশ্য, খোলা-যাওয়া সুবিধাযুক্ত স্বচ্ছ অ্যালাইনারে দাঁত সোজা করুন। কেউ বুঝতেই পারবে না আপনি অর্থোডন্টিক চিকিৎসা নিচ্ছেন — আর খাওয়া-দাঁত ব্রাশ সব স্বাভাবিক থাকবে।",
+   329→    name: "Invisalign® (Clear Aligners)",
+   330→    shortName: "Invisalign®",
+   331→    category: "Orthodontics",
+   332→    icon: "Smile",
+   333→    tagline: "Straighten your smile. Almost invisibly.",
+   334→    excerpt:
+   335→      "Custom-made, virtually invisible clear aligners that gradually straighten your teeth — removable for eating and brushing, with no wires or metal braces.",
+   336→    overview: [
+   337→      "Invisalign® offers a modern, discreet alternative to traditional metal braces, using a series of custom-made, clear aligners to gradually and comfortably straighten your teeth. Each set of aligners is precisely designed using 3D digital imaging to shift your teeth into their ideal position step by step, giving you a straighter, healthier smile without the wires, brackets, or metal typically associated with orthodontic treatment.",
+   338→      "Because Invisalign® aligners are virtually invisible, most people won't even notice you're wearing them, making it an ideal choice for adults and teens who want to straighten their teeth discreetly — whether at work, school, or in social settings. The aligners are also fully removable, giving you the freedom to eat all your favorite foods without restriction and to brush and floss normally, supporting better oral hygiene throughout your treatment compared to fixed braces.",
+   339→      "Every Invisalign® treatment plan is fully customized to your unique smile goals, and many patients begin to see visible results within just a few months. From minor spacing issues to more complex alignment concerns, Invisalign® combines comfort, convenience, and near-invisible design to help you achieve a confidently straight smile — without disrupting your everyday life.",
+   340→    ],
+   341→    benefits: [
+   342→      {
+   343→        title: "Virtually Invisible",
+   344→        description:
+   345→          "Crystal-clear aligners are barely noticeable — straighten teeth without anyone knowing.",
+   346→      },
+   347→      {
+   348→        title: "Fully Removable",
+   349→        description:
+   350→          "Eat whatever you love and brush normally — simply take aligners out when needed.",
+   351→      },
+   352→      {
+   353→        title: "Superior Comfort",
+   354→        description:
+   355→          "Smooth medical-grade plastic with no poking wires or bracket irritation.",
+   356→      },
+   357→      {
+   358→        title: "Predictable Digital Planning",
+   359→        description:
+   360→          "3D software shows your tooth movement timeline and final result before you start.",
+   361→      },
+   362→      {
+   363→        title: "Fewer Clinic Visits",
+   364→        description:
+   365→          "Aligner sets are changed at home every 1–2 weeks with periodic check-ups only.",
+   366→      },
+   367→      {
+   368→        title: "Visible Results in Months",
+   369→        description:
+   370→          "Many patients notice meaningful improvement within the first few months.",
+   371→      },
+   372→    ],
+   373→    process: [
+   374→      {
+   375→        step: "01",
+   376→        title: "Smile Scan & Simulation",
+   377→        description:
+   378→          "A 3D digital scan (no messy impressions) maps your teeth and simulates your final result.",
+   379→      },
+   380→      {
+   381→        step: "02",
+   382→        title: "Custom Aligner Fabrication",
+   383→        description:
+   384→          "Your full series of aligners is precision-manufactured for your treatment plan.",
+   385→      },
+   386→      {
+   387→        step: "03",
+   388→        title: "Wear & Progress",
+   389→        description:
+   390→          "Wear each aligner 20–22 hours daily, switching to the next set every 1–2 weeks.",
+   391→      },
+   392→      {
+   393→        step: "04",
+   394→        title: "Retention",
+   395→        description:
+   396→          "After treatment, retainers lock in your beautiful new smile long-term.",
+   397→      },
+   398→    ],
+   399→    ideal: [
+   400→      "Adults and teens wanting discreet orthodontics",
+   401→      "Crowded, spaced or mildly misaligned teeth",
+   402→      "Relapse after previous braces treatment",
+   403→      "Professionals who can't wear visible braces at work",
+   404→    ],
+   405→    duration: "6–18 months (case-dependent)",
+   406→    longevity: "Permanent with proper retainer wear",
+   407→    anesthesia: "None — non-invasive",
+   408→    faqs: [
+   409→      {
+   410→        question: "How long does Invisalign treatment take?",
+   411→        answer:
+   412→          "Most cases complete in 6–18 months depending on complexity. Minor spacing can finish in as little as 6 months; your simulation shows the exact projected timeline.",
+   413→      },
+   414→      {
+   415→        question: "Can I eat with Invisalign aligners on?",
+   416→        answer:
+   417→          "Remove them for all food and drinks (except plain water). This freedom to eat anything is one of Invisalign's biggest advantages over fixed braces.",
+   418→      },
+   419→      {
+   420→        question: "Does Invisalign hurt?",
+   421→        answer:
+   422→          "You may feel gentle pressure for a day or two after switching to a new aligner set — a sign teeth are moving. Most patients find it far more comfortable than metal braces.",
+   423→      },
+   424→    ],
+   425→    related: ["traditional-braces-orthodontics", "digital-smile-design", "teeth-whitening"],
+   426→    featured: true,
+   427→  },
+   428→  {
+   429→    slug: "laser-assisted-fillings",
+   430→    nameBn: "লেজার-সহায়ক ফিলিং",
+   431→    shortNameBn: "লেজার ফিলিং",
+   432→    taglineBn: "আধুনিক নির্ভুলতায় রেস্টোরেটিভ চিকিৎসা।",
+   433→    excerptBn: "ডেন্টাল লেজারে ক্যাভিটি পরিষ্কার করা হয় নির্ভুলভাবে — প্রায়ই ড্রিল বা ইনজেকশন ছাড়াই। শব্দ কম, ভাইব্রেশন নেই, অস্বস্তি অনেক কম।",
+   434→    name: "Laser-Assisted Fillings",
+   435→    shortName: "Laser Fillings",
+   436→    category: "Restorative",
+   437→    icon: "Zap",
+   438→    tagline: "Restorative care meets modern precision.",
+   439→    excerpt:
+   440→      "Advanced laser technology removes decay with exceptional precision — often without anesthesia or the drill — restored with durable, tooth-colored composite materials.",
+   441→    overview: [
+   442→      "Laser-Assisted Fillings bring together restorative care and modern aesthetics for a comfortable, precise, and virtually seamless way to treat tooth decay. Using advanced laser technology, our dental team removes decayed tooth structure with exceptional precision, targeting only the affected area while preserving as much healthy enamel as possible.",
+   443→      "This gentle approach often eliminates the need for anesthesia, needles, or the drill, making the entire experience faster and far more comfortable — especially for patients who feel anxious about traditional dental treatment. Once the decay is removed, the tooth is restored using durable, tooth-colored composite materials that are carefully matched to the shade and texture of your natural enamel.",
+   444→      "The result is a filling that not only restores the strength and function of your tooth but also blends in so naturally that it's virtually invisible. Laser-assisted treatment also reduces bleeding, swelling, and post-treatment sensitivity compared to conventional methods, allowing for quicker healing and a smoother recovery — a precise, minimally invasive, aesthetically flawless solution.",
+   445→    ],
+   446→    benefits: [
+   447→      {
+   448→        title: "Often No Anesthesia",
+   449→        description:
+   450→          "Laser energy often eliminates the need for injections — ideal for needle-anxious patients.",
+   451→      },
+   452→      {
+   453→        title: "No Drill Noise",
+   454→        description:
+   455→          "The high-pitched drill sound that triggers anxiety is replaced by a quiet, gentle process.",
+   456→      },
+   457→      {
+   458→        title: "Maximum Tooth Preservation",
+   459→        description:
+   460→          "Laser removes only diseased tissue, keeping more healthy enamel intact than drilling.",
+   461→      },
+   462→      {
+   463→        title: "Invisible Restoration",
+   464→        description:
+   465→          "Tooth-colored composite matched to your enamel — fillings you can't see.",
+   466→      },
+   467→      {
+   468→        title: "Faster Healing",
+   469→        description:
+   470→          "Reduced bleeding, swelling and sensitivity means smoother recovery.",
+   471→      },
+   472→      {
+   473→        title: "Kid-Friendly",
+   474→        description:
+   475→          "The gentle experience makes laser fillings excellent for anxious children.",
+   476→      },
+   477→    ],
+   478→    process: [
+   479→      {
+   480→        step: "01",
+   481→        title: "Diagnosis",
+   482→        description:
+   483→          "Digital X-rays and intraoral camera imaging locate decay with precision.",
+   484→      },
+   485→      {
+   486→        step: "02",
+   487→        title: "Laser Decay Removal",
+   488→        description:
+   489→          "The dental laser gently vaporizes only the decayed portion of the tooth.",
+   490→      },
+   491→      {
+   492→        step: "03",
+   493→        title: "Composite Restoration",
+   494→        description:
+   495→          "Shade-matched composite resin is layered, sculpted and cured for an invisible fill.",
+   496→      },
+   497→      {
+   498→        step: "04",
+   499→        title: "Polish & Check",
+   500→        description:
+   501→          "We refine your bite and polish the surface — done in a single comfortable visit.",
+   502→      },
+   503→    ],
+   504→    ideal: [
+   505→      "Patients with dental anxiety or needle phobia",
+   506→      "Early-to-moderate cavities",
+   507→      "Children who fear the drill",
+   508→      "Anyone wanting metal-free, invisible fillings",
+   509→    ],
+   510→    duration: "Single visit • 30–60 min",
+   511→    longevity: "7–10+ years",
+   512→    anesthesia: "Often none needed; available if preferred",
+   513→    faqs: [
+   514→      {
+   515→        question: "Are laser fillings safe?",
+   516→        answer:
+   517→          "Yes. Dental lasers are FDA-cleared and have been used for decades. They are precise, sterile and gentle on surrounding tissues.",
+   518→      },
+   519→      {
+   520→        question: "Will I really not need an injection?",
+   521→        answer:
+   522→          "In most small-to-moderate cavities, yes — the laser is comfortable enough without anesthesia. For deeper decay we still offer gentle numbing.",
+   523→      },
+   524→      {
+   525→        question: "How long do laser fillings last?",
+   526→        answer:
+   527→          "With good brushing, flossing and six-month check-ups, tooth-colored composite fillings typically last 7–10 years or longer.",
+   528→      },
+   529→    ],
+   530→    related: ["root-canal-treatment", "pediatric-dentistry", "periodontal-gum-treatment"],
+   531→  },
+   532→  {
+   533→    slug: "oral-maxillofacial-surgery",
+   534→    nameBn: "ওরাল ও ম্যাক্সিলোফেসিয়াল সার্জারি",
+   535→    shortNameBn: "ওরাল সার্জারি",
+   536→    taglineBn: "দক্ষ সার্জিক্যাল চিকিৎসা, কোমল পুনরুদ্ধার।",
+   537→    excerptBn: "জটিল দাঁত তোলা, জ্ঞানদন্ত সার্জারি থেকে শুরু করে মুখ-চোয়ালের অস্বাভাবিকতা — অভিজ্ঞ সার্জনের হাতে নিরাপদ, পরিকল্পিত ও যত্নশীল অস্ত্রোপচার।",
+   538→    name: "Oral & Maxillofacial Surgery",
+   539→    shortName: "Oral Surgery",
+   540→    category: "Surgical",
+   541→    icon: "Scissors",
+   542→    tagline: "Expert surgical care, gentle recovery.",
+   543→    excerpt:
+   544→      "From wisdom tooth extractions to corrective jaw surgery — specialists handle complex dental, facial and jaw conditions with focus on safety and rapid recovery.",
+   545→    overview: [
+   546→      "Oral & Maxillofacial Surgery covers a broad range of advanced surgical procedures for treating complex dental, facial, and jaw-related conditions, performed by specialists trained specifically in this demanding area of care. From routine wisdom tooth extractions to more involved procedures like corrective jaw surgery, our surgical team is equipped to handle a wide spectrum of cases with precision, expertise, and a strong focus on patient comfort.",
+   547→      "Wisdom tooth extractions are among the most common procedures we perform, addressing impacted, misaligned, or problematic third molars before they cause pain, infection, or crowding of the surrounding teeth. For more complex cases, our specialists also manage corrective jaw surgery to address bite misalignment, jaw asymmetry, or structural issues that affect both function and facial appearance.",
+   548→      "At every step, patient safety and comfort remain our top priorities. Our team uses modern anesthesia and sedation options tailored to each procedure and patient, along with careful surgical techniques designed to minimize trauma and support faster healing. With a strong emphasis on effective pain management and post-operative care, we help ensure a smoother, more comfortable recovery.",
+   549→    ],
+   550→    benefits: [
+   551→      {
+   552→        title: "Specialist Expertise",
+   553→        description:
+   554→          "Surgeons with hospital-grade training in oral & maxillofacial procedures.",
+   555→      },
+   556→      {
+   557→        title: "Modern Sedation Options",
+   558→        description:
+   559→          "From local anesthesia to conscious sedation — matched to your procedure and comfort level.",
+   560→      },
+   561→      {
+   562→        title: "Minimally Invasive Techniques",
+   563→        description:
+   564→          "Smaller incisions, less trauma and visibly faster healing.",
+   565→      },
+   566→      {
+   567→        title: "Complete Pain Management",
+   568→        description:
+   569→          "A structured before-and-after pain control plan keeps recovery comfortable.",
+   570→      },
+   571→      {
+   572→        title: "Impacted Wisdom Teeth",
+   573→        description:
+   574→          "Safe removal of deeply impacted or sideways-growing third molars.",
+   575→      },
+   576→      {
+   577→        title: "Full Aftercare Support",
+   578→        description:
+   579→          "Detailed recovery guidance and follow-ups until you are fully healed.",
+   580→      },
+   581→    ],
+   582→    process: [
+   583→      {
+   584→        step: "01",
+   585→        title: "Surgical Consultation",
+   586→        description:
+   587→          "3D imaging and examination determine the safest surgical approach for your case.",
+   588→      },
+   589→      {
+   590→        step: "02",
+   591→        title: "Pre-Surgical Planning",
+   592→        description:
+   593→          "We plan anesthesia, schedule and prepare your personalized aftercare kit.",
+   594→      },
+   595→      {
+   596→        step: "03",
+   597→        title: "The Procedure",
+   598→        description:
+   599→          "Performed in our sterile surgical suite with the sedation level chosen for you.",
+   600→      },
+   601→      {
+   602→        step: "04",
+   603→        title: "Recovery & Follow-Up",
+   604→        description:
+   605→          "Guided healing with scheduled reviews, pain management and dietary instructions.",
+   606→      },
+   607→    ],
+   608→    ideal: [
+   609→      "Painful or impacted wisdom teeth",
+   610→      "Severe dental infection or abscess",
+   611→      "Jaw pain, asymmetry or bite dysfunction",
+   612→      "Teeth requiring surgical extraction",
+   613→    ],
+   614→    duration: "45–120 min depending on procedure",
+   615→    longevity: "Permanent solution",
+   616→    anesthesia: "Local / IV sedation options",
+   617→    faqs: [
+   618→      {
+   619→        question: "Is wisdom tooth removal painful?",
+   620→        answer:
+   621→          "The surgery itself is painless under anesthesia. Mild swelling and soreness for 2–4 days afterwards is normal and well-managed with prescribed medication.",
+   622→      },
+   623→      {
+   624→        question: "When can I return to work after surgery?",
+   625→        answer:
+   626→          "Most patients resume normal activities within 2–3 days. Complex cases may need up to a week — we give you a precise timeline for your specific procedure.",
+   627→      },
+   628→      {
+   629→        question: "Do all wisdom teeth need removal?",
+   630→        answer:
+   631→          "No. Healthy, fully erupted, cleansable wisdom teeth can stay. We only recommend removal when teeth are impacted, decayed, or damaging neighbors.",
+   632→      },
+   633→    ],
+   634→    related: ["dental-implants", "root-canal-treatment", "crowns-bridges"],
+   635→    featured: true,
+   636→  },
+   637→  {
+   638→    slug: "pediatric-dentistry",
+   639→    nameBn: "পেডিয়াট্রিক ডেন্টিস্ট্রি",
+   640→    shortNameBn: "শিশু ডেন্টিস্ট্রি",
+   641→    taglineBn: "ছোট্ট হাসির জন্য কোমল যত্ন।",
+   642→    excerptBn: "শিশুদের জন্য বিশেষভাবে সাজানো পরিবেশ — ভয় নয়, বন্ধুত্ব তৈরি হয় এখানে। ফ্লুরাইড, সিল্যান্ট ও প্রথম-দাঁতের যত্নে শুরু হোক সুস্থ অভ্যাস।",
+   643→    name: "Pediatric Dentistry",
+   644→    shortName: "Kids' Dentistry",
+   645→    category: "Preventive",
+   646→    icon: "Baby",
+   647→    tagline: "Gentle care for little smiles.",
+   648→    excerpt:
+   649→      "A friendly, fear-free environment designed for children — preventative care, habit counseling and development monitoring for a lifetime of healthy smiles.",
+   650→    overview: [
+   651→      "Gentle care for little smiles. Our pediatric dentistry creates a friendly, fear-free environment for children, focusing on preventative care, habit counseling, and monitoring development to ensure your child grows up with a healthy, happy smile. Our clinic features a specially designed kids' room that helps reduce dental fear gradually with every visit.",
+   652→      "Early dental experiences shape lifelong attitudes toward oral health. Our team takes time — never rushing — to introduce children to dental care at their own pace, using tell-show-do techniques that turn unfamiliar instruments into friendly, understandable tools. Positive early visits mean children who happily visit the dentist for life.",
+   653→      "We cover the complete spectrum of children's dental needs: fluoride varnish and sealants that protect growing teeth, gentle fillings for baby-tooth cavities, guidance for thumb-sucking and pacifier habits, and orthodontic monitoring as permanent teeth erupt — catching alignment issues at the ideal time for simple correction.",
+   654→    ],
+   655→    benefits: [
+   656→      {
+   657→        title: "Fear-Free Environment",
+   658→        description:
+   659→          "Specially designed kids' room and gradual exposure that turns fear into friendship.",
+   660→      },
+   661→      {
+   662→        title: "Prevention First",
+   663→        description:
+   664→          "Fluoride varnish and protective sealants stop cavities before they start.",
+   665→      },
+   666→      {
+   667→        title: "Growth Monitoring",
+   668→        description:
+   669→          "We track jaw development and tooth eruption, catching issues at the ideal treatment time.",
+   670→      },
+   671→      {
+   672→        title: "Habit Counseling",
+   673→        description:
+   674→          "Expert guidance on thumb-sucking, pacifiers and bottle habits that shape dental development.",
+   675→      },
+   676→      {
+   677→        title: "Gentle Techniques",
+   678→        description:
+   679→          "Tell-show-do methods and laser options make treatments comfortable for children.",
+   680→      },
+   681→      {
+   682→        title: "Parent Partnership",
+   683→        description:
+   684→          "You receive clear home-care coaching so healthy habits continue between visits.",
+   685→      },
+   686→    ],
+   687→    process: [
+   688→      {
+   689→        step: "01",
+   690→        title: "Happy First Visit",
+   691→        description:
+   692→          "A fun, pressure-free introduction — a ride in the chair, counting teeth and lots of praise.",
+   693→      },
+   694→      {
+   695→        step: "02",
+   696→        title: "Gentle Examination",
+   697→        description:
+   698→          "We check teeth, gums and development while your child stays relaxed and engaged.",
+   699→      },
+   700→      {
+   701→        step: "03",
+   702→        title: "Preventive Care",
+   703→        description:
+   704→          "Cleaning, fluoride and sealants protect teeth — quick, easy and totally comfortable.",
+   705→      },
+   706→      {
+   707→        step: "04",
+   708→        title: "Ongoing Growth Care",
+   709→        description:
+   710→          "Six-month visits track development and keep your child's smile on track.",
+   711→      },
+   712→    ],
+   713→    ideal: [
+   714→      "Children from their first tooth (age 1) onward",
+   715→      "Kids with dental fear or anxiety",
+   716→      "Cavity-prone children needing preventive care",
+   717→      "Thumb-sucking or pacifier habit support",
+   718→    ],
+   719→    duration: "30–45 min per visit",
+   720→    longevity: "Ongoing care through adolescence",
+   721→    anesthesia: "Rarely needed; laser & gentle techniques",
+   722→    faqs: [
+   723→      {
+   724→        question: "When should my child first see a dentist?",
+   725→        answer:
+   726→          "By their first birthday, or within six months of the first tooth appearing. Early visits are quick, fun and establish a dental home for your child.",
+   727→      },
+   728→      {
+   729→        question: "How can I prepare my anxious child for the visit?",
+   730→        answer:
+   731→          "Stay positive about the dentist at home, avoid scary words like 'needle', and arrive a little early so your child can relax in our kids' room. Our team handles the rest with gentle pacing.",
+   732→      },
+   733→      {
+   734→        question: "Are baby teeth cavities really important to treat?",
+   735→        answer:
+   736→          "Yes. Baby teeth guide permanent teeth into place, support speech and nutrition. Untreated cavities cause pain, infection and orthodontic problems later.",
+   737→      },
+   738→    ],
+   739→    related: ["laser-assisted-fillings", "traditional-braces-orthodontics", "periodontal-gum-treatment"],
+   740→  },
+   741→  {
+   742→    slug: "periodontal-gum-treatment",
+   743→    nameBn: "পেরিওডন্টাল (মাড়ি) চিকিৎসা",
+   744→    shortNameBn: "মাড়ির চিকিৎসা",
+   745→    taglineBn: "সুস্থ মাড়ি, সুন্দর হাসি।",
+   746→    excerptBn: "মাড়ি থেকে রক্তপাত, ফোলা বা দুর্গন্ধ — উপেক্ষা করবেন না। স্কেলিং, ডিপ ক্লিনিং ও আধুনিক লেজার থেরাপিতে মাড়ির রোগ থামান আজই।",
+   747→    name: "Periodontal (Gum) Treatment",
+   748→    shortName: "Gum Treatment",
+   749→    category: "Preventive",
+   750→    icon: "Leaf",
+   751→    tagline: "Healthy gums, healthy smile.",
+   752→    excerpt:
+   753→      "Comprehensive treatment for gum disease (gingivitis & periodontitis) — stop recession, reduce inflammation and protect your teeth from loss.",
+   754→    overview: [
+   755→      "Healthy gums are the foundation of a healthy smile. We offer comprehensive treatments for gum disease (gingivitis and periodontitis) to stop recession, reduce inflammation, and protect your teeth from loss. Gum disease is painless in its early stages — which is why professional assessment matters so much.",
+   756→      "Gingivitis, the earliest stage, shows as redness, swelling or bleeding when brushing. At this stage the damage is completely reversible with professional cleaning and improved home care. Left untreated, it can progress to periodontitis — where the infection destroys the bone and fibers holding your teeth, creating pockets, looseness and eventually tooth loss.",
+   757→      "Our periodontal care spans deep cleaning (scaling & root planing), laser-assisted disinfection of periodontal pockets, targeted antimicrobial therapy and, where needed, surgical correction of advanced defects. Every treatment plan includes personalized home-care coaching, because gum health is a partnership between clinic visits and your daily routine.",
+   758→    ],
+   759→    benefits: [
+   760→      {
+   761→        title: "Stop Disease Progression",
+   762→        description:
+   763→          "Early treatment reverses gingivitis completely and halts periodontitis damage.",
+   764→      },
+   765→      {
+   766→        title: "Save Loose Teeth",
+   767→        description:
+   768→          "Deep therapy and bone-supporting treatment can stabilize teeth you feared losing.",
+   769→      },
+   770→      {
+   771→        title: "Fresh Breath",
+   772→        description:
+   773→          "Eliminating gum infection resolves persistent bad breath at its source.",
+   774→      },
+   775→      {
+   776→        title: "Laser Precision",
+   777→        description:
+   778→          "Laser-assisted therapy disinfects pockets with less bleeding and faster healing.",
+   779→      },
+   780→      {
+   781→        title: "Protect Overall Health",
+   782→        description:
+   783→          "Treating gum disease reduces risks linked to diabetes and heart disease.",
+   784→      },
+   785→      {
+   786→        title: "Custom Maintenance Plan",
+   787→        description:
+   788→          "A recall schedule that keeps your gums healthy for life.",
+   789→      },
+   790→    ],
+   791→    process: [
+   792→      {
+   793→        step: "01",
+   794→        title: "Periodontal Assessment",
+   795→        description:
+   796→          "Pocket depth measurements and X-rays map the exact stage of gum disease.",
+   797→      },
+   798→      {
+   799→        step: "02",
+   800→        title: "Deep Cleaning Therapy",
+   801→        description:
+   802→          "Scaling & root planing removes plaque and tartar deep below the gumline.",
+   803→      },
+   804→      {
+   805→        step: "03",
+   806→        title: "Laser Disinfection",
+   807→        description:
+   808→          "Laser therapy eliminates bacteria in pockets and accelerates gum reattachment.",
+   809→      },
+   810→      {
+   811→        step: "04",
+   812→        title: "Maintenance & Coaching",
+   813→        description:
+   814→          "Personalized home-care routine and scheduled recalls keep gums healthy for life.",
+   815→      },
+   816→    ],
+   817→    ideal: [
+   818→      "Bleeding or swollen gums",
+   819→      "Persistent bad breath",
+   820→      "Receding gums or longer-looking teeth",
+   821→      "Loose teeth or diagnosed periodontitis",
+   822→    ],
+   823→    duration: "1–4 visits depending on stage",
+   824→    longevity: "Ongoing maintenance keeps gums healthy",
+   825→    anesthesia: "Topical gel; local if needed for deep therapy",
+   826→    faqs: [
+   827→      {
+   828→        question: "My gums bleed when brushing — should I be worried?",
+   829→        answer:
+   830→          "Bleeding is a sign of gingivitis, the earliest and fully reversible stage of gum disease. Book a professional cleaning — treated now, it resolves completely within weeks.",
+   831→      },
+   832→      {
+   833→        question: "Can gum disease be cured?",
+   834→        answer:
+   835→          "Gingivitis is fully reversible. Advanced periodontitis can't regrow lost bone, but treatment stops progression, eliminates infection and stabilizes teeth long-term.",
+   836→      },
+   837→      {
+   838→        question: "How often should I get my gums checked?",
+   839→        answer:
+   840→          "Every six months with routine check-ups, or every 3–4 months if you've had periodontal disease, as maintenance matters most after treatment.",
+   841→      },
+   842→    ],
+   843→    related: ["laser-assisted-fillings", "pediatric-dentistry", "root-canal-treatment"],
+   844→  },
+   845→  {
+   846→    slug: "porcelain-veneers",
+   847→    nameBn: "পোর্সেলেন ভিনিয়ার",
+   848→    shortNameBn: "ভিনিয়ার",
+   849→    taglineBn: "আপনার জন্য তৈরি করা পারফেক্ট হাসি।",
+   850→    excerptBn: "হালকা-পাতলা পোর্সেলেন শেল দিয়ে দাঁতের রং, আকৃতি ও সারিবিন্যাস বদলে যায় এক ঝলকে। চিপ, ফাঁক বা দাগ — সব ঢাকা পড়ে প্রাকৃতিক নিখুঁত হাসিতে।",
+   851→    name: "Porcelain Veneers",
+   852→    shortName: "Veneers",
+   853→    category: "Cosmetic",
+   854→    icon: "Gem",
+   855→    tagline: "The Hollywood smile, crafted for you.",
+   856→    excerpt:
+   857→      "Ultra-thin porcelain shells bonded to your teeth — instantly correct chips, gaps and discoloration for a flawless, natural-looking smile with minimal invasiveness.",
+   858→    overview: [
+   859→      "Correct chips, gaps, and discoloration instantly with our custom-crafted porcelain veneers — ultra-thin shells bonded to your teeth for a flawless, natural-looking Hollywood smile with minimal invasiveness. Each veneer is individually designed to complement your facial features and personality.",
+   860→      "Porcelain veneers are remarkable in their ability to transform a smile conservatively. Just 0.3–0.5mm thin — about the thickness of a contact lens — they require only minimal enamel preparation while completely reshaping the appearance of your teeth. Modern porcelain mimics natural enamel's light-reflecting properties, giving results that never look artificial.",
+   861→      "Whether you're preparing for a milestone event or simply want the smile you've always imagined, veneers deliver dramatic transformation in just two to three visits. Resistant to staining from coffee, tea and tobacco, porcelain veneers keep their brilliance for a decade or more with basic care — a long-term investment in your confidence.",
+   862→    ],
+   863→    benefits: [
+   864→      {
+   865→        title: "Instant Transformation",
+   866→        description:
+   867→          "Chips, gaps, stains and uneven shape corrected in two to three visits.",
+   868→      },
+   869→      {
+   870→        title: "Natural Brilliance",
+   871→        description:
+   872→          "Porcelain reflects light exactly like natural enamel — never fake-looking.",
+   873→      },
+   874→      {
+   875→        title: "Conservative Preparation",
+   876→        description:
+   877→          "Only 0.3–0.5mm of enamel adjusted — preserving your tooth structure.",
+   878→      },
+   879→      {
+   880→        title: "Stain Resistant",
+   881→        description:
+   882→          "Coffee, tea and turmeric won't dull your smile — porcelain holds its brilliance.",
+   883→      },
+   884→      {
+   885→        title: "Custom Crafted",
+   886→        description:
+   887→          "Every veneer designed for your face, skin tone and personality.",
+   888→      },
+   889→      {
+   890→        title: "Long-Lasting Beauty",
+   891→        description:
+   892→          "10–15 years of confident smiling with routine care.",
+   893→      },
+   894→    ],
+   895→    process: [
+   896→      {
+   897→        step: "01",
+   898→        title: "Smile Design Consultation",
+   899→        description:
+   900→          "We discuss your goals, examine your teeth and design your new smile (often with DSD simulation).",
+   901→      },
+   902→      {
+   903→        step: "02",
+   904→        title: "Minimal Preparation",
+   905→        description:
+   906→          "A thin layer of enamel is gently refined and precise impressions taken.",
+   907→      },
+   908→      {
+   909→        step: "03",
+   910→        title: "Master Ceramist Crafting",
+   911→        description:
+   912→          "Your custom veneers are hand-layered and fired to match your shade and character.",
+   913→      },
+   914→      {
+   915→        step: "04",
+   916→        title: "Bonding & Reveal",
+   917→        description:
+   918→          "Veneers are permanently bonded — you walk out with your new smile the same day.",
+   919→      },
+   920→    ],
+   921→    ideal: [
+   922→      "Chipped or worn front teeth",
+   923→      "Gaps between teeth you'd like closed",
+   924→      "Stubborn discoloration unresponsive to whitening",
+   925→      "Uneven or undersized teeth seeking harmony",
+   926→    ],
+   927→    duration: "2–3 visits over 2–3 weeks",
+   928→    longevity: "10–15 years",
+   929→    anesthesia: "Minimal; often none needed",
+   930→    faqs: [
+   931→      {
+   932→        question: "Do veneers damage your teeth?",
+   933→        answer:
+   934→          "Modern veneers are highly conservative — removing only 0.3–0.5mm, less than a brace would. Your underlying teeth stay healthy and protected by the veneer.",
+   935→      },
+   936→      {
+   937→        question: "How many veneers do I need?",
+   938→        answer:
+   939→          "It depends on your goals — some patients need just 1–2 for a chipped tooth; full smile makeovers typically use 6–10 veneers. We advise the minimum that achieves your dream result.",
+   940→      },
+   941→      {
+   942→        question: "Can veneers stain like natural teeth?",
+   943→        answer:
+   944→          "Porcelain is far more stain-resistant than enamel — coffee and tea won't discolor them. Your natural teeth may shift shade over years, which whitening can rebalance.",
+   945→      },
+   946→    ],
+   947→    related: ["digital-smile-design", "teeth-whitening", "crowns-bridges"],
+   948→    featured: true,
+   949→  },
+   950→  {
+   951→    slug: "root-canal-treatment",
+   952→    nameBn: "রুট ক্যানেল চিকিৎসা (এন্ডোডন্টিক্স)",
+   953→    shortNameBn: "রুট ক্যানেল",
+   954→    taglineBn: "আপনার নিজের দাঁতটাই বাঁচান।",
+   955→    excerptBn: "সংক্রমিত বা মরে যাওয়া দাঁত তুলে ফেলাই একমাত্র পথ নয়। আধুনিক রুট ক্যানেল চিকিৎসায় ব্যথা প্রায় শূন্যে নেমে আসে আর দাঁত বাঁচে বছরের পর বছর।",
+   956→    name: "Root Canal Treatment (Endodontics)",
+   957→    shortName: "Root Canal",
+   958→    category: "Restorative",
+   959→    icon: "Activity",
+   960→    tagline: "Save your natural tooth.",
+   961→    excerpt:
+   962→      "Advanced endodontic therapy removes infection from the tooth's inner pulp and seals it — with modern techniques, often as comfortable as getting a filling.",
+   963→    overview: [
+   964→      "Save your natural tooth. When the inner pulp of a tooth becomes infected through deep decay, cracks or trauma, our advanced root canal therapy removes the infection and seals the tooth — with modern techniques, often as comfortable as getting a filling. Nothing functions or feels quite like your own natural tooth.",
+   965→      "Modern root canal treatment bears little resemblance to its fearsome reputation. Using rotary nickel-titanium instruments, electronic length measurement and magnification, we clean the intricate canal system efficiently in one or two visits. Most patients are surprised at how straightforward the experience actually is.",
+   966→      "After disinfection and sealing, the tooth is restored with a protective crown that returns full strength. With success rates above 95%, root canal treatment lets you keep your natural smile intact — far better for your bite, your bone and your wallet than extraction and replacement.",
+   967→    ],
+   968→    benefits: [
+   969→      {
+   970→        title: "Relieve Pain Fast",
+   971→        description:
+   972→          "The severe pain of pulp infection often fades the same day as treatment.",
+   973→      },
+   974→      {
+   975→        title: "Keep Your Natural Tooth",
+   976→        description:
+   977→          "Nothing matches the feel, function and longevity of your own tooth.",
+   978→      },
+   979→      {
+   980→        title: "95%+ Success Rate",
+   981→        description:
+   982→          "Modern endodontics delivers highly predictable, long-lasting outcomes.",
+   983→      },
+   984→      {
+   985→        title: "Comfortable Experience",
+   986→        description:
+   987→          "Rotary instruments and effective anesthesia make treatment like a long filling.",
+   988→      },
+   989→      {
+   990→        title: "Single-Visit Options",
+   991→        description:
+   992→          "Many cases complete in one appointment of 60–90 minutes.",
+   993→      },
+   994→      {
+   995→        title: "Cost-Effective",
+   996→        description:
+   997→          "Saving a tooth costs far less than extraction plus implant or bridge replacement.",
+   998→      },
+   999→    ],
+  1000→    process: [
+  1001→      {
+  1002→        step: "01",
+  1003→        title: "Diagnosis & Anesthesia",
+  1004→        description:
+  1005→          "Digital X-rays pinpoint the infection; profound anesthesia ensures zero discomfort.",
+  1006→      },
+  1007→      {
+  1008→        step: "02",
+  1009→        title: "Canal Cleaning",
+  1010→        description:
+  1011→          "Rotary instruments gently remove infected pulp and shape the canals.",
+  1012→      },
+  1013→      {
+  1014→        step: "03",
+  1015→        title: "Disinfection & Sealing",
+  1016→        description:
+  1017→          "Antimicrobial irrigation sterilizes the system before biocompatible sealing.",
+  1018→      },
+  1019→      {
+  1020→        step: "04",
+  1021→        title: "Crown Protection",
+  1022→        description:
+  1023→          "A crown restores strength — your saved tooth functions like new.",
+  1024→      },
+  1025→    ],
+  1026→    ideal: [
+  1027→      "Deep tooth decay reaching the nerve",
+  1028→      "Severe, lingering toothache or sensitivity",
+  1029→      "Tooth abscess or infection",
+  1030→      "Cracked or traumatized tooth",
+  1031→    ],
+  1032→    duration: "1–2 visits • 60–90 min",
+  1033→    longevity: "Lifetime with crown protection",
+  1034→    anesthesia: "Fully numbed — painless procedure",
+  1035→    faqs: [
+  1036→      {
+  1037→        question: "Is root canal treatment painful?",
+  1038→        answer:
+  1039→          "With modern anesthesia, treatment itself is painless — and it relieves the pain of infection, rather than causing it. Most patients compare it to getting a regular filling.",
+  1040→      },
+  1041→      {
+  1042→        question: "How many visits does a root canal take?",
+  1043→        answer:
+  1044→          "Many cases finish in a single visit. Teeth with complex anatomy or active infection may need a second short visit — your dentist gives you a precise plan upfront.",
+  1045→      },
+  1046→      {
+  1047→        question: "Can't I just extract the tooth instead?",
+  1048→        answer:
+  1049→          "Extraction leads to bone loss, neighboring teeth drifting and costly replacement. Saving your natural tooth with root canal preserves function, bone and your bite — almost always the better choice.",
+  1050→      },
+  1051→    ],
+  1052→    related: ["crowns-bridges", "laser-assisted-fillings", "dental-implants"],
+  1053→  },
+  1054→  {
+  1055→    slug: "traditional-braces-orthodontics",
+  1056→    nameBn: "ট্র্যাডিশনাল ব্রেসেস ও অর্থোডন্টিক্স",
+  1057→    shortNameBn: "ব্রেসেস",
+  1058→    taglineBn: "জটিল কেসে যুগ যুগ ধরে প্রমাণিত ফল।",
+  1059→    excerptBn: "বড় বড় সমস্যার নির্ভরযোগ্য সমাধান — আধুনিক সেলফ-লিগেটিং ব্রেসেস দ্রুত ফল দেয়, ভিজিট কম লাগে আর আরাম বেশি।",
+  1060→    name: "Traditional Braces & Orthodontics",
+  1061→    shortName: "Braces",
+  1062→    category: "Orthodontics",
+  1063→    icon: "Grid3x3",
+  1064→    tagline: "Time-tested results for complex cases.",
+  1065→    excerpt:
+  1066→      "Modern orthodontic braces — more comfortable and efficient than ever — correcting alignment and bite issues for children, teens and adults with long-term oral health.",
+  1067→    overview: [
+  1068→      "Time-tested results for complex cases. Our modern orthodontic braces are designed to be more comfortable and efficient than ever, effectively correcting alignment and bite issues for children, teens, and adults — supporting long-term oral health. For significant crowding, rotations and bite corrections, braces remain the most powerful and predictable tool in orthodontics.",
+  1069→      "Today's braces are far sleeker than their reputation suggests. Self-ligating brackets reduce friction and appointment frequency, tooth-colored ceramic options blend with your smile, and heat-activated archwires move teeth with gentle continuous force — shorter treatment times and greater comfort throughout.",
+  1070→      "Properly aligned teeth are about much more than appearance: they're easier to clean, distribute chewing forces evenly, reduce jaw strain and prevent abnormal wear. Our orthodontists design each treatment plan around your facial growth, bite relationship and long-term stability — results that stay beautiful for decades.",
+  1071→    ],
+  1072→    benefits: [
+  1073→      {
+  1074→        title: "Corrects Complex Cases",
+  1075→        description:
+  1076→          "Handles severe crowding, rotations and bite problems aligners can't fix.",
+  1077→      },
+  1078→      {
+  1079→        title: "Modern Comfort",
+  1080→        description:
+  1081→          "Self-ligating brackets and gentle wires mean less friction and fewer adjustments.",
+  1082→      },
+  1083→      {
+  1084→        title: "Ceramic Aesthetic Option",
+  1085→        description:
+  1086→          "Tooth-colored brackets blend with your smile during treatment.",
+  1087→      },
+  1088→      {
+  1089→        title: "Healthier Teeth For Life",
+  1090→        description:
+  1091→          "Aligned teeth are easier to clean and function without destructive wear.",
+  1092→      },
+  1093→      {
+  1094→        title: "Age Is No Barrier",
+  1095→        description:
+  1096→          "Effective for children, teens and adults alike.",
+  1097→      },
+  1098→      {
+  1099→        title: "Stable Long-Term Results",
+  1100→        description:
+  1101→          "Comprehensive planning means your new smile stays put with retainers.",
+  1102→      },
+  1103→    ],
+  1104→    process: [
+  1105→      {
+  1106→        step: "01",
+  1107→        title: "Orthodontic Assessment",
+  1108→        description:
+  1109→          "Photos, X-rays and study models map your bite and alignment precisely.",
+  1110→      },
+  1111→      {
+  1112→        step: "02",
+  1113→        title: "Treatment Plan & Options",
+  1114→        description:
+  1115→          "We present metal or ceramic brace options with timeline and predicted outcome.",
+  1116→      },
+  1117→      {
+  1118→        step: "03",
+  1119→        title: "Braces Fitted",
+  1120→        description:
+  1121→          "Brackets are bonded comfortably in a single appointment — gentle from day one.",
+  1122→      },
+  1123→      {
+  1124→        step: "04",
+  1125→        title: "Adjustments & Retention",
+  1126→        description:
+  1127→          "Quick adjustment visits every 4–6 weeks, then retainers lock in your new smile.",
+  1128→      },
+  1129→    ],
+  1130→    ideal: [
+  1131→      "Significant crowding or spacing",
+  1132→      "Bite problems: overbite, underbite, crossbite",
+  1133→      "Children around age 11–13 (ideal growth window)",
+  1134→      "Adults preferring predictable, fixed treatment",
+  1135→    ],
+  1136→    duration: "12–24 months (case-dependent)",
+  1137→    longevity: "Permanent with retainer wear",
+  1138→    anesthesia: "None — painless bonding",
+  1139→    faqs: [
+  1140→      {
+  1141→        question: "What age is best for braces?",
+  1142→        answer:
+  1143→          "Around 11–13, when most permanent teeth have erupted and jaw growth can be guided. But braces work at any age — a growing number of our patients are adults.",
+  1144→      },
+  1145→      {
+  1146→        question: "Braces or Invisalign — which is better?",
+  1147→        answer:
+  1148→          "For complex crowding and bite correction, braces achieve results aligners can't. For mild-to-moderate alignment and lifestyle discretion, Invisalign excels. We recommend after assessing your case — many patients qualify for both.",
+  1149→      },
+  1150→      {
+  1151→        question: "Do braces hurt?",
+  1152→        answer:
+  1153→          "Bonding day is painless. Each adjustment brings 2–3 days of mild pressure sensation — a sign teeth are moving — managed easily with normal meals and soft foods initially.",
+  1154→      },
+  1155→    ],
+  1156→    related: ["invisalign-clear-aligners", "pediatric-dentistry", "digital-smile-design"],
+  1157→  },
+  1158→];
+  1159→
+  1160→export const serviceCategories = [
+  1161→  { value: "all", label: "All Services", count: services.length },
+  1162→  { value: "Restorative", label: "Restorative", count: services.filter((s) => s.category === "Restorative").length },
+  1163→  { value: "Cosmetic", label: "Cosmetic", count: services.filter((s) => s.category === "Cosmetic").length },
+  1164→  { value: "Orthodontics", label: "Orthodontics", count: services.filter((s) => s.category === "Orthodontics").length },
+  1165→  { value: "Surgical", label: "Surgical", count: services.filter((s) => s.category === "Surgical").length },
+  1166→  { value: "Preventive", label: "Preventive", count: services.filter((s) => s.category === "Preventive").length },
+  1167→] as const;
+  1168→
+  1169→export function getService(slug: string): Service | undefined {
+  1170→  return services.find((s) => s.slug === slug);
+  1171→}
+  1172→
+  1173→export function getFeaturedServices(): Service[] {
+  1174→  return services.filter((s) => s.featured);
+  1175→}
+  1176→

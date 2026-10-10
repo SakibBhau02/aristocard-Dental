@@ -19,6 +19,8 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
 import { site } from "@/lib/site";
+import { BD_WEEK_ORDER, WEEKDAYS_BN, WEEKDAYS_EN } from "@/lib/clinic-hours";
+import { ClinicStatusBadge, useClinicStatus } from "@/components/site/clinic-status";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  CONTACT PAGE (EN / বাংলা)                                          */
@@ -55,6 +58,7 @@ export function ContactPage() {
   const { navigate } = useRouter();
   const { toast } = useToast();
   const { lang, d } = useLang();
+  const status = useClinicStatus();
   const bn = lang === "bn";
   const t = d.contactPage;
   const [submitting, setSubmitting] = useState(false);
@@ -209,20 +213,47 @@ export function ContactPage() {
               {/* hours & social */}
               <Reveal delay={0.2} className="mt-6">
                 <div className="rounded-3xl bg-brand-navy p-6 sm:p-7">
-                  <h3 className="flex items-center gap-2.5 font-heading text-base font-bold text-white">
+                  <h3 className="flex flex-wrap items-center gap-x-2.5 gap-y-2 font-heading text-base font-bold text-white">
                     <Clock className="h-5 w-5 text-amber-300" aria-hidden="true" />
                     {t.hoursTitle}
+                    <ClinicStatusBadge variant="on-dark" className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs ring-1 ring-white/15" />
                   </h3>
-                  <dl className="mt-4 space-y-2.5 text-sm">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                      <dt className="text-blue-200/80">{t.daysSatThu}</dt>
-                      <dd className="font-semibold text-white">{t.timeSatThu}</dd>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <dt className="text-blue-200/80">{t.friday}</dt>
-                      <dd className="font-semibold text-amber-300">{t.fridayNote}</dd>
-                    </div>
-                  </dl>
+                  <ul className="hours-week mt-4">
+                    {BD_WEEK_ORDER.map((day) => {
+                      const today = status ? status.nowDay === day : false;
+                      const closed = day === 5;
+                      return (
+                        <li
+                          key={day}
+                          className={cn(
+                            "flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors",
+                            today && "is-today"
+                          )}
+                        >
+                          <span className="flex items-center gap-2 font-medium text-blue-100/85">
+                            {lang === "bn" ? WEEKDAYS_BN[day] : WEEKDAYS_EN[day]}
+                            {today && (
+                              <span className="today-chip" aria-label={t.today}>
+                                {t.today}
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              closed ? "text-amber-300" : "text-white"
+                            )}
+                          >
+                            {closed ? t.closedShort : t.timeSatThu}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-blue-200/70">
+                    <span>{t.fridayNote}</span>
+                    <span>{t.weekNote}</span>
+                  </p>
                   <div className="mt-6 flex items-center gap-3">
                     {[
                       { label: "Facebook", href: site.social.facebook, Icon: Facebook },

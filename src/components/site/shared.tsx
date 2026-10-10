@@ -45,7 +45,7 @@ export function PageHeader({
                       e.preventDefault();
                       navigate(item.to!);
                     }}
-                    className="transition-colors hover:text-white"
+                    className="link-underline-gold transition-colors hover:text-white"
                   >
                     {item.label}
                   </a>
@@ -62,7 +62,7 @@ export function PageHeader({
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+            <span className="eyebrow-dot h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
             {eyebrow}
           </span>
           <h1 className="font-heading mt-4 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">

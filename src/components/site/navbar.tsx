@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarCheck, Clock, Menu, Phone, X } from "lucide-react";
+import { CalendarCheck, Clock, Menu, Phone, Search, X } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
 import { navItems, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/site/language-toggle";
+import { ClinicStatusBadge } from "@/components/site/clinic-status";
 
 /* ------------------------------------------------------------------ */
 /*  Navbar — sticky, glass on scroll, mobile drawer, EN/বাংলা toggle   */
@@ -64,7 +65,8 @@ export function Navbar() {
       <div className="hidden bg-brand-navy text-white lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2 text-xs">
           <div className="flex items-center gap-5 text-blue-100/90">
-            <span className="inline-flex items-center gap-1.5">
+            <ClinicStatusBadge variant="on-dark" className="text-xs" />
+            <span className="hidden items-center gap-1.5 xl:inline-flex">
               <Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
               {d.chrome.hours}
             </span>
@@ -164,6 +166,26 @@ export function Navbar() {
 
           {/* CTA + mobile lang toggle */}
           <div className="flex items-center gap-2">
+            {/* Global search trigger (⌘K) — palette listens for the event */}
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("adc:open-search"))
+              }
+              className="hidden h-11 items-center gap-2 rounded-xl px-2.5 text-brand-navy ring-1 ring-blue-100 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue lg:inline-flex"
+              aria-label={d.search.openSearch}
+            >
+              <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="hidden items-center gap-1.5 xl:inline-flex">
+                <kbd className="kbd-key">
+                  ⌘K
+                </kbd>
+                <span className="text-xs font-medium text-slate-400">
+                  {d.search.shortcutHint}
+                </span>
+              </span>
+            </button>
+
             <Button
               asChild
               className="btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
@@ -241,6 +263,30 @@ export function Navbar() {
                 </button>
               </div>
               <ul className="flex-1 overflow-y-auto px-4 py-6">
+                {/* Global search — palette listens for the event */}
+                <motion.li
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0, duration: 0.4 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      window.dispatchEvent(new CustomEvent("adc:open-search"));
+                    }}
+                    className="mb-2 flex w-full items-center justify-between rounded-2xl bg-blue-50/60 px-5 py-4 text-base font-medium text-brand-blue transition-colors hover:bg-blue-50"
+                    aria-label={d.search.openSearch}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Search className="h-5 w-5" aria-hidden="true" />
+                      {d.search.openSearch}
+                    </span>
+                    <kbd className="kbd-key">
+                      ⌘K
+                    </kbd>
+                  </button>
+                </motion.li>
                 {navItems.map((item, i) => (
                   <motion.li
                     key={item.href}

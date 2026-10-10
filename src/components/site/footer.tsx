@@ -25,6 +25,7 @@ import { useLang } from "@/lib/i18n";
 import { services } from "@/lib/data/services";
 import { site } from "@/lib/site";
 import { useToast } from "@/hooks/use-toast";
+import { ClinicStatusBadge } from "@/components/site/clinic-status";
 
 /* ------------------------------------------------------------------ */
 /*  Footer — sticky bottom, rich links, trust signals                  */
@@ -247,6 +248,7 @@ export function Footer() {
                 <span>
                   <span className="block text-xs text-blue-200/70">{d.footer.hoursLabel}</span>
                   {d.footer.hours}
+                  <ClinicStatusBadge variant="on-dark" className="mt-1.5 text-xs" showTime={false} />
                 </span>
               </li>
             </ul>
