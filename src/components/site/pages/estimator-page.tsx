@@ -9,6 +9,7 @@ import {
   Info,
   Minus,
   Plus,
+  Printer,
   Receipt,
   RotateCcw,
   Sparkles,
@@ -62,6 +63,23 @@ type Selection = Record<string, number>;
 const formatBDT = (n: number) =>
   `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
+/* Map estimator items → real service slugs (for booking deep-link) */
+const serviceByEstimatorSlug: Record<string, string> = {
+  scaling: "periodontal-gum-treatment",
+  filling: "laser-assisted-fillings",
+  "root-canal": "root-canal-treatment",
+  crown: "crowns-bridges",
+  bridge: "crowns-bridges",
+  implant: "dental-implants",
+  extraction: "oral-maxillofacial-surgery",
+  veneer: "porcelain-veneers",
+  "braces-metal": "traditional-braces-orthodontics",
+  "braces-ceramic": "traditional-braces-orthodontics",
+  invisalign: "invisalign-clear-aligners",
+  gum: "periodontal-gum-treatment",
+  kids: "pediatric-dentistry",
+};
+
 export function EstimatorPage() {
   const { navigate } = useRouter();
   const [selection, setSelection] = useState<Selection>({});
@@ -105,6 +123,28 @@ export function EstimatorPage() {
       else next[slug] = qty;
       return next;
     });
+  };
+
+  /* Deep-link to booking with the estimate pre-filled */
+  const bookWithEstimate = () => {
+    const entries = Object.entries(selection).filter(([, qty]) => qty > 0);
+    const params = new URLSearchParams();
+    const primaryService = entries
+      .map(([slug]) => serviceByEstimatorSlug[slug])
+      .find(Boolean);
+    if (primaryService) params.set("service", primaryService);
+    const summary = entries
+      .map(([slug, qty]) => {
+        const item = estimatorItems.find((i) => i.slug === slug);
+        return item ? `${item.name}${qty > 1 ? ` ×${qty}` : ""}` : null;
+      })
+      .filter(Boolean)
+      .join(", ");
+    params.set(
+      "note",
+      `Online estimate: ${summary} — est. ${formatBDT(totals.min)}–${formatBDT(totals.max)}. Please confirm exact pricing at consultation.`
+    );
+    navigate(`/appointment?${params.toString()}`);
   };
 
   const grouped = useMemo(() => {
@@ -321,30 +361,48 @@ export function EstimatorPage() {
 
                       <div className="mt-6 space-y-3">
                         <Button
-                          asChild
+                          asChild={!totals.isEmpty ? false : true}
+                          onClick={totals.isEmpty ? undefined : bookWithEstimate}
                           className="w-full rounded-2xl bg-white py-4 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
                         >
-                          <a
-                            href="#/appointment"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              navigate("/appointment");
-                            }}
-                            className="inline-flex items-center justify-center gap-2"
-                          >
-                            <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
-                            Book Consultation
-                          </a>
+                          {totals.isEmpty ? (
+                            <a
+                              href="#/appointment"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/appointment");
+                              }}
+                              className="inline-flex items-center justify-center gap-2"
+                            >
+                              <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+                              Book Consultation
+                            </a>
+                          ) : (
+                            <span className="inline-flex items-center justify-center gap-2">
+                              <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+                              Book with This Estimate
+                            </span>
+                          )}
                         </Button>
                         {!totals.isEmpty && (
-                          <button
-                            type="button"
-                            onClick={() => setSelection({})}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-semibold text-blue-200/80 ring-1 ring-white/20 transition-all duration-300 hover:bg-white/10 hover:text-white"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                            Reset Estimate
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => window.print()}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-3 text-xs font-semibold text-white ring-1 ring-white/20 transition-all duration-300 hover:bg-white/15"
+                            >
+                              <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                              Print / Save Estimate
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelection({})}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-semibold text-blue-200/80 ring-1 ring-white/20 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                              Reset Estimate
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -426,6 +484,64 @@ export function EstimatorPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* Print-only estimate sheet (visible only when printing) */}
+      <div className="print-sheet hidden print:block" aria-hidden="true">
+        <div style={{ fontFamily: "Georgia, serif", color: "#002060", padding: "8px 4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #002060", paddingBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>Aristocrat Dental Care &amp; Orthodontic Center</div>
+              <div style={{ fontSize: 12, color: "#475569" }}>Uttara, Dhaka, Bangladesh • Hotline 01715-027522</div>
+            </div>
+            <div style={{ fontSize: 12, color: "#475569", textAlign: "right" }}>
+              Treatment Cost Estimate<br />
+              {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            </div>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16, fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: "1.5px solid #cbd5e1", textAlign: "left" }}>
+                <th style={{ padding: "8px 6px" }}>Treatment</th>
+                <th style={{ padding: "8px 6px", textAlign: "center" }}>Qty</th>
+                <th style={{ padding: "8px 6px", textAlign: "right" }}>Unit Range (BDT)</th>
+                <th style={{ padding: "8px 6px", textAlign: "right" }}>Line Total (BDT)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(selection)
+                .filter(([, qty]) => qty > 0)
+                .map(([slug, qty]) => {
+                  const item = estimatorItems.find((i) => i.slug === slug);
+                  if (!item) return null;
+                  return (
+                    <tr key={slug} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <td style={{ padding: "8px 6px" }}>
+                        {item.name}
+                        <span style={{ color: "#64748b", fontSize: 11 }}> ({item.unit})</span>
+                      </td>
+                      <td style={{ padding: "8px 6px", textAlign: "center" }}>{qty}</td>
+                      <td style={{ padding: "8px 6px", textAlign: "right" }}>{item.min.toLocaleString()} – {item.max.toLocaleString()}</td>
+                      <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600 }}>
+                        {(item.min * qty).toLocaleString()} – {(item.max * qty).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ background: "#f0f7ff", borderRadius: 10, padding: "10px 18px", fontSize: 15, fontWeight: 700 }}>
+              Estimated Total: BDT {totals.min.toLocaleString()} – {totals.max.toLocaleString()}
+            </div>
+          </div>
+          <p style={{ marginTop: 16, fontSize: 11, color: "#475569", lineHeight: 1.6 }}>
+            This estimate reflects typical Dhaka market rates and is provided for planning purposes only — not a binding quote.
+            Your personalized written plan with exact pricing is confirmed by our specialists after examination and digital
+            diagnostics. Installments available. Book online at aristocratdentalcarebd.com or call 01715-027522
+            (Sat–Thu, 10:00 AM – 9:00 PM).
+          </p>
+        </div>
+      </div>
 
       <CtaBanner
         title="Get your exact, personalized quote"

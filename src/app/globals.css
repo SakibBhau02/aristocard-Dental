@@ -141,6 +141,12 @@
     background: #1e7dff;
     color: white;
   }
+  /* Keyboard-only focus ring — visible, on-brand, never on mouse click */
+  :focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
 }
 
 /* ---------- Custom scrollbar ---------- */
@@ -211,6 +217,13 @@
     radial-gradient(52rem 30rem at 85% -10%, rgba(30, 125, 255, 0.14), transparent 60%),
     radial-gradient(40rem 28rem at -10% 110%, rgba(0, 32, 96, 0.1), transparent 60%),
     radial-gradient(30rem 22rem at 50% 50%, rgba(65, 148, 255, 0.06), transparent 65%);
+}
+
+/* Softer ambient wash for light content sections */
+.section-wash {
+  background:
+    radial-gradient(46rem 24rem at 100% 0%, rgba(30, 125, 255, 0.07), transparent 60%),
+    radial-gradient(38rem 22rem at 0% 100%, rgba(0, 32, 96, 0.05), transparent 60%);
 }
 
 .hero-mesh-dark {
@@ -350,6 +363,27 @@
   }
   html {
     scroll-behavior: auto;
+  }
+}
+
+/* ---------- Print: show only the print sheet ---------- */
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+  .print-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 24px;
   }
 }
 

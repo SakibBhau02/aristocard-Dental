@@ -68,11 +68,11 @@ export function ServicesPage() {
       />
 
       {/* Filter & search bar */}
-      <section className="sticky top-[64px] z-30 border-b border-blue-100/60 bg-white/85 py-4 backdrop-blur-lg" aria-label="Service filters">
+      <section className="sticky top-[64px] z-30 border-b border-blue-100/60 bg-white/90 py-4 shadow-[0_10px_30px_-20px_rgba(0,32,96,0.3)] backdrop-blur-lg" aria-label="Service filters">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 sm:px-6">
           <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
               aria-hidden="true"
             />
             <Input
@@ -81,12 +81,12 @@ export function ServicesPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search services…"
               aria-label="Search services"
-              className="rounded-full border-blue-100 bg-white pl-10 focus-visible:ring-brand-blue"
+              className="h-11 rounded-full border-blue-200/80 bg-white pl-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md"
             />
           </div>
 
           <div className="scroll-area flex flex-1 items-center gap-2 overflow-x-auto pb-1 pt-1">
-            <SlidersHorizontal className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" aria-hidden="true" />
+            <SlidersHorizontal className="hidden h-4.5 w-4.5 shrink-0 text-slate-400 sm:block" aria-hidden="true" />
             {serviceCategories.map((c) => (
               <button
                 key={c.value}
@@ -94,19 +94,19 @@ export function ServicesPage() {
                 onClick={() => setCategory(c.value)}
                 aria-pressed={category === c.value}
                 className={cn(
-                  "relative shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300",
+                  "relative shrink-0 rounded-full px-4 py-2.5 text-xs font-semibold transition-all duration-300",
                   category === c.value
                     ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
-                    : "bg-blue-50 text-brand-navy hover:bg-blue-100"
+                    : "bg-blue-50 text-brand-navy/80 hover:bg-blue-100 hover:text-brand-navy"
                 )}
               >
                 {c.label}
                 <span
                   className={cn(
-                    "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                    "ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold",
                     category === c.value
-                      ? "bg-white/20 text-white"
-                      : "bg-white text-slate-500"
+                      ? "bg-white/25 text-white"
+                      : "bg-white text-brand-blue ring-1 ring-blue-100"
                   )}
                 >
                   {c.count}
@@ -118,7 +118,7 @@ export function ServicesPage() {
       </section>
 
       {/* Results */}
-      <section className="py-16 sm:py-20" aria-label="Service list">
+      <section className="section-wash py-16 sm:py-20" aria-label="Service list">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between">
             <p className="text-sm text-slate-500" aria-live="polite">

@@ -73,6 +73,9 @@ export type BlogPost = {
   authorCredentials: string;
   featured?: boolean;
   tags: string[];
+  /* Cover image path in /public */
+  image?: string;
+  imageAlt?: string;
   /* AEO: quick answer box at top of article */
   quickAnswer: string;
   sections: {

@@ -1,6 +1,27 @@
 # Project Worklog — Aristocrat Dental Care & Orthodontic Center (Redesign)
 
 ---
+Task ID: 3
+Agent: Z.ai Code (webDevReview cron round 3)
+Task: Status assessment + QA via agent-browser + new features (appointment status lookup, estimator deep-link, blog imagery) + micro-features + mandatory styling polish
+
+Work Log:
+- **QA assessment first**: all 14 routes render (h1 + title + no overflow at 390px), zero console errors, lint clean, booking E2E works. Site was stable → proceeded to features + polish per instructions.
+- **FEATURE 1 — Appointment Status Lookup (#/status)**: extended GET /api/appointments to support `?ref=ADC-XXXX` (regex-validated, 404 if unknown) alongside `?phone=`; new POST /api/appointments/cancel (requires refCode + booking-phone match → 403 on mismatch, 409 on already cancelled/completed). New status-page.tsx: animated mode toggle (ref/phone tabs with layoutId pill), lookup card with icons + validation hints, result cards with status ribbons (PENDING pulse dot / CONFIRMED / COMPLETED / CANCELLED), service+doctor resolution, cancel dialog with phone re-verification, help strip (lost ref / reschedule / call us). Wired links: appointment success screen ("Check Status Anytime"), appointment hero ("Already booked?"), footer quick links, sitemap.ts. **Verified E2E in browser: lookup by ref, lookup by phone, cancel dialog flow, card updates to CANCELLED, toast fires.**
+- **FEATURE 2 — Estimator → Booking deep-link**: estimator "Book Consultation" becomes "Book with This Estimate" when items selected → navigates `#/appointment?service=<mapped-slug>&note=<estimate summary>`; added 13-entry estimator-slug→service-slug map; appointment page now also accepts `?note=` param (prefills notes once, max 900 chars). **Verified: Dental Implants preselected + notes prefilled with "Online estimate: … est. ৳76,000–৳1,65,000"**.
+- **FEATURE 3 — Blog cover images**: generated 6 AI images (1344x768, consistent professional photography style) → blog-checkup/rootcanal/aligners/implant/child/whitening.png; added `image`/`imageAlt` to BlogPost type + all 6 posts; blog cards now image-first with gradient overlay + category chip on image, featured post shows cover in right panel, detail page has magazine-style overlapping cover figure (-mt-24 over hero wave), related cards show images too. **VLM rated grid 9/10.**
+- **MICRO-FEATURES**: copy-reference-code button on booking success (clipboard + toast); scroll-to-top FAB (bottom-left, appears after 700px scroll); share button on blog detail (Web Share API + clipboard fallback); Print/Save Estimate button with dedicated print stylesheet (@media print shows only .print-sheet — clean BDT estimate document, verified via PDF+VLM; ৳ swapped to "BDT" for print-font safety).
+- **STYLING POLISH (VLM-feedback driven)**: navbar active pill now bg-blue-100/90 + inset ring + animated gold accent dot, font-semibold, top bar amber icon accents; services search input h-11 + border + shadow + larger search icon; filter count badges now 11px circles with ring, active pill py-2.5; floating contact FABs: gap-4, 52px, white ring-4, backdrop-blur, hover scale+shadow; ServiceCard/DoctorCard resting shadows deepened (0_10px_30px); tagline contrast amber-300→amber-200; new `.section-wash` utility (subtle ambient radial) applied to home why/testimonials/FAQ/gallery-preview + services results; hero ambient gradient blobs; global :focus-visible ring (2px brand-blue) for keyboard a11y.
+- **Re-QA after all changes**: lint clean, zero console errors across 10-route sweep, no overflow anywhere, full booking E2E re-verified (ADC-YO8L9211 created → lookup by ref → cancel via dialog UI → status CANCELLED), all 6 blog images load via next/image optimizer, VLM re-review: Home 9/10, Services 8/10, Status 8.5/10, Blog grid 9/10.
+
+Stage Summary:
+- 3 substantial features + 4 micro-features shipped, all verified E2E in browser + API level
+- New page #/status + 2 API endpoints (ref lookup, verified cancel); booking funnel now has post-booking lifecycle management
+- Estimator → booking conversion path complete; blog visually upgraded with 6 AI covers
+- Styling depth pass applied per VLM critique (cards, FABs, navbar, filters, section washes, focus rings)
+- Unresolved/next-phase: (1) Bangla language toggle (biggest remaining idea — needs translation layer for chrome + home first); (2) hero LCP could be tuned further; (3) more before/after cases when real clinic photos available; (4) gallery per-service filtering; (5) admin view for appointments (currently only API-level GET); (6) Turbopack CSS cache trick still applies if styles seem stale (append+remove cache-bust comment in globals.css)
+
+---
 Task ID: 2
 Agent: Z.ai Code (webDevReview cron round 1)
 Task: QA testing + bug fixes + new features (gallery, price estimator, newsletter, hero imagery)

@@ -19,6 +19,8 @@ export const blogPosts: BlogPost[] = [
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     featured: true,
     tags: ["dental checkup", "preventive dentistry", "oral health Bangladesh"],
+    image: "/images/blog-checkup.png",
+    imageAlt: "A happy family with healthy smiles in a bright modern dental clinic waiting area",
     quickAnswer:
       "Most adults and children should visit the dentist every six months for a checkup and professional cleaning. If you have gum disease, braces, diabetes or ongoing treatment, your dentist may recommend visits every 3–4 months instead.",
     sections: [
@@ -71,6 +73,8 @@ export const blogPosts: BlogPost[] = [
     authorCredentials: "BDS (DU), PGT — Restorative & Surgical Dentistry",
     featured: true,
     tags: ["root canal", "toothache", "endodontics Dhaka"],
+    image: "/images/blog-rootcanal.png",
+    imageAlt: "Modern root canal treatment being performed with advanced rotary instruments",
     quickAnswer:
       "Modern root canal treatment is painless — patients compare it to getting a regular filling. It saves your natural tooth, usually takes 1–2 visits, and has a success rate above 95%. Delaying treatment is what actually causes severe pain.",
     sections: [
@@ -120,6 +124,8 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Shazia Khanam",
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     tags: ["Invisalign Bangladesh", "braces Dhaka", "orthodontics", "clear aligners"],
+    image: "/images/blog-aligners.png",
+    imageAlt: "Clear aligners and metal braces compared in a dentist's hands at an orthodontic clinic",
     quickAnswer:
       "Invisalign suits mild-to-moderate alignment issues and patients needing discretion — it's removable and invisible. Braces are more powerful for severe crowding and complex bite corrections. Both take 6–24 months. The right choice depends on your case complexity, lifestyle and budget.",
     sections: [
@@ -170,6 +176,8 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Abdur Rahim",
     authorCredentials: "BDS, MDS — Senior Consultant",
     tags: ["dental implant cost Bangladesh", "tooth replacement Dhaka", "implantology"],
+    image: "/images/blog-implant.png",
+    imageAlt: "A titanium dental implant model with crown displayed in a clinical setting",
     quickAnswer:
       "A dental implant replaces a missing tooth with a titanium root and porcelain crown that lasts decades — often a lifetime for the implant itself. Costs in Dhaka vary with implant system, crown material and number of teeth replaced. Most healthy adults with missing teeth are candidates; a 3D scan confirms your bone suitability.",
     sections: [
@@ -219,6 +227,8 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Israt Jahan Rimi",
     authorCredentials: "BDS (DU), PGT (OMFS) — Consultant Dental Surgeon",
     tags: ["kids dentist Dhaka", "first dental visit", "pediatric dentistry"],
+    image: "/images/blog-child.png",
+    imageAlt: "A smiling child giving thumbs up in a dental chair with a friendly pediatric dentist",
     quickAnswer:
       "Bring your child to the dentist by their first birthday, or within six months of the first tooth appearing. Keep the visit positive and playful, avoid scary words like 'needle' or 'pain', and choose a clinic with a kid-friendly environment. Early visits prevent fear and catch problems before they start.",
     sections: [
@@ -266,6 +276,8 @@ export const blogPosts: BlogPost[] = [
     author: "Dr. Shazia Khanam",
     authorCredentials: "BDS, MDS — Chief Dental Surgeon",
     tags: ["teeth whitening Dhaka", "cosmetic dentistry", "smile makeover"],
+    image: "/images/blog-whitening.png",
+    imageAlt: "A radiant white smile with a dental mirror in a bright cosmetic dentistry studio",
     quickAnswer:
       "Yes — professional teeth whitening is safe when supervised by a dentist. In-clinic whitening uses controlled peroxide concentrations with gum protection, causing no permanent enamel damage. Temporary mild sensitivity is normal and fades within days. Results typically last 1–3 years with good habits.",
     sections: [

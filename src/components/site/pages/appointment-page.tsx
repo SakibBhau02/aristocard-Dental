@@ -8,9 +8,11 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
+  Copy,
   Loader2,
   Mail,
   Phone,
+  Search,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -82,6 +84,11 @@ export function AppointmentPage() {
     }
     if (doctor && doctors.some((d) => d.slug === doctor)) {
       setForm((f) => ({ ...f, doctorSlug: doctor }));
+    }
+    /* Deep-link note (e.g. from pricing estimator) — only fill empty notes */
+    const note = query.get("note");
+    if (note) {
+      setForm((f) => (f.notes ? f : { ...f, notes: note.slice(0, 900) }));
     }
   }, [query]);
 
@@ -175,6 +182,22 @@ export function AppointmentPage() {
   }
 
   if (confirmed) {
+    const copyRef = async () => {
+      try {
+        await navigator.clipboard.writeText(confirmationId);
+        toast({
+          title: "Reference copied",
+          description: `${confirmationId} is on your clipboard.`,
+        });
+      } catch {
+        toast({
+          title: "Couldn't copy",
+          description: "Please note the reference down manually.",
+          variant: "destructive",
+        });
+      }
+    };
+
     return (
       <section className="hero-mesh flex items-center justify-center px-4 py-24 sm:py-32" aria-label="Booking confirmation">
         <motion.div
@@ -194,11 +217,18 @@ export function AppointmentPage() {
             Thank you, <strong className="text-brand-navy">{form.name}</strong>.
             Your appointment request has been received.
             {confirmationId && (
-              <span className="mt-2 block text-sm text-slate-500">
-                Reference:{" "}
-                <span className="font-mono font-bold text-brand-blue">
+              <span className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-ice/70 py-2 pl-4 pr-2 text-sm text-slate-500">
+                <span className="font-mono font-bold tracking-wider text-brand-blue">
                   {confirmationId}
                 </span>
+                <button
+                  type="button"
+                  onClick={copyRef}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-brand-navy/60 transition-colors hover:bg-white hover:text-brand-blue"
+                  aria-label="Copy reference code to clipboard"
+                >
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                </button>
               </span>
             )}
           </p>
@@ -263,6 +293,13 @@ export function AppointmentPage() {
               Back to Home
             </Button>
             <Button
+              onClick={() => navigate("/status")}
+              className="rounded-full border border-blue-100 bg-ice px-8 py-5 font-bold text-brand-navy transition-all duration-300 hover:border-brand-blue/30 hover:bg-blue-50"
+            >
+              <Search className="h-4.5 w-4.5" aria-hidden="true" />
+              Check Status Anytime
+            </Button>
+            <Button
               variant="outline"
               onClick={() => {
                 setConfirmed(false);
@@ -322,6 +359,20 @@ export function AppointmentPage() {
                 </span>
               ))}
             </div>
+            <p className="mt-6 text-xs text-blue-200/70">
+              Already booked with us?{" "}
+              <a
+                href="#/status"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/status");
+                }}
+                className="inline-flex items-center gap-1 font-semibold text-white underline decoration-amber-400/70 decoration-2 underline-offset-4 transition-colors hover:text-amber-300"
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                Check your appointment status
+              </a>
+            </p>
           </motion.div>
         </div>
         <svg

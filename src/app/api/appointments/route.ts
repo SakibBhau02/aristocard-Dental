@@ -136,29 +136,56 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/* GET /api/appointments?phone=... — check own bookings (privacy-safe) */
+/* GET /api/appointments?ref=ADC-XXXX | ?phone=01XXXXXXXXX — lookup bookings (privacy-safe) */
 export async function GET(req: NextRequest) {
   try {
-    const phone = req.nextUrl.searchParams.get("phone");
-    if (!phone || !/^01[3-9]\d{8}$/.test(phone.replace(/[-\s]/g, ""))) {
+    const ref = req.nextUrl.searchParams.get("ref")?.trim().toUpperCase();
+    const phone = req.nextUrl.searchParams.get("phone")?.replace(/[-\s]/g, "");
+
+    const select = {
+      refCode: true,
+      name: true,
+      date: true,
+      time: true,
+      status: true,
+      serviceSlug: true,
+      doctorSlug: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
+    };
+
+    /* Lookup by reference code */
+    if (ref) {
+      if (!/^ADC-[A-Z0-9]{6,10}$/.test(ref)) {
+        return NextResponse.json(
+          { error: "Reference codes look like ADC-XXXXXXXX. Please check and try again." },
+          { status: 400 }
+        );
+      }
+      const appointment = await db.appointment.findFirst({
+        where: { refCode: ref },
+        select,
+      });
+      if (!appointment) {
+        return NextResponse.json(
+          { error: "No appointment found with that reference code." },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ appointments: [appointment] });
+    }
+
+    /* Lookup by phone */
+    if (!phone || !/^01[3-9]\d{8}$/.test(phone)) {
       return NextResponse.json(
-        { error: "A valid phone number query parameter is required." },
+        { error: "A valid phone number (e.g. 01712345678) is required." },
         { status: 400 }
       );
     }
-    const normalized = phone.replace(/[-\s]/g, "");
     const appointments = await db.appointment.findMany({
-      where: { phone: normalized },
-      select: {
-        refCode: true,
-        name: true,
-        date: true,
-        time: true,
-        status: true,
-        serviceSlug: true,
-        doctorSlug: true,
-        createdAt: true,
-      },
+      where: { phone },
+      select,
       orderBy: { createdAt: "desc" },
       take: 10,
     });

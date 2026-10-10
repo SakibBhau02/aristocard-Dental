@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock3,
   Lightbulb,
+  Share2,
   Tag,
   UserRound,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
 /*  BLOG LIST PAGE                                                     */
@@ -99,6 +101,21 @@ export function BlogPage() {
 
               <div className="flex flex-col justify-between bg-white p-8 sm:p-10">
                 <div>
+                  {featured.image && (
+                    <div className="zoom-img relative mb-6 overflow-hidden rounded-2xl ring-1 ring-blue-100">
+                      <Image
+                        src={featured.image}
+                        alt={featured.imageAlt ?? featured.title}
+                        width={672}
+                        height={384}
+                        className="h-44 w-full object-cover sm:h-48"
+                      />
+                      <span
+                        className="absolute inset-0 bg-gradient-to-t from-brand-navy/35 via-transparent to-transparent"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
                   <span className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm leading-relaxed text-brand-navy ring-1 ring-blue-100">
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
                     <span>
@@ -201,13 +218,36 @@ export function BlogPage() {
                       e.preventDefault();
                       navigate(`/blog/${post.slug}`);
                     }}
-                    className="card-shine group flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
+                    className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
                     aria-label={`Read article: ${post.title}`}
                   >
-                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
-                      {post.category}
-                    </span>
-                    <h3 className="font-heading mt-4 text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
+                    {post.image ? (
+                      <div className="zoom-img relative h-44 w-full overflow-hidden">
+                        <Image
+                          src={post.image}
+                          alt={post.imageAlt ?? post.title}
+                          width={448}
+                          height={256}
+                          className="h-full w-full object-cover"
+                        />
+                        <span
+                          className="absolute inset-0 bg-gradient-to-t from-brand-navy/45 via-brand-navy/5 to-transparent"
+                          aria-hidden="true"
+                        />
+                        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue backdrop-blur">
+                          {post.category}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
+                        {post.category}
+                      </span>
+                    )}
+                    <div className="flex flex-1 flex-col p-6 pt-5">
+                    <h3 className={cn(
+                      "font-heading text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue",
+                      !post.image && "mt-4"
+                    )}>
                       {post.title}
                     </h3>
                     <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
@@ -222,6 +262,7 @@ export function BlogPage() {
                         <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                         {post.readTime}
                       </span>
+                    </div>
                     </div>
                   </a>
                 </motion.article>
@@ -246,6 +287,24 @@ export function BlogPage() {
 export function BlogDetailPage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
   const post = getPost(slug);
+
+  const shareArticle = async () => {
+    const url = `${window.location.origin}/#/blog/${slug}`;
+    const shareData = {
+      title: post?.title ?? "Dental health article",
+      text: post?.excerpt ?? "Expert dental advice from Aristocrat Dental Care",
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      /* user dismissed share sheet — no-op */
+    }
+  };
 
   usePageMeta({
     title: post ? post.title : "Article Not Found",
@@ -373,8 +432,28 @@ export function BlogDetailPage({ slug }: { slug: string }) {
       {/* Article body */}
       <article className="py-14 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          {/* Cover image */}
+          {post.image && (
+            <Reveal>
+              <figure className="zoom-img relative -mt-24 overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-20px_rgba(0,32,96,0.45)] ring-1 ring-blue-100 sm:-mt-28">
+                <Image
+                  src={post.image}
+                  alt={post.imageAlt ?? post.title}
+                  width={896}
+                  height={504}
+                  priority
+                  className="h-56 w-full object-cover sm:h-80"
+                />
+                <span
+                  className="absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+                  aria-hidden="true"
+                />
+              </figure>
+            </Reveal>
+          )}
+
           {/* AEO quick answer */}
-          <Reveal>
+          <Reveal className="mt-10">
             <div className="rounded-3xl border-l-4 border-brand-blue bg-ice p-6 sm:p-8">
               <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
                 <Lightbulb className="h-4 w-4" aria-hidden="true" />
@@ -462,18 +541,28 @@ export function BlogDetailPage({ slug }: { slug: string }) {
             </div>
           </Reveal>
 
-          {/* tags */}
-          <div className="mt-8 flex flex-wrap items-center gap-2">
-            <Tag className="h-4 w-4 text-slate-400" aria-hidden="true" />
-            {post.tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="outline"
-                className="border-blue-100 bg-ice text-xs font-medium text-brand-navy"
-              >
-                #{tag}
-              </Badge>
-            ))}
+          {/* tags + share */}
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Tag className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              {post.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="border-blue-100 bg-ice text-xs font-medium text-brand-navy"
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={shareArticle}
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:bg-blue-50 hover:ring-brand-blue/30"
+            >
+              <Share2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+              Share this article
+            </button>
           </div>
         </div>
       </article>
@@ -499,8 +588,24 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ duration: 0.5, delay: i * 0.07 }}
-                className="card-shine group flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
+                className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)]"
               >
+                {p.image ? (
+                  <div className="zoom-img relative h-36 w-full overflow-hidden">
+                    <Image
+                      src={p.image}
+                      alt={p.imageAlt ?? p.title}
+                      width={448}
+                      height={256}
+                      className="h-full w-full object-cover"
+                    />
+                    <span
+                      className="absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+                      aria-hidden="true"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex flex-1 flex-col p-6">
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
                   {p.category}
                 </span>
@@ -514,6 +619,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                   Read article
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                 </span>
+                </div>
               </motion.a>
             ))}
           </div>

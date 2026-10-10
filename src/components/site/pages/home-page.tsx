@@ -78,6 +78,15 @@ export function HomePage() {
         aria-labelledby="hero-heading"
       >
         <div className="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
+        {/* ambient depth blobs */}
+        <span
+          className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
+          aria-hidden="true"
+        />
+        <span
+          className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-brand-teal/10 blur-3xl"
+          aria-hidden="true"
+        />
         <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8 lg:pb-28 lg:pt-20">
           {/* Left copy */}
           <div>
@@ -368,7 +377,7 @@ export function HomePage() {
       </section>
 
       {/* ============ WHY CHOOSE US ============ */}
-      <section className="relative py-20 sm:py-24" aria-labelledby="why-heading">
+      <section className="section-wash relative py-20 sm:py-24" aria-labelledby="why-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             {/* Left visual */}
@@ -577,7 +586,7 @@ export function HomePage() {
       </section>
 
       {/* ============ SMILE GALLERY PREVIEW ============ */}
-      <section className="relative py-20 sm:py-24" aria-labelledby="gallery-preview-heading">
+      <section className="section-wash relative py-20 sm:py-24" aria-labelledby="gallery-preview-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
             <Reveal>
@@ -650,7 +659,7 @@ export function HomePage() {
       </section>
 
       {/* ============ TESTIMONIALS ============ */}
-      <section className="relative py-20 sm:py-24" aria-labelledby="testimonials-heading">
+      <section className="section-wash relative py-20 sm:py-24" aria-labelledby="testimonials-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             eyebrow="Patient Stories"
@@ -705,7 +714,7 @@ export function HomePage() {
       </section>
 
       {/* ============ FAQ (AEO) ============ */}
-      <section className="relative py-20 sm:py-24" aria-labelledby="faq-heading">
+      <section className="section-wash relative py-20 sm:py-24" aria-labelledby="faq-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr]">
             <div>

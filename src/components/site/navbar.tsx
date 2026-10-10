@@ -48,18 +48,18 @@ export function Navbar() {
       {/* Top info bar */}
       <div className="hidden bg-brand-navy text-white lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2 text-xs">
-          <div className="flex items-center gap-5 text-blue-100">
+          <div className="flex items-center gap-5 text-blue-100/90">
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+              <Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
               {site.hours}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+              <Phone className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
               Hotline: {site.phone}
             </span>
           </div>
-          <div className="flex items-center gap-4 text-blue-100">
-            <span className="font-medium text-amber-300">
+          <div className="flex items-center gap-4 text-blue-100/90">
+            <span className="font-semibold tracking-wide text-amber-200">
               {site.tagline}
             </span>
           </div>
@@ -105,33 +105,43 @@ export function Navbar() {
           </a>
 
           {/* Desktop nav */}
-          <ul className="hidden items-center gap-1 lg:flex">
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <a
-                  href={item.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigateAndClose(item.href.replace("#", ""));
-                  }}
-                  className={cn(
-                    "relative rounded-full px-3 text-[13px] font-medium transition-colors duration-300 xl:px-3.5 xl:text-sm",
-                    isActive(item.href)
-                      ? "text-brand-blue"
-                      : "text-slate-700 hover:text-brand-blue"
-                  )}
-                >
-                  {item.label}
-                  {isActive(item.href) && (
-                    <motion.span
-                      layoutId="nav-pill"
-                      className="absolute inset-0 -z-10 rounded-full bg-blue-50 ring-1 ring-blue-100"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          <ul className="hidden items-center gap-0.5 lg:flex">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateAndClose(item.href.replace("#", ""));
+                    }}
+                    className={cn(
+                      "relative rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-300 xl:px-3.5 xl:text-sm",
+                      active
+                        ? "text-brand-blue"
+                        : "text-slate-700 hover:text-brand-blue"
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="nav-pill"
+                        className="absolute inset-0 -z-10 rounded-full bg-blue-100/90 shadow-[inset_0_0_0_1px_rgba(30,125,255,0.18)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      />
+                    )}
+                    {item.label}
+                    <span
+                      className={cn(
+                        "absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-brand-gold transition-all duration-300",
+                        active ? "opacity-100 scale-100" : "opacity-0 scale-0"
+                      )}
+                      aria-hidden="true"
                     />
-                  )}
-                </a>
-              </li>
-            ))}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
 
           {/* CTA */}

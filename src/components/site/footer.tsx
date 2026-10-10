@@ -46,6 +46,7 @@ export function Footer() {
     { label: "Cost Estimator", to: "/estimator" },
     { label: "Contact", to: "/contact" },
     { label: "Book Appointment", to: "/appointment" },
+    { label: "Check Appointment Status", to: "/status" },
   ];
 
   return (
