@@ -86,9 +86,9 @@ export function Footer() {
             <Image
               src="/logo-white.png"
               alt="Aristocrat Dental Care & Orthodontic Center logo"
-              width={220}
-              height={49}
-              className="h-11 w-auto object-contain"
+              width={240}
+              height={54}
+              className="h-12 w-auto object-contain sm:h-14 lg:h-12"
             />
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-blue-100/85">
               {settings.name} — {lang === "bn"

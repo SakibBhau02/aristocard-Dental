@@ -1,7 +1,12 @@
-import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { hashPassword, verifyPassword } from "@/lib/password";
+
+/* Re-exported for the patient API routes (single hashing implementation
+   now lives in @/lib/password, shared with admin accounts). */
+export { hashPassword, verifyPassword };
 
 /* ------------------------------------------------------------------ */
 /*  Patient account authentication — powers the Patient Portal (#/portal)
@@ -17,38 +22,9 @@ import { db } from "@/lib/db";
 export const PATIENT_SESSION_COOKIE = "adc_patient_session";
 export const PATIENT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-const SCRYPT_KEYLEN = 64;
-const SCRYPT_COST = 16384; // N — standard "interactive" strength
-
 const SESSION_SECRET = createHash("sha256")
   .update(`adc-patient-session-v1:${process.env.PATIENT_SESSION_SECRET ?? "aristocrat-care-2026"}`)
   .digest();
-
-/* ------------------------------------------------------------------ */
-/*  Password hashing (scrypt)                                           */
-/* ------------------------------------------------------------------ */
-
-/** Hash a plaintext password → "scrypt:<saltHex>:<hashHex>". */
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, SCRYPT_KEYLEN, { N: SCRYPT_COST });
-  return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
-}
-
-/** Constant-time password verification against a stored scrypt hash. */
-export function verifyPassword(password: string, stored: string): boolean {
-  try {
-    const parts = stored.split(":");
-    if (parts.length !== 3 || parts[0] !== "scrypt") return false;
-    const salt = Buffer.from(parts[1], "hex");
-    const expected = Buffer.from(parts[2], "hex");
-    if (salt.length === 0 || expected.length !== SCRYPT_KEYLEN) return false;
-    const actual = scryptSync(password, salt, SCRYPT_KEYLEN, { N: SCRYPT_COST });
-    return expected.length === actual.length && timingSafeEqual(expected, actual);
-  } catch {
-    return false;
-  }
-}
 
 /* ------------------------------------------------------------------ */
 /*  Session tokens                                                      */

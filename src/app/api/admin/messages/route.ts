@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-auth";
+import { requireAdminRole } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { dhakaToday, messagesToCsv } from "@/lib/admin-csv";
 
@@ -11,9 +11,8 @@ import { dhakaToday, messagesToCsv } from "@/lib/admin-csv";
 
 export async function GET(req: NextRequest) {
   try {
-    if (!isAdminAuthorized(req)) {
-      return NextResponse.json({ error: "Invalid admin passcode." }, { status: 401 });
-    }
+    const denied = await requireAdminRole(req);
+    if (denied) return denied;
 
     const rows = await db.contactMessage.findMany({
       orderBy: { createdAt: "desc" },
@@ -55,9 +54,8 @@ export async function GET(req: NextRequest) {
 /* POST — toggle handled flag { id, handled } */
 export async function POST(req: NextRequest) {
   try {
-    if (!isAdminAuthorized(req)) {
-      return NextResponse.json({ error: "Invalid admin passcode." }, { status: 401 });
-    }
+    const denied = await requireAdminRole(req);
+    if (denied) return denied;
 
     const body = await req.json().catch(() => null);
     const { id, handled } = body ?? {};

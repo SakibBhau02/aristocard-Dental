@@ -35,7 +35,7 @@ function sanitizeSections(input: unknown): { heading: string; body: string[]; li
 }
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.blogPost.findMany({ orderBy: { date: "desc" } });
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -106,20 +106,20 @@ export async function POST(req: NextRequest) {
         if (clash && clash.id !== id) return bad("Another post already uses that slug.");
       }
       const row = await db.blogPost.update({ where: { id }, data });
-      return ok({ post: mapBlogPost(row as unknown as Record<string, unknown>), id }, "Post updated.");
+      return ok(req, { post: mapBlogPost(row as unknown as Record<string, unknown>), id }, "Post updated.");
     }
 
     const clash = await db.blogPost.findUnique({ where: { slug } });
     if (clash) return bad("A post with that slug already exists.");
     const row = await db.blogPost.create({ data });
-    return ok({ post: mapBlogPost(row as unknown as Record<string, unknown>), id: row.id }, "Post created.");
+    return ok(req, { post: mapBlogPost(row as unknown as Record<string, unknown>), id: row.id }, "Post created.");
   } catch (err) {
     return serverError("blog", err);
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -127,7 +127,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await db.blogPost.findUnique({ where: { id } });
     if (!existing) return notFound("No post found with that id.");
     await db.blogPost.delete({ where: { id } });
-    return ok({ id }, "Post deleted.");
+    return ok(req, { id }, "Post deleted.");
   } catch (err) {
     return serverError("blog", err);
   }

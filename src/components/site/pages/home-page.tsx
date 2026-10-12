@@ -47,32 +47,52 @@ import { Button } from "@/components/ui/button";
 /*  HOME PAGE (EN / বাংলা) — content served live from the CMS bundle   */
 /* ------------------------------------------------------------------ */
 
+const HOME_META_DESCRIPTION =
+  "Modern & well-equipped dental clinic in Uttara, Dhaka. 50,000+ happy patients. Implants, Invisalign, braces, root canal, smile design & kids dentistry. Book: 01715-027522.";
+
 export function HomePage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
   const { home, settings, heroSlides, faqs, services, doctors } = useBundle();
   const bn = lang === "bn";
 
-  /* FAQ JSON-LD over the live CMS FAQs (EN question/answer canonical). */
-  const heroFaqsJsonLd = useMemo(
-    () => ({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faqs.map((f) => ({
-        "@type": "Question",
-        name: f.question,
-        acceptedAnswer: { "@type": "Answer", text: f.answer },
-      })),
-    }),
-    [faqs]
+  /* SEO/AEO/GEO: WebPage (linked to the Organization + speakable hero) +
+     compact FAQPage over exactly the FAQs the homepage renders (first 6). */
+  const homeJsonLd = useMemo(
+    () => [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://aristocratdentalcarebd.com/#webpage",
+        url: "https://aristocratdentalcarebd.com/",
+        name: settings.name,
+        description: HOME_META_DESCRIPTION,
+        inLanguage: "en",
+        isPartOf: { "@id": "https://aristocratdentalcarebd.com/#website" },
+        about: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+        speakable: {
+          "@type": "SpeakableSpecification",
+          cssSelector: ["#hero-heading", "#hero-subtitle"],
+        },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.slice(0, 6).map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      },
+    ],
+    [settings.name, faqs]
   );
 
   usePageMeta({
     title:
       "Aristocrat Dental Care & Orthodontic Center | Best Dental Clinic in Uttara, Dhaka",
-    description:
-      "Modern & well-equipped dental clinic in Uttara, Dhaka. 50,000+ happy patients. Implants, Invisalign, braces, root canal, smile design & kids dentistry. Book: 01715-027522.",
-    jsonLd: heroFaqsJsonLd,
+    description: HOME_META_DESCRIPTION,
+    jsonLd: homeJsonLd,
   });
 
   const featured = featuredServices(services, 6);
@@ -111,6 +131,7 @@ export function HomePage() {
           </motion.h1>
 
           <motion.p
+            id="hero-subtitle"
             initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
@@ -262,7 +283,9 @@ export function HomePage() {
       {/* ============ WHY CHOOSE US ============ */}
       <section className="section-wash relative py-20 sm:py-24" aria-labelledby="why-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          {/* minmax(0,1fr) on mobile so the track can shrink below content
+              min-width — prevents 3px horizontal overflow at 320-360px */}
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             {/* Left visual */}
             <Reveal className="relative order-2 lg:order-1">
               <div className="relative mx-auto max-w-md">
@@ -301,8 +324,9 @@ export function HomePage() {
                     </div>
                   </div>
                 </div>
-                {/* floating rating card */}
-                <div className="animate-float-soft absolute -right-4 -top-4 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-8">
+                {/* floating rating card — right-4 on mobile (no viewport
+                    overflow at 320-360px), pokes out from sm up */}
+                <div className="animate-float-soft absolute right-4 -top-4 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-8">
                   <span className="flex items-center gap-1">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star

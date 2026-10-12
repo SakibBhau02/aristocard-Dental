@@ -1,0 +1,857 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  ADMIN — modular staff shell (#/admin)                              */
+     5→/*  • Login gate: passcode → POST /api/admin/login (httpOnly session    */
+     6→/*    cookie, 8h); session probed via GET /api/admin/session.          */
+     7→/*  • Professional sidebar shell (desktop lg+) with grouped modules:   */
+     8→/*    Dashboard · Bookings · Engagement · Content · Configuration.     */
+     9→/*    Mobile: top bar + hamburger → Sheet drawer.                      */
+    10→/*  • Panels live in ./panels/* — the six live modules were extracted  */
+    11→/*    verbatim from the former monolithic page; the nine CMS modules   */
+    12→/*    are wired placeholders pending their editors.                    */
+    13→/* ------------------------------------------------------------------ */
+    14→
+    15→import { useCallback, useEffect, useState } from "react";
+    16→import { AnimatePresence, motion } from "framer-motion";
+    17→import {
+    18→  Building2,
+    19→  CalendarDays,
+    20→  CircleHelp,
+    21→  Home,
+    22→  Inbox,
+    23→  LayoutDashboard,
+    24→  Loader2,
+    25→  Lock,
+    26→  LogOut,
+    27→  Mails,
+    28→  Menu,
+    29→  MonitorPlay,
+    30→  Newspaper,
+    31→  Settings,
+    32→  ShieldCheck,
+    33→  Smile,
+    34→  Sparkles,
+    35→  Star,
+    36→  Stethoscope,
+    37→  Users,
+    38→} from "lucide-react";
+    39→import { usePageMeta } from "@/lib/router";
+    40→import { cn } from "@/lib/utils";
+    41→import { Button } from "@/components/ui/button";
+    42→import {
+    43→  Sheet,
+    44→  SheetContent,
+    45→  SheetDescription,
+    46→  SheetHeader,
+    47→  SheetTitle,
+    48→} from "@/components/ui/sheet";
+    49→import type { AdminView } from "./admin-shared";
+    50→import { OverviewPanel } from "./panels/overview-panel";
+    51→import { AppointmentsPanel } from "./panels/appointments-panel";
+    52→import { ReviewsPanel } from "./panels/reviews-panel";
+    53→import { MessagesPanel } from "./panels/messages-panel";
+    54→import { SubscribersPanel } from "./panels/subscribers-panel";
+    55→import { PatientsPanel } from "./panels/patients-panel";
+    56→import { DoctorsPanel } from "./panels/doctors-panel";
+    57→import { BlogPanel } from "./panels/blog-panel";
+    58→import { FaqsPanel } from "./panels/faqs-panel";
+    59→import { CasesPanel } from "./panels/cases-panel";
+    60→import { ServicesPanel } from "./panels/services-panel";
+    61→import { HomepagePanel } from "./panels/homepage-panel";
+    62→import { AboutPanel } from "./panels/about-panel";
+    63→import { HeroPanel } from "./panels/hero-panel";
+    64→import { SettingsPanel } from "./panels/settings-panel";
+    65→
+    66→const LEGACY_SESSION_KEY = "adc-admin-code"; /* pre-session era; cleared on boot */
+    67→
+    68→/* ------------------------------------------------------------------ */
+    69→/*  Sidebar navigation model                                            */
+    70→/* ------------------------------------------------------------------ */
+    71→
+    72→type NavEntry = {
+    73→  id: AdminView;
+    74→  label: string;
+    75→  title: string;
+    76→  description: string;
+    77→  icon: typeof LayoutDashboard;
+    78→  badge?: "appointments" | "reviews" | "messages";
+    79→};
+    80→
+    81→type BadgeState = {
+    82→  appointments: number | null;
+    83→  reviews: number | null;
+    84→  messages: number | null;
+    85→};
+    86→
+    87→const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
+    88→  {
+    89→    label: "Dashboard",
+    90→    items: [
+    91→      {
+    92→        id: "overview",
+    93→        label: "Overview",
+    94→        title: "Clinic Overview",
+    95→        description: "Cross-module KPIs, the 14-day booking trend and quick jumps into every module.",
+    96→        icon: LayoutDashboard,
+    97→      },
+    98→    ],
+    99→  },
+   100→  {
+   101→    label: "Bookings",
+   102→    items: [
+   103→      {
+   104→        id: "appointments",
+   105→        label: "Appointments",
+   106→        title: "Appointment Dashboard",
+   107→        description: "Bookings & schedules — confirm, complete or cancel patient visits.",
+   108→        icon: CalendarDays,
+   109→        badge: "appointments",
+   110→      },
+   111→    ],
+   112→  },
+   113→  {
+   114→    label: "Engagement",
+   115→    items: [
+   116→      {
+   117→        id: "reviews",
+   118→        label: "Reviews",
+   119→        title: "Review Moderation",
+   120→        description: "Approve, reject or delete patient reviews before they appear on the site.",
+   121→        icon: Star,
+   122→        badge: "reviews",
+   123→      },
+   124→      {
+   125→        id: "messages",
+   126→        label: "Messages",
+   127→        title: "Message Inbox",
+   128→        description: "Contact-form messages with reply links and handled/new triage.",
+   129→        icon: Inbox,
+   130→        badge: "messages",
+   131→      },
+   132→      {
+   133→        id: "subscribers",
+   134→        label: "Subscribers",
+   135→        title: "Newsletter Subscribers",
+   136→        description: "The clinic newsletter mailing list with CSV export.",
+   137→        icon: Mails,
+   138→      },
+   139→      {
+   140→        id: "patients",
+   141→        label: "Patients",
+   142→        title: "Patient Accounts",
+   143→        description: "Portal accounts with expandable booking drilldowns.",
+   144→        icon: Users,
+   145→      },
+   146→    ],
+   147→  },
+   148→  {
+   149→    label: "Content",
+   150→    items: [
+   151→      {
+   152→        id: "doctors",
+   153→        label: "Doctors",
+   154→        title: "Doctors",
+   155→        description: "Manage the doctor directory — profiles, credentials, photos and order.",
+   156→        icon: Stethoscope,
+   157→      },
+   158→      {
+   159→        id: "blog",
+   160→        label: "Blog Posts",
+   161→        title: "Blog Posts",
+   162→        description: "Write, publish and update dental health articles.",
+   163→        icon: Newspaper,
+   164→      },
+   165→      {
+   166→        id: "faqs",
+   167→        label: "FAQs",
+   168→        title: "FAQs",
+   169→        description: "Frequently asked questions shown across the website.",
+   170→        icon: CircleHelp,
+   171→      },
+   172→      {
+   173→        id: "cases",
+   174→        label: "Smile Cases",
+   175→        title: "Smile Cases",
+   176→        description: "Before/after smile transformation case gallery.",
+   177→        icon: Smile,
+   178→      },
+   179→      {
+   180→        id: "services",
+   181→        label: "Services",
+   182→        title: "Services",
+   183→        description: "Treatment catalogue — names, imagery and per-service details.",
+   184→        icon: Sparkles,
+   185→      },
+   186→      {
+   187→        id: "homepage",
+   188→        label: "Homepage",
+   189→        title: "Homepage Content",
+   190→        description: "Hero copy, highlights and the homepage section blocks.",
+   191→        icon: Home,
+   192→      },
+   193→      {
+   194→        id: "about",
+   195→        label: "About Page",
+   196→        title: "About Page Content",
+   197→        description: "Story, timeline and facility blocks for the about page.",
+   198→        icon: Building2,
+   199→      },
+   200→      {
+   201→        id: "hero",
+   202→        label: "Hero & Videos",
+   203→        title: "Hero Slides & Videos",
+   204→        description: "Background slides and YouTube videos behind page heroes.",
+   205→        icon: MonitorPlay,
+   206→      },
+   207→    ],
+   208→  },
+   209→  {
+   210→    label: "Configuration",
+   211→    items: [
+   212→      {
+   213→        id: "settings",
+   214→        label: "Site Settings",
+   215→        title: "Site Settings",
+   216→        description: "Clinic contact details, socials and global configuration.",
+   217→        icon: Settings,
+   218→      },
+   219→    ],
+   220→  },
+   221→];
+   222→
+   223→/* ------------------------------------------------------------------ */
+   224→/*  AdminPage — session gate + shell                                    */
+   225→/* ------------------------------------------------------------------ */
+   226→
+   227→export function AdminPage() {
+   228→  usePageMeta({
+   229→    title: "Admin — Staff Dashboard",
+   230→    description: "Staff-only clinic management dashboard.",
+   231→  });
+   232→
+   233→  /* noindex for this back-office page */
+   234→  useEffect(() => {
+   235→    const meta = document.createElement("meta");
+   236→    meta.name = "robots";
+   237→    meta.content = "noindex, nofollow";
+   238→    meta.dataset.adminNoindex = "true";
+   239→    document.head.appendChild(meta);
+   240→    return () => {
+   241→      meta.remove();
+   242→    };
+   243→  }, []);
+   244→
+   245→  const [authState, setAuthState] = useState<"checking" | "locked" | "open">(
+   246→    "checking"
+   247→  );
+   248→
+   249→  /* Restore an existing cookie session (and clear any legacy
+   250→     pre-session-era key) — the passcode is never re-sent or stored. */
+   251→  useEffect(() => {
+   252→    try {
+   253→      sessionStorage.removeItem(LEGACY_SESSION_KEY);
+   254→    } catch {
+   255→      /* ignore */
+   256→    }
+   257→    let cancelled = false;
+   258→    (async () => {
+   259→      try {
+   260→        const res = await fetch("/api/admin/session");
+   261→        if (!cancelled) setAuthState(res.ok ? "open" : "locked");
+   262→      } catch {
+   263→        if (!cancelled) setAuthState("locked");
+   264→      }
+   265→    })();
+   266→    return () => {
+   267→      cancelled = true;
+   268→    };
+   269→  }, []);
+   270→
+   271→  const handleLogout = useCallback(async () => {
+   272→    try {
+   273→      await fetch("/api/admin/logout", { method: "POST" });
+   274→    } catch {
+   275→      /* clearing the local state matters more than the network call */
+   276→    }
+   277→    setAuthState("locked");
+   278→  }, []);
+   279→
+   280→  if (authState === "checking") return <AdminBoot />;
+   281→
+   282→  return authState === "open" ? (
+   283→    <AdminShell onLogout={handleLogout} />
+   284→  ) : (
+   285→    <AdminGate onUnlock={() => setAuthState("open")} />
+   286→  );
+   287→}
+   288→
+   289→/* ------------------------------------------------------------------ */
+   290→/*  Boot state while restoring the cookie session                       */
+   291→/* ------------------------------------------------------------------ */
+   292→
+   293→function AdminBoot() {
+   294→  return (
+   295→    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] px-4 py-24">
+   296→      <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
+   297→      <motion.div
+   298→        initial={{ opacity: 0, y: 16 }}
+   299→        animate={{ opacity: 1, y: 0 }}
+   300→        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+   301→        className="relative flex flex-col items-center gap-4"
+   302→      >
+   303→        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15">
+   304→          <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+   305→        </span>
+   306→        <p className="text-sm font-medium text-blue-100/80">Checking your session…</p>
+   307→      </motion.div>
+   308→    </div>
+   309→  );
+   310→}
+   311→
+   312→/* ------------------------------------------------------------------ */
+   313→/*  Passcode gate (visuals polished; auth logic unchanged)              */
+   314→/* ------------------------------------------------------------------ */
+   315→
+   316→function AdminGate({ onUnlock }: { onUnlock: () => void }) {
+   317→  const [value, setValue] = useState("");
+   318→  const [error, setError] = useState<string | null>(null);
+   319→  const [checking, setChecking] = useState(false);
+   320→
+   321→  async function handleSubmit(e: React.FormEvent) {
+   322→    e.preventDefault();
+   323→    if (checking) return;
+   324→    setError(null);
+   325→    setChecking(true);
+   326→    try {
+   327→      /* The passcode travels once, in this request body — the server
+   328→         responds with an httpOnly session cookie that does the rest. */
+   329→      const res = await fetch("/api/admin/login", {
+   330→        method: "POST",
+   331→        headers: { "Content-Type": "application/json" },
+   332→        body: JSON.stringify({ code: value.trim() }),
+   333→      });
+   334→      if (res.status === 401) {
+   335→        setError("Incorrect passcode. Please try again.");
+   336→        return;
+   337→      }
+   338→      if (res.status === 429) {
+   339→        setError("Too many attempts. Please wait a few minutes and try again.");
+   340→        return;
+   341→      }
+   342→      if (!res.ok) throw new Error("Server error");
+   343→      onUnlock();
+   344→    } catch {
+   345→      setError("Could not reach the server. Please try again.");
+   346→    } finally {
+   347→      setChecking(false);
+   348→    }
+   349→  }
+   350→
+   351→  return (
+   352→    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] px-4 py-20">
+   353→      <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
+   354→      <div className="pointer-events-none absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-blue/30 blur-3xl" aria-hidden="true" />
+   355→      <div className="pointer-events-none absolute -bottom-40 right-[12%] h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" aria-hidden="true" />
+   356→
+   357→      <motion.div
+   358→        initial={{ opacity: 0, y: 24 }}
+   359→        animate={{ opacity: 1, y: 0 }}
+   360→        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   361→        className="relative w-full max-w-md"
+   362→      >
+   363→        <div className="mb-7 text-center">
+   364→          <p className="font-heading text-xl font-bold tracking-wide text-white">
+   365→            Aristocrat Dental Care
+   366→          </p>
+   367→          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90">
+   368→            Admin Panel
+   369→          </p>
+   370→        </div>
+   371→
+   372→        <form
+   373→          onSubmit={handleSubmit}
+   374→          className="card-shine rounded-[2rem] border border-white/40 bg-white p-8 shadow-[0_32px_80px_-24px_rgba(0,10,40,0.7)] sm:p-10"
+   375→        >
+   376→          <div className="flex items-center justify-center">
+   377→            <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-navy to-brand-blue text-white shadow-lg shadow-navy-900/30 ring-1 ring-blue-900/20">
+   378→              <Lock className="h-7 w-7" aria-hidden="true" />
+   379→            </span>
+   380→          </div>
+   381→          <h1 className="font-heading mt-6 text-center text-2xl font-bold text-brand-navy">
+   382→            Staff Access Only
+   383→          </h1>
+   384→          <p className="mt-2 text-center text-sm leading-relaxed text-slate-500">
+   385→            Enter the clinic admin passcode to manage appointments and site
+   386→            content. This area is for Aristocrat Dental Care staff.
+   387→          </p>
+   388→
+   389→          <label htmlFor="admin-code" className="sr-only">
+   390→            Admin passcode
+   391→          </label>
+   392→          <input
+   393→            id="admin-code"
+   394→            type="password"
+   395→            autoComplete="current-password"
+   396→            value={value}
+   397→            onChange={(e) => setValue(e.target.value)}
+   398→            placeholder="Admin passcode"
+   399→            className="mt-7 h-13 w-full rounded-2xl border border-blue-100 bg-ice px-5 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   400→          />
+   401→
+   402→          {error && (
+   403→            <p className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600 ring-1 ring-rose-100">
+   404→              {error}
+   405→            </p>
+   406→          )}
+   407→
+   408→          <Button
+   409→            type="submit"
+   410→            disabled={checking || value.trim().length === 0}
+   411→            className="mt-5 h-12 w-full rounded-2xl bg-brand-navy text-sm font-bold text-white shadow-lg shadow-navy-900/25 hover:bg-brand-blue disabled:opacity-60"
+   412→          >
+   413→            {checking ? (
+   414→              <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+   415→            ) : (
+   416→              <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   417→            )}
+   418→            Unlock Dashboard
+   419→          </Button>
+   420→
+   421→          <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
+   422→            You'll stay signed in for 8 hours on this device. Demo passcode:{" "}
+   423→            <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+   424→              aristocrat-2026
+   425→            </code>
+   426→          </p>
+   427→        </form>
+   428→      </motion.div>
+   429→    </div>
+   430→  );
+   431→}
+   432→
+   433→/* ------------------------------------------------------------------ */
+   434→/*  Session expired interstitial                                        */
+   435→/* ------------------------------------------------------------------ */
+   436→
+   437→function SessionExpiredCard({ onLogout }: { onLogout: () => void }) {
+   438→  return (
+   439→    <div className="flex flex-1 items-center justify-center px-4 py-24">
+   440→      <div className="max-w-md rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center">
+   441→        <Lock className="mx-auto h-8 w-8 text-amber-600" aria-hidden="true" />
+   442→        <h2 className="font-heading mt-4 text-lg font-bold text-amber-900">
+   443→          Session expired
+   444→        </h2>
+   445→        <p className="mt-2 text-sm text-amber-800">
+   446→          Your session ended (it expires after 8 hours for security).
+   447→          Please sign in again to continue.
+   448→        </p>
+   449→        <Button onClick={onLogout} className="mt-5 rounded-full bg-amber-600 hover:bg-amber-700">
+   450→          Back to sign-in
+   451→        </Button>
+   452→      </div>
+   453→    </div>
+   454→  );
+   455→}
+   456→
+   457→/* Resolve the active module's header metadata (title / description /
+   458→   icon / group label). Cheap lookup — no memoization needed. */
+   459→function navMeta(view: AdminView) {
+   460→  for (const group of NAV_GROUPS) {
+   461→    const item = group.items.find((i) => i.id === view);
+   462→    if (item) return { ...item, group: group.label };
+   463→  }
+   464→  return { ...NAV_GROUPS[0].items[0], group: NAV_GROUPS[0].label };
+   465→}
+   466→
+   467→/* ------------------------------------------------------------------ */
+   468→/*  AdminShell — sidebar + content area + mobile Sheet                  */
+   469→/* ------------------------------------------------------------------ */
+   470→
+   471→function AdminShell({ onLogout }: { onLogout: () => void }) {
+   472→  const [view, setView] = useState<AdminView>("overview");
+   473→  const [sessionExpired, setSessionExpired] = useState(false);
+   474→  const [navOpen, setNavOpen] = useState(false);
+   475→  const [badges, setBadges] = useState<BadgeState>({
+   476→    appointments: null,
+   477→    reviews: null,
+   478→    messages: null,
+   479→  });
+   480→
+   481→  const handleExpired = useCallback(() => setSessionExpired(true), []);
+   482→  const setAppointmentsBadge = useCallback(
+   483→    (n: number) => setBadges((b) => ({ ...b, appointments: n })),
+   484→    []
+   485→  );
+   486→  const setReviewsBadge = useCallback(
+   487→    (n: number) => setBadges((b) => ({ ...b, reviews: n })),
+   488→    []
+   489→  );
+   490→  const setMessagesBadge = useCallback(
+   491→    (n: number) => setBadges((b) => ({ ...b, messages: n })),
+   492→    []
+   493→  );
+   494→  const syncBadges = useCallback(
+   495→    (appointments: number, reviews: number, messages: number) =>
+   496→      setBadges({ appointments, reviews, messages }),
+   497→    []
+   498→  );
+   499→
+   500→  /* One light call carries every sidebar badge count before the staff
+   501→     member opens each view. (Cookie auth — no header.) */
+   502→  useEffect(() => {
+   503→    let cancelled = false;
+   504→    (async () => {
+   505→      try {
+   506→        const res = await fetch("/api/admin/overview");
+   507→        if (res.status === 401) {
+   508→          setSessionExpired(true);
+   509→          return;
+   510→        }
+   511→        if (!res.ok) return;
+   512→        const data = await res.json();
+   513→        if (cancelled || !data) return;
+   514→        setBadges({
+   515→          appointments: data.appointmentStats?.pending ?? 0,
+   516→          reviews: data.reviewStats?.pendingApproval ?? 0,
+   517→          messages: data.messageStats?.unhandled ?? 0,
+   518→        });
+   519→      } catch {
+   520→        /* badges are best-effort */
+   521→      }
+   522→    })();
+   523→    return () => {
+   524→      cancelled = true;
+   525→    };
+   526→  }, []);
+   527→
+   528→  const navigate = useCallback((next: AdminView) => {
+   529→    setView(next);
+   530→    setNavOpen(false);
+   531→    window.scrollTo({ top: 0 });
+   532→  }, []);
+   533→
+   534→  const meta = navMeta(view);
+   535→
+   536→  if (sessionExpired) return <SessionExpiredCard onLogout={onLogout} />;
+   537→
+   538→  let panel: React.ReactNode = null;
+   539→  switch (view) {
+   540→    case "overview":
+   541→      panel = (
+   542→        <OverviewPanel
+   543→          onSessionExpired={handleExpired}
+   544→          onNavigate={navigate}
+   545→          onBadgeCounts={syncBadges}
+   546→        />
+   547→      );
+   548→      break;
+   549→    case "appointments":
+   550→      panel = (
+   551→        <AppointmentsPanel
+   552→          onSessionExpired={handleExpired}
+   553→          onPendingChange={setAppointmentsBadge}
+   554→        />
+   555→      );
+   556→      break;
+   557→    case "reviews":
+   558→      panel = (
+   559→        <ReviewsPanel
+   560→          onSessionExpired={handleExpired}
+   561→          onPendingChange={setReviewsBadge}
+   562→        />
+   563→      );
+   564→      break;
+   565→    case "messages":
+   566→      panel = (
+   567→        <MessagesPanel
+   568→          onSessionExpired={handleExpired}
+   569→          onUnhandledChange={setMessagesBadge}
+   570→        />
+   571→      );
+   572→      break;
+   573→    case "subscribers":
+   574→      panel = <SubscribersPanel onSessionExpired={handleExpired} />;
+   575→      break;
+   576→    case "patients":
+   577→      panel = <PatientsPanel onSessionExpired={handleExpired} />;
+   578→      break;
+   579→    case "doctors":
+   580→      panel = <DoctorsPanel onSessionExpired={handleExpired} />;
+   581→      break;
+   582→    case "blog":
+   583→      panel = <BlogPanel onSessionExpired={handleExpired} />;
+   584→      break;
+   585→    case "faqs":
+   586→      panel = <FaqsPanel onSessionExpired={handleExpired} />;
+   587→      break;
+   588→    case "cases":
+   589→      panel = <CasesPanel onSessionExpired={handleExpired} />;
+   590→      break;
+   591→    case "services":
+   592→      panel = <ServicesPanel onSessionExpired={handleExpired} />;
+   593→      break;
+   594→    case "homepage":
+   595→      panel = <HomepagePanel onSessionExpired={handleExpired} />;
+   596→      break;
+   597→    case "about":
+   598→      panel = <AboutPanel onSessionExpired={handleExpired} />;
+   599→      break;
+   600→    case "hero":
+   601→      panel = <HeroPanel onSessionExpired={handleExpired} />;
+   602→      break;
+   603→    case "settings":
+   604→      panel = <SettingsPanel onSessionExpired={handleExpired} />;
+   605→      break;
+   606→  }
+   607→
+   608→  return (
+   609→    <div className="section-wash flex-1 pb-16 lg:pb-20">
+   610→      <div className="lg:flex lg:min-h-screen lg:items-start">
+   611→        {/* Desktop sidebar — sticks to the viewport while content scrolls
+   612→            (the site navbar scrolls away; offset 0 keeps it flush) */}
+   613→        <aside className="hidden w-64 shrink-0 lg:sticky lg:top-0 lg:block lg:h-screen lg:flex-col bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] text-white">
+   614→          <SidebarChrome
+   615→            view={view}
+   616→            badges={badges}
+   617→            onNavigate={navigate}
+   618→            onLogout={onLogout}
+   619→          />
+   620→        </aside>
+   621→
+   622→        {/* Content column */}
+   623→        <div className="min-w-0 flex-1">
+   624→          {/* Mobile admin bar */}
+   625→          <div className="border-b border-blue-100 bg-white/90 backdrop-blur lg:hidden">
+   626→            <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+   627→              <Button
+   628→                variant="outline"
+   629→                size="icon"
+   630→                onClick={() => setNavOpen(true)}
+   631→                aria-label="Open admin navigation"
+   632→                className="rounded-xl border-blue-200 text-brand-navy hover:bg-blue-50"
+   633→              >
+   634→                <Menu className="h-5 w-5" aria-hidden="true" />
+   635→              </Button>
+   636→              <div className="min-w-0 flex-1">
+   637→                <p className="font-heading truncate text-sm font-bold text-brand-navy">
+   638→                  Aristocrat Admin
+   639→                </p>
+   640→                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+   641→                  {meta.group}
+   642→                </p>
+   643→              </div>
+   644→              <Button
+   645→                variant="ghost"
+   646→                size="icon"
+   647→                onClick={onLogout}
+   648→                aria-label="Sign out"
+   649→                title="Sign out"
+   650→                className="rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+   651→              >
+   652→                <LogOut className="h-4.5 w-4.5" aria-hidden="true" />
+   653→              </Button>
+   654→            </div>
+   655→          </div>
+   656→
+   657→          {/* Module header strip */}
+   658→          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+   659→            <header className="flex items-center gap-4">
+   660→              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-navy-900/25">
+   661→                <meta.icon className="h-5 w-5" aria-hidden="true" />
+   662→              </span>
+   663→              <div className="min-w-0">
+   664→                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+   665→                  Admin · {meta.group}
+   666→                </p>
+   667→                <h1 className="font-heading truncate text-xl font-bold text-brand-navy">
+   668→                  {meta.title}
+   669→                </h1>
+   670→              </div>
+   671→              <p className="ml-auto hidden max-w-sm text-right text-sm leading-relaxed text-slate-500 md:block lg:max-w-md">
+   672→                {meta.description}
+   673→              </p>
+   674→            </header>
+   675→            <p className="mt-2 text-sm leading-relaxed text-slate-500 md:hidden">
+   676→              {meta.description}
+   677→            </p>
+   678→          </div>
+   679→
+   680→          {/* Active panel */}
+   681→          <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8 lg:pt-5">
+   682→            <AnimatePresence mode="wait">
+   683→              <motion.div
+   684→                key={view}
+   685→                initial={{ opacity: 0, y: 10 }}
+   686→                animate={{ opacity: 1, y: 0 }}
+   687→                exit={{ opacity: 0, y: -8 }}
+   688→                transition={{ duration: 0.22, ease: "easeOut" }}
+   689→              >
+   690→                {panel}
+   691→              </motion.div>
+   692→            </AnimatePresence>
+   693→          </div>
+   694→        </div>
+   695→      </div>
+   696→
+   697→      {/* Mobile navigation drawer */}
+   698→      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+   699→        <SheetContent
+   700→          side="left"
+   701→          className="w-80 gap-0 border-0 bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] p-0 text-white sm:max-w-none"
+   702→        >
+   703→          <SheetHeader className="sr-only">
+   704→            <SheetTitle>Admin navigation</SheetTitle>
+   705→            <SheetDescription>Switch between admin modules</SheetDescription>
+   706→          </SheetHeader>
+   707→          <SidebarChrome
+   708→            view={view}
+   709→            badges={badges}
+   710→            onNavigate={navigate}
+   711→            onLogout={onLogout}
+   712→          />
+   713→        </SheetContent>
+   714→      </Sheet>
+   715→    </div>
+   716→  );
+   717→}
+   718→
+   719→/* ------------------------------------------------------------------ */
+   720→/*  SidebarChrome — header + grouped nav + footer (shared by aside      */
+   721→/*  and the mobile Sheet)                                               */
+   722→/* ------------------------------------------------------------------ */
+   723→
+   724→function SidebarChrome({
+   725→  view,
+   726→  badges,
+   727→  onNavigate,
+   728→  onLogout,
+   729→}: {
+   730→  view: AdminView;
+   731→  badges: BadgeState;
+   732→  onNavigate: (view: AdminView) => void;
+   733→  onLogout: () => void;
+   734→}) {
+   735→  return (
+   736→    <div className="flex h-full min-h-0 flex-col">
+   737→      {/* Header */}
+   738→      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+   739→        <span
+   740→          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 font-heading text-lg font-black text-brand-navy shadow-lg shadow-amber-900/20"
+   741→          aria-hidden="true"
+   742→        >
+   743→          A
+   744→        </span>
+   745→        <div className="min-w-0">
+   746→          <p className="font-heading truncate text-sm font-bold leading-tight text-white">
+   747→            Aristocrat Dental Care
+   748→          </p>
+   749→          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200/70">
+   750→            Admin Panel
+   751→          </p>
+   752→        </div>
+   753→      </div>
+   754→
+   755→      {/* Grouped navigation */}
+   756→      <nav
+   757→        className="scroll-area min-h-0 flex-1 overflow-y-auto px-3 py-4"
+   758→        aria-label="Admin modules"
+   759→      >
+   760→        {NAV_GROUPS.map((group, gi) => (
+   761→          <div key={group.label} className={cn(gi > 0 && "mt-5")}>
+   762→            <p className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-300/60">
+   763→              {group.label}
+   764→            </p>
+   765→            <ul className="space-y-0.5">
+   766→              {group.items.map((item) => (
+   767→                <SidebarItem
+   768→                  key={item.id}
+   769→                  active={view === item.id}
+   770→                  label={item.label}
+   771→                  icon={item.icon}
+   772→                  badge={item.badge ? badges[item.badge] : undefined}
+   773→                  onClick={() => onNavigate(item.id)}
+   774→                />
+   775→              ))}
+   776→            </ul>
+   777→          </div>
+   778→        ))}
+   779→      </nav>
+   780→
+   781→      {/* Footer */}
+   782→      <div className="space-y-1 border-t border-white/10 p-3">
+   783→        <a
+   784→          href="#/"
+   785→          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-blue-200/70 transition-colors duration-200 hover:bg-white/5 hover:text-white"
+   786→        >
+   787→          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5">
+   788→            <Home className="h-4 w-4" aria-hidden="true" />
+   789→          </span>
+   790→          View site
+   791→        </a>
+   792→        <button
+   793→          type="button"
+   794→          onClick={onLogout}
+   795→          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-rose-300/80 transition-colors duration-200 hover:bg-rose-500/10 hover:text-rose-200"
+   796→        >
+   797→          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5">
+   798→            <LogOut className="h-4 w-4" aria-hidden="true" />
+   799→          </span>
+   800→          Sign out
+   801→        </button>
+   802→      </div>
+   803→    </div>
+   804→  );
+   805→}
+   806→
+   807→function SidebarItem({
+   808→  active,
+   809→  label,
+   810→  icon: Icon,
+   811→  badge,
+   812→  onClick,
+   813→}: {
+   814→  active: boolean;
+   815→  label: string;
+   816→  icon: typeof LayoutDashboard;
+   817→  badge?: number | null;
+   818→  onClick: () => void;
+   819→}) {
+   820→  return (
+   821→    <li className="relative">
+   822→      <button
+   823→        type="button"
+   824→        onClick={onClick}
+   825→        aria-current={active ? "page" : undefined}
+   826→        className={cn(
+   827→          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-200",
+   828→          active
+   829→            ? "bg-white/10 text-white"
+   830→            : "text-blue-200/70 hover:bg-white/5 hover:text-white"
+   831→        )}
+   832→      >
+   833→        {active && (
+   834→          <span
+   835→            className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-amber-400"
+   836→            aria-hidden="true"
+   837→          />
+   838→        )}
+   839→        <span
+   840→          className={cn(
+   841→            "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+   842→            active ? "bg-white/15 text-amber-300" : "bg-white/5 text-blue-200/80"
+   843→          )}
+   844→        >
+   845→          <Icon className="h-4 w-4" aria-hidden="true" />
+   846→        </span>
+   847→        <span className="min-w-0 flex-1 truncate">{label}</span>
+   848→        {typeof badge === "number" && badge > 0 && (
+   849→          <span className="shrink-0 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-brand-navy">
+   850→            {badge}
+   851→          </span>
+   852→        )}
+   853→      </button>
+   854→    </li>
+   855→  );
+   856→}
+   857→

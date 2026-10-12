@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { guard, serverError, bad } from "@/lib/content/admin-api";
+import { guard, serverError, bad, audit } from "@/lib/content/admin-api";
 import { createHash, randomBytes } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
@@ -22,7 +22,7 @@ const MIME_MAP: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const form = await req.formData().catch(() => null);
@@ -48,6 +48,12 @@ export async function POST(req: NextRequest) {
     await mkdir(dir, { recursive: true });
     const name = `${Date.now().toString(36)}-${randomBytes(5).toString("hex")}${magic.slice(0, 4)}.${ext}`;
     await writeFile(path.join(dir, name), buf);
+
+    void audit(req, {
+      action: "upload",
+      entity: "upload",
+      label: `/uploads/${name} (${Math.round(file.size / 1024)} KB)`,
+    });
 
     return NextResponse.json(
       { success: true, url: `/uploads/${name}`, bytes: file.size, type: file.type },

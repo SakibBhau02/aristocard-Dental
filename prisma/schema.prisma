@@ -210,3 +210,36 @@ model PageBlock {
   dataJson  String   @default("{}")
   updatedAt DateTime @updatedAt
 }
+
+/* ------------------------------------------------------------------ */
+/*  Admin staff accounts — powers the admin panel login (#/admin)      */
+/*  Passwords: scrypt with per-user random salt ("scrypt:salt:hash").  */
+/*  Roles:    OWNER (full access incl. settings + staff management)    */
+/*            EDITOR (all content + engagement, read-only settings)    */
+/*            VIEWER (read-only dashboards)                            */
+/*  A separate legacy path (x-admin-code header / ADMIN_PASSCODE env)  */
+/*  remains for trusted automation and is treated as OWNER.            */
+/* ------------------------------------------------------------------ */
+model AdminUser {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  displayName  String
+  passwordHash String
+  role         String    @default("EDITOR") // OWNER | EDITOR | VIEWER
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+/* Immutable audit trail — one row per admin mutation/login event.     */
+model AdminActivity {
+  id         String   @id @default(cuid())
+  actor      String // username, or "automation" for passcode-header calls
+  actorLabel String?  // display name at the time of the event
+  role       String?  // role at the time of the event
+  action     String   // create | update | delete | reorder | login | logout | login-failed | settings | upload
+  entity     String   // doctors | blog | faqs | cases | services | pages | hero | settings | users | auth | upload
+  label      String?  // human summary (entity slug/name/title or message)
+  createdAt  DateTime @default(now())
+}

@@ -44,7 +44,7 @@ function sanitizeSettings(raw: Record<string, unknown>): Record<string, unknown>
 }
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const row = await db.pageBlock.findUnique({ where: { key: "settings" } });
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       create: { key: "settings", dataJson: JSON.stringify(merged) },
       update: { dataJson: JSON.stringify(merged) },
     });
-    return ok({ settings: merged }, "Site settings saved.");
+    return ok(req, { settings: merged }, "Site settings saved.");
   } catch (err) {
     return serverError("settings", err);
   }

@@ -79,7 +79,20 @@ export type HomeContent = {
   faq: SectionHead & { stillTitle?: string; stillTitleBn?: string };
 };
 
-export type TimelineItem = { title: string; titleBn?: string; description: string; descriptionBn?: string };
+export type TimelineItem = {
+  year: string;
+  icon: string;
+  title: string;
+  titleBn?: string;
+  description: string;
+  descriptionBn?: string;
+};
+
+export type StoryStatItem = {
+  value: string;
+  label: string;
+  labelBn?: string;
+};
 
 export type AboutContent = {
   eyebrow: string; eyebrowBn?: string;
@@ -88,6 +101,7 @@ export type AboutContent = {
   storyBadge: string; storyBadgeBn?: string;
   storyQuote: string; storyQuoteBn?: string;
   storyP2: string; storyP2Bn?: string;
+  storyStats: StoryStatItem[];
   missionEyebrow: string; missionEyebrowBn?: string;
   missionTitle: string; missionTitleBn?: string;
   missionHeading: string; missionHeadingBn?: string;
@@ -97,6 +111,7 @@ export type AboutContent = {
   journeyEyebrow: string; journeyEyebrowBn?: string;
   journeyTitle: string; journeyTitleBn?: string;
   timeline: TimelineItem[];
+  founderName: string; founderNameBn?: string;
   founderRole: string; founderRoleBn?: string;
   founderChipTitle: string; founderChipTitleBn?: string;
   founderChipNote: string; founderChipNoteBn?: string;
@@ -216,6 +231,16 @@ export function defaultHomeContent(): HomeContent {
   };
 }
 
+/* Journey timeline presentation defaults — year + icon per milestone.
+   Kept beside the defaults so blobs saved BEFORE these fields existed
+   heal per-index (arrays are replaced wholesale by the deep merge). */
+const TIMELINE_META = [
+  { year: "2019", icon: "Heart" },
+  { year: "2021", icon: "Microscope" },
+  { year: "2023", icon: "Sparkles" },
+  { year: "2025", icon: "Users" },
+] as const;
+
 export function defaultAboutContent(): AboutContent {
   const a = en.about;
   const ab = bn.about;
@@ -226,6 +251,11 @@ export function defaultAboutContent(): AboutContent {
     storyBadge: a.storyBadge, storyBadgeBn: ab.storyBadge,
     storyQuote: a.storyQuote, storyQuoteBn: ab.storyQuote,
     storyP2: a.storyP2, storyP2Bn: ab.storyP2,
+    storyStats: [
+      { value: "6+", label: a.storyStats[0].label, labelBn: ab.storyStats[0].label },
+      { value: "11", label: a.storyStats[1].label, labelBn: ab.storyStats[1].label },
+      { value: "4.9★", label: a.storyStats[2].label, labelBn: ab.storyStats[2].label },
+    ],
     missionEyebrow: a.missionEyebrow, missionEyebrowBn: ab.missionEyebrow,
     missionTitle: a.missionTitle, missionTitleBn: ab.missionTitle,
     missionHeading: a.missionHeading, missionHeadingBn: ab.missionHeading,
@@ -235,9 +265,13 @@ export function defaultAboutContent(): AboutContent {
     journeyEyebrow: a.journeyEyebrow, journeyEyebrowBn: ab.journeyEyebrow,
     journeyTitle: a.journeyTitle, journeyTitleBn: ab.journeyTitle,
     timeline: a.timeline.map((t, i) => ({
+      year: TIMELINE_META[i]?.year ?? "2024",
+      icon: TIMELINE_META[i]?.icon ?? "Sparkles",
       title: t.title, titleBn: ab.timeline[i]?.title,
       description: t.description, descriptionBn: ab.timeline[i]?.description,
     })),
+    founderName: "Dr. Shazia Khanam",
+    founderNameBn: "ডা. শাজিয়া খানম",
     founderRole: a.founderRole, founderRoleBn: ab.founderRole,
     founderChipTitle: a.founderChipTitle, founderChipTitleBn: ab.founderChipTitle,
     founderChipNote: a.founderChipNote, founderChipNoteBn: ab.founderChipNote,
@@ -256,6 +290,45 @@ export function defaultAboutContent(): AboutContent {
     specialistsDescription: a.specialistsDescription, specialistsDescriptionBn: ab.specialistsDescription,
     ctaTitle: a.ctaTitle, ctaTitleBn: ab.ctaTitle,
     ctaDescription: a.ctaDescription, ctaDescriptionBn: ab.ctaDescription,
+  };
+}
+
+/* Defensive healer for About blobs saved before a field existed.
+   deepMerge replaces ARRAYS wholesale, so an old blob's timeline items
+   keep lacking year/icon even after merging — refill per-index from
+   the defaults so the public bundle is always complete. */
+export function normalizeAboutContent(about: AboutContent): AboutContent {
+  const defaults = defaultAboutContent();
+  const obj = (v: unknown): Record<string, unknown> =>
+    v !== null && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  const timeline = (Array.isArray(about.timeline) ? about.timeline : defaults.timeline).map(
+    (t, i) => {
+      const raw = obj(t);
+      return {
+        year: str(raw.year) || defaults.timeline[i]?.year || "2024",
+        icon: str(raw.icon) || defaults.timeline[i]?.icon || "Sparkles",
+        title: str(raw.title),
+        titleBn: ostr(raw.titleBn),
+        description: str(raw.description),
+        descriptionBn: ostr(raw.descriptionBn),
+      };
+    }
+  );
+  const storyStats = Array.isArray(about.storyStats)
+    ? about.storyStats.map((s) => {
+        const raw = obj(s);
+        return {
+          value: str(raw.value),
+          label: str(raw.label),
+          labelBn: ostr(raw.labelBn),
+        };
+      })
+    : defaults.storyStats;
+  return {
+    ...about,
+    timeline,
+    storyStats,
+    founderName: str(about.founderName).trim() || defaults.founderName,
   };
 }
 

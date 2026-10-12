@@ -1,20 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Award,
-  BadgeCheck,
   CheckCircle2,
-  Heart,
-  HeartHandshake,
-  Microscope,
-  ShieldCheck,
-  Sparkles,
   Star,
   Stethoscope,
   Target,
   Telescope,
-  Users,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
@@ -35,12 +29,17 @@ import { Button } from "@/components/ui/button";
 /*  ABOUT PAGE (EN / বাংলা) — content served live from the CMS bundle  */
 /* ------------------------------------------------------------------ */
 
-const timelineMeta = [
-  { year: "2019", icon: "Heart" },
-  { year: "2021", icon: "Microscope" },
-  { year: "2023", icon: "Sparkles" },
-  { year: "2025", icon: "Users" },
-];
+/* Founder medallion initials, derived from the CMS English name.
+   Honorifics ("Dr.", "ডা.") are skipped so "Dr. Shazia Khanam" → "SK",
+   matching the legacy hardcoded badge. */
+function founderInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const real = words.filter((w) => !w.endsWith("."));
+  const base = real.length > 0 ? real : words;
+  const first = base[0]?.charAt(0) ?? "";
+  const second = base[1]?.charAt(0) ?? base[0]?.charAt(1) ?? "";
+  return (first + second).toUpperCase();
+}
 
 export function AboutPage() {
   const { navigate } = useRouter();
@@ -49,17 +48,73 @@ export function AboutPage() {
   const bn = lang === "bn";
   const t = d.about;
 
+  /* Founder's live doctor profile slug (Person url), when one matches. */
+  const founderDoctorSlug = doctors.find(
+    (doc) => doc.name === about.founderName
+  )?.slug;
+
+  /* SEO/AEO: AboutPage + founder Person + BreadcrumbList, built from the
+     LIVE CMS bundle (founder name/role, page description, doctor slug). */
+  const aboutJsonLd = useMemo(
+    () => [
+      {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "@id": "https://aristocratdentalcarebd.com/#/about#webpage",
+        url: "https://aristocratdentalcarebd.com/#/about",
+        name: `About ${settings.name}`,
+        description: about.description.replace("{site}", settings.name),
+        inLanguage: "en",
+        isPartOf: { "@id": "https://aristocratdentalcarebd.com/#website" },
+        mainEntity: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://aristocratdentalcarebd.com/#founder",
+        name: about.founderName,
+        jobTitle: about.founderRole,
+        worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+        ...(founderDoctorSlug
+          ? { url: `https://aristocratdentalcarebd.com/#/doctors/${founderDoctorSlug}` }
+          : {}),
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://aristocratdentalcarebd.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "About Us",
+            item: "https://aristocratdentalcarebd.com/#/about",
+          },
+        ],
+      },
+    ],
+    [about.description, about.founderName, about.founderRole, settings.name, founderDoctorSlug]
+  );
+
   usePageMeta({
     title: "About Us — Our Story, Mission & Values",
     description:
       "Welcome to Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka — combining art, medical science and compassion under the leadership of Dr. Shazia Khanam. 50,000+ happy patients.",
+    jsonLd: aboutJsonLd,
   });
 
-  const storyStats = [
-    { value: bn ? "৬+" : "6+", label: t.storyStats[0].label },
-    { value: bn ? "১১" : "11", label: t.storyStats[1].label },
-    { value: "4.9★", label: t.storyStats[2].label },
-  ];
+  /* Story stats live in the CMS (value + bilingual label); digits are
+     converted to Bangla numerals in বাংলা mode, matching the rest of
+     the page (e.g. the founder rating). */
+  const storyStats = about.storyStats.map((stat) => ({
+    value: bn ? toBnDigits(stat.value) : stat.value,
+    label: pickBn(stat.label, stat.labelBn, bn),
+  }));
 
   return (
     <>
@@ -88,10 +143,19 @@ export function AboutPage() {
                   <blockquote className="font-heading relative mt-8 text-2xl font-bold leading-snug text-white sm:text-[1.75rem]">
                     {pickBn(about.storyQuote, about.storyQuoteBn, bn)}
                   </blockquote>
-                  <div className="relative mt-10 grid grid-cols-3 gap-4">
-                    {storyStats.map((stat) => (
+                  {storyStats.length > 0 ? (
+                  <div
+                    className="relative mt-10 grid gap-4"
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.min(
+                        Math.max(storyStats.length, 1),
+                        4
+                      )}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {storyStats.map((stat, i) => (
                       <div
-                        key={stat.label}
+                        key={`${stat.label}-${i}`}
                         className="rounded-2xl bg-white/8 p-4 text-center ring-1 ring-white/12"
                       >
                         <span className="font-heading block text-2xl font-bold text-white">
@@ -103,6 +167,7 @@ export function AboutPage() {
                       </div>
                     ))}
                   </div>
+                  ) : null}
                 </div>
                 <div className="animate-float-soft absolute -right-3 -top-5 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-6">
                   <span className="flex items-center gap-2">
@@ -130,7 +195,9 @@ export function AboutPage() {
                 <Reveal delay={0.05}>
                   <p>
                     {t.storyP1a.replace("{site}", settings.name)}
-                    <strong className="text-brand-navy">{t.storyDoctor}</strong>
+                    <strong className="text-brand-navy">
+                      {pickBn(about.founderName, about.founderNameBn, bn)}
+                    </strong>
                     {t.storyP1b}
                   </p>
                 </Reveal>
@@ -198,6 +265,7 @@ export function AboutPage() {
       </section>
 
       {/* ============ TIMELINE ============ */}
+      {about.timeline.length > 0 ? (
       <section className="relative py-16 sm:py-20" aria-labelledby="timeline-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
@@ -210,35 +278,37 @@ export function AboutPage() {
               aria-hidden="true"
             />
             <ol className="space-y-10">
-              {timelineMeta.map((meta, i) => {
-                const item = about.timeline[i];
-                return (
-                  <li key={meta.year}>
-                    <Reveal delay={i * 0.06}>
-                      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                        <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
-                          {bn ? toBnDigits(meta.year) : meta.year}
+              {about.timeline.map((item, i) => (
+                <li key={`${item.year}-${i}`}>
+                  <Reveal delay={i * 0.06}>
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                      <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
+                        {bn ? toBnDigits(item.year) : item.year}
+                      </span>
+                      <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
+                        <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+                          {bn ? toBnDigits(item.year) : item.year}
                         </span>
-                        <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
-                          <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
-                            {bn ? toBnDigits(meta.year) : meta.year}
-                          </span>
-                          <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
-                            {item ? pickBn(item.title, item.titleBn, bn) : ""}
-                          </h3>
-                          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
-                            {item ? pickBn(item.description, item.descriptionBn, bn) : ""}
-                          </p>
-                        </div>
+                        <h3 className="font-heading mt-1 flex items-center gap-2 text-lg font-bold text-brand-navy sm:mt-0">
+                          <DynamicIcon
+                            name={item.icon}
+                            className="h-4.5 w-4.5 shrink-0 text-brand-blue"
+                          />
+                          {pickBn(item.title, item.titleBn, bn)}
+                        </h3>
+                        <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+                          {pickBn(item.description, item.descriptionBn, bn)}
+                        </p>
                       </div>
-                    </Reveal>
-                  </li>
-                );
-              })}
+                    </div>
+                  </Reveal>
+                </li>
+              ))}
             </ol>
           </div>
         </div>
       </section>
+      ) : null}
 
       {/* ============ FOUNDER SPOTLIGHT ============ */}
       <section className="relative bg-brand-navy py-16 sm:py-20" aria-labelledby="founder-heading">
@@ -250,10 +320,10 @@ export function AboutPage() {
                 <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-blue/30 to-transparent p-1.5">
                   <div className="flex aspect-[4/4.6] flex-col items-center justify-center rounded-[1.8rem] bg-white/5 p-8 text-center ring-1 ring-white/10">
                     <span className="inline-flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 font-heading text-4xl font-bold text-brand-navy shadow-2xl shadow-amber-500/30">
-                      SK
+                      {founderInitials(about.founderName)}
                     </span>
                     <h3 className="font-heading mt-6 text-2xl font-bold text-white">
-                      {bn ? "ডা. শাজিয়া খানম" : "Dr. Shazia Khanam"}
+                      {pickBn(about.founderName, about.founderNameBn, bn)}
                     </h3>
                     <p className="mt-1 text-sm font-medium text-blue-200">
                       {pickBn(about.founderRole, about.founderRoleBn, bn)}

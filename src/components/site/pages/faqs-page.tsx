@@ -117,19 +117,51 @@ export function FaqsPage() {
       }));
   }, [filtered, t.groupClinic, d.categories]);
 
+  /* AEO: FAQPage with speakable selectors + BreadcrumbList, over the live
+     CMS FAQs (plain-text answers — CMS content carries no HTML). */
+  const faqsJsonLd = useMemo(
+    () => [
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        url: "https://aristocratdentalcarebd.com/#/faqs",
+        mainEntity: allFaqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+        speakable: {
+          "@type": "SpeakableSpecification",
+          cssSelector: [".faq-question"],
+        },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://aristocratdentalcarebd.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "FAQs",
+            item: "https://aristocratdentalcarebd.com/#/faqs",
+          },
+        ],
+      },
+    ],
+    [allFaqs]
+  );
+
   usePageMeta({
     title: "Frequently Asked Questions — Dental FAQs | Aristocrat Dental Care",
     description:
       "56+ answered dental questions: braces duration, whitening safety, kids' first visit, emergencies, laser dentistry, booking & home care — answered by Aristocrat Dental Care specialists, Uttara.",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: allFaqs.map((f) => ({
-        "@type": "Question",
-        name: f.question,
-        acceptedAnswer: { "@type": "Answer", text: f.answer },
-      })),
-    },
+    jsonLd: faqsJsonLd,
   });
 
   const countText = t.searchResults.replace(
@@ -258,7 +290,7 @@ export function FaqsPage() {
                           value={`${g.key}-${i}`}
                           className="faq-row border-b border-blue-100/80 data-[state=open]:border-brand-blue/30"
                         >
-                          <AccordionTrigger className="py-4.5 text-left font-heading text-[15px] font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+                          <AccordionTrigger className="faq-question py-4.5 text-left font-heading text-[15px] font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
                             {bn && f.questionBn ? f.questionBn : f.question}
                           </AccordionTrigger>
                           <AccordionContent className="pb-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">

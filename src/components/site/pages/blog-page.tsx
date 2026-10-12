@@ -514,6 +514,95 @@ export function BlogDetailPage({ slug }: { slug: string }) {
     }
   };
 
+  /* AEO: full BlogPosting (headline, author Person w/ worksFor, dates,
+     image, keywords, wordCount, speakable) + BreadcrumbList, on top of the
+     baseline MedicalWebPage block — all from the live CMS post content. */
+  const postJsonLd = useMemo(() => {
+    if (!post) return undefined;
+    /* wordCount over the EN article body (quick answer + section bodies + lists) */
+    const bodyText = [
+      post.quickAnswer,
+      ...post.sections.flatMap((s) => [...s.body, ...(s.list ?? [])]),
+    ].join(" ");
+    const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
+    const postUrl = `https://aristocratdentalcarebd.com/#/blog/${post.slug}`;
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "MedicalWebPage",
+        headline: post.title,
+        description: post.excerpt,
+        datePublished: post.date,
+        dateModified: post.updated,
+        author: {
+          "@type": "Person",
+          name: post.author,
+          jobTitle: post.authorCredentials,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Aristocrat Dental Care & Orthodontic Center",
+        },
+        about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
+        lastReviewed: post.updated,
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.excerpt,
+        author: {
+          "@type": "Person",
+          name: post.author,
+          jobTitle: post.authorCredentials,
+          worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+        },
+        publisher: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+        datePublished: post.date,
+        dateModified: post.updated ?? post.date,
+        image: [
+          post.image
+            ? `https://aristocratdentalcarebd.com${post.image}`
+            : "https://aristocratdentalcarebd.com/og-image.png",
+        ],
+        mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+        url: postUrl,
+        inLanguage: "en",
+        keywords: post.tags.join(", "),
+        articleSection: post.category,
+        wordCount,
+        speakable: {
+          "@type": "SpeakableSpecification",
+          cssSelector: ["h1", ".quick-answer"],
+        },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://aristocratdentalcarebd.com/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: "https://aristocratdentalcarebd.com/#/blog",
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: post.title,
+            item: postUrl,
+          },
+        ],
+      },
+    ];
+  }, [post]);
+
   usePageMeta({
     title: post
       ? bn && post.titleBn
@@ -521,27 +610,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
         : post.title
       : "Article Not Found",
     description: post ? (bn && post.excerptBn ? post.excerptBn : post.excerpt) : undefined,
-    jsonLd: post
-      ? {
-          "@context": "https://schema.org",
-          "@type": "MedicalWebPage",
-          headline: post.title,
-          description: post.excerpt,
-          datePublished: post.date,
-          dateModified: post.updated,
-          author: {
-            "@type": "Person",
-            name: post.author,
-            jobTitle: post.authorCredentials,
-          },
-          publisher: {
-            "@type": "Organization",
-            name: "Aristocrat Dental Care & Orthodontic Center",
-          },
-          about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
-          lastReviewed: post.updated,
-        }
-      : undefined,
+    jsonLd: postJsonLd,
   });
 
   if (!post) return <NotFoundPage />;
@@ -661,7 +730,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
                 <Lightbulb className="h-4 w-4" aria-hidden="true" />
                 {t.quickAnswer}
               </span>
-              <p className="mt-3 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
+              <p className="quick-answer mt-3 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
                 {bn && post.quickAnswerBn ? post.quickAnswerBn : post.quickAnswer}
               </p>
             </div>

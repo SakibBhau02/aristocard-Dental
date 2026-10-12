@@ -14,7 +14,7 @@ import {
 /* ------------------------------------------------------------------ */
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.doctor.findMany({ orderBy: [{ sort: "asc" }, { createdAt: "asc" }] });
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -82,20 +82,20 @@ export async function POST(req: NextRequest) {
         if (clash && clash.id !== id) return bad("Another doctor already uses that slug.");
       }
       const row = await db.doctor.update({ where: { id }, data });
-      return ok({ doctor: mapDoctor(row as unknown as Record<string, unknown>), id }, "Doctor updated.");
+      return ok(req, { doctor: mapDoctor(row as unknown as Record<string, unknown>), id }, "Doctor updated.");
     }
 
     const clash = await db.doctor.findUnique({ where: { slug } });
     if (clash) return bad("A doctor with that slug already exists.");
     const row = await db.doctor.create({ data });
-    return ok({ doctor: mapDoctor(row as unknown as Record<string, unknown>), id: row.id }, "Doctor created.");
+    return ok(req, { doctor: mapDoctor(row as unknown as Record<string, unknown>), id: row.id }, "Doctor created.");
   } catch (err) {
     return serverError("doctors", err);
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -103,7 +103,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await db.doctor.findUnique({ where: { id } });
     if (!existing) return notFound("No doctor found with that id.");
     await db.doctor.delete({ where: { id } });
-    return ok({ id }, "Doctor deleted.");
+    return ok(req, { id }, "Doctor deleted.");
   } catch (err) {
     return serverError("doctors", err);
   }

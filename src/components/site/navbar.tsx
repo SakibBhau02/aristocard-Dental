@@ -113,7 +113,16 @@ export function Navbar() {
             className="group flex items-center gap-3"
             aria-label="Aristocrat Dental Care & Orthodontic Center — Home"
           >
-            <div className={cn("w-auto transition-all duration-500", scrolled ? "h-9" : "h-11")}>
+            {/* Logo — mobile-first: phones get a visibly larger mark than the
+                compact desktop bar (logo is 800×179 → width ≈ height × 4.47) */}
+            <div
+              className={cn(
+                "w-auto transition-all duration-500",
+                scrolled
+                  ? "h-10 min-[360px]:h-11 lg:h-9"
+                  : "h-10.5 min-[360px]:h-12 sm:h-13 lg:h-11"
+              )}
+            >
               <Image
                 src="/logo.png"
                 alt="Aristocrat Dental Care & Orthodontic Center logo"
@@ -167,7 +176,7 @@ export function Navbar() {
           </ul>
 
           {/* CTA + mobile lang toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Global search trigger (⌘K) — palette listens for the event */}
             <button
               type="button"
@@ -217,15 +226,34 @@ export function Navbar() {
                   e.preventDefault();
                   navigateAndClose("/appointment");
                 }}
-                className="inline-flex items-center gap-2"
+                /* no display class here — the Button's hidden/lg:inline-flex
+                   must stay the only display utilities (a child inline-flex
+                   concatenates after them via Slot and un-hides the CTA on
+                   mobile, which crushed the logo — see 13-d worklog) */
+                className="items-center gap-2"
               >
                 <CalendarCheck className="h-4 w-4" aria-hidden="true" />
                 {d.chrome.book}
               </a>
             </Button>
 
-            {/* Mobile language toggle */}
-            <LanguageToggle variant="compact" className="lg:hidden" />
+            {/* Book Appointment — icon-only CTA below lg (44px touch target) */}
+            <a
+              href="#/appointment"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateAndClose("/appointment");
+              }}
+              aria-label={d.chrome.book}
+              title={d.chrome.book}
+              className="btn-press btn-shine relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-blue text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue lg:hidden"
+            >
+              <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+            </a>
+
+            {/* Mobile language toggle — hidden on the smallest bars (kept in
+                the drawer) so the bigger logo never fights it for space */}
+            <LanguageToggle variant="compact" className="hidden sm:inline-flex lg:hidden" />
 
             {/* Mobile menu toggle */}
             <button
@@ -270,9 +298,9 @@ export function Navbar() {
                 <Image
                   src="/logo.png"
                   alt="Aristocrat Dental Care logo"
-                  width={160}
-                  height={36}
-                  className="h-9 w-auto object-contain"
+                  width={200}
+                  height={45}
+                  className="h-11 w-auto object-contain"
                 />
                 <button
                   type="button"

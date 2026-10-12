@@ -137,6 +137,25 @@ export function useRouter(): RouterState {
 /*  Dynamic page meta — SEO title / description per "page"            */
 /* ------------------------------------------------------------------ */
 
+const SITE_URL = "https://aristocratdentalcarebd.com";
+
+/* Create-or-update a <meta> tag (name= or property=) in <head>. */
+function upsertMeta(
+  attr: "name" | "property",
+  key: string,
+  content: string
+) {
+  let meta = document.querySelector<HTMLMetaElement>(
+    `meta[${attr}="${key}"]`
+  );
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attr, key);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", content);
+}
+
 export function usePageMeta(opts: {
   title: string;
   description?: string;
@@ -151,16 +170,20 @@ export function usePageMeta(opts: {
       : `${title} | Aristocrat Dental Care & Orthodontic Center`;
     document.title = fullTitle;
 
+    /* Social meta (og:* / twitter:*) stays in sync with the active hash
+       route so shared links unfurl the right page (AEO/GEO). The canonical
+       URL mirrors the sitemap convention: "/#<path>" (no hash on home),
+       query strings stripped. */
+    const path = (window.location.hash.replace(/^#/, "") || "/").split("?")[0];
+    const canonicalUrl =
+      path === "/" ? `${SITE_URL}/` : `${SITE_URL}/#${path}`;
+    upsertMeta("property", "og:title", fullTitle);
+    upsertMeta("property", "og:url", canonicalUrl);
+    upsertMeta("name", "twitter:title", fullTitle);
     if (description) {
-      let meta = document.querySelector<HTMLMetaElement>(
-        'meta[name="description"]'
-      );
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.name = "description";
-        document.head.appendChild(meta);
-      }
-      meta.content = description;
+      upsertMeta("name", "description", description);
+      upsertMeta("property", "og:description", description);
+      upsertMeta("name", "twitter:description", description);
     }
   }, [title, description]);
 

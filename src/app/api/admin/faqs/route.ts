@@ -12,7 +12,7 @@ import { guard, readJson, bad, notFound, serverError, ok, s, os, b, clamp, clamp
 /* ------------------------------------------------------------------ */
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.faq.findMany({ orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] });
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         ids.map((id, i) => db.faq.update({ where: { id }, data: { sort: i } }))
       );
       const rows = await db.faq.findMany({ orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] });
-      return ok({ faqs: rows.map((r) => mapFaq(r as unknown as Record<string, unknown>)) }, "FAQ order saved.");
+      return ok(req, { faqs: rows.map((r) => mapFaq(r as unknown as Record<string, unknown>)) }, "FAQ order saved.");
     }
 
     const id = os(body.id);
@@ -59,18 +59,18 @@ export async function POST(req: NextRequest) {
       const existing = await db.faq.findUnique({ where: { id } });
       if (!existing) return notFound("No FAQ found with that id.");
       const row = await db.faq.update({ where: { id }, data });
-      return ok({ faq: mapFaq(row as unknown as Record<string, unknown>), id }, "FAQ updated.");
+      return ok(req, { faq: mapFaq(row as unknown as Record<string, unknown>), id }, "FAQ updated.");
     }
     const max = await db.faq.aggregate({ _max: { sort: true } });
     const row = await db.faq.create({ data: { ...data, sort: (max._max.sort ?? -1) + 1 } });
-    return ok({ faq: mapFaq(row as unknown as Record<string, unknown>), id: row.id }, "FAQ created.");
+    return ok(req, { faq: mapFaq(row as unknown as Record<string, unknown>), id: row.id }, "FAQ created.");
   } catch (err) {
     return serverError("faqs", err);
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -78,7 +78,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await db.faq.findUnique({ where: { id } });
     if (!existing) return notFound("No FAQ found with that id.");
     await db.faq.delete({ where: { id } });
-    return ok({ id }, "FAQ deleted.");
+    return ok(req, { id }, "FAQ deleted.");
   } catch (err) {
     return serverError("faqs", err);
   }

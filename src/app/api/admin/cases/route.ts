@@ -16,7 +16,7 @@ import {
 const VALID_CATS = ["Cosmetic", "Orthodontics", "Restorative", "Preventive"] as const;
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.smileCase.findMany({ orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] });
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -81,19 +81,19 @@ export async function POST(req: NextRequest) {
         if (clash && clash.id !== id) return bad("Another case already uses that slug.");
       }
       const row = await db.smileCase.update({ where: { id }, data });
-      return ok({ case: mapCase(row as unknown as Record<string, unknown>), id }, "Case updated.");
+      return ok(req, { case: mapCase(row as unknown as Record<string, unknown>), id }, "Case updated.");
     }
     const clash = await db.smileCase.findUnique({ where: { slug } });
     if (clash) return bad("A case with that slug already exists.");
     const row = await db.smileCase.create({ data });
-    return ok({ case: mapCase(row as unknown as Record<string, unknown>), id: row.id }, "Case created.");
+    return ok(req, { case: mapCase(row as unknown as Record<string, unknown>), id: row.id }, "Case created.");
   } catch (err) {
     return serverError("cases", err);
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -101,7 +101,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await db.smileCase.findUnique({ where: { id } });
     if (!existing) return notFound("No case found with that id.");
     await db.smileCase.delete({ where: { id } });
-    return ok({ id }, "Case deleted.");
+    return ok(req, { id }, "Case deleted.");
   } catch (err) {
     return serverError("cases", err);
   }

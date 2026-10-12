@@ -25,3 +25,6 @@ User-agent: facebookexternalhit
 Allow: /
 
 Sitemap: https://aristocratdentalcarebd.com/sitemap.xml
+
+# LLM / answer-engine guidance (GEO): https://llmstxt.org
+# Curated site overview for AI crawlers: https://aristocratdentalcarebd.com/llms.txt

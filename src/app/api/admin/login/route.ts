@@ -4,33 +4,33 @@ import {
   ADMIN_SESSION_TTL_MS,
   createSessionToken,
   sessionCookieOptions,
-  verifyAdminCode,
+  type AdminRole,
+  type AdminSessionUser,
 } from "@/lib/admin-auth";
+import { verifyPassword } from "@/lib/password";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { db } from "@/lib/db";
+import { audit } from "@/lib/content/admin-api";
 
 /* ------------------------------------------------------------------ */
-/*  POST /api/admin/login — exchange passcode for a session cookie     */
-/*  Body: { code: string }                                             */
-/*  → 200 { success, expiresAt }  + Set-Cookie adc_admin_session       */
-/*  → 401 invalid passcode    → 429 rate-limited (5 attempts / 10 min) */
+/*  POST /api/admin/login — staff username + password login            */
+/*  Body: { username: string, password: string }                       */
+/*  → 200 { success, user: {username, displayName, role}, expiresAt }  */
+/*        + Set-Cookie adc_admin_session (httpOnly, 8h)                */
+/*  → 401 invalid credentials    → 429 rate-limited (5 / 10 min)       */
+/*  Every attempt (success AND failure) is written to the audit log.   */
 /* ------------------------------------------------------------------ */
+
+function roleFromDb(role: string): AdminRole {
+  return (["OWNER", "EDITOR", "VIEWER"] as const).includes(role as AdminRole)
+    ? (role as AdminRole)
+    : "VIEWER";
+}
 
 export async function POST(req: NextRequest) {
-  /* Brute-force guard FIRST (before body parse) — mirrors public routes. */
+  /* Brute-force guard FIRST (before body parse) — per IP and per
+     username, so one account can't be hammered from many IPs. */
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`admin-login:${ip}`, 5, 10 * 60 * 1000);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please wait a few minutes and try again, or call the clinic." },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.max(1, rl.retryAfterSec ?? 60)),
-          "Cache-Control": "no-store",
-        },
-      }
-    );
-  }
 
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -39,21 +39,72 @@ export async function POST(req: NextRequest) {
       { status: 400, headers: { "Cache-Control": "no-store" } }
     );
   }
-  const code =
-    typeof (body as Record<string, unknown>).code === "string"
-      ? ((body as { code: string }).code).trim()
-      : "";
+  const raw = body as Record<string, unknown>;
+  const username =
+    typeof raw.username === "string" ? raw.username.trim().toLowerCase() : "";
+  const password = typeof raw.password === "string" ? raw.password : "";
 
-  if (!verifyAdminCode(code)) {
+  const rlIp = checkRateLimit(`admin-login:${ip}`, 5, 10 * 60 * 1000);
+  const rlUser = username
+    ? checkRateLimit(`admin-login-user:${username}`, 5, 10 * 60 * 1000)
+    : { allowed: true as const, retryAfterSec: null };
+  if (!rlIp.allowed || !rlUser.allowed) {
+    const retry = Math.max(rlIp.retryAfterSec ?? 0, rlUser.retryAfterSec ?? 0, 60);
     return NextResponse.json(
-      { error: "Invalid admin passcode." },
-      { status: 401, headers: { "Cache-Control": "no-store" } }
+      { error: "Too many attempts. Please wait a few minutes and try again, or call the clinic." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, retry)),
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 
-  const { token, expiresAt } = createSessionToken();
+  const fail = (message: string) =>
+    NextResponse.json({ error: message }, { status: 401, headers: { "Cache-Control": "no-store" } });
+
+  if (!username || !password) {
+    return fail("Enter both your username and password.");
+  }
+
+  const user = await db.adminUser.findUnique({ where: { username } }).catch(() => null);
+  if (!user || !user.active || !verifyPassword(password, user.passwordHash)) {
+    void audit(req, {
+      action: "login-failed",
+      entity: "auth",
+      label: username,
+      actorName: username,
+      actorLabel: null,
+      actorRole: null,
+    });
+    return fail("Incorrect username or password.");
+  }
+
+  const sessionUser: AdminSessionUser = {
+    sub: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: roleFromDb(user.role),
+  };
+  const { token, expiresAt } = createSessionToken(sessionUser);
+
+  await db.adminUser
+    .update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
+    .catch(() => null);
+
+  void audit(req, {
+    action: "login",
+    entity: "auth",
+    label: `${sessionUser.displayName} (${sessionUser.role}) signed in`,
+    actorName: sessionUser.username,
+    actorLabel: sessionUser.displayName,
+    actorRole: sessionUser.role,
+  });
+
   const res = NextResponse.json(
-    { success: true, expiresAt },
+    { success: true, user: sessionUser, expiresAt },
     { headers: { "Cache-Control": "no-store" } }
   );
   res.cookies.set(

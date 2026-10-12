@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -57,66 +58,88 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   const { services, posts, cases, settings } = useBundle();
   const service = services.find((s) => s.slug === slug);
 
+  /* AEO: MedicalTherapy (baseline) + FAQPage (≥1 faq) + HowTo (≥2 process
+     steps) + BreadcrumbList — all built from the LIVE CMS service content. */
+  const serviceJsonLd = useMemo(() => {
+    if (!service) return undefined;
+    const blocks: Record<string, unknown>[] = [
+      {
+        "@context": "https://schema.org",
+        "@type": "MedicalTherapy",
+        name: service.name,
+        description: service.excerpt,
+        url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+        provider: {
+          "@type": "Dentist",
+          name: settings.name,
+          telephone: settings.phoneRaw,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Uttara",
+            addressRegion: "Dhaka",
+            addressCountry: "BD",
+          },
+        },
+      },
+    ];
+    if (service.faqs.length > 0) {
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: service.faqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      });
+    }
+    if (service.process.length >= 2) {
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: `${service.name} — Step-by-Step Process`,
+        description: service.excerpt,
+        step: service.process.map((p, i) => ({
+          "@type": "HowToStep",
+          position: Number(p.step) || i + 1,
+          name: p.title,
+          text: p.description,
+        })),
+      });
+    }
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://aristocratdentalcarebd.com/",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Services",
+          item: "https://aristocratdentalcarebd.com/#/services",
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: service.name,
+          item: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+        },
+      ],
+    });
+    return blocks;
+  }, [service, settings.name, settings.phoneRaw]);
+
   usePageMeta({
     title: service
       ? `${service.name} in Uttara, Dhaka — Aristocrat Dental Care`
       : "Service Not Found",
     description: service?.excerpt,
-    jsonLd: service
-      ? [
-          {
-            "@context": "https://schema.org",
-            "@type": "MedicalTherapy",
-            name: service.name,
-            description: service.excerpt,
-            url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
-            provider: {
-              "@type": "Dentist",
-              name: settings.name,
-              telephone: settings.phoneRaw,
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: "Uttara",
-                addressRegion: "Dhaka",
-                addressCountry: "BD",
-              },
-            },
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: service.faqs.map((f) => ({
-              "@type": "Question",
-              name: f.question,
-              acceptedAnswer: { "@type": "Answer", text: f.answer },
-            })),
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: "https://aristocratdentalcarebd.com/",
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Services",
-                item: "https://aristocratdentalcarebd.com/#/services",
-              },
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: service.name,
-                item: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
-              },
-            ],
-          },
-        ]
-      : undefined,
+    jsonLd: serviceJsonLd,
   });
 
   if (!service) return <NotFoundPage />;

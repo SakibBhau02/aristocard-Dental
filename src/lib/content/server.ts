@@ -14,6 +14,7 @@ import {
   buildHomeHeroSlides,
   defaultHomeContent,
   defaultAboutContent,
+  normalizeAboutContent,
   defaultSettings,
   type ContentBundle,
   type HomeContent,
@@ -74,9 +75,13 @@ export async function getContentBundle(): Promise<ContentBundle> {
       pageRows.find((p) => p.key === "home")?.dataJson,
       fallback.home
     );
-    const about = mergePageBlock<AboutContent>(
-      pageRows.find((p) => p.key === "about")?.dataJson,
-      fallback.about
+    /* normalizeAboutContent: the deep merge replaces arrays wholesale, so
+       blobs saved before timeline.year/icon existed must be healed per-item. */
+    const about = normalizeAboutContent(
+      mergePageBlock<AboutContent>(
+        pageRows.find((p) => p.key === "about")?.dataJson,
+        fallback.about
+      )
     );
     const settings = mergePageBlock<SiteSettings>(
       pageRows.find((p) => p.key === "settings")?.dataJson,

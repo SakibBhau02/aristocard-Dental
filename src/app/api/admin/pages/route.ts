@@ -12,7 +12,7 @@ import { guard, readJson, bad, serverError, ok, s, n } from "@/lib/content/admin
 const KEYS = ["home", "about"] as const;
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.pageBlock.findMany();
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       create: { key, dataJson: serialized },
       update: { dataJson: serialized },
     });
-    return ok({ key }, "Page content saved.");
+    return ok(req, { key }, "Page content saved.");
   } catch (err) {
     return serverError("pages", err);
   }

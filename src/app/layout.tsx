@@ -72,10 +72,10 @@ export const metadata: Metadata = {
       "Modern & well-equipped dental clinic in Uttara, Dhaka with advanced technology & strict sterilization. Book your appointment today.",
     images: [
       {
-        url: "/logo.png",
-        width: 800,
-        height: 179,
-        alt: "Aristocrat Dental Care & Orthodontic Center",
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aristocrat Dental Care & Orthodontic Center — modern dental clinic in Uttara, Dhaka",
       },
     ],
   },
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     title: "Aristocrat Dental Care & Orthodontic Center",
     description:
       "Modern & well-equipped dental clinic in Uttara, Dhaka. Excellence in Every Smile!",
-    images: ["/logo.png"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -105,6 +105,7 @@ export const metadata: Metadata = {
     "geo.placename": "Uttara, Dhaka",
     "geo.position": "23.874;90.379",
     ICBM: "23.874, 90.379",
+    "content-language": "en, bn",
   },
 };
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-auth";
+import { requireAdminRole } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { dhakaToday } from "@/lib/admin-csv";
 import { services } from "@/lib/data/services";
@@ -12,9 +12,8 @@ import { services } from "@/lib/data/services";
 
 export async function GET(req: NextRequest) {
   try {
-    if (!isAdminAuthorized(req)) {
-      return NextResponse.json({ error: "Invalid admin passcode." }, { status: 401 });
-    }
+    const denied = await requireAdminRole(req);
+    if (denied) return denied;
 
     const today = dhakaToday();
 

@@ -13,7 +13,7 @@ import { parseYouTubeId } from "@/lib/data/hero-media";
 /* ------------------------------------------------------------------ */
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.heroSlide.findMany({ where: { scope: "home" }, orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] });
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string") : [];
       if (ids.length === 0) return bad("A non-empty ids array is required.");
       await db.$transaction(ids.map((id, i) => db.heroSlide.update({ where: { id }, data: { sort: i } })));
-      return ok({}, "Slide order saved.");
+      return ok(req, {}, "Slide order saved.");
     }
 
     /* ---- slide create / update ---- */
@@ -61,18 +61,18 @@ export async function POST(req: NextRequest) {
       const existing = await db.heroSlide.findUnique({ where: { id } });
       if (!existing) return notFound("No slide found with that id.");
       const row = await db.heroSlide.update({ where: { id }, data });
-      return ok({ slide: mapHeroSlide(row as unknown as Record<string, unknown>) }, "Slide updated.");
+      return ok(req, { slide: mapHeroSlide(row as unknown as Record<string, unknown>) }, "Slide updated.");
     }
     const max = await db.heroSlide.aggregate({ where: { scope: "home" }, _max: { sort: true } });
     const row = await db.heroSlide.create({ data: { ...data, sort: (max._max.sort ?? -1) + 1 } });
-    return ok({ slide: mapHeroSlide(row as unknown as Record<string, unknown>), id: row.id }, "Slide added.");
+    return ok(req, { slide: mapHeroSlide(row as unknown as Record<string, unknown>), id: row.id }, "Slide added.");
   } catch (err) {
     return serverError("hero", err);
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -80,7 +80,7 @@ export async function DELETE(req: NextRequest) {
     const existing = await db.heroSlide.findUnique({ where: { id } });
     if (!existing) return notFound("No slide found with that id.");
     await db.heroSlide.delete({ where: { id } });
-    return ok({ id }, "Slide removed.");
+    return ok(req, { id }, "Slide removed.");
   } catch (err) {
     return serverError("hero", err);
   }

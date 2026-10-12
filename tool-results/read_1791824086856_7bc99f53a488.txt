@@ -1,0 +1,659 @@
+     1→"use client";
+     2→
+     3→import { motion } from "framer-motion";
+     4→import {
+     5→  ArrowLeft,
+     6→  ArrowRight,
+     7→  BadgeCheck,
+     8→  BookOpen,
+     9→  CalendarCheck,
+    10→  Camera,
+    11→  CheckCircle2,
+    12→  Clock3,
+    13→  Globe,
+    14→  HeartPulse,
+    15→  Info,
+    16→  Phone,
+    17→  Repeat,
+    18→  ShieldCheck,
+    19→  Sparkles,
+    20→  Syringe,
+    21→} from "lucide-react";
+    22→import {
+    23→  Accordion,
+    24→  AccordionContent,
+    25→  AccordionItem,
+    26→  AccordionTrigger,
+    27→} from "@/components/ui/accordion";
+    28→import { useRouter, usePageMeta } from "@/lib/router";
+    29→import { useLang, toBnDigits } from "@/lib/i18n";
+    30→import { useBundle } from "@/components/site/content-provider";
+    31→import { BeforeAfterSlider } from "@/components/site/before-after-slider";
+    32→import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
+    33→import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
+    34→import { ServiceCard, CtaBanner } from "@/components/site/shared";
+    35→import { ServiceReviews } from "@/components/site/service-reviews";
+    36→import { NotFoundPage } from "@/components/site/pages/not-found-page";
+    37→import { HeroBackdrop } from "@/components/site/hero-backdrop";
+    38→import type { HeroSlide } from "@/lib/data/hero-media";
+    39→import Image from "next/image";
+    40→
+    41→/* ------------------------------------------------------------------ */
+    42→/*  SERVICE DETAIL PAGE — deep, rich, conversion-focused (EN / বাংলা)   */
+    43→/* ------------------------------------------------------------------ */
+    44→
+    45→/* "8 min read" → "৮ মিনিট পাঠ" when Bangla (mirrors blog page) */
+    46→function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
+    47→  if (!bn) return readTime;
+    48→  const n = readTime.match(/\d+/)?.[0] ?? "";
+    49→  return n ? `${toBnDigits(n)} ${minRead}` : readTime;
+    50→}
+    51→
+    52→export function ServiceDetailPage({ slug }: { slug: string }) {
+    53→  const { navigate } = useRouter();
+    54→  const { lang, d } = useLang();
+    55→  const bn = lang === "bn";
+    56→  const t = d.serviceDetail;
+    57→  const { services, posts, cases, settings } = useBundle();
+    58→  const service = services.find((s) => s.slug === slug);
+    59→
+    60→  usePageMeta({
+    61→    title: service
+    62→      ? `${service.name} in Uttara, Dhaka — Aristocrat Dental Care`
+    63→      : "Service Not Found",
+    64→    description: service?.excerpt,
+    65→    jsonLd: service
+    66→      ? [
+    67→          {
+    68→            "@context": "https://schema.org",
+    69→            "@type": "MedicalTherapy",
+    70→            name: service.name,
+    71→            description: service.excerpt,
+    72→            url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+    73→            provider: {
+    74→              "@type": "Dentist",
+    75→              name: settings.name,
+    76→              telephone: settings.phoneRaw,
+    77→              address: {
+    78→                "@type": "PostalAddress",
+    79→                addressLocality: "Uttara",
+    80→                addressRegion: "Dhaka",
+    81→                addressCountry: "BD",
+    82→              },
+    83→            },
+    84→          },
+    85→          {
+    86→            "@context": "https://schema.org",
+    87→            "@type": "FAQPage",
+    88→            mainEntity: service.faqs.map((f) => ({
+    89→              "@type": "Question",
+    90→              name: f.question,
+    91→              acceptedAnswer: { "@type": "Answer", text: f.answer },
+    92→            })),
+    93→          },
+    94→          {
+    95→            "@context": "https://schema.org",
+    96→            "@type": "BreadcrumbList",
+    97→            itemListElement: [
+    98→              {
+    99→                "@type": "ListItem",
+   100→                position: 1,
+   101→                name: "Home",
+   102→                item: "https://aristocratdentalcarebd.com/",
+   103→              },
+   104→              {
+   105→                "@type": "ListItem",
+   106→                position: 2,
+   107→                name: "Services",
+   108→                item: "https://aristocratdentalcarebd.com/#/services",
+   109→              },
+   110→              {
+   111→                "@type": "ListItem",
+   112→                position: 3,
+   113→                name: service.name,
+   114→                item: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+   115→              },
+   116→            ],
+   117→          },
+   118→        ]
+   119→      : undefined,
+   120→  });
+   121→
+   122→  if (!service) return <NotFoundPage />;
+   123→
+   124→  const colors = categoryColors[service.category] ?? categoryColors.Restorative;
+   125→  const related = services.filter((s) => service.related.includes(s.slug));
+   126→  const serviceCases = cases.filter((c) => c.serviceSlug === service.slug);
+   127→  const relatedPosts = posts.filter((p) => (p.serviceRefs ?? []).includes(service.slug));
+   128→
+   129→  /* localized service naming */
+   130→  const name = bn && service.nameBn ? service.nameBn : service.name;
+   131→  const shortName = bn && service.shortNameBn ? service.shortNameBn : service.shortName;
+   132→  const tagline = bn && service.taglineBn ? service.taglineBn : service.tagline;
+   133→  const excerpt = bn && service.excerptBn ? service.excerptBn : service.excerpt;
+   134→  const categoryLabel = d.categories[service.category];
+   135→
+   136→  /* hero backdrop — the service's own image first, then supporting scenes */
+   137→  const heroSlides: HeroSlide[] = [
+   138→    ...(service.image
+   139→      ? [{ type: "image", src: service.image, alt: `${name} at Aristocrat Dental Care` } as HeroSlide]
+   140→      : []),
+   141→    { type: "image", src: "/images/hero-slide-care.png", alt: "Dentist consulting a smiling patient" },
+   142→    { type: "image", src: "/images/facility-tech.png", alt: "Advanced dental technology" },
+   143→  ];
+   144→
+   145→  return (
+   146→    <>
+   147→      {/* ============ HERO — centered over the service's own imagery ============ */}
+   148→      <section className="relative isolate overflow-hidden bg-brand-navy">
+   149→        <HeroBackdrop slides={heroSlides} overlay="deep" interval={7500} priority />
+   150→        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+   151→          {/* breadcrumb (centered) */}
+   152→          <nav aria-label="Breadcrumb" className="mb-8">
+   153→            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+   154→              <li>
+   155→                <a
+   156→                  href="#/"
+   157→                  onClick={(e) => {
+   158→                    e.preventDefault();
+   159→                    navigate("/");
+   160→                  }}
+   161→                  className="transition-colors hover:text-white"
+   162→                >
+   163→                  {d.chrome.nav.home}
+   164→                </a>
+   165→              </li>
+   166→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   167→              <li>
+   168→                <a
+   169→                  href="#/services"
+   170→                  onClick={(e) => {
+   171→                    e.preventDefault();
+   172→                    navigate("/services");
+   173→                  }}
+   174→                  className="transition-colors hover:text-white"
+   175→                >
+   176→                  {d.chrome.nav.services}
+   177→                </a>
+   178→              </li>
+   179→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   180→              <li className="font-medium text-white">{name}</li>
+   181→            </ol>
+   182→          </nav>
+   183→
+   184→          <motion.div
+   185→            initial={{ opacity: 0, y: 24 }}
+   186→            animate={{ opacity: 1, y: 0 }}
+   187→            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   188→          >
+   189→            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
+   190→              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+   191→              {t.accepting}
+   192→            </span>
+   193→            <h1 className="font-heading mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
+   194→              {name}
+   195→            </h1>
+   196→            <p className="font-heading mt-3 text-lg font-medium text-amber-300">
+   197→              {tagline}
+   198→            </p>
+   199→            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
+   200→              {excerpt}
+   201→            </p>
+   202→
+   203→            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+   204→              <button
+   205→                type="button"
+   206→                onClick={() => navigate(`/appointment?service=${service.slug}`)}
+   207→                className="btn-press btn-shine inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-amber-500/40"
+   208→              >
+   209→                <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   210→                {t.bookFor.replace("{service}", shortName)}
+   211→              </button>
+   212→              <a
+   213→                href={`tel:${settings.phoneRaw}`}
+   214→                className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
+   215→              >
+   216→                <Phone className="h-4.5 w-4.5" aria-hidden="true" />
+   217→                {t.callWith.replace("{phone}", settings.phone)}
+   218→              </a>
+   219→            </div>
+   220→
+   221→            {/* quick facts strip (glassy, centered) */}
+   222→            <dl className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3 rounded-[1.75rem] bg-white/8 px-6 py-4 ring-1 ring-white/15 backdrop-blur">
+   223→              <div className="flex items-center gap-2.5">
+   224→                <dt className="flex items-center gap-1.5 text-blue-200/80">
+   225→                  <Clock3 className="h-4 w-4" aria-hidden="true" />
+   226→                  {t.duration}
+   227→                </dt>
+   228→                <dd className="font-semibold text-white">{bn ? toBnDigits(service.duration) : service.duration}</dd>
+   229→              </div>
+   230→              <div className="hidden h-5 w-px bg-white/15 sm:block" aria-hidden="true" />
+   231→              <div className="flex items-center gap-2.5">
+   232→                <dt className="flex items-center gap-1.5 text-blue-200/80">
+   233→                  <Repeat className="h-4 w-4" aria-hidden="true" />
+   234→                  {t.longevity}
+   235→                </dt>
+   236→                <dd className="font-semibold text-white">{bn ? toBnDigits(service.longevity) : service.longevity}</dd>
+   237→              </div>
+   238→              <div className="hidden h-5 w-px bg-white/15 sm:block" aria-hidden="true" />
+   239→              <div className="flex items-center gap-2.5">
+   240→                <dt className="flex items-center gap-1.5 text-blue-200/80">
+   241→                  <Syringe className="h-4 w-4" aria-hidden="true" />
+   242→                  {t.comfort}
+   243→                </dt>
+   244→                <dd className="font-semibold text-white">{service.anesthesia}</dd>
+   245→              </div>
+   246→            </dl>
+   247→
+   248→            {/* category / verified / service icon */}
+   249→            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+   250→              <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+   251→                {t.categoryCare.replace("{category}", categoryLabel)}
+   252→              </span>
+   253→              <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300">
+   254→                <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+   255→                {t.verified}
+   256→              </span>
+   257→              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20">
+   258→                <DynamicIcon name={service.icon} className="h-6 w-6" />
+   259→              </span>
+   260→            </div>
+   261→          </motion.div>
+   262→        </div>
+   263→      </section>
+   264→
+   265→      {/* ============ OVERVIEW + IDEAL FOR ============ */}
+   266→      <section className="py-16 sm:py-20" aria-labelledby="overview-heading">
+   267→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   268→          <div className="grid gap-12 lg:grid-cols-[1.25fr_0.75fr]">
+   269→            <div>
+   270→              <SectionHeading
+   271→                align="left"
+   272→                eyebrow={t.overviewEyebrow}
+   273→                title={t.overviewTitle.replace("{service}", name)}
+   274→              />
+   275→              {bn && (
+   276→                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+   277→                  <Globe className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   278→                  {t.contentNote}
+   279→                </p>
+   280→              )}
+   281→              <div className="mt-8 space-y-5">
+   282→                {service.overview.map((para, i) => (
+   283→                  <Reveal key={i} delay={i * 0.06}>
+   284→                    <p className="text-[15px] leading-relaxed text-slate-600 sm:text-base">
+   285→                      {para}
+   286→                    </p>
+   287→                  </Reveal>
+   288→                ))}
+   289→              </div>
+   290→
+   291→              {/* ideal for */}
+   292→              <Reveal className="mt-10">
+   293→                <div className="rounded-3xl border border-blue-100/80 bg-ice p-7 sm:p-8">
+   294→                  <h3 className="flex items-center gap-2.5 font-heading text-lg font-bold text-brand-navy">
+   295→                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-brand-blue">
+   296→                      <Info className="h-4.5 w-4.5" aria-hidden="true" />
+   297→                    </span>
+   298→                    {t.idealTitle}
+   299→                  </h3>
+   300→                  <p className="mt-3 text-sm text-slate-600">
+   301→                    {t.idealText.replace("{service}", name)}
+   302→                  </p>
+   303→                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+   304→                    {service.ideal.map((item) => (
+   305→                      <li key={item} className="flex items-start gap-2.5 text-sm text-slate-700">
+   306→                        <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500" aria-hidden="true" />
+   307→                        {item}
+   308→                      </li>
+   309→                    ))}
+   310→                  </ul>
+   311→                </div>
+   312→              </Reveal>
+   313→            </div>
+   314→
+   315→            {/* safety sidebar */}
+   316→            <div>
+   317→              <Reveal delay={0.1}>
+   318→                <div className="sticky top-28 space-y-4">
+   319→                  <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
+   320→                    <h3 className="font-heading flex items-center gap-2 text-base font-bold text-brand-navy">
+   321→                      <ShieldCheck className="h-5 w-5 text-brand-blue" aria-hidden="true" />
+   322→                      {t.safetyTitle}
+   323→                    </h3>
+   324→                    <ul className="mt-4 space-y-3.5 text-sm text-slate-600">
+   325→                      {t.safetyList.map((item) => (
+   326→                        <li key={item} className="flex items-start gap-2.5">
+   327→                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   328→                          {item}
+   329→                        </li>
+   330→                      ))}
+   331→                    </ul>
+   332→                  </div>
+   333→
+   334→                  <div className="rounded-3xl bg-gradient-to-br from-amber-50 to-amber-100/50 p-6 ring-1 ring-amber-200/60">
+   335→                    <h3 className="flex items-center gap-2 font-heading text-base font-bold text-amber-800">
+   336→                      <HeartPulse className="h-5 w-5" aria-hidden="true" />
+   337→                      {t.anxiousTitle}
+   338→                    </h3>
+   339→                    <p className="mt-2.5 text-sm leading-relaxed text-amber-900/80">
+   340→                      {t.anxiousText}
+   341→                    </p>
+   342→                  </div>
+   343→                </div>
+   344→              </Reveal>
+   345→            </div>
+   346→          </div>
+   347→        </div>
+   348→      </section>
+   349→
+   350→      {/* ============ BENEFITS ============ */}
+   351→      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="benefits-heading">
+   352→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   353→          <SectionHeading
+   354→            eyebrow={t.benefitsEyebrow}
+   355→            title={
+   356→              <>
+   357→                {t.benefitsPre} <span className="gradient-text">{shortName}</span>
+   358→                {t.benefitsPost}
+   359→              </>
+   360→            }
+   361→            description={t.benefitsText.replace("{service}", name)}
+   362→          />
+   363→          <StaggerContainer className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+   364→            {service.benefits.map((benefit, i) => (
+   365→              <StaggerItem key={benefit.title}>
+   366→                <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
+   367→                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   368→                    <span className="font-heading text-sm font-bold">
+   369→                      {bn ? toBnDigits(String(i + 1).padStart(2, "0")) : String(i + 1).padStart(2, "0")}
+   370→                    </span>
+   371→                  </span>
+   372→                  <h3 className="font-heading mt-4 text-base font-bold text-brand-navy group-hover:text-brand-blue">
+   373→                    {benefit.title}
+   374→                  </h3>
+   375→                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+   376→                    {benefit.description}
+   377→                  </p>
+   378→                </div>
+   379→              </StaggerItem>
+   380→            ))}
+   381→          </StaggerContainer>
+   382→        </div>
+   383→      </section>
+   384→
+   385→      {/* ============ PROCESS ============ */}
+   386→      <section className="relative py-16 sm:py-20" aria-labelledby="process-heading">
+   387→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   388→          <SectionHeading
+   389→            eyebrow={t.processEyebrow}
+   390→            title={t.processTitle}
+   391→            description={t.processText}
+   392→          />
+   393→          <div className="relative mt-14">
+   394→            {/* connecting line */}
+   395→            <span
+   396→              className="absolute left-[27px] top-4 hidden h-[calc(100%-32px)] w-0.5 bg-gradient-to-b from-brand-blue via-brand-blue/40 to-transparent sm:block lg:left-1/2 lg:-translate-x-1/2"
+   397→              aria-hidden="true"
+   398→            />
+   399→            <ol className="space-y-10">
+   400→              {service.process.map((step, i) => (
+   401→                <li key={step.step}>
+   402→                  <Reveal delay={i * 0.05}>
+   403→                    <div
+   404→                      className={`relative flex flex-col gap-5 sm:flex-row sm:items-start ${
+   405→                        i % 2 === 1 ? "lg:flex-row-reverse" : ""
+   406→                      } lg:justify-between`}
+   407→                    >
+   408→                      {/* node */}
+   409→                      <span className="absolute left-0 top-1 hidden h-14 w-14 sm:flex lg:left-1/2 lg:-translate-x-1/2" aria-hidden="true">
+   410→                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy font-heading text-base font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white">
+   411→                          {bn ? toBnDigits(step.step) : step.step}
+   412→                        </span>
+   413→                      </span>
+   414→                      <div className={`sm:pl-[76px] lg:w-[46%] lg:pl-0 ${i % 2 === 1 ? "lg:pl-0" : ""}`}>
+   415→                        <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:p-7">
+   416→                          <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+   417→                            {t.step} {bn ? toBnDigits(step.step) : step.step}
+   418→                          </span>
+   419→                          <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
+   420→                            {step.title}
+   421→                          </h3>
+   422→                          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+   423→                            {step.description}
+   424→                          </p>
+   425→                        </div>
+   426→                      </div>
+   427→                      <div className="hidden lg:block lg:w-[46%]" aria-hidden="true" />
+   428→                    </div>
+   429→                  </Reveal>
+   430→                </li>
+   431→              ))}
+   432→            </ol>
+   433→          </div>
+   434→        </div>
+   435→      </section>
+   436→
+   437→      {/* ============ REAL RESULTS (gallery cross-link) ============ */}
+   438→      {serviceCases.length > 0 && (
+   439→        <section className="section-wash relative py-16 sm:py-20" aria-labelledby="service-gallery-heading">
+   440→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   441→            <SectionHeading
+   442→              eyebrow={t.galleryEyebrow}
+   443→              title={t.galleryTitle.replace("{service}", shortName)}
+   444→              description={t.galleryText}
+   445→            />
+   446→            <div className="mt-12 grid items-center gap-10 lg:grid-cols-2">
+   447→              {serviceCases.slice(0, 1).map((c) => (
+   448→                <Reveal key={c.id}>
+   449→                  <div className="relative mx-auto w-full max-w-md">
+   450→                    <BeforeAfterSlider
+   451→                      beforeSrc={c.beforeSrc}
+   452→                      afterSrc={c.afterSrc}
+   453→                      beforeAlt={c.beforeAlt}
+   454→                      afterAlt={c.afterAlt}
+   455→                    />
+   456→                    <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-navy px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+   457→                      <Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+   458→                      {c.treatment}
+   459→                    </span>
+   460→                  </div>
+   461→                </Reveal>
+   462→              ))}
+   463→              <Reveal delay={0.1}>
+   464→                {serviceCases.slice(0, 1).map((c) => (
+   465→                  <div key={c.id} className="lg:pl-4">
+   466→                    <h3 className="font-heading text-2xl font-bold leading-snug text-brand-navy text-balance">
+   467→                      {c.title}
+   468→                    </h3>
+   469→                    <p className="mt-4 text-[15px] leading-relaxed text-slate-600">
+   470→                      {c.result}
+   471→                    </p>
+   472→                    <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+   473→                      <div className="flex items-center gap-2 text-slate-500">
+   474→                        <dt className="font-semibold text-brand-navy">{c.patient}</dt>
+   475→                        <dd>• {bn ? toBnDigits(c.age) : c.age} {d.shared.yrs}</dd>
+   476→                      </div>
+   477→                      <div className="flex items-center gap-2 text-slate-500">
+   478→                        <Clock3 className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+   479→                        <dt className="sr-only">{t.galleryDuration}</dt>
+   480→                        <dd>{c.duration}</dd>
+   481→                      </div>
+   482→                    </dl>
+   483→                    <button
+   484→                      type="button"
+   485→                      onClick={() => navigate("/gallery")}
+   486→                      className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-lg hover:shadow-blue-500/30"
+   487→                    >
+   488→                      <Camera className="h-4 w-4" aria-hidden="true" />
+   489→                      {t.galleryCta}
+   490→                    </button>
+   491→                  </div>
+   492→                ))}
+   493→              </Reveal>
+   494→            </div>
+   495→          </div>
+   496→        </section>
+   497→      )}
+   498→
+   499→      {/* ============ FAQ ============ */}
+   500→      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="service-faq-heading">
+   501→        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+   502→          <SectionHeading
+   503→            eyebrow={t.faqEyebrow}
+   504→            title={t.faqTitle.replace("{service}", shortName)}
+   505→          />
+   506→          <Reveal className="mt-10">
+   507→            <Accordion type="single" collapsible className="w-full">
+   508→              {service.faqs.map((faq, i) => (
+   509→                <AccordionItem
+   510→                  key={faq.question}
+   511→                  value={`s-faq-${i}`}
+   512→                  className="border-b border-blue-100"
+   513→                >
+   514→                  <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
+   515→                    {faq.question}
+   516→                  </AccordionTrigger>
+   517→                  <AccordionContent className="pb-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+   518→                    {faq.answer}
+   519→                  </AccordionContent>
+   520→                </AccordionItem>
+   521→              ))}
+   522→            </Accordion>
+   523→          </Reveal>
+   524→
+   525→          <Reveal className="mt-8">
+   526→            <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-white p-6 text-center sm:flex-row sm:text-left">
+   527→              <p className="flex items-center gap-3 text-sm font-medium text-brand-navy">
+   528→                <Sparkles className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+   529→                {t.faqCta}
+   530→              </p>
+   531→              <a
+   532→                href={`tel:${settings.phoneRaw}`}
+   533→                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-brand-blue"
+   534→              >
+   535→                <Phone className="h-4 w-4" aria-hidden="true" />
+   536→                {settings.phone}
+   537→              </a>
+   538→            </div>
+   539→          </Reveal>
+   540→        </div>
+   541→      </section>
+   542→
+   543→      {/* ============ PATIENT REVIEWS (this treatment) ============ */}
+   544→      <ServiceReviews serviceSlug={service.slug} />
+   545→
+   546→      {/* ============ RELATED SERVICES ============ */}
+   547→      {related.length > 0 && (
+   548→        <section className="relative py-16 sm:py-20" aria-labelledby="related-heading">
+   549→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   550→            <div className="flex flex-wrap items-end justify-between gap-4">
+   551→              <SectionHeading
+   552→                align="left"
+   553→                eyebrow={t.relatedEyebrow}
+   554→                title={t.relatedTitle}
+   555→              />
+   556→              <Reveal>
+   557→                <a
+   558→                  href="#/services"
+   559→                  onClick={(e) => {
+   560→                    e.preventDefault();
+   561→                    navigate("/services");
+   562→                  }}
+   563→                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-semibold text-brand-blue transition-all duration-300 hover:bg-brand-blue hover:text-white"
+   564→                >
+   565→                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+   566→                  {t.allServices}
+   567→                </a>
+   568→              </Reveal>
+   569→            </div>
+   570→            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+   571→              {related.map((s, i) => (
+   572→                <ServiceCard key={s.slug} service={s} index={i} />
+   573→              ))}
+   574→            </div>
+   575→          </div>
+   576→        </section>
+   577→      )}
+   578→
+   579→      {/* ============ RECOMMENDED READING (blog cross-link) ============ */}
+   580→      {relatedPosts.length > 0 && (
+   581→        <section
+   582→          className="relative bg-ice py-16 sm:py-20"
+   583→          aria-labelledby="service-reading-heading"
+   584→        >
+   585→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   586→            <Reveal className="max-w-3xl">
+   587→              <h2
+   588→                id="service-reading-heading"
+   589→                className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue"
+   590→              >
+   591→                <BookOpen className="h-4 w-4" aria-hidden="true" />
+   592→                {d.shared.relatedReading}
+   593→              </h2>
+   594→              <p className="mt-2 text-sm text-slate-500 sm:text-base">
+   595→                {d.shared.relatedReadingSub}
+   596→              </p>
+   597→            </Reveal>
+   598→            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   599→              {relatedPosts.map((post, i) => {
+   600→                const postTitle = bn && post.titleBn ? post.titleBn : post.title;
+   601→                return (
+   602→                  <Reveal key={post.slug} delay={i * 0.06} className="h-full">
+   603→                    <a
+   604→                      href={`#/blog/${post.slug}`}
+   605→                      onClick={(e) => {
+   606→                        e.preventDefault();
+   607→                        navigate(`/blog/${post.slug}`);
+   608→                      }}
+   609→                      aria-label={`${d.blogPage.readMore}: ${postTitle}`}
+   610→                      className="group flex h-full items-center gap-4 rounded-2xl border border-blue-100/80 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   611→                    >
+   612→                      {post.image ? (
+   613→                        <span className="zoom-img relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100">
+   614→                          <Image
+   615→                            src={post.image}
+   616→                            alt={post.imageAlt ?? post.title}
+   617→                            width={128}
+   618→                            height={128}
+   619→                            className="h-full w-full object-cover"
+   620→                          />
+   621→                        </span>
+   622→                      ) : (
+   623→                        <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   624→                          <DynamicIcon name={service.icon} className="h-7 w-7" />
+   625→                        </span>
+   626→                      )}
+   627→                      <span className="min-w-0 flex-1">
+   628→                        <span className="block text-[10px] font-bold uppercase tracking-wider text-brand-blue">
+   629→                          {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+   630→                        </span>
+   631→                        <span className="font-heading mt-1 block line-clamp-2 text-sm font-bold leading-snug text-brand-navy transition-colors duration-300 group-hover:text-brand-blue">
+   632→                          {postTitle}
+   633→                        </span>
+   634→                        <span className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+   635→                          <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+   636→                          {localizeReadTime(post.readTime, bn, d.blogPage.minRead)}
+   637→                        </span>
+   638→                      </span>
+   639→                      <ArrowRight
+   640→                        className="h-4 w-4 shrink-0 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-brand-blue"
+   641→                        aria-hidden="true"
+   642→                      />
+   643→                    </a>
+   644→                  </Reveal>
+   645→                );
+   646→              })}
+   647→            </div>
+   648→          </div>
+   649→        </section>
+   650→      )}
+   651→
+   652→      <CtaBanner
+   653→        title={t.ctaTitle.replace("{service}", shortName)}
+   654→        description={t.ctaDescription.replace("{serviceFull}", name).replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : settings.hours)}
+   655→      />
+   656→    </>
+   657→  );
+   658→}
+   659→

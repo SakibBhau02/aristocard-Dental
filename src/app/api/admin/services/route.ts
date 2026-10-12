@@ -60,7 +60,7 @@ function sanitizeFaqs(v: unknown): { question: string; answer: string }[] | null
 }
 
 export async function GET(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const rows = await db.serviceContent.findMany();
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = guard(req);
+  const denied = await guard(req);
   if (denied) return denied;
   try {
     const body = await readJson(req);
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     const row = await db.serviceContent.upsert({ where: { slug }, create: { slug, ...data }, update: data });
     const merged = applyServiceOverlay(base, row as unknown as Record<string, unknown>);
-    return ok({ service: merged, slug }, "Service content saved.");
+    return ok(req, { service: merged, slug }, "Service content saved.");
   } catch (err) {
     return serverError("services", err);
   }

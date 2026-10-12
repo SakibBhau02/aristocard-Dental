@@ -4,15 +4,18 @@
 /*  About page editor (Content → About)                                 */
 /*  GET  /api/admin/pages → { home, about } (defaults merged)           */
 /*  POST /api/admin/pages { key: "about", data: <complete object> }     */
-/*  Groups: Page Head · Story · Mission & Vision · Journey (timeline)   */
-/*  · Founder · Values · Specialists + CTA. Empty Bangla twins are      */
-/*  pruned on save so the site falls back to English.                   */
+/*  Groups: Page Head · Story · Story stats · Mission & Vision ·        */
+/*  Journey (timeline years/icons/reorder) · Founder (name) · Values ·  */
+/*  Specialists + CTA. Empty Bangla twins are pruned on save so the     */
+/*  site falls back to English.                                         */
 /* ------------------------------------------------------------------ */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   BookOpenText,
   ChevronDown,
   Compass,
@@ -22,11 +25,13 @@ import {
   RefreshCw,
   Sparkles,
   Trash2,
+  TrendingUp,
   UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Collapsible,
   CollapsibleContent,
@@ -40,7 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useContent } from "@/components/site/content-provider";
-import type { AboutContent } from "@/lib/content/shared";
+import { normalizeAboutContent, type AboutContent } from "@/lib/content/shared";
 import {
   BilingualField,
   PanelHeader,
@@ -58,6 +63,8 @@ const VALUE_ICONS = [
   "HeartHandshake",
   "Sparkles",
   "Microscope",
+  "Heart",
+  "Users",
   "Smile",
   "Crown",
   "Gem",
@@ -70,11 +77,9 @@ const VALUE_ICONS = [
   "Scissors",
 ] as const;
 
-/* Timeline years are presentation literals paired by position on the
-   public page — surfaced here as read-only labels. */
-const TIMELINE_YEARS = ["2019", "2021", "2023", "2025"] as const;
-
-const MAX_TIMELINE = 4;
+const MIN_TIMELINE = 1;
+const MAX_TIMELINE = 8;
+const MAX_STORY_STATS = 4;
 const MAX_FOUNDER_ITEMS = 3;
 const MAX_VALUES = 4;
 
@@ -190,9 +195,11 @@ function MiniField({
 function RowRemoveButton({
   onClick,
   label,
+  disabled,
 }: {
   onClick: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <Button
@@ -202,10 +209,37 @@ function RowRemoveButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+      disabled={disabled}
+      className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30"
     >
       <Trash2 className="h-4 w-4" aria-hidden="true" />
     </Button>
+  );
+}
+
+/** Small ↑ / ↓ button (same affordance as the FAQs panel reorder). */
+function RowMoveButton({
+  onClick,
+  disabled,
+  label,
+  icon: Icon,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 ring-1 ring-blue-100 transition hover:bg-blue-50 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-30"
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+    </button>
   );
 }
 
@@ -253,7 +287,9 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
   const [saving, setSaving] = useState(false);
 
   /* Initial fetch (+ manual retry). The async IIFE keeps every setState
-     behind an await so the effect stays purely a subscription. */
+     behind an await so the effect stays purely a subscription.
+     normalizeAboutContent heals blobs saved before timeline.year/icon,
+     storyStats or founderName existed (arrays deep-merge wholesale). */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -264,8 +300,9 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
         return;
       }
       setLoadFailed(false);
-      setSnapshot(clone(data.about));
-      setForm(clone(data.about));
+      const about = normalizeAboutContent(data.about);
+      setSnapshot(clone(about));
+      setForm(clone(about));
     })();
     return () => {
       cancelled = true;
@@ -328,12 +365,65 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
   const addTimelineItem = () =>
     setForm((f) =>
       f && f.timeline.length < MAX_TIMELINE
-        ? { ...f, timeline: [...f.timeline, { title: "", description: "" }] }
+        ? {
+            ...f,
+            timeline: [
+              ...f.timeline,
+              {
+                year: String(new Date().getFullYear()),
+                icon: "Sparkles",
+                title: "",
+                description: "",
+              },
+            ],
+          }
         : f
     );
 
   const removeTimelineItem = (index: number) =>
-    setForm((f) => (f ? { ...f, timeline: f.timeline.filter((_, i) => i !== index) } : f));
+    setForm((f) =>
+      f && f.timeline.length > MIN_TIMELINE
+        ? { ...f, timeline: f.timeline.filter((_, i) => i !== index) }
+        : f
+    );
+
+  const moveTimelineItem = (index: number, dir: -1 | 1) =>
+    setForm((f) => {
+      if (!f) return f;
+      const target = index + dir;
+      if (target < 0 || target >= f.timeline.length) return f;
+      const next = [...f.timeline];
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...f, timeline: next };
+    });
+
+  /* ---- story stats ---- */
+  const setStoryStat = (
+    index: number,
+    patch: Partial<AboutContent["storyStats"][number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            storyStats: f.storyStats.map((s, i) =>
+              i === index ? { ...s, ...patch } : s
+            ),
+          }
+        : f
+    );
+
+  const addStoryStat = () =>
+    setForm((f) =>
+      f && f.storyStats.length < MAX_STORY_STATS
+        ? { ...f, storyStats: [...f.storyStats, { value: "", label: "" }] }
+        : f
+    );
+
+  const removeStoryStat = (index: number) =>
+    setForm((f) =>
+      f ? { ...f, storyStats: f.storyStats.filter((_, i) => i !== index) } : f
+    );
 
   /* ---- founder items ---- */
   const setFounderItem = (
@@ -483,6 +573,71 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
         />
       </FormSection>
 
+      {/* ============ STORY STATS ============ */}
+      <FormSection
+        icon={TrendingUp}
+        title="Story stats"
+        description="The number chips inside the story card (6+ / 11 / 4.9★)"
+        edited={groupDirty((a) => a.storyStats)}
+      >
+        <Hint>
+          Values containing digits automatically render in Bangla numerals on
+          the বাংলা site — enter them in English digits here.
+        </Hint>
+        <div className="space-y-3">
+          {form.storyStats.map((stat, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  Stat {i + 1}
+                </p>
+                <RowRemoveButton
+                  onClick={() => removeStoryStat(i)}
+                  label={`Remove stat ${i + 1}`}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[9rem_1fr]">
+                <MiniField label="Value">
+                  <Input
+                    value={stat.value}
+                    maxLength={12}
+                    placeholder="6+"
+                    onChange={(e) => setStoryStat(i, { value: e.target.value })}
+                    className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                  />
+                </MiniField>
+                <BilingualField
+                  label="Label"
+                  enValue={stat.label}
+                  bnValue={stat.labelBn}
+                  onEnChange={(v) => setStoryStat(i, { label: v })}
+                  onBnChange={(v) => setStoryStat(i, { labelBn: v })}
+                />
+              </div>
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={form.storyStats.length >= MAX_STORY_STATS}
+              onClick={addStoryStat}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add stat
+            </Button>
+            {form.storyStats.length >= MAX_STORY_STATS ? (
+              <Hint>The story card shows up to {MAX_STORY_STATS} stats side by side.</Hint>
+            ) : null}
+          </div>
+        </div>
+      </FormSection>
+
       {/* ============ MISSION & VISION ============ */}
       <FormSection
         icon={Compass}
@@ -551,7 +706,7 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
       <FormSection
         icon={Sparkles}
         title="Journey (Timeline)"
-        description="Section head and the four milestone cards"
+        description="Section head and the milestone cards — year, icon, order and count are all editable"
         edited={groupDirty((a) => [a.journeyEyebrow, a.journeyTitle, a.timeline])}
       >
         <BilingualField
@@ -568,19 +723,54 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
           onEnChange={(v) => set("journeyTitle", v)}
           onBnChange={(v) => set("journeyTitleBn", v)}
         />
-        <Hint>
-          Milestone years 2019 / 2021 / 2023 / 2025 auto-pair with the cards by position —
-          they are presentation labels, not editable text.
-        </Hint>
         <div className="space-y-3">
           {form.timeline.map((item, i) => (
             <div
               key={i}
               className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
             >
-              <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
-                {TIMELINE_YEARS[i] ?? `Milestone ${i + 1}`}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {item.year.trim() ? `Milestone · ${item.year}` : `Milestone ${i + 1}`}
+                </p>
+                <span className="flex items-center gap-1">
+                  <RowMoveButton
+                    onClick={() => moveTimelineItem(i, -1)}
+                    disabled={i === 0}
+                    label={`Move milestone ${i + 1} up`}
+                    icon={ArrowUp}
+                  />
+                  <RowMoveButton
+                    onClick={() => moveTimelineItem(i, 1)}
+                    disabled={i === form.timeline.length - 1}
+                    label={`Move milestone ${i + 1} down`}
+                    icon={ArrowDown}
+                  />
+                  <RowRemoveButton
+                    onClick={() => removeTimelineItem(i)}
+                    disabled={form.timeline.length <= MIN_TIMELINE}
+                    label={`Remove milestone ${i + 1}`}
+                  />
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[8rem_11rem]">
+                <MiniField label="Year">
+                  <Input
+                    value={item.year}
+                    maxLength={8}
+                    placeholder="2019"
+                    onChange={(e) => setTimelineItem(i, { year: e.target.value })}
+                    className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                  />
+                </MiniField>
+                <MiniField label="Icon">
+                  <IconSelect
+                    value={item.icon}
+                    onChange={(v) => setTimelineItem(i, { icon: v })}
+                    ariaLabel={`Milestone ${i + 1} icon`}
+                  />
+                </MiniField>
+              </div>
               <BilingualField
                 label="Title"
                 enValue={item.title}
@@ -597,12 +787,6 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
                 onEnChange={(v) => setTimelineItem(i, { description: v })}
                 onBnChange={(v) => setTimelineItem(i, { descriptionBn: v })}
               />
-              <div className="flex justify-end">
-                <RowRemoveButton
-                  onClick={() => removeTimelineItem(i)}
-                  label={`Remove milestone ${i + 1}`}
-                />
-              </div>
             </div>
           ))}
           <div>
@@ -618,8 +802,12 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
               Add milestone
             </Button>
             {form.timeline.length >= MAX_TIMELINE ? (
-              <Hint>Capped at {MAX_TIMELINE} milestones (one per year).</Hint>
+              <Hint>Capped at {MAX_TIMELINE} milestones.</Hint>
             ) : null}
+            <Hint>
+              At least {MIN_TIMELINE} milestone is required. New milestones
+              start at the current year with the Sparkles icon.
+            </Hint>
           </div>
         </div>
       </FormSection>
@@ -628,14 +816,26 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
       <FormSection
         icon={UserRound}
         title="Founder"
-        description="Role line, chip and the three credential items"
+        description="Name, role line, chip and the three credential items"
         edited={groupDirty((a) => [
+          a.founderName,
           a.founderRole,
           a.founderChipTitle,
           a.founderChipNote,
           a.founderItems,
         ])}
       >
+        <BilingualField
+          label="Founder name"
+          enValue={form.founderName}
+          bnValue={form.founderNameBn}
+          onEnChange={(v) => set("founderName", v)}
+          onBnChange={(v) => set("founderNameBn", v)}
+        />
+        <Hint>
+          The monogram on the founder card is derived from the English name
+          (honorifics like “Dr.” are skipped — “Dr. Shazia Khanam” → SK).
+        </Hint>
         <BilingualField
           label="Role"
           enValue={form.founderRole}

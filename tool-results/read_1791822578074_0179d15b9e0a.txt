@@ -1,0 +1,849 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  About page editor (Content → About)                                 */
+     5→/*  GET  /api/admin/pages → { home, about } (defaults merged)           */
+     6→/*  POST /api/admin/pages { key: "about", data: <complete object> }     */
+     7→/*  Groups: Page Head · Story · Mission & Vision · Journey (timeline)   */
+     8→/*  · Founder · Values · Specialists + CTA. Empty Bangla twins are      */
+     9→/*  pruned on save so the site falls back to English.                   */
+    10→/* ------------------------------------------------------------------ */
+    11→
+    12→import { useCallback, useEffect, useMemo, useState } from "react";
+    13→import type { LucideIcon } from "lucide-react";
+    14→import {
+    15→  AlertTriangle,
+    16→  BookOpenText,
+    17→  ChevronDown,
+    18→  Compass,
+    19→  HeartHandshake,
+    20→  Landmark,
+    21→  Plus,
+    22→  RefreshCw,
+    23→  Sparkles,
+    24→  Trash2,
+    25→  UserRound,
+    26→} from "lucide-react";
+    27→import { cn } from "@/lib/utils";
+    28→import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+    29→import { Button } from "@/components/ui/button";
+    30→import {
+    31→  Collapsible,
+    32→  CollapsibleContent,
+    33→  CollapsibleTrigger,
+    34→} from "@/components/ui/collapsible";
+    35→import {
+    36→  Select,
+    37→  SelectContent,
+    38→  SelectItem,
+    39→  SelectTrigger,
+    40→  SelectValue,
+    41→} from "@/components/ui/select";
+    42→import { useContent } from "@/components/site/content-provider";
+    43→import type { AboutContent } from "@/lib/content/shared";
+    44→import {
+    45→  BilingualField,
+    46→  PanelHeader,
+    47→  PanelSkeleton,
+    48→  SaveBar,
+    49→  useAdminFetch,
+    50→  useAdminToast,
+    51→  type PanelProps,
+    52→} from "../admin-shared";
+    53→
+    54→/* Icon keys that actually resolve in the site's icon-map. */
+    55→const VALUE_ICONS = [
+    56→  "BadgeCheck",
+    57→  "ShieldCheck",
+    58→  "HeartHandshake",
+    59→  "Sparkles",
+    60→  "Microscope",
+    61→  "Smile",
+    62→  "Crown",
+    63→  "Gem",
+    64→  "Zap",
+    65→  "Leaf",
+    66→  "Activity",
+    67→  "Baby",
+    68→  "Anchor",
+    69→  "Grid3x3",
+    70→  "Scissors",
+    71→] as const;
+    72→
+    73→/* Timeline years are presentation literals paired by position on the
+    74→   public page — surfaced here as read-only labels. */
+    75→const TIMELINE_YEARS = ["2019", "2021", "2023", "2025"] as const;
+    76→
+    77→const MAX_TIMELINE = 4;
+    78→const MAX_FOUNDER_ITEMS = 3;
+    79→const MAX_VALUES = 4;
+    80→
+    81→/* ------------------------------------------------------------------ */
+    82→/*  Local helpers                                                       */
+    83→/* ------------------------------------------------------------------ */
+    84→
+    85→function clone<T>(value: T): T {
+    86→  return JSON.parse(JSON.stringify(value)) as T;
+    87→}
+    88→
+    89→/** Drop empty optional Bangla twins (…Bn keys) so the site falls back to EN. */
+    90→function pruneBangla<T>(value: T): T {
+    91→  if (Array.isArray(value)) return value.map((item) => pruneBangla(item)) as unknown as T;
+    92→  if (value !== null && typeof value === "object") {
+    93→    const out: Record<string, unknown> = {};
+    94→    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+    95→      if (typeof v === "string" && v.trim() === "" && key.endsWith("Bn")) continue;
+    96→      out[key] = pruneBangla(v);
+    97→    }
+    98→    return out as T;
+    99→  }
+   100→  return value;
+   101→}
+   102→
+   103→function ErrorNote({ message }: { message: string }) {
+   104→  return (
+   105→    <Alert variant="destructive" className="rounded-2xl border-rose-200">
+   106→      <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+   107→      <AlertTitle>Something went wrong</AlertTitle>
+   108→      <AlertDescription>{message}</AlertDescription>
+   109→    </Alert>
+   110→  );
+   111→}
+   112→
+   113→/** Collapsible form group card with an "edited" dot in the header. */
+   114→function FormSection({
+   115→  icon: Icon,
+   116→  title,
+   117→  description,
+   118→  edited,
+   119→  defaultOpen = false,
+   120→  children,
+   121→}: {
+   122→  icon: LucideIcon;
+   123→  title: string;
+   124→  description?: string;
+   125→  edited?: boolean;
+   126→  defaultOpen?: boolean;
+   127→  children: React.ReactNode;
+   128→}) {
+   129→  const [open, setOpen] = useState(defaultOpen);
+   130→  return (
+   131→    <Collapsible
+   132→      open={open}
+   133→      onOpenChange={setOpen}
+   134→      className="overflow-hidden rounded-2xl border border-blue-100/70 bg-white shadow-sm"
+   135→    >
+   136→      <CollapsibleTrigger className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-blue-50/40 sm:px-5">
+   137→        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ice text-brand-navy ring-1 ring-blue-100">
+   138→          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   139→        </span>
+   140→        <span className="min-w-0 flex-1">
+   141→          <span className="font-heading block text-sm font-bold text-brand-navy">
+   142→            {title}
+   143→          </span>
+   144→          {description ? (
+   145→            <span className="mt-0.5 block truncate text-xs text-slate-400">{description}</span>
+   146→          ) : null}
+   147→        </span>
+   148→        {edited ? (
+   149→          <span
+   150→            title="This section has unsaved edits"
+   151→            className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.25)]"
+   152→          />
+   153→        ) : null}
+   154→        <ChevronDown
+   155→          aria-hidden="true"
+   156→          className={cn(
+   157→            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300",
+   158→            open && "rotate-180"
+   159→          )}
+   160→        />
+   161→      </CollapsibleTrigger>
+   162→      <CollapsibleContent className="border-t border-blue-100/70">
+   163→        <div className="space-y-4 px-4 py-5 sm:px-5">{children}</div>
+   164→      </CollapsibleContent>
+   165→    </Collapsible>
+   166→  );
+   167→}
+   168→
+   169→function Hint({ children }: { children: React.ReactNode }) {
+   170→  return <p className="-mt-1 text-xs leading-relaxed text-slate-400">{children}</p>;
+   171→}
+   172→
+   173→function MiniField({
+   174→  label,
+   175→  children,
+   176→}: {
+   177→  label: string;
+   178→  children: React.ReactNode;
+   179→}) {
+   180→  return (
+   181→    <label className="min-w-0 block">
+   182→      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   183→        {label}
+   184→      </span>
+   185→      {children}
+   186→    </label>
+   187→  );
+   188→}
+   189→
+   190→function RowRemoveButton({
+   191→  onClick,
+   192→  label,
+   193→}: {
+   194→  onClick: () => void;
+   195→  label: string;
+   196→}) {
+   197→  return (
+   198→    <Button
+   199→      type="button"
+   200→      variant="ghost"
+   201→      size="icon"
+   202→      onClick={onClick}
+   203→      aria-label={label}
+   204→      title={label}
+   205→      className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+   206→    >
+   207→      <Trash2 className="h-4 w-4" aria-hidden="true" />
+   208→    </Button>
+   209→  );
+   210→}
+   211→
+   212→function IconSelect({
+   213→  value,
+   214→  onChange,
+   215→  ariaLabel,
+   216→}: {
+   217→  value: string;
+   218→  onChange: (value: string) => void;
+   219→  ariaLabel: string;
+   220→}) {
+   221→  return (
+   222→    <Select value={value} onValueChange={onChange}>
+   223→      <SelectTrigger
+   224→        aria-label={ariaLabel}
+   225→        className="mt-1 h-9 w-full rounded-xl border-blue-100 bg-ice text-sm text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   226→      >
+   227→        <SelectValue placeholder="Pick an icon" />
+   228→      </SelectTrigger>
+   229→      <SelectContent className="rounded-xl border-blue-100">
+   230→        {VALUE_ICONS.map((key) => (
+   231→          <SelectItem key={key} value={key}>
+   232→            {key}
+   233→          </SelectItem>
+   234→        ))}
+   235→      </SelectContent>
+   236→    </Select>
+   237→  );
+   238→}
+   239→
+   240→/* ------------------------------------------------------------------ */
+   241→/*  Panel                                                               */
+   242→/* ------------------------------------------------------------------ */
+   243→
+   244→export function AboutPanel({ onSessionExpired }: PanelProps) {
+   245→  const { get, post, error, clearError } = useAdminFetch(onSessionExpired);
+   246→  const { ok, fail } = useAdminToast();
+   247→  const { refresh } = useContent();
+   248→
+   249→  const [snapshot, setSnapshot] = useState<AboutContent | null>(null);
+   250→  const [form, setForm] = useState<AboutContent | null>(null);
+   251→  const [loadFailed, setLoadFailed] = useState(false);
+   252→  const [loadTick, setLoadTick] = useState(0);
+   253→  const [saving, setSaving] = useState(false);
+   254→
+   255→  /* Initial fetch (+ manual retry). The async IIFE keeps every setState
+   256→     behind an await so the effect stays purely a subscription. */
+   257→  useEffect(() => {
+   258→    let cancelled = false;
+   259→    (async () => {
+   260→      const data = await get<{ about: AboutContent }>("/api/admin/pages");
+   261→      if (cancelled) return;
+   262→      if (!data) {
+   263→        setLoadFailed(true);
+   264→        return;
+   265→      }
+   266→      setLoadFailed(false);
+   267→      setSnapshot(clone(data.about));
+   268→      setForm(clone(data.about));
+   269→    })();
+   270→    return () => {
+   271→      cancelled = true;
+   272→    };
+   273→  }, [get, loadTick]);
+   274→
+   275→  const dirty = useMemo(
+   276→    () => (snapshot && form ? JSON.stringify(form) !== JSON.stringify(snapshot) : false),
+   277→    [snapshot, form]
+   278→  );
+   279→
+   280→  const groupDirty = useCallback(
+   281→    (pick: (a: AboutContent) => unknown) =>
+   282→      snapshot && form ? JSON.stringify(pick(form)) !== JSON.stringify(pick(snapshot)) : false,
+   283→    [snapshot, form]
+   284→  );
+   285→
+   286→  async function save() {
+   287→    if (!form || saving) return;
+   288→    setSaving(true);
+   289→    const payload = pruneBangla(form);
+   290→    const res = await post<{ error?: string }>("/api/admin/pages", {
+   291→      key: "about",
+   292→      data: payload,
+   293→    });
+   294→    setSaving(false);
+   295→    if (res.ok) {
+   296→      setSnapshot(payload);
+   297→      setForm(clone(payload));
+   298→      ok("About page saved", "The live site now shows your changes.");
+   299→      await refresh();
+   300→    } else {
+   301→      fail("Could not save the about page", res.data?.error ?? "Please try again.");
+   302→    }
+   303→  }
+   304→
+   305→  function reset() {
+   306→    if (snapshot) setForm(clone(snapshot));
+   307→    clearError();
+   308→  }
+   309→
+   310→  /* ---- generic field setter ---- */
+   311→  const set = <K extends keyof AboutContent>(key: K, value: AboutContent[K]) =>
+   312→    setForm((f) => (f ? { ...f, [key]: value } : f));
+   313→
+   314→  /* ---- timeline ---- */
+   315→  const setTimelineItem = (
+   316→    index: number,
+   317→    patch: Partial<AboutContent["timeline"][number]>
+   318→  ) =>
+   319→    setForm((f) =>
+   320→      f
+   321→        ? {
+   322→            ...f,
+   323→            timeline: f.timeline.map((t, i) => (i === index ? { ...t, ...patch } : t)),
+   324→          }
+   325→        : f
+   326→    );
+   327→
+   328→  const addTimelineItem = () =>
+   329→    setForm((f) =>
+   330→      f && f.timeline.length < MAX_TIMELINE
+   331→        ? { ...f, timeline: [...f.timeline, { title: "", description: "" }] }
+   332→        : f
+   333→    );
+   334→
+   335→  const removeTimelineItem = (index: number) =>
+   336→    setForm((f) => (f ? { ...f, timeline: f.timeline.filter((_, i) => i !== index) } : f));
+   337→
+   338→  /* ---- founder items ---- */
+   339→  const setFounderItem = (
+   340→    index: number,
+   341→    patch: Partial<AboutContent["founderItems"][number]>
+   342→  ) =>
+   343→    setForm((f) =>
+   344→      f
+   345→        ? {
+   346→            ...f,
+   347→            founderItems: f.founderItems.map((item, i) =>
+   348→              i === index ? { ...item, ...patch } : item
+   349→            ),
+   350→          }
+   351→        : f
+   352→    );
+   353→
+   354→  const addFounderItem = () =>
+   355→    setForm((f) =>
+   356→      f && f.founderItems.length < MAX_FOUNDER_ITEMS
+   357→        ? { ...f, founderItems: [...f.founderItems, { title: "", text: "" }] }
+   358→        : f
+   359→    );
+   360→
+   361→  const removeFounderItem = (index: number) =>
+   362→    setForm((f) => (f ? { ...f, founderItems: f.founderItems.filter((_, i) => i !== index) } : f));
+   363→
+   364→  /* ---- values ---- */
+   365→  const setValue = (index: number, patch: Partial<AboutContent["values"][number]>) =>
+   366→    setForm((f) =>
+   367→      f
+   368→        ? { ...f, values: f.values.map((v, i) => (i === index ? { ...v, ...patch } : v)) }
+   369→        : f
+   370→    );
+   371→
+   372→  const addValue = () =>
+   373→    setForm((f) =>
+   374→      f && f.values.length < MAX_VALUES
+   375→        ? { ...f, values: [...f.values, { icon: "BadgeCheck", title: "", description: "" }] }
+   376→        : f
+   377→    );
+   378→
+   379→  const removeValue = (index: number) =>
+   380→    setForm((f) => (f ? { ...f, values: f.values.filter((_, i) => i !== index) } : f));
+   381→
+   382→  /* ---- render ---- */
+   383→
+   384→  if (!snapshot || !form) {
+   385→    if (loadFailed) {
+   386→      return (
+   387→        <div className="space-y-4">
+   388→          <PanelHeader title="About Page Content" />
+   389→          <ErrorNote message={error ?? "Could not load the about page content."} />
+   390→          <div>
+   391→            <Button
+   392→              onClick={() => {
+   393→                setLoadFailed(false);
+   394→                clearError();
+   395→                setLoadTick((t) => t + 1);
+   396→              }}
+   397→              variant="outline"
+   398→              size="sm"
+   399→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   400→            >
+   401→              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+   402→              Try again
+   403→            </Button>
+   404→          </div>
+   405→        </div>
+   406→      );
+   407→    }
+   408→    return <PanelSkeleton />;
+   409→  }
+   410→
+   411→  return (
+   412→    <div className="space-y-4">
+   413→      <PanelHeader
+   414→        title="About Page Content"
+   415→        description="Story, mission & vision, journey timeline, founder, values and the closing CTA — saves go live instantly."
+   416→      />
+   417→      {error ? <ErrorNote message={error} /> : null}
+   418→
+   419→      {/* ============ PAGE HEAD ============ */}
+   420→      <FormSection
+   421→        icon={Landmark}
+   422→        title="Page Head"
+   423→        description="Eyebrow, main title and intro paragraph"
+   424→        edited={groupDirty((a) => [a.eyebrow, a.title, a.description])}
+   425→        defaultOpen
+   426→      >
+   427→        <BilingualField
+   428→          label="Eyebrow"
+   429→          enValue={form.eyebrow}
+   430→          bnValue={form.eyebrowBn}
+   431→          onEnChange={(v) => set("eyebrow", v)}
+   432→          onBnChange={(v) => set("eyebrowBn", v)}
+   433→        />
+   434→        <BilingualField
+   435→          label="Title"
+   436→          enValue={form.title}
+   437→          bnValue={form.titleBn}
+   438→          onEnChange={(v) => set("title", v)}
+   439→          onBnChange={(v) => set("titleBn", v)}
+   440→        />
+   441→        <BilingualField
+   442→          label="Description"
+   443→          textarea
+   444→          rows={4}
+   445→          enValue={form.description}
+   446→          bnValue={form.descriptionBn}
+   447→          onEnChange={(v) => set("description", v)}
+   448→          onBnChange={(v) => set("descriptionBn", v)}
+   449→        />
+   450→      </FormSection>
+   451→
+   452→      {/* ============ STORY ============ */}
+   453→      <FormSection
+   454→        icon={BookOpenText}
+   455→        title="Story"
+   456→        description="Founding-year badge, pull-quote and second paragraph"
+   457→        edited={groupDirty((a) => [a.storyBadge, a.storyQuote, a.storyP2])}
+   458→      >
+   459→        <BilingualField
+   460→          label="Story badge"
+   461→          enValue={form.storyBadge}
+   462→          bnValue={form.storyBadgeBn}
+   463→          onEnChange={(v) => set("storyBadge", v)}
+   464→          onBnChange={(v) => set("storyBadgeBn", v)}
+   465→        />
+   466→        <BilingualField
+   467→          label="Pull quote"
+   468→          textarea
+   469→          rows={3}
+   470→          enValue={form.storyQuote}
+   471→          bnValue={form.storyQuoteBn}
+   472→          onEnChange={(v) => set("storyQuote", v)}
+   473→          onBnChange={(v) => set("storyQuoteBn", v)}
+   474→        />
+   475→        <BilingualField
+   476→          label="Second paragraph"
+   477→          textarea
+   478→          rows={4}
+   479→          enValue={form.storyP2}
+   480→          bnValue={form.storyP2Bn}
+   481→          onEnChange={(v) => set("storyP2", v)}
+   482→          onBnChange={(v) => set("storyP2Bn", v)}
+   483→        />
+   484→      </FormSection>
+   485→
+   486→      {/* ============ MISSION & VISION ============ */}
+   487→      <FormSection
+   488→        icon={Compass}
+   489→        title="Mission & Vision"
+   490→        description="Eyebrow, section title and both cards"
+   491→        edited={groupDirty((a) => [
+   492→          a.missionEyebrow,
+   493→          a.missionTitle,
+   494→          a.missionHeading,
+   495→          a.missionText,
+   496→          a.visionHeading,
+   497→          a.visionText,
+   498→        ])}
+   499→      >
+   500→        <div className="grid gap-4 sm:grid-cols-2">
+   501→          <BilingualField
+   502→            label="Eyebrow"
+   503→            enValue={form.missionEyebrow}
+   504→            bnValue={form.missionEyebrowBn}
+   505→            onEnChange={(v) => set("missionEyebrow", v)}
+   506→            onBnChange={(v) => set("missionEyebrowBn", v)}
+   507→          />
+   508→          <BilingualField
+   509→            label="Section title"
+   510→            enValue={form.missionTitle}
+   511→            bnValue={form.missionTitleBn}
+   512→            onEnChange={(v) => set("missionTitle", v)}
+   513→            onBnChange={(v) => set("missionTitleBn", v)}
+   514→          />
+   515→        </div>
+   516→        <BilingualField
+   517→          label="Mission card heading"
+   518→          enValue={form.missionHeading}
+   519→          bnValue={form.missionHeadingBn}
+   520→          onEnChange={(v) => set("missionHeading", v)}
+   521→          onBnChange={(v) => set("missionHeadingBn", v)}
+   522→        />
+   523→        <BilingualField
+   524→          label="Mission text"
+   525→          textarea
+   526→          rows={5}
+   527→          enValue={form.missionText}
+   528→          bnValue={form.missionTextBn}
+   529→          onEnChange={(v) => set("missionText", v)}
+   530→          onBnChange={(v) => set("missionTextBn", v)}
+   531→        />
+   532→        <BilingualField
+   533→          label="Vision card heading"
+   534→          enValue={form.visionHeading}
+   535→          bnValue={form.visionHeadingBn}
+   536→          onEnChange={(v) => set("visionHeading", v)}
+   537→          onBnChange={(v) => set("visionHeadingBn", v)}
+   538→        />
+   539→        <BilingualField
+   540→          label="Vision text"
+   541→          textarea
+   542→          rows={5}
+   543→          enValue={form.visionText}
+   544→          bnValue={form.visionTextBn}
+   545→          onEnChange={(v) => set("visionText", v)}
+   546→          onBnChange={(v) => set("visionTextBn", v)}
+   547→        />
+   548→      </FormSection>
+   549→
+   550→      {/* ============ JOURNEY ============ */}
+   551→      <FormSection
+   552→        icon={Sparkles}
+   553→        title="Journey (Timeline)"
+   554→        description="Section head and the four milestone cards"
+   555→        edited={groupDirty((a) => [a.journeyEyebrow, a.journeyTitle, a.timeline])}
+   556→      >
+   557→        <BilingualField
+   558→          label="Eyebrow"
+   559→          enValue={form.journeyEyebrow}
+   560→          bnValue={form.journeyEyebrowBn}
+   561→          onEnChange={(v) => set("journeyEyebrow", v)}
+   562→          onBnChange={(v) => set("journeyEyebrowBn", v)}
+   563→        />
+   564→        <BilingualField
+   565→          label="Section title"
+   566→          enValue={form.journeyTitle}
+   567→          bnValue={form.journeyTitleBn}
+   568→          onEnChange={(v) => set("journeyTitle", v)}
+   569→          onBnChange={(v) => set("journeyTitleBn", v)}
+   570→        />
+   571→        <Hint>
+   572→          Milestone years 2019 / 2021 / 2023 / 2025 auto-pair with the cards by position —
+   573→          they are presentation labels, not editable text.
+   574→        </Hint>
+   575→        <div className="space-y-3">
+   576→          {form.timeline.map((item, i) => (
+   577→            <div
+   578→              key={i}
+   579→              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+   580→            >
+   581→              <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+   582→                {TIMELINE_YEARS[i] ?? `Milestone ${i + 1}`}
+   583→              </p>
+   584→              <BilingualField
+   585→                label="Title"
+   586→                enValue={item.title}
+   587→                bnValue={item.titleBn}
+   588→                onEnChange={(v) => setTimelineItem(i, { title: v })}
+   589→                onBnChange={(v) => setTimelineItem(i, { titleBn: v })}
+   590→              />
+   591→              <BilingualField
+   592→                label="Description"
+   593→                textarea
+   594→                rows={3}
+   595→                enValue={item.description}
+   596→                bnValue={item.descriptionBn}
+   597→                onEnChange={(v) => setTimelineItem(i, { description: v })}
+   598→                onBnChange={(v) => setTimelineItem(i, { descriptionBn: v })}
+   599→              />
+   600→              <div className="flex justify-end">
+   601→                <RowRemoveButton
+   602→                  onClick={() => removeTimelineItem(i)}
+   603→                  label={`Remove milestone ${i + 1}`}
+   604→                />
+   605→              </div>
+   606→            </div>
+   607→          ))}
+   608→          <div>
+   609→            <Button
+   610→              type="button"
+   611→              variant="outline"
+   612→              size="sm"
+   613→              disabled={form.timeline.length >= MAX_TIMELINE}
+   614→              onClick={addTimelineItem}
+   615→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   616→            >
+   617→              <Plus className="h-4 w-4" aria-hidden="true" />
+   618→              Add milestone
+   619→            </Button>
+   620→            {form.timeline.length >= MAX_TIMELINE ? (
+   621→              <Hint>Capped at {MAX_TIMELINE} milestones (one per year).</Hint>
+   622→            ) : null}
+   623→          </div>
+   624→        </div>
+   625→      </FormSection>
+   626→
+   627→      {/* ============ FOUNDER ============ */}
+   628→      <FormSection
+   629→        icon={UserRound}
+   630→        title="Founder"
+   631→        description="Role line, chip and the three credential items"
+   632→        edited={groupDirty((a) => [
+   633→          a.founderRole,
+   634→          a.founderChipTitle,
+   635→          a.founderChipNote,
+   636→          a.founderItems,
+   637→        ])}
+   638→      >
+   639→        <BilingualField
+   640→          label="Role"
+   641→          enValue={form.founderRole}
+   642→          bnValue={form.founderRoleBn}
+   643→          onEnChange={(v) => set("founderRole", v)}
+   644→          onBnChange={(v) => set("founderRoleBn", v)}
+   645→        />
+   646→        <div className="grid gap-4 sm:grid-cols-2">
+   647→          <BilingualField
+   648→            label="Chip title"
+   649→            enValue={form.founderChipTitle}
+   650→            bnValue={form.founderChipTitleBn}
+   651→            onEnChange={(v) => set("founderChipTitle", v)}
+   652→            onBnChange={(v) => set("founderChipTitleBn", v)}
+   653→          />
+   654→          <BilingualField
+   655→            label="Chip note"
+   656→            enValue={form.founderChipNote}
+   657→            bnValue={form.founderChipNoteBn}
+   658→            onEnChange={(v) => set("founderChipNote", v)}
+   659→            onBnChange={(v) => set("founderChipNoteBn", v)}
+   660→          />
+   661→        </div>
+   662→        <div className="space-y-3">
+   663→          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+   664→            Founder highlights
+   665→          </p>
+   666→          {form.founderItems.map((item, i) => (
+   667→            <div
+   668→              key={i}
+   669→              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+   670→            >
+   671→              <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+   672→                Highlight {i + 1}
+   673→              </p>
+   674→              <BilingualField
+   675→                label="Title"
+   676→                enValue={item.title}
+   677→                bnValue={item.titleBn}
+   678→                onEnChange={(v) => setFounderItem(i, { title: v })}
+   679→                onBnChange={(v) => setFounderItem(i, { titleBn: v })}
+   680→              />
+   681→              <BilingualField
+   682→                label="Text"
+   683→                textarea
+   684→                rows={2}
+   685→                enValue={item.text}
+   686→                bnValue={item.textBn}
+   687→                onEnChange={(v) => setFounderItem(i, { text: v })}
+   688→                onBnChange={(v) => setFounderItem(i, { textBn: v })}
+   689→              />
+   690→              <div className="flex justify-end">
+   691→                <RowRemoveButton
+   692→                  onClick={() => removeFounderItem(i)}
+   693→                  label={`Remove founder highlight ${i + 1}`}
+   694→                />
+   695→              </div>
+   696→            </div>
+   697→          ))}
+   698→          <div>
+   699→            <Button
+   700→              type="button"
+   701→              variant="outline"
+   702→              size="sm"
+   703→              disabled={form.founderItems.length >= MAX_FOUNDER_ITEMS}
+   704→              onClick={addFounderItem}
+   705→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   706→            >
+   707→              <Plus className="h-4 w-4" aria-hidden="true" />
+   708→              Add highlight
+   709→            </Button>
+   710→            {form.founderItems.length >= MAX_FOUNDER_ITEMS ? (
+   711→              <Hint>Capped at {MAX_FOUNDER_ITEMS} highlights.</Hint>
+   712→            ) : null}
+   713→          </div>
+   714→        </div>
+   715→      </FormSection>
+   716→
+   717→      {/* ============ VALUES ============ */}
+   718→      <FormSection
+   719→        icon={HeartHandshake}
+   720→        title="Values"
+   721→        description="Section head and the four value cards"
+   722→        edited={groupDirty((a) => [a.valuesEyebrow, a.valuesTitle, a.values])}
+   723→      >
+   724→        <BilingualField
+   725→          label="Eyebrow"
+   726→          enValue={form.valuesEyebrow}
+   727→          bnValue={form.valuesEyebrowBn}
+   728→          onEnChange={(v) => set("valuesEyebrow", v)}
+   729→          onBnChange={(v) => set("valuesEyebrowBn", v)}
+   730→        />
+   731→        <BilingualField
+   732→          label="Section title"
+   733→          enValue={form.valuesTitle}
+   734→          bnValue={form.valuesTitleBn}
+   735→          onEnChange={(v) => set("valuesTitle", v)}
+   736→          onBnChange={(v) => set("valuesTitleBn", v)}
+   737→        />
+   738→        <div className="space-y-3">
+   739→          {form.values.map((value, i) => (
+   740→            <div
+   741→              key={i}
+   742→              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+   743→            >
+   744→              <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+   745→                <MiniField label="Icon">
+   746→                  <IconSelect
+   747→                    value={value.icon}
+   748→                    onChange={(v) => setValue(i, { icon: v })}
+   749→                    ariaLabel={`Value ${i + 1} icon`}
+   750→                  />
+   751→                </MiniField>
+   752→                <BilingualField
+   753→                  label="Title"
+   754→                  enValue={value.title}
+   755→                  bnValue={value.titleBn}
+   756→                  onEnChange={(v) => setValue(i, { title: v })}
+   757→                  onBnChange={(v) => setValue(i, { titleBn: v })}
+   758→                />
+   759→              </div>
+   760→              <BilingualField
+   761→                label="Description"
+   762→                textarea
+   763→                rows={3}
+   764→                enValue={value.description}
+   765→                bnValue={value.descriptionBn}
+   766→                onEnChange={(v) => setValue(i, { description: v })}
+   767→                onBnChange={(v) => setValue(i, { descriptionBn: v })}
+   768→              />
+   769→              <div className="flex justify-end">
+   770→                <RowRemoveButton onClick={() => removeValue(i)} label={`Remove value ${i + 1}`} />
+   771→              </div>
+   772→            </div>
+   773→          ))}
+   774→          <div>
+   775→            <Button
+   776→              type="button"
+   777→              variant="outline"
+   778→              size="sm"
+   779→              disabled={form.values.length >= MAX_VALUES}
+   780→              onClick={addValue}
+   781→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   782→            >
+   783→              <Plus className="h-4 w-4" aria-hidden="true" />
+   784→              Add value
+   785→            </Button>
+   786→            {form.values.length >= MAX_VALUES ? (
+   787→              <Hint>Capped at {MAX_VALUES} — the grid is laid out as a 4-column row.</Hint>
+   788→            ) : null}
+   789→          </div>
+   790→        </div>
+   791→      </FormSection>
+   792→
+   793→      {/* ============ SPECIALISTS + CTA ============ */}
+   794→      <FormSection
+   795→        icon={Sparkles}
+   796→        title="Specialists + CTA"
+   797→        description="Specialist team heading and the closing call-to-action banner"
+   798→        edited={groupDirty((a) => [
+   799→          a.specialistsTitle,
+   800→          a.specialistsDescription,
+   801→          a.ctaTitle,
+   802→          a.ctaDescription,
+   803→        ])}
+   804→      >
+   805→        <BilingualField
+   806→          label="Specialists title"
+   807→          enValue={form.specialistsTitle}
+   808→          bnValue={form.specialistsTitleBn}
+   809→          onEnChange={(v) => set("specialistsTitle", v)}
+   810→          onBnChange={(v) => set("specialistsTitleBn", v)}
+   811→        />
+   812→        <BilingualField
+   813→          label="Specialists description"
+   814→          textarea
+   815→          rows={3}
+   816→          enValue={form.specialistsDescription}
+   817→          bnValue={form.specialistsDescriptionBn}
+   818→          onEnChange={(v) => set("specialistsDescription", v)}
+   819→          onBnChange={(v) => set("specialistsDescriptionBn", v)}
+   820→        />
+   821→        <BilingualField
+   822→          label="CTA title"
+   823→          enValue={form.ctaTitle}
+   824→          bnValue={form.ctaTitleBn}
+   825→          onEnChange={(v) => set("ctaTitle", v)}
+   826→          onBnChange={(v) => set("ctaTitleBn", v)}
+   827→        />
+   828→        <BilingualField
+   829→          label="CTA description"
+   830→          textarea
+   831→          rows={3}
+   832→          enValue={form.ctaDescription}
+   833→          bnValue={form.ctaDescriptionBn}
+   834→          onEnChange={(v) => set("ctaDescription", v)}
+   835→          onBnChange={(v) => set("ctaDescriptionBn", v)}
+   836→        />
+   837→      </FormSection>
+   838→
+   839→      <SaveBar
+   840→        dirty={dirty}
+   841→        saving={saving}
+   842→        onSave={save}
+   843→        onReset={reset}
+   844→        saveLabel="Save about page"
+   845→      />
+   846→    </div>
+   847→  );
+   848→}
+   849→

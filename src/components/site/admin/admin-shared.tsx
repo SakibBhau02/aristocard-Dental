@@ -46,6 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 /** Every admin sidebar module (panels switch on this union). */
 export type AdminView =
   | "overview"
+  | "activity"
   | "appointments"
   | "reviews"
   | "messages"
@@ -59,11 +60,66 @@ export type AdminView =
   | "homepage"
   | "about"
   | "hero"
-  | "settings";
+  | "settings"
+  | "users";
 
 /** Props every panel understands (the shell owns login/logout). */
 export type PanelProps = {
   onSessionExpired: () => void;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Staff roles + session identity (mirrors src/lib/admin-auth.ts)      */
+/* ------------------------------------------------------------------ */
+
+export type AdminRole = "OWNER" | "EDITOR" | "VIEWER";
+
+/** Signed-in staff identity carried by the session cookie. */
+export type AdminSessionUser = {
+  sub: string;
+  username: string;
+  displayName: string;
+  role: AdminRole;
+};
+
+/** One staff account row from GET /api/admin/users (no password hash). */
+export type AdminAccountRow = {
+  id: string;
+  username: string;
+  displayName: string;
+  role: AdminRole;
+  active: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** One audit row from GET /api/admin/activity. */
+export type AdminActivityRow = {
+  id: string;
+  actor: string;
+  actorLabel: string | null;
+  role: AdminRole | null;
+  action: string;
+  entity: string;
+  label: string;
+  createdAt: string;
+};
+
+/** One-line human explanation per role (users panel + login gate). */
+export const ADMIN_ROLE_INFO: Record<AdminRole, { label: string; blurb: string }> = {
+  OWNER: {
+    label: "Owner",
+    blurb: "Everything — all content, site settings and staff accounts.",
+  },
+  EDITOR: {
+    label: "Editor",
+    blurb: "All content and patient engagement — no settings or staff.",
+  },
+  VIEWER: {
+    label: "Viewer",
+    blurb: "Read-only — can look around, but every change is refused.",
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -394,20 +450,83 @@ export function StarsRow({ value }: { value: number }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  RoleBadge — OWNER gold · EDITOR blue · VIEWER slate                 */
+/*  onDark flips the palette for the navy sidebar / mobile drawer.      */
+/* ------------------------------------------------------------------ */
+
+const ROLE_BADGE_LIGHT: Record<AdminRole, string> = {
+  OWNER: "bg-amber-50 text-amber-700 ring-amber-200",
+  EDITOR: "bg-blue-50 text-brand-blue ring-blue-200",
+  VIEWER: "bg-slate-100 text-slate-500 ring-slate-200",
+};
+
+const ROLE_BADGE_DARK: Record<AdminRole, string> = {
+  OWNER: "bg-amber-400/15 text-amber-300 ring-amber-300/30",
+  EDITOR: "bg-blue-400/15 text-blue-200 ring-blue-300/30",
+  VIEWER: "bg-white/10 text-blue-100/70 ring-white/15",
+};
+
+export function RoleBadge({
+  role,
+  onDark = false,
+}: {
+  role: AdminRole | string | null | undefined;
+  onDark?: boolean;
+}) {
+  if (role !== "OWNER" && role !== "EDITOR" && role !== "VIEWER") return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1",
+        onDark ? ROLE_BADGE_DARK[role] : ROLE_BADGE_LIGHT[role]
+      )}
+    >
+      {role}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  useAdminFetch — cookie-auth wrappers for the admin CRUD APIs        */
 /*  (same-origin fetch; 401 routes to onUnauthorized so the shell can   */
-/*   return to the login gate)                                          */
+/*   return to the login gate). 403 toasts the server's reason once     */
+/*   and is never auto-retried — the server enforces roles centrally.    */
 /* ------------------------------------------------------------------ */
+
+/* Panels fire several parallel requests; collapse 403 notices so a
+   mid-session role change doesn't spam the toaster. */
+let lastForbiddenNoticeAt = 0;
+
+function notifyForbidden(
+  fail: (title: string, description?: string) => void,
+  message: string
+) {
+  const now = Date.now();
+  if (now - lastForbiddenNoticeAt < 15_000) return;
+  lastForbiddenNoticeAt = now;
+  fail("Not allowed", message);
+}
 
 export function useAdminFetch(onUnauthorized: () => void) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const onAuthRef = useRef(onUnauthorized);
   onAuthRef.current = onUnauthorized;
+  const { fail: toastFail } = useAdminToast();
+  const failRef = useRef(toastFail);
+  failRef.current = toastFail;
 
   const handle401 = useCallback((res: Response): boolean => {
     if (res.status === 401) {
       onAuthRef.current();
+      return true;
+    }
+    return false;
+  }, []);
+
+  const handle403 = useCallback((res: Response, message: string) => {
+    if (res.status === 403) {
+      notifyForbidden(failRef.current, message);
       return true;
     }
     return false;
@@ -422,9 +541,10 @@ export function useAdminFetch(onUnauthorized: () => void) {
         if (handle401(res)) return null;
         const data = await res.json().catch(() => null);
         if (!res.ok) {
-          throw new Error(
-            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`
-          );
+          const message =
+            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+          handle403(res, message);
+          throw new Error(message);
         }
         return data as T;
       } catch (err) {
@@ -434,7 +554,7 @@ export function useAdminFetch(onUnauthorized: () => void) {
         setLoading(false);
       }
     },
-    [handle401]
+    [handle401, handle403]
   );
 
   const post = useCallback(
@@ -455,6 +575,7 @@ export function useAdminFetch(onUnauthorized: () => void) {
         if (!res.ok) {
           const message =
             (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+          handle403(res, message);
           setError(message);
           return { ok: false, data: data as T | null, status: res.status };
         }
@@ -466,7 +587,7 @@ export function useAdminFetch(onUnauthorized: () => void) {
         setLoading(false);
       }
     },
-    [handle401]
+    [handle401, handle403]
   );
 
   const del = useCallback(
@@ -480,6 +601,7 @@ export function useAdminFetch(onUnauthorized: () => void) {
         if (!res.ok) {
           const message =
             (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+          handle403(res, message);
           setError(message);
           return { ok: false, data: data as T | null, status: res.status };
         }
@@ -491,7 +613,7 @@ export function useAdminFetch(onUnauthorized: () => void) {
         setLoading(false);
       }
     },
-    [handle401]
+    [handle401, handle403]
   );
 
   const clearError = useCallback(() => setError(null), []);

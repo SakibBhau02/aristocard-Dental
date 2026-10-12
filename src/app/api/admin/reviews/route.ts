@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthorized } from "@/lib/admin-auth";
+import { requireAdminRole } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { reviewsToCsv } from "@/lib/admin-csv";
 
@@ -16,21 +16,16 @@ import { reviewsToCsv } from "@/lib/admin-csv";
 const VALID_ACTIONS = ["approve", "reject", "delete"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
 
-function isAuthorized(req: NextRequest): boolean {
-  /* Timing-safe check via shared helper (src/lib/admin-auth.ts) —
-     accepts the passcode header or the httpOnly session cookie. */
-  return isAdminAuthorized(req);
+async function isAuthorized(req: NextRequest): Promise<NextResponse | null> {
+  /* Central RBAC gate (src/lib/admin-auth.ts) — session roles or passcode. */
+  return requireAdminRole(req);
 }
 
 /* GET — list every review (newest first) + moderation stats. */
 export async function GET(req: NextRequest) {
   try {
-    if (!isAuthorized(req)) {
-      return NextResponse.json(
-        { error: "Invalid admin passcode." },
-        { status: 401 }
-      );
-    }
+    const denied = await isAuthorized(req);
+    if (denied) return denied;
 
     /* ---------------- CSV export branch ---------------- */
     if (req.nextUrl.searchParams.get("format") === "csv") {
@@ -80,12 +75,8 @@ export async function GET(req: NextRequest) {
 /* POST — moderate a review { id, action } */
 export async function POST(req: NextRequest) {
   try {
-    if (!isAuthorized(req)) {
-      return NextResponse.json(
-        { error: "Invalid admin passcode." },
-        { status: 401 }
-      );
-    }
+    const denied = await isAuthorized(req);
+    if (denied) return denied;
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
