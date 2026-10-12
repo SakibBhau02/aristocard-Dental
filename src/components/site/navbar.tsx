@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarCheck, Clock, Menu, Phone, Search, X } from "lucide-react";
+import { CalendarCheck, Clock, Menu, Phone, Search, UserRound, X } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
 import { navItems, site } from "@/lib/site";
@@ -185,6 +185,25 @@ export function Navbar() {
               </span>
             </button>
 
+            {/* Patient Portal — ghost pill near the booking CTA */}
+            <a
+              href="#/portal"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateAndClose("/portal");
+              }}
+              aria-current={isActive("/portal") ? "page" : undefined}
+              className={cn(
+                "hidden h-11 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-all duration-300 xl:px-4 xl:text-sm lg:inline-flex",
+                isActive("/portal")
+                  ? "bg-blue-100/90 text-brand-blue shadow-[inset_0_0_0_1px_rgba(30,125,255,0.18)]"
+                  : "text-slate-700 ring-1 ring-blue-100 hover:bg-blue-50 hover:text-brand-blue"
+              )}
+            >
+              <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {d.chrome.nav.portal}
+            </a>
+
             <Button
               asChild
               className="btn-press btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
@@ -312,6 +331,33 @@ export function Navbar() {
                     </a>
                   </motion.li>
                 ))}
+                {/* Patient Portal — account-style entry */}
+                <motion.li
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 * navItems.length, duration: 0.4 }}
+                >
+                  <a
+                    href="#/portal"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateAndClose("/portal");
+                    }}
+                    aria-current={isActive("/portal") ? "page" : undefined}
+                    className={cn(
+                      "flex items-center justify-between rounded-2xl px-5 py-4 text-base font-medium transition-colors",
+                      isActive("/portal")
+                        ? "bg-blue-50 text-brand-blue"
+                        : "text-slate-700 hover:bg-blue-50/60 hover:text-brand-blue"
+                    )}
+                  >
+                    <span className="flex items-center gap-3">
+                      <UserRound className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      {d.chrome.nav.portal}
+                    </span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current opacity-40" aria-hidden="true" />
+                  </a>
+                </motion.li>
               </ul>
               <div className="space-y-3 border-t border-blue-50 p-5">
                 <div className="flex items-center justify-between rounded-2xl bg-ice px-4 py-3">

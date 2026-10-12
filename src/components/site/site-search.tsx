@@ -17,6 +17,7 @@ import {
   Sparkles,
   Stethoscope,
   TrendingUp,
+  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -72,6 +73,7 @@ const ICONS: Record<string, LucideIcon> = {
   BookOpen,
   CalendarCheck,
   Sparkles,
+  UserRound,
 };
 
 const MAX_PER_GROUP = 8;

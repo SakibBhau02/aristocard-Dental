@@ -9,7 +9,7 @@ import { site } from "@/lib/site";
 /* ------------------------------------------------------------------ */
 /*  Global search index — powers the ⌘K / Ctrl+K command palette       */
 /*  Flat, pre-localized list of everything searchable on the site:     */
-/*  10 pages + 11 services + 4 doctors + 5 blog posts + 45 FAQs        */
+/*  11 pages + 11 services + 4 doctors + 5 blog posts + 45 FAQs        */
 /* ------------------------------------------------------------------ */
 
 export type SearchGroup = "pages" | "services" | "doctors" | "blog" | "faqs";
@@ -41,7 +41,7 @@ const BLOG_KEYWORDS: Record<string, string> = {
     "pain ব্যথা",
 };
 
-/* Lucide icon names for the 10 static pages (resolved in site-search.tsx;
+/* Lucide icon names for the 11 static pages (resolved in site-search.tsx;
    service icons come from services.ts and resolve via icon-map.tsx). */
 const PAGE_ICONS: Record<string, string> = {
   "/": "Home",
@@ -54,6 +54,7 @@ const PAGE_ICONS: Record<string, string> = {
   "/assessment": "ClipboardList",
   "/status": "CalendarClock",
   "/contact": "Phone",
+  "/portal": "UserRound",
 };
 
 /** Word-boundary-safe truncation for FAQ answer previews. */
@@ -68,9 +69,12 @@ function pageEntries(lang: Lang): SearchEntry[] {
   const d = dictionary[lang];
   const other = dictionary[lang === "en" ? "bn" : "en"];
 
-  /* [href, localized title, localized description, other-language title] —
-     titles/descriptions come from the per-page dictionary sections. */
-  const rows: [string, string, string, string][] = [
+  /* [href, localized title, localized description, other-language title,
+     extra matching keywords?] — titles/descriptions come from the per-page
+     dictionary sections. The optional 5th column adds page-specific search
+     vocabulary (the portal page's title never says "portal", so its nav
+     label + account/login terms are appended for both languages). */
+  const rows: [string, string, string, string, string?][] = [
     ["/", `${d.home.hero.titleA} ${d.home.hero.titleB}`, d.home.hero.description, `${other.home.hero.titleA} ${other.home.hero.titleB}`],
     ["/about", d.about.title, d.about.description.replace("{site}", site.shortName), other.about.title],
     ["/services", d.servicesPage.title, d.servicesPage.description, other.servicesPage.title],
@@ -81,9 +85,16 @@ function pageEntries(lang: Lang): SearchEntry[] {
     ["/assessment", d.assessmentPage.title, d.assessmentPage.description, other.assessmentPage.title],
     ["/status", d.statusPage.title, d.statusPage.description, other.statusPage.title],
     ["/contact", d.contactPage.title, d.contactPage.description, other.contactPage.title],
+    [
+      "/portal",
+      d.portalPage.title,
+      d.portalPage.description,
+      other.portalPage.title,
+      `${d.chrome.nav.portal} ${other.chrome.nav.portal} patient account login register dashboard bookings পেশেন্ট পোর্টাল অ্যাকাউন্ট`,
+    ],
   ];
 
-  return rows.map(([href, title, description, otherTitle]) => ({
+  return rows.map(([href, title, description, otherTitle, extraKeywords]) => ({
     id: `page:${href}`,
     group: "pages" as const,
     title,
@@ -91,7 +102,7 @@ function pageEntries(lang: Lang): SearchEntry[] {
     description,
     href,
     icon: PAGE_ICONS[href],
-    keywords: `${otherTitle} ${d.chrome.nav.home} ${d.chrome.nav.services} ${d.chrome.nav.contact}`,
+    keywords: `${otherTitle} ${d.chrome.nav.home} ${d.chrome.nav.services} ${d.chrome.nav.contact} ${extraKeywords ?? ""}`,
   }));
 }
 

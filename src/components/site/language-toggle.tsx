@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { Languages } from "lucide-react";
-import { useLang, type Lang } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n";
+import type { Lang } from "@/lib/data/dictionary";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */

@@ -50,6 +50,7 @@ export function Footer() {
     { label: d.footer.quickLinks[7], to: "/appointment" },
     { label: d.footer.quickLinks[8], to: "/status" },
     { label: d.footer.quickLinks[9], to: "/faqs" },
+    { label: d.footer.quickLinks[10], to: "/portal" },
   ];
 
   return (

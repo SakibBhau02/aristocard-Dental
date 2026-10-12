@@ -1,0 +1,603 @@
+  1050→            {/* Mobile cards */}
+  1051→            <div className="mt-6 space-y-3 lg:hidden">
+  1052→              {filtered.map((r) => (
+  1053→                <motion.article
+  1054→                  key={r.id}
+  1055→                  initial={{ opacity: 0, y: 14 }}
+  1056→                  animate={{ opacity: 1, y: 0 }}
+  1057→                  className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+  1058→                >
+  1059→                  <div className="flex items-start justify-between gap-3">
+  1060→                    <div>
+  1061→                      <p className="font-semibold text-brand-navy">{r.name}</p>
+  1062→                      <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+  1063→                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+  1064→                    </div>
+  1065→                    <span className={cn(
+  1066→                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+  1067→                      statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+  1068→                    )}>
+  1069→                      {r.status === "PENDING" && (
+  1070→                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1071→                      )}
+  1072→                      {r.status}
+  1073→                    </span>
+  1074→                  </div>
+  1075→                  <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-ice px-3.5 py-3 text-xs text-slate-600">
+  1076→                    <p className="col-span-2">
+  1077→                      <Sparkles className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1078→                      {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "Service: —"}
+  1079→                      {r.doctorSlug ? ` • ${doctorMap[r.doctorSlug] ?? r.doctorSlug}` : ""}
+  1080→                    </p>
+  1081→                    <p className="col-span-2 font-semibold tabular-nums">
+  1082→                      <CalendarDays className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1083→                      {r.date} • {r.time}
+  1084→                    </p>
+  1085→                    {r.notes && (
+  1086→                      <p className="col-span-2 line-clamp-2 italic text-slate-400">“{r.notes}”</p>
+  1087→                    )}
+  1088→                  </div>
+  1089→                  {busyRef === r.refCode ? (
+  1090→                    <div className="mt-3 flex justify-center py-1.5">
+  1091→                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1092→                    </div>
+  1093→                  ) : (
+  1094→                    <div className="mt-3 flex flex-wrap gap-2">
+  1095→                      {r.status === "PENDING" && (
+  1096→                        <>
+  1097→                          <SmallAction label="Confirm" tone="confirm" onClick={() => updateStatus(r.refCode, "CONFIRMED")} />
+  1098→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1099→                        </>
+  1100→                      )}
+  1101→                      {r.status === "CONFIRMED" && (
+  1102→                        <>
+  1103→                          <SmallAction label="Complete" tone="complete" onClick={() => updateStatus(r.refCode, "COMPLETED")} />
+  1104→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1105→                        </>
+  1106→                      )}
+  1107→                      {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+  1108→                        <SmallAction label="Reopen as Pending" tone="neutral" onClick={() => updateStatus(r.refCode, "PENDING")} />
+  1109→                      )}
+  1110→                    </div>
+  1111→                  )}
+  1112→                </motion.article>
+  1113→              ))}
+  1114→            </div>
+  1115→          </>
+  1116→        )}
+  1117→      </div>
+  1118→    </div>
+  1119→  );
+  1120→}
+  1121→
+  1122→/* ------------------------------------------------------------------ */
+  1123→/*  Reviews view — patient review moderation                            */
+  1124→/* ------------------------------------------------------------------ */
+  1125→
+  1126→function StarsRow({ value }: { value: number }) {
+  1127→  return (
+  1128→    <span role="img" aria-label={`${value} out of 5 stars`} className="flex items-center gap-0.5">
+  1129→      {Array.from({ length: 5 }).map((_, i) => (
+  1130→        <Star
+  1131→          key={i}
+  1132→          aria-hidden="true"
+  1133→          className={cn(
+  1134→            "h-3.5 w-3.5",
+  1135→            i < value ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"
+  1136→          )}
+  1137→        />
+  1138→      ))}
+  1139→    </span>
+  1140→  );
+  1141→}
+  1142→
+  1143→function ReviewsPanel({
+  1144→  onLogout,
+  1145→  onSessionExpired,
+  1146→  onPendingChange,
+  1147→}: {
+  1148→  onLogout: () => void;
+  1149→  onSessionExpired: () => void;
+  1150→  onPendingChange: (n: number) => void;
+  1151→}) {
+  1152→  const [rows, setRows] = useState<ReviewRow[]>([]);
+  1153→  const [stats, setStats] = useState<ReviewStats | null>(null);
+  1154→  const [loading, setLoading] = useState(true);
+  1155→  const [loadError, setLoadError] = useState<string | null>(null);
+  1156→  const [filter, setFilter] = useState<ReviewFilter>("ALL");
+  1157→  const [search, setSearch] = useState("");
+  1158→  const [busyId, setBusyId] = useState<string | null>(null);
+  1159→  const [exporting, setExporting] = useState(false);
+  1160→  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  1161→  const loadIdRef = useRef(0);
+  1162→
+  1163→  const load = useCallback(async () => {
+  1164→    const requestId = ++loadIdRef.current;
+  1165→    setLoading(true);
+  1166→    setLoadError(null);
+  1167→    try {
+  1168→      const res = await fetch("/api/admin/reviews");
+  1169→      if (res.status === 401) {
+  1170→        onSessionExpired();
+  1171→        return;
+  1172→      }
+  1173→      const data = await res.json();
+  1174→      if (!res.ok) throw new Error(data.error || "Failed to load");
+  1175→      if (requestId !== loadIdRef.current) return; /* a newer request is in flight */
+  1176→      setRows(data.reviews ?? []);
+  1177→      setStats(data.stats ?? null);
+  1178→      setLastUpdated(new Date());
+  1179→      onPendingChange(data.stats?.pending ?? 0);
+  1180→    } catch (err) {
+  1181→      if (requestId !== loadIdRef.current) return;
+  1182→      setLoadError(err instanceof Error ? err.message : "Failed to load reviews.");
+  1183→    } finally {
+  1184→      if (requestId === loadIdRef.current) setLoading(false);
+  1185→    }
+  1186→  }, [onSessionExpired, onPendingChange]);
+  1187→
+  1188→  useEffect(() => {
+  1189→    load();
+  1190→  }, [load]);
+  1191→
+  1192→  /* auto-refresh every 60s (pause when tab hidden) */
+  1193→  useEffect(() => {
+  1194→    const id = window.setInterval(() => {
+  1195→      if (document.visibilityState === "visible") load();
+  1196→    }, 60_000);
+  1197→    return () => window.clearInterval(id);
+  1198→  }, [load]);
+  1199→
+  1200→  async function reviewAction(id: string, action: "approve" | "reject" | "delete") {
+  1201→    setBusyId(id);
+  1202→    try {
+  1203→      const res = await fetch("/api/admin/reviews", {
+  1204→        method: "POST",
+  1205→        headers: {
+  1206→          "Content-Type": "application/json",
+  1207→        },
+  1208→        body: JSON.stringify({ id, action }),
+  1209→      });
+  1210→      const data = await res.json();
+  1211→      if (res.status === 401) {
+  1212→        onSessionExpired();
+  1213→        return;
+  1214→      }
+  1215→      if (!res.ok) throw new Error(data.error || "Update failed");
+  1216→      /* the server is the source of truth — refresh rows, stats and the tab badge */
+  1217→      await load();
+  1218→    } catch (err) {
+  1219→      setLoadError(err instanceof Error ? err.message : "Could not update the review.");
+  1220→    } finally {
+  1221→      setBusyId(null);
+  1222→    }
+  1223→  }
+  1224→
+  1225→  /* --- CSV export of every review --- */
+  1226→  async function exportCsv() {
+  1227→    if (exporting) return;
+  1228→    setExporting(true);
+  1229→    try {
+  1230→      const res = await fetch(`/api/admin/reviews?format=csv`);
+  1231→      if (res.status === 401) {
+  1232→        onSessionExpired();
+  1233→        return;
+  1234→      }
+  1235→      if (!res.ok) throw new Error("Export failed");
+  1236→      const blob = await res.blob();
+  1237→      const disposition = res.headers.get("Content-Disposition") ?? "";
+  1238→      const filename =
+  1239→        /filename="([^"]+)"/.exec(disposition)?.[1] ?? "reviews.csv";
+  1240→      const url = URL.createObjectURL(blob);
+  1241→      const a = document.createElement("a");
+  1242→      a.href = url;
+  1243→      a.download = filename;
+  1244→      document.body.appendChild(a);
+  1245→      a.click();
+  1246→      a.remove();
+  1247→      URL.revokeObjectURL(url);
+  1248→    } catch {
+  1249→      setLoadError("Could not export the CSV. Please try again.");
+  1250→    } finally {
+  1251→      setExporting(false);
+  1252→    }
+  1253→  }
+  1254→
+  1255→  const serviceMap = useMemo(() => {
+  1256→    const m: Record<string, string> = {};
+  1257→    services.forEach((s) => (m[s.slug] = s.shortName));
+  1258→    return m;
+  1259→  }, []);
+  1260→
+  1261→  const filtered = useMemo(() => {
+  1262→    const q = search.trim().toLowerCase();
+  1263→    return rows.filter((r) => {
+  1264→      if (filter !== "ALL" && (filter === "PENDING") === r.approved) return false;
+  1265→      if (!q) return true;
+  1266→      return r.name.toLowerCase().includes(q);
+  1267→    });
+  1268→  }, [rows, filter, search]);
+  1269→
+  1270→  const statCards = stats
+  1271→    ? [
+  1272→        { label: "Total", value: stats.total, Icon: Inbox, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+  1273→        { label: "Pending", value: stats.pending, Icon: Clock, tone: "text-amber-700 bg-amber-50 ring-amber-100" },
+  1274→        { label: "Approved", value: stats.approved, Icon: BadgeCheck, tone: "text-emerald-700 bg-emerald-50 ring-emerald-100" },
+  1275→        {
+  1276→          label: "Avg rating",
+  1277→          value: stats.average > 0 ? stats.average.toFixed(1) : "—",
+  1278→          Icon: Star,
+  1279→          tone: "text-amber-700 bg-amber-50 ring-amber-100",
+  1280→        },
+  1281→      ]
+  1282→    : [];
+  1283→
+  1284→  return (
+  1285→    <div>
+  1286→      {/* Header */}
+  1287→      <div className="hero-mesh-dark noise relative mt-6 overflow-hidden">
+  1288→        <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+  1289→        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6">
+  1290→          <div>
+  1291→            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15">
+  1292→              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+  1293→              Staff Console
+  1294→            </span>
+  1295→            <h1 className="font-heading mt-3 text-2xl font-bold text-white sm:text-3xl">
+  1296→              Review Moderation
+  1297→            </h1>
+  1298→            <p className="mt-1 text-sm text-blue-100/80">
+  1299→              {lastUpdated
+  1300→                ? `Last updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} • auto-refreshes every 60s`
+  1301→                : "Loading…"}
+  1302→            </p>
+  1303→          </div>
+  1304→          <div className="flex items-center gap-2.5">
+  1305→            <Button
+  1306→              onClick={load}
+  1307→              disabled={loading}
+  1308→              variant="outline"
+  1309→              className="rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+  1310→            >
+  1311→              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden="true" />
+  1312→              Refresh
+  1313→            </Button>
+  1314→            <Button
+  1315→              onClick={onLogout}
+  1316→              className="rounded-full bg-white text-brand-navy hover:bg-blue-100"
+  1317→            >
+  1318→              <LogOut className="h-4 w-4" aria-hidden="true" />
+  1319→              Sign out
+  1320→            </Button>
+  1321→          </div>
+  1322→        </div>
+  1323→      </div>
+  1324→
+  1325→      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1326→        {/* Stats */}
+  1327→        <div className="-mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  1328→          {statCards.map((s, i) => (
+  1329→            <motion.div
+  1330→              key={s.label}
+  1331→              initial={{ opacity: 0, y: 16 }}
+  1332→              animate={{ opacity: 1, y: 0 }}
+  1333→              transition={{ delay: i * 0.05, duration: 0.4 }}
+  1334→              className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]"
+  1335→            >
+  1336→              <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1", s.tone)}>
+  1337→                <s.Icon className="h-4.5 w-4.5" aria-hidden="true" />
+  1338→              </span>
+  1339→              <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+  1340→                {s.value}
+  1341→              </p>
+  1342→              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+  1343→                {s.label}
+  1344→              </p>
+  1345→            </motion.div>
+  1346→          ))}
+  1347→        </div>
+  1348→
+  1349→        {/* Toolbar */}
+  1350→        <div className="mt-8 rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+  1351→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  1352→            <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Filter reviews by status">
+  1353→              {(["ALL", "PENDING", "APPROVED"] as ReviewFilter[]).map((f) => {
+  1354→                const active = filter === f;
+  1355→                const count =
+  1356→                  f === "ALL"
+  1357→                    ? rows.length
+  1358→                    : rows.filter((r) => (f === "PENDING") !== r.approved).length;
+  1359→                return (
+  1360→                  <button
+  1361→                    key={f}
+  1362→                    role="tab"
+  1363→                    aria-selected={active}
+  1364→                    onClick={() => setFilter(f)}
+  1365→                    className={cn(
+  1366→                      "relative rounded-full px-4 py-2 text-xs font-bold transition-all duration-300",
+  1367→                      active
+  1368→                        ? "bg-brand-navy text-white shadow-md shadow-navy-900/25"
+  1369→                        : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+  1370→                    )}
+  1371→                  >
+  1372→                    {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+  1373→                    <span
+  1374→                      className={cn(
+  1375→                        "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+  1376→                        active ? "bg-white/20 text-white" : "bg-white text-slate-500"
+  1377→                      )}
+  1378→                    >
+  1379→                      {count}
+  1380→                    </span>
+  1381→                  </button>
+  1382→                );
+  1383→              })}
+  1384→            </div>
+  1385→            <div className="flex flex-wrap items-center gap-2.5">
+  1386→              <div className="relative flex-1 sm:w-72 sm:flex-none">
+  1387→                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+  1388→                <input
+  1389→                  type="search"
+  1390→                  value={search}
+  1391→                  onChange={(e) => setSearch(e.target.value)}
+  1392→                  placeholder="Search by name…"
+  1393→                  aria-label="Search reviews"
+  1394→                  className="h-11 w-full rounded-full border border-blue-100 bg-ice pl-10 pr-4 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+  1395→                />
+  1396→              </div>
+  1397→              <Button
+  1398→                type="button"
+  1399→                onClick={exportCsv}
+  1400→                disabled={exporting}
+  1401→                title="Download every review as a CSV file"
+  1402→                className="h-11 rounded-full bg-brand-gold px-5 text-sm font-bold text-brand-navy shadow-md shadow-amber-500/30 hover:bg-amber-400 disabled:opacity-60"
+  1403→              >
+  1404→                {exporting ? (
+  1405→                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  1406→                ) : (
+  1407→                  <Download className="h-4 w-4" aria-hidden="true" />
+  1408→                )}
+  1409→                Export CSV
+  1410→              </Button>
+  1411→            </div>
+  1412→          </div>
+  1413→        </div>
+  1414→
+  1415→        {loadError && (
+  1416→          <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+  1417→            {loadError}
+  1418→          </p>
+  1419→        )}
+  1420→
+  1421→        {/* List */}
+  1422→        {loading && rows.length === 0 ? (
+  1423→          <div className="mt-8 flex items-center justify-center py-20">
+  1424→            <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden="true" />
+  1425→          </div>
+  1426→        ) : filtered.length === 0 ? (
+  1427→          <motion.div
+  1428→            initial={{ opacity: 0, y: 10 }}
+  1429→            animate={{ opacity: 1, y: 0 }}
+  1430→            transition={{ duration: 0.35 }}
+  1431→            className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white/60 py-20 text-center"
+  1432→          >
+  1433→            <MessageSquareQuote className="mx-auto h-10 w-10 text-blue-300" aria-hidden="true" />
+  1434→            <p className="font-heading mt-4 text-lg font-bold text-brand-navy">
+  1435→              {rows.length === 0 ? "No reviews yet" : "No reviews found"}
+  1436→            </p>
+  1437→            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+  1438→              {rows.length === 0
+  1439→                ? "Patient reviews submitted on the website will appear here for approval."
+  1440→                : "Try a different filter or search term."}
+  1441→            </p>
+  1442→          </motion.div>
+  1443→        ) : (
+  1444→          <>
+  1445→            {/* Desktop table */}
+  1446→            <div className="mt-6 hidden overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_14px_40px_-24px_rgba(0,32,96,0.25)] lg:block">
+  1447→              <div className="max-h-[38rem] overflow-y-auto scroll-area">
+  1448→                <table className="w-full text-left text-sm table-zebra">
+  1449→                  <thead className="sticky top-0 z-10 bg-ice/95 backdrop-blur">
+  1450→                    <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+  1451→                      <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+  1452→                      <th scope="col" className="px-5 py-3.5 font-semibold">Review</th>
+  1453→                      <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+  1454→                      <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+  1455→                    </tr>
+  1456→                  </thead>
+  1457→                  <tbody className="divide-y divide-blue-50">
+  1458→                    {filtered.map((r) => (
+  1459→                      <tr
+  1460→                        key={r.id}
+  1461→                        className={cn(
+  1462→                          "transition-colors hover:bg-blue-50/40",
+  1463→                          !r.approved && "bg-amber-50/50"
+  1464→                        )}
+  1465→                      >
+  1466→                        <td className="px-5 py-4">
+  1467→                          <p className="font-semibold text-brand-navy">{r.name}</p>
+  1468→                          <p className="mt-0.5 text-xs text-slate-500">{r.phone ?? "—"}</p>
+  1469→                          <p className="mt-0.5 text-[10px] text-slate-400">
+  1470→                            {new Date(r.createdAt).toLocaleDateString("en-US", {
+  1471→                              month: "short",
+  1472→                              day: "numeric",
+  1473→                              year: "numeric",
+  1474→                            })}
+  1475→                          </p>
+  1476→                        </td>
+  1477→                        <td className="px-5 py-4">
+  1478→                          <StarsRow value={r.rating} />
+  1479→                          {r.title && (
+  1480→                            <p className="mt-1 text-xs font-semibold text-brand-navy">
+  1481→                              {r.title}
+  1482→                            </p>
+  1483→                          )}
+  1484→                          <p className="mt-1 line-clamp-2 max-w-md text-xs leading-relaxed text-slate-500" title={r.message}>
+  1485→                            {r.message}
+  1486→                          </p>
+  1487→                          {r.serviceSlug && (
+  1488→                            <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+  1489→                              <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
+  1490→                              {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+  1491→                            </span>
+  1492→                          )}
+  1493→                        </td>
+  1494→                        <td className="px-5 py-4">
+  1495→                          <span
+  1496→                            className={cn(
+  1497→                              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1",
+  1498→                              r.approved
+  1499→                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+  1500→                                : "bg-amber-50 text-amber-700 ring-amber-200"
+  1501→                            )}
+  1502→                          >
+  1503→                            {!r.approved && (
+  1504→                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1505→                            )}
+  1506→                            {r.approved ? "APPROVED" : "PENDING"}
+  1507→                          </span>
+  1508→                        </td>
+  1509→                        <td className="px-5 py-4">
+  1510→                          <div className="flex items-center justify-end gap-1.5">
+  1511→                            {busyId === r.id ? (
+  1512→                              <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1513→                            ) : (
+  1514→                              <>
+  1515→                                {!r.approved && (
+  1516→                                  <SmallAction
+  1517→                                    label="Approve"
+  1518→                                    tone="confirm"
+  1519→                                    onClick={() => reviewAction(r.id, "approve")}
+  1520→                                  />
+  1521→                                )}
+  1522→                                {r.approved && (
+  1523→                                  <SmallAction
+  1524→                                    label="Reject"
+  1525→                                    tone="warn"
+  1526→                                    onClick={() => reviewAction(r.id, "reject")}
+  1527→                                  />
+  1528→                                )}
+  1529→                                <SmallAction
+  1530→                                  label="Delete"
+  1531→                                  tone="cancel"
+  1532→                                  onClick={() => reviewAction(r.id, "delete")}
+  1533→                                />
+  1534→                              </>
+  1535→                            )}
+  1536→                          </div>
+  1537→                        </td>
+  1538→                      </tr>
+  1539→                    ))}
+  1540→                  </tbody>
+  1541→                </table>
+  1542→              </div>
+  1543→            </div>
+  1544→
+  1545→            {/* Mobile cards */}
+  1546→            <div className="mt-6 space-y-3 lg:hidden">
+  1547→              {filtered.map((r) => (
+  1548→                <motion.article
+  1549→                  key={r.id}
+  1550→                  initial={{ opacity: 0, y: 14 }}
+  1551→                  animate={{ opacity: 1, y: 0 }}
+  1552→                  className={cn(
+  1553→                    "rounded-2xl border border-blue-100 bg-white p-4 shadow-sm",
+  1554→                    !r.approved && "ring-2 ring-amber-200"
+  1555→                  )}
+  1556→                >
+  1557→                  <div className="flex items-start justify-between gap-3">
+  1558→                    <div>
+  1559→                      <p className="font-semibold text-brand-navy">{r.name}</p>
+  1560→                      <p className="mt-0.5 text-xs text-slate-500">{r.phone ?? "—"}</p>
+  1561→                      <p className="mt-0.5 text-[10px] text-slate-400">
+  1562→                        {new Date(r.createdAt).toLocaleDateString("en-US", {
+  1563→                          month: "short",
+  1564→                          day: "numeric",
+  1565→                          year: "numeric",
+  1566→                        })}
+  1567→                      </p>
+  1568→                    </div>
+  1569→                    <span
+  1570→                      className={cn(
+  1571→                        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+  1572→                        r.approved
+  1573→                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+  1574→                          : "bg-amber-50 text-amber-700 ring-amber-200"
+  1575→                      )}
+  1576→                    >
+  1577→                      {!r.approved && (
+  1578→                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1579→                      )}
+  1580→                      {r.approved ? "APPROVED" : "PENDING"}
+  1581→                    </span>
+  1582→                  </div>
+  1583→                  <div className="mt-3 rounded-xl bg-ice px-3.5 py-3">
+  1584→                    <StarsRow value={r.rating} />
+  1585→                    {r.title && (
+  1586→                      <p className="mt-1 text-xs font-semibold text-brand-navy">{r.title}</p>
+  1587→                    )}
+  1588→                    <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-500">
+  1589→                      {r.message}
+  1590→                    </p>
+  1591→                    {r.serviceSlug && (
+  1592→                      <span className="mt-2 inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
+  1593→                        <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
+  1594→                        {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+  1595→                      </span>
+  1596→                    )}
+  1597→                  </div>
+  1598→                  {busyId === r.id ? (
+  1599→                    <div className="mt-3 flex justify-center py-1.5">
+  1600→                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1601→                    </div>
+  1602→                  ) : (
+  1603→                    <div className="mt-3 flex flex-wrap gap-2">
+  1604→                      {!r.approved && (
+  1605→                        <SmallAction label="Approve" tone="confirm" onClick={() => reviewAction(r.id, "approve")} />
+  1606→                      )}
+  1607→                      {r.approved && (
+  1608→                        <SmallAction label="Reject" tone="warn" onClick={() => reviewAction(r.id, "reject")} />
+  1609→                      )}
+  1610→                      <SmallAction label="Delete" tone="cancel" onClick={() => reviewAction(r.id, "delete")} />
+  1611→                    </div>
+  1612→                  )}
+  1613→                </motion.article>
+  1614→              ))}
+  1615→            </div>
+  1616→          </>
+  1617→        )}
+  1618→      </div>
+  1619→    </div>
+  1620→  );
+  1621→}
+  1622→
+  1623→function SmallAction({
+  1624→  label,
+  1625→  tone,
+  1626→  onClick,
+  1627→}: {
+  1628→  label: string;
+  1629→  tone: "confirm" | "complete" | "cancel" | "neutral" | "warn";
+  1630→  onClick: () => void;
+  1631→}) {
+  1632→  const tones = {
+  1633→    confirm: "bg-blue-50 text-brand-blue ring-blue-200 hover:bg-brand-blue hover:text-white",
+  1634→    complete: "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-600 hover:text-white",
+  1635→    cancel: "bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-500 hover:text-white",
+  1636→    neutral: "bg-slate-50 text-slate-600 ring-slate-200 hover:bg-slate-600 hover:text-white",
+  1637→    warn: "bg-amber-50 text-amber-700 ring-amber-200 hover:bg-brand-gold hover:text-brand-navy",
+  1638→  };
+  1639→  return (
+  1640→    <button
+  1641→      type="button"
+  1642→      onClick={onClick}
+  1643→      className={cn(
+  1644→        "rounded-full px-3.5 py-1.5 text-[11px] font-bold ring-1 transition-all duration-300",
+  1645→        tones[tone]
+  1646→      )}
+  1647→    >
+  1648→      {label}
+  1649→    </button>
+  1650→  );
+  1651→}
+  1652→

@@ -206,3 +206,95 @@ export function reviewsToCsv(rows: CsvReviewRow[]): string {
   }
   return `${lines.join("\r\n")}\r\n`;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Contact messages CSV export (admin inbox)                           */
+/* ------------------------------------------------------------------ */
+
+export type CsvMessageRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string;
+  handled: boolean;
+  createdAt: Date;
+};
+
+const MESSAGE_CSV_COLUMNS = [
+  "ID",
+  "Name",
+  "Email",
+  "Phone",
+  "Subject",
+  "Message",
+  "Status",
+  "CreatedAt",
+] as const;
+
+export function messagesToCsv(rows: CsvMessageRow[]): string {
+  const lines: string[] = [MESSAGE_CSV_COLUMNS.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        csvCell(r.id),
+        csvCell(r.name),
+        csvCell(r.email),
+        csvCell(r.phone),
+        csvCell(r.subject),
+        csvCell(r.message),
+        csvCell(r.handled ? "HANDLED" : "NEW"),
+        csvCell(dhakaIso(r.createdAt)),
+      ].join(",")
+    );
+  }
+  return `${lines.join("\r\n")}\r\n`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Newsletter subscribers CSV export                                   */
+/* ------------------------------------------------------------------ */
+
+export type CsvSubscriberRow = {
+  id: string;
+  email: string;
+  createdAt: Date;
+};
+
+export function subscribersToCsv(rows: CsvSubscriberRow[]): string {
+  const lines: string[] = ["Email,SubscribedAt"];
+  for (const r of rows) {
+    lines.push([csvCell(r.email), csvCell(dhakaIso(r.createdAt))].join(","));
+  }
+  return `${lines.join("\r\n")}\r\n`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Patient accounts CSV export (portal accounts)                       */
+/* ------------------------------------------------------------------ */
+
+export type CsvPatientRow = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  createdAt: Date;
+  appointmentCount: number;
+};
+
+export function patientsToCsv(rows: CsvPatientRow[]): string {
+  const lines: string[] = ["Name,Phone,Email,Appointments,RegisteredAt"];
+  for (const r of rows) {
+    lines.push(
+      [
+        csvCell(r.name),
+        csvCell(r.phone),
+        csvCell(r.email),
+        csvCell(r.appointmentCount),
+        csvCell(dhakaIso(r.createdAt)),
+      ].join(",")
+    );
+  }
+  return `${lines.join("\r\n")}\r\n`;
+}

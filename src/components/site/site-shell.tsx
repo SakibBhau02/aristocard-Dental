@@ -20,6 +20,7 @@ import { GalleryPage } from "@/components/site/pages/gallery-page";
 import { FaqsPage } from "@/components/site/pages/faqs-page";
 import { AssessmentPage } from "@/components/site/pages/assessment-page";
 import { StatusPage } from "@/components/site/pages/status-page";
+import { PortalPage } from "@/components/site/pages/portal-page";
 import { AdminPage } from "@/components/site/pages/admin-page";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 
@@ -64,6 +65,8 @@ function PageRouter() {
     page = <AssessmentPage />;
   } else if (segments[0] === "status") {
     page = <StatusPage />;
+  } else if (segments[0] === "portal") {
+    page = <PortalPage />;
   } else if (segments[0] === "admin") {
     page = <AdminPage />;
   } else {

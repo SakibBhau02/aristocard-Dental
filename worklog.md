@@ -472,3 +472,90 @@ Task: Round 11 — full hero redesign (professional centered heroes over sliding
 - Hero LCP: first backdrop image has priority — acceptable; could add preload link if LCP regresses.
 - Carried risks: real clinic photos pending (imagery is AI-representative incl. new service images); admin passcode demo-grade; blog bodies EN-only; clinic-status hardcoded schedule.
 - Next-phase priorities: (1) client's YouTube links → heroVideoUrls; (2) real clinic/service photos when available; (3) optional cleanup of unused dictionary keys; (4) consider per-service hero fine-tuning if client wants video per service page; (5) blog BN translations; (6) admin auth hardening.
+
+---
+Task ID: 11 (main agent round 11) — IN PROGRESS (backend complete, frontend in flight)
+Agent: Z.ai Code (user-driven round: "admin panel fully ready + Patient Portal")
+Task: Make the Admin Panel fully ready AND build a Patient Portal (#/portal) — patients can look up bookings by phone number WITHOUT an account, and can register/login for a full-detail dashboard.
+
+Work Log (so far):
+- Read worklog; assessed project (round 10 stable, dev server healthy, 200 on /).
+- Prisma: added `Patient` model (phone unique, name, email?, scrypt passwordHash) → `bun run db:push` OK. RESTARTED the dev server because the running process held a stale global PrismaClient singleton (`db.patient` undefined → 500). Lesson: after schema changes ALWAYS restart dev server.
+- New lib `src/lib/patient-auth.ts`: scrypt password hashing ("scrypt:salt:hash", N=16384, keylen 64) + HMAC-signed session cookie `adc_patient_session` (30d TTL, httpOnly, sameSite=lax, token binds patientId+expiry).
+- New patient APIs (all rate-limited, all verified with curl):
+  - POST /api/patient/register {name,phone,password,email?} → creates account + session cookie (409 if phone registered)
+  - POST /api/patient/login {phone,password} → generic 401 on unknown phone OR wrong password
+  - POST /api/patient/logout → clears cookie
+  - GET /api/patient/me → {patient, appointments (FULL fields incl. notes/source), reviews (by phone), stats} — richer than anonymous lookup by design
+  - PUT /api/patient/profile {name?,email?}
+  - PUT /api/patient/password {currentPassword,newPassword}
+  - POST /api/patient/cancel {refCode} → session-verified cancel (booking must belong to session phone)
+- New admin APIs (x-admin-code or admin session cookie; verified with curl):
+  - GET /api/admin/overview → cross-module stats + 14-day booking-created trend + topServices + review/message/subscriber/patient stats
+  - GET /api/admin/messages (+?format=csv) → inbox + stats; POST {id,handled} → toggle handled
+  - GET /api/admin/subscribers (+csv) → list + stats
+  - GET /api/admin/patients (+csv; ?phone=01… → account + their bookings) — passwordHash NEVER selected
+- Extended src/lib/admin-csv.ts with messagesToCsv / subscribersToCsv / patientsToCsv.
+- Dictionary: added full bilingual `portalPage` namespace (EN+BN, ~120 keys: quick-check/login/register/dashboard/profile/security/toasts) + `chrome.nav.portal` ("Patient Portal"/"পেশেন্ট পোর্টাল"). Dictionary type = typeof en → both languages must stay shape-identical.
+- DB cleanup + demo seed: removed ALL QA-noise appointments/patients/messages/subscribers; seeded realistic demo data — **demo patient account: phone 01601000950, password demo1234** (5 bookings: 2 upcoming, 2 completed, 1 cancelled), 5 other-patient bookings, 3 inbox messages (1 unhandled), 4 subscribers. Reviews (6 seeded) kept.
+
+Stage Summary:
+- Backend for BOTH features is complete and curl-verified end-to-end (register→me→cancel→profile→password→re-login→logout all PASS; admin overview/messages/subscribers/patients all PASS incl. auth-gating 401s).
+- Dictionary + chrome.nav.portal done centrally by main agent to avoid subagent edit conflicts on dictionary.ts.
+- NEXT (in flight): subagent 2-a builds PortalPage (#/portal) + nav/footer/search integration; subagent 2-b expands AdminPage with Overview/Messages/Subscribers/Patients tabs. Then agent-browser E2E QA + lint + final worklog update.
+---
+Task ID: 2-a
+Agent: fullstack-developer (patient portal frontend)
+Task: Patient Portal page (#/portal) + navbar/footer/search integration
+
+Work Log:
+- Read worklog Task 11 + reference files (status-page, appointment-page, shared, motion, site-shell, navbar, footer, search-index/site-search, dictionary portalPage/statusPage namespaces); curl-verified all patient APIs + demo seed (01601000950/demo1234 → 5 bookings, stats 2/2/1/0).
+- CREATED src/components/site/pages/portal-page.tsx (~1990 lines): PageHeader hero + session probe (GET /api/patient/me → checking/guest/authed, httpOnly cookie only). Guest: elevated auth card with 3-way segmented control (layoutId pill "portal-mode-pill", icon+label+hint per tab), AnimatePresence mode slides. Quick Check (GET /api/appointments?phone=, status-page-style result cards, upsell box → login tab w/ phone prefill). Login (Eye/EyeOff, inline+toast errors). Register (name/phone/email?/pw/confirm, client validation: 01[3-9]XXXXXXXX + 8-char letter+digit + mismatch, auto-login). Dashboard: navy welcome banner (initials avatar, memberSince, logout), 4 stat cards (bn digits), upcoming section (highlighted cards + shadcn AlertDialog cancel via POST /api/patient/cancel, local state+stats update), full visit-history timeline (status dots on dashed rail, service/doctor lookups w/ nameBn, notes, requested/updated, source), my reviews (stars + pendingReview badge), profile settings (edit mode → PUT /api/patient/profile) + change password (PUT /api/patient/password) side-by-side on lg. Bilingual via d.portalPage + d.statusPage.status labels/statusStyles copied from status-page; toBnDigits for phones/counts/dates.
+- MODIFIED site-shell.tsx (route + import), navbar.tsx (desktop UserRound ghost pill w/ isActive state near Book CTA + mobile drawer item), footer.tsx (quickLinks[10] → /portal), search-index.ts (PAGE_ICONS "/portal":"UserRound" + pageEntries row + optional 5th "extra keywords" column so "portal/patient/account/login/পোর্টাল" queries match — the portal title never says "portal"), site-search.tsx (UserRound import + ICONS).
+- QA (agent-browser + dev.log + VLM spot-checks), DB restored (ADC-DMO2405 → PENDING via admin API; test patient 01770000001 deleted).
+
+Stage Summary:
+- Golden path: (1) PASS — header+3 tabs render, title correct, ZERO console/page errors, dev.log clean. (2) PASS — quick check 01601000950 → 5 cards (PENDING/CONFIRMED/CANCELLED/COMPLETED/COMPLETED) + upsell box. (3) PASS — login demo1234 → "Welcome back, Demo Patient", stats 2/2/5/0, 2 upcoming cards w/ cancel, history timeline shows all 5, profile shows name/email. (4) PASS — wrong password → inline "Incorrect phone number or password." + destructive toast, no crash. (5) PASS — register 01770000001/testpass1 → auto-login → 0-appt empty states (upcoming w/ Book CTA, history, reviews) → logout; account cleaned up. (6) PASS — full BN render (tabs/labels/hints/dates/phones/stats in Bangla digits). (7) PASS — navbar pill (aria-current) + footer quick link + Ctrl+K "portal" → PAGES hit → Enter navigates to #/portal; mobile drawer entry also verified. (8) PASS — 390px: scrollWidth=clientWidth=390 across guest+dashboard, stat grid 2×2, timeline dots centered on rail; VLM: no overlaps. (9) PASS — AlertDialog cancel ADC-DMO2405 → CANCELLED (DB verified) → restored to PENDING.
+- Extras verified: profile no-op save (toast + view refresh), password change wrong-current → 403 inline error, client mismatch error, logout flow, session probe 401→guest.
+- Files lint clean (eslint on the 6 touched files: 0 errors/0 warnings), tsc clean for all touched files (pre-existing estimator/language-toggle errors untouched).
+- Deviations: (a) visit history shows ALL bookings (QA said "history shows 5" = full timeline incl. upcoming, not just past 3); (b) search-index rows gained an optional 5th keywords column (needed for "portal" query match); (c) client-side validation error strings for phone/name reuse the backend's canonical English messages (no dictionary keys exist for them) — disabled submits + hints cover the bilingual case.
+
+---
+Task ID: 2-b (completed by subagent, verified + finalized by main agent)
+Agent: full-stack-developer (admin panel expansion) — context deadline hit before its own worklog append; main agent performed the QA below and documents it here.
+Task: Admin panel fully-ready — Overview + Messages + Subscribers + Patients modules
+
+Work Log (reconstructed from the shipped code + main-agent QA):
+- Rewrote AdminDashboard into SIX tabs: Overview (new DEFAULT), Appointments (unchanged), Reviews (unchanged), Messages (new), Subscribers (new), Patients (new); AdminView type extended.
+- OverviewPanel: 7 KPI stat cards (today/upcoming/pending/unhandled-messages/reviews-to-approve/patients/subscribers), hand-rolled SVG 14-day bookings-created bar chart (counts above bars, weekday+day labels, today highlighted), segmented appointment-status bar with legend, Top-services list with proportional progress bars, Quick-jump cards.
+- MessagesPanel: stats row, All/New/Handled filter tabs + search, expandable message cards (email/phone/reply links, mark handled ↔ mark new toggle), CSV export.
+- SubscribersPanel: stats + search + table + CSV export.
+- PatientsPanel: stats + search + avatar rows with appointmentCount badges, expandable drilldown fetching /api/admin/patients?phone=… showing that patient's bookings, CSV export (password hashes never selected).
+- Tab badges: live count pills (Appointments=pending, Messages=unhandled, Reviews=pendingApproval).
+
+Stage Summary (main-agent QA via agent-browser, session adminqa-03e363425671):
+- Gate login (passcode) → lands on Overview; 7 KPI cards show correct values (1 today / 6 upcoming / 3 pending / 1 unhandled / 0 reviews / 1 patient / 4 subscribers).
+- Bar chart verified visually via VLM: 14 bars, counts above non-zero bars, weekday labels, today highlighted. Status segmented bar + Top services progress bars render cleanly.
+- Messages: Farhana Akter (NEW) expand → Mark handled → flips to HANDLED, New filter count 1→0, tab badge 1→(none). Toggled back via DB restore (handled=0). Search + CSV buttons present.
+- Subscribers: 4 rows with dates. Patients: Demo Patient row (5 bookings badge, tel/email links) → drilldown shows all 5 bookings w/ statuses.
+- FIXED by main agent: seed data used 3 invalid service slugs (scaling-polishing/general-checkup/teeth-whitening + braces-aligners) → replaced with real slugs or NULL; drilldown/overview now show friendly names.
+- Mobile 390px: both #/admin and #/portal scrollWidth === 390 (no overflow). Zero console/page errors; dev.log clean.
+
+---
+Task ID: 11 (main agent round 11) — COMPLETE
+Agent: Z.ai Code (user-driven: "admin panel fully ready + Patient Portal")
+Task: Finish round 11 — frontend integration, E2E QA, hardening, cleanup.
+
+Work Log:
+- Subagent 2-a shipped portal-page.tsx (~1990 lines: 3-mode auth card w/ layoutId pill, quick check, login/register w/ validation + password visibility toggles, dashboard w/ avatar initials welcome banner, 4 stat cards, upcoming + AlertDialog cancel, history timeline, my reviews, profile + password cards) + route registration in site-shell + navbar UserRound portal pill (desktop + mobile drawer) + footer quick link + search-index entry (+ optional keywords column so "portal" query matches) + site-search UserRound icon. Its 9-item golden path: ALL PASS (documented above in its own section).
+- Main agent independent QA re-verified: quick check 01601000950 → 5 cards; login demo1234 → dashboard (stats 2/2/5/0, upcoming cards, profile); Bangla render incl. Bangla digits; mobile 390px no overflow; VLM design review 9/10.
+- Portal polish: appointment-card times now convert to Bangla digits in BN mode (matches the cancel dialog; 2 occurrences).
+- Pre-existing defects found via tsc and FIXED: (1) deleted src/components/site/pages/estimator-page.tsx — dead code, unrouted since an earlier round, referenced non-existent dictionary namespace `estimatorPage` (route showed 404, file was TS-broken); (2) language-toggle.tsx imported `type Lang` from @/lib/i18n (not re-exported there) → now imports from @/lib/data/dictionary. `bunx tsc --noEmit` now reports ZERO errors under src/ (examples/ + skills/ folders retain their own pre-existing errors — out of scope).
+- bun run lint: 0 errors / 0 warnings project-wide.
+- Demo data restorations after QA: Farhana Akter message back to unhandled; ADC-DMO2405 PENDING; test patient accounts removed.
+- Dev server healthy throughout (single instance, port 3000); no restarts needed after the initial Prisma-client reload.
+
+Stage Summary:
+- USER-FACING RESULT: (A) Patient Portal live at #/portal — patients look up bookings by phone WITHOUT an account; registered patients log in for the full dashboard (history + notes + reviews + profile + password + one-tap cancel). Demo login: 01601000950 / demo1234. (B) Admin panel now "fully ready": 6 modules (Overview dashboard w/ charts, Appointments, Reviews, Messages inbox, Subscribers, Patients w/ drilldown).
+- New routes/APIs this round: #/portal; /api/patient/{register,login,logout,me,profile,password,cancel}; /api/admin/{overview,messages,subscribers,patients}. Prisma Patient model added (dev server restart REQUIRED after schema push — stale global PrismaClient).
+- Remaining risks/next-phase ideas: (1) password reset is call-the-clinic only (no SMS/email infra) — documented in UI; (2) patient sessions cannot be revoked server-side per-account (HMAC secret is global) — acceptable at this scale; (3) portal booking creation could pre-fill logged-in patient's name/phone on the appointment page; (4) admin Patients panel could gain "book on behalf" action; (5) overview chart could add date-range switching.

@@ -56,3 +56,18 @@ model Review {
   approved    Boolean  @default(false) // moderation: only approved shown publicly
   createdAt   DateTime @default(now())
 }
+
+/* Registered patient accounts — powers the Patient Portal (#/portal).
+   Signup is by Bangladeshi mobile number (unique); password is stored as
+   "scrypt:<salt>:<hash>" (never plaintext). Appointments link to accounts
+   at query time via the shared `phone` field, so historic bookings made
+   BEFORE signup appear automatically in the logged-in dashboard.        */
+model Patient {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  name         String
+  email        String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

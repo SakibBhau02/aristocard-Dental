@@ -1,0 +1,614 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useState, type FormEvent } from "react";
+     4→     4→import { AnimatePresence, motion } from "framer-motion";
+     5→     5→import {
+     6→     6→  AlertCircle,
+     7→     7→  BadgeCheck,
+     8→     8→  CalendarClock,
+     9→     9→  CalendarX2,
+    10→    10→  CheckCircle2,
+    11→    11→  Clock,
+    12→    12→  Hash,
+    13→    13→  Info,
+    14→    14→  Loader2,
+    15→    15→  Phone,
+    16→    16→  RefreshCw,
+    17→    17→  Search,
+    18→    18→  Stethoscope,
+    19→    19→  UserRound,
+    20→    20→  XCircle,
+    21→    21→} from "lucide-react";
+    22→    22→import { usePageMeta } from "@/lib/router";
+    23→    23→import { useLang, toBnDigits } from "@/lib/i18n";
+    24→    24→import { services } from "@/lib/data/services";
+    25→    25→import { doctors } from "@/lib/data/doctors";
+    26→    26→import { site } from "@/lib/site";
+    27→    27→import { PageHeader } from "@/components/site/shared";
+    28→    28→import { Reveal } from "@/components/site/motion";
+    29→    29→import { Button } from "@/components/ui/button";
+    30→    30→import { Input } from "@/components/ui/input";
+    31→    31→import { Label } from "@/components/ui/label";
+    32→    32→import { useToast } from "@/hooks/use-toast";
+    33→    33→import { cn } from "@/lib/utils";
+    34→    34→import type { Lang } from "@/lib/data/dictionary";
+    35→    35→
+    36→    36→/* ------------------------------------------------------------------ */
+    37→    37→/*  APPOINTMENT STATUS — lookup by reference code or phone (EN / বাংলা) */
+    38→    38→/* ------------------------------------------------------------------ */
+    39→    39→
+    40→    40→type AppointmentRecord = {
+    41→    41→  refCode: string;
+    42→    42→  name: string;
+    43→    43→  date: string;
+    44→    44→  time: string;
+    45→    45→  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+    46→    46→  serviceSlug: string | null;
+    47→    47→  doctorSlug: string | null;
+    48→    48→  notes: string | null;
+    49→    49→  createdAt: string;
+    50→    50→  updatedAt: string;
+    51→    51→};
+    52→    52→
+    53→    53→const statusStyles: Record<
+    54→    54→  AppointmentRecord["status"],
+    55→    55→  { badge: string; dot: string; icon: typeof Clock }
+    56→    56→> = {
+    57→    57→  PENDING: {
+    58→    58→    badge: "bg-amber-50 text-amber-700 ring-amber-200",
+    59→    59→    dot: "bg-amber-500",
+    60→    60→    icon: Clock,
+    61→    61→  },
+    62→    62→  CONFIRMED: {
+    63→    63→    badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    64→    64→    dot: "bg-emerald-500",
+    65→    65→    icon: BadgeCheck,
+    66→    66→  },
+    67→    67→  COMPLETED: {
+    68→    68→    badge: "bg-blue-50 text-brand-blue ring-blue-200",
+    69→    69→    dot: "bg-brand-blue",
+    70→    70→    icon: CheckCircle2,
+    71→    71→  },
+    72→    72→  CANCELLED: {
+    73→    73→    badge: "bg-rose-50 text-rose-600 ring-rose-200",
+    74→    74→    dot: "bg-rose-400",
+    75→    75→    icon: XCircle,
+    76→    76→  },
+    77→    77→};
+    78→    78→
+    79→    79→function formatDateLabel(iso: string, lang: Lang): string {
+    80→    80→  if (!iso) return "";
+    81→    81→  return new Date(`${iso}T00:00:00`).toLocaleDateString(
+    82→    82→    lang === "bn" ? "bn-BD" : "en-GB",
+    83→    83→    {
+    84→    84→      weekday: "long",
+    85→    85→      day: "numeric",
+    86→    86→      month: "long",
+    87→    87→      year: "numeric",
+    88→    88→    }
+    89→    89→  );
+    90→    90→}
+    91→    91→
+    92→    92→function formatShortDate(iso: string, lang: Lang): string {
+    93→    93→  return new Date(iso).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {
+    94→    94→    day: "numeric",
+    95→    95→    month: "short",
+    96→    96→    year: "numeric",
+    97→    97→  });
+    98→    98→}
+    99→    99→
+   100→   100→export function StatusPage() {
+   101→   101→  const { lang, d } = useLang();
+   102→   102→  const bn = lang === "bn";
+   103→   103→  const t = d.statusPage;
+   104→   104→
+   105→   105→  usePageMeta({
+   106→   106→    title: "Check Your Appointment Status",
+   107→   107→    description:
+   108→   108→      "Look up your Aristocrat Dental Care appointment by reference code or phone number — see confirmation status, reschedule or cancel in seconds.",
+   109→   109→  });
+   110→   110→
+   111→   111→  const { toast } = useToast();
+   112→   112→  const [mode, setMode] = useState<"ref" | "phone">("ref");
+   113→   113→  const [refCode, setRefCode] = useState("");
+   114→   114→  const [phone, setPhone] = useState("");
+   115→   115→  const [loading, setLoading] = useState(false);
+   116→   116→  const [error, setError] = useState("");
+   117→   117→  const [results, setResults] = useState<AppointmentRecord[] | null>(null);
+   118→   118→
+   119→   119→  /* Cancel flow state */
+   120→   120→  const [cancelTarget, setCancelTarget] = useState<AppointmentRecord | null>(null);
+   121→   121→  const [cancelPhone, setCancelPhone] = useState("");
+   122→   122→  const [cancelling, setCancelling] = useState(false);
+   123→   123→
+   124→   124→  const lookup = async (e?: FormEvent) => {
+   125→   125→    e?.preventDefault();
+   126→   126→    setError("");
+   127→   127→    setResults(null);
+   128→   128→    setLoading(true);
+   129→   129→    try {
+   130→   130→      const params =
+   131→   131→        mode === "ref"
+   132→   132→          ? `ref=${encodeURIComponent(refCode.trim())}`
+   133→   133→          : `phone=${encodeURIComponent(phone.replace(/[-\s]/g, ""))}`;
+   134→   134→      const res = await fetch(`/api/appointments?${params}`);
+   135→   135→      const data = await res.json();
+   136→   136→      if (!res.ok) {
+   137→   137→        setError(data.error ?? t.lookupFailed);
+   138→   138→      } else {
+   139→   139→        setResults(data.appointments as AppointmentRecord[]);
+   140→   140→        if ((data.appointments as AppointmentRecord[]).length === 0) {
+   141→   141→          setError(mode === "phone" ? t.notFoundPhone : t.notFoundRef);
+   142→   142→        }
+   143→   143→      }
+   144→   144→    } catch {
+   145→   145→      setError(t.networkError);
+   146→   146→    } finally {
+   147→   147→      setLoading(false);
+   148→   148→    }
+   149→   149→  };
+   150→   150→
+   151→   151→  const performCancel = async (e?: FormEvent) => {
+   152→   152→    e?.preventDefault();
+   153→   153→    if (!cancelTarget) return;
+   154→   154→    setCancelling(true);
+   155→   155→    try {
+   156→   156→      const res = await fetch("/api/appointments/cancel", {
+   157→   157→        method: "POST",
+   158→   158→        headers: { "Content-Type": "application/json" },
+   159→   159→        body: JSON.stringify({ refCode: cancelTarget.refCode, phone: cancelPhone }),
+   160→   160→      });
+   161→   161→      const data = await res.json();
+   162→   162→      if (!res.ok) {
+   163→   163→        toast({
+   164→   164→          title: t.toastCancelFail,
+   165→   165→          description: data.error ?? t.toastCancelFailDesc,
+   166→   166→          variant: "destructive",
+   167→   167→        });
+   168→   168→        return;
+   169→   169→      }
+   170→   170→      toast({
+   171→   171→        title: t.toastCancelled,
+   172→   172→        description: t.toastCancelledDesc,
+   173→   173→      });
+   174→   174→      setCancelTarget(null);
+   175→   175→      setCancelPhone("");
+   176→   176→      /* refresh results */
+   177→   177→      setResults((prev) =>
+   178→   178→        prev
+   179→   179→          ? prev.map((a) => (a.refCode === cancelTarget.refCode ? { ...a, status: "CANCELLED" as const } : a))
+   180→   180→          : prev
+   181→   181→      );
+   182→   182→    } catch {
+   183→   183→      toast({
+   184→   184→        title: t.toastNetwork,
+   185→   185→        description: t.toastNetworkDesc,
+   186→   186→        variant: "destructive",
+   187→   187→      });
+   188→   188→    } finally {
+   189→   189→      setCancelling(false);
+   190→   190→    }
+   191→   191→  };
+   192→   192→
+   193→   193→  return (
+   194→   194→    <>
+   195→   195→      <PageHeader
+   196→   196→        eyebrow={t.eyebrow}
+   197→   197→        title={t.title}
+   198→   198→        description={t.description}
+   199→   199→        breadcrumb={[
+   200→   200→          { label: d.chrome.nav.home, to: "/" },
+   201→   201→          { label: t.breadcrumb },
+   202→   202→        ]}
+   203→   203→      />
+   204→   204→
+   205→   205→      <section className="hero-mesh relative overflow-hidden">
+   206→   206→        <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-18">
+   207→   207→          {/* Lookup card */}
+   208→   208→          <Reveal>
+   209→   209→            <div className="rounded-[2rem] border border-blue-100/80 bg-white p-6 shadow-[0_24px_60px_-24px_rgba(0,32,96,0.25)] sm:p-8">
+   210→   210→              {/* Mode toggle */}
+   211→   211→              <div
+   212→   212→                className="relative mx-auto flex w-full max-w-md rounded-2xl bg-ice p-1.5"
+   213→   213→                role="tablist"
+   214→   214→                aria-label="Lookup method"
+   215→   215→              >
+   216→   216→                {(["ref", "phone"] as const).map((m) => (
+   217→   217→                  <button
+   218→   218→                    key={m}
+   219→   219→                    type="button"
+   220→   220→                    role="tab"
+   221→   221→                    aria-selected={mode === m}
+   222→   222→                    onClick={() => {
+   223→   223→                      setMode(m);
+   224→   224→                      setError("");
+   225→   225→                      setResults(null);
+   226→   226→                    }}
+   227→   227→                    className={cn(
+   228→   228→                      "relative flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-300",
+   229→   229→                      mode === m ? "text-white" : "text-brand-navy/70 hover:text-brand-navy"
+   230→   230→                    )}
+   231→   231→                  >
+   232→   232→                    {mode === m && (
+   233→   233→                      <motion.span
+   234→   234→                        layoutId="lookup-mode-pill"
+   235→   235→                        className="absolute inset-0 rounded-xl bg-brand-navy shadow-lg shadow-navy-900/25"
+   236→   236→                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+   237→   237→                      />
+   238→   238→                    )}
+   239→   239→                    <span className="relative inline-flex items-center justify-center gap-2">
+   240→   240→                      {m === "ref" ? (
+   241→   241→                        <Hash className="h-4 w-4" aria-hidden="true" />
+   242→   242→                      ) : (
+   243→   243→                        <Phone className="h-4 w-4" aria-hidden="true" />
+   244→   244→                      )}
+   245→   245→                      {m === "ref" ? t.modeRef : t.modePhone}
+   246→   246→                    </span>
+   247→   247→                  </button>
+   248→   248→                ))}
+   249→   249→              </div>
+   250→   250→
+   251→   251→              <form onSubmit={lookup} className="mt-6">
+   252→   252→                <AnimatePresence mode="wait">
+   253→   253→                  <motion.div
+   254→   254→                    key={mode}
+   255→   255→                    initial={{ opacity: 0, y: 8 }}
+   256→   256→                    animate={{ opacity: 1, y: 0 }}
+   257→   257→                    exit={{ opacity: 0, y: -8 }}
+   258→   258→                    transition={{ duration: 0.25 }}
+   259→   259→                  >
+   260→   260→                    {mode === "ref" ? (
+   261→   261→                      <div className="space-y-2">
+   262→   262→                        <Label htmlFor="ref-input" className="text-sm font-semibold text-brand-navy">
+   263→   263→                          {t.refLabel} <span className="text-rose-500">*</span>
+   264→   264→                        </Label>
+   265→   265→                        <div className="relative">
+   266→   266→                          <Hash
+   267→   267→                            className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+   268→   268→                            aria-hidden="true"
+   269→   269→                          />
+   270→   270→                          <Input
+   271→   271→                            id="ref-input"
+   272→   272→                            value={refCode}
+   273→   273→                            onChange={(e) => setRefCode(e.target.value.toUpperCase())}
+   274→   274→                            placeholder="ADC-XXXXXXXX"
+   275→   275→                            autoComplete="off"
+   276→   276→                            maxLength={14}
+   277→   277→                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 font-mono text-base font-semibold tracking-wider text-brand-navy placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+   278→   278→                          />
+   279→   279→                        </div>
+   280→   280→                        <p className="text-xs text-slate-500">
+   281→   281→                          {t.refHintA}
+   282→   282→                          <span className="font-mono font-semibold text-brand-blue">ADC-</span>
+   283→   283→                          {t.refHintB}
+   284→   284→                        </p>
+   285→   285→                      </div>
+   286→   286→                    ) : (
+   287→   287→                      <div className="space-y-2">
+   288→   288→                        <Label htmlFor="phone-input" className="text-sm font-semibold text-brand-navy">
+   289→   289→                          {t.phoneLabel} <span className="text-rose-500">*</span>
+   290→   290→                        </Label>
+   291→   291→                        <div className="relative">
+   292→   292→                          <Phone
+   293→   293→                            className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+   294→   294→                            aria-hidden="true"
+   295→   295→                          />
+   296→   296→                          <Input
+   297→   297→                            id="phone-input"
+   298→   298→                            value={phone}
+   299→   299→                            onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, "").slice(0, 11))}
+   300→   300→                            inputMode="numeric"
+   301→   301→                            placeholder="01XXXXXXXXX"
+   302→   302→                            autoComplete="tel"
+   303→   303→                            className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base font-semibold text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+   304→   304→                          />
+   305→   305→                        </div>
+   306→   306→                        <p className="text-xs text-slate-500">{t.phoneHint}</p>
+   307→   307→                      </div>
+   308→   308→                    )}
+   309→   309→                  </motion.div>
+   310→   310→                </AnimatePresence>
+   311→   311→
+   312→   312→                <Button
+   313→   313→                  type="submit"
+   314→   314→                  disabled={
+   315→   315→                    loading ||
+   316→   316→                    (mode === "ref" ? refCode.trim().length < 6 : phone.length !== 11)
+   317→   317→                  }
+   318→   318→                  className="mt-6 h-13 w-full rounded-2xl bg-brand-blue text-base font-bold shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+   319→   319→                >
+   320→   320→                  {loading ? (
+   321→   321→                    <>
+   322→   322→                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+   323→   323→                      {t.searching}
+   324→   324→                    </>
+   325→   325→                  ) : (
+   326→   326→                    <>
+   327→   327→                      <Search className="h-5 w-5" aria-hidden="true" />
+   328→   328→                      {t.find}
+   329→   329→                    </>
+   330→   330→                  )}
+   331→   331→                </Button>
+   332→   332→              </form>
+   333→   333→
+   334→   334→              {/* Error message */}
+   335→   335→              <AnimatePresence>
+   336→   336→                {error && (
+   337→   337→                  <motion.div
+   338→   338→                    initial={{ opacity: 0, y: 8 }}
+   339→   339→                    animate={{ opacity: 1, y: 0 }}
+   340→   340→                    exit={{ opacity: 0 }}
+   341→   341→                    className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50/80 p-4 text-sm text-rose-700"
+   342→   342→                    role="alert"
+   343→   343→                  >
+   344→   344→                    <AlertCircle className="mt-0.5 h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+   345→   345→                    <span>{error}</span>
+   346→   346→                  </motion.div>
+   347→   347→                )}
+   348→   348→              </AnimatePresence>
+   349→   349→            </div>
+   350→   350→          </Reveal>
+   351→   351→
+   352→   352→          {/* Results */}
+   353→   353→          <AnimatePresence>
+   354→   354→            {results && results.length > 0 && (
+   355→   355→              <motion.div
+   356→   356→                initial={{ opacity: 0, y: 18 }}
+   357→   357→                animate={{ opacity: 1, y: 0 }}
+   358→   358→                exit={{ opacity: 0 }}
+   359→   359→                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   360→   360→                className="mt-8 space-y-5"
+   361→   361→                aria-live="polite"
+   362→   362→              >
+   363→   363→                <h2 className="font-heading text-xl font-bold text-brand-navy">
+   364→   364→                  {results.length === 1
+   365→   365→                    ? t.yourAppointment
+   366→   366→                    : t.yourAppointments.replace("{count}", bn ? toBnDigits(results.length) : String(results.length))}
+   367→   367→                </h2>
+   368→   368→                {results.map((appt, i) => {
+   369→   369→                  const style = statusStyles[appt.status] ?? statusStyles.PENDING;
+   370→   370→                  const label = t.status[appt.status]?.label ?? appt.status;
+   371→   371→                  const blurb = t.status[appt.status]?.blurb ?? "";
+   372→   372→                  const StatusIcon = style.icon;
+   373→   373→                  const service = services.find((s) => s.slug === appt.serviceSlug);
+   374→   374→                  const doctor = doctors.find((doc) => doc.slug === appt.doctorSlug);
+   375→   375→                  const cancellable = appt.status === "PENDING" || appt.status === "CONFIRMED";
+   376→   376→                  const isPast = new Date(`${appt.date}T23:59:59`) < new Date();
+   377→   377→
+   378→   378→                  return (
+   379→   379→                    <Reveal key={appt.refCode} delay={i * 0.06}>
+   380→   380→                      <article className="card-shine relative overflow-hidden rounded-[1.75rem] border border-blue-100/80 bg-white shadow-[0_10px_40px_-16px_rgba(0,32,96,0.18)]">
+   381→   381→                        {/* status ribbon */}
+   382→   382→                        <div
+   383→   383→                          className={cn(
+   384→   384→                            "flex flex-wrap items-center justify-between gap-3 border-b border-blue-50/80 px-6 py-4 sm:px-8",
+   385→   385→                            appt.status === "CANCELLED" ? "bg-rose-50/50" : "bg-ice/60"
+   386→   386→                          )}
+   387→   387→                        >
+   388→   388→                          <div className="flex items-center gap-3">
+   389→   389→                            <span
+   390→   390→                              className={cn(
+   391→   391→                                "relative inline-flex h-3 w-3 rounded-full",
+   392→   392→                                style.dot,
+   393→   393→                                appt.status === "PENDING" && "animate-pulse"
+   394→   394→                              )}
+   395→   395→                              aria-hidden="true"
+   396→   396→                            />
+   397→   397→                            <span
+   398→   398→                              className={cn(
+   399→   399→                                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider ring-1",
+   400→   400→                                style.badge
+   401→   401→                              )}
+   402→   402→                            >
+   403→   403→                              <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
+   404→   404→                              {label}
+   405→   405→                            </span>
+   406→   406→                          </div>
+   407→   407→                          <span className="font-mono text-sm font-bold tracking-wider text-brand-navy/70">
+   408→   408→                            {appt.refCode}
+   409→   409→                          </span>
+   410→   410→                        </div>
+   411→   411→
+   412→   412→                        <div className="grid gap-5 p-6 sm:grid-cols-[1.4fr_1fr] sm:p-8">
+   413→   413→                          <div className="space-y-4">
+   414→   414→                            <div className="flex items-start gap-4">
+   415→   415→                              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+   416→   416→                                <CalendarClock className="h-6 w-6" aria-hidden="true" />
+   417→   417→                              </span>
+   418→   418→                              <div>
+   419→   419→                                <p className="font-heading text-lg font-bold leading-snug text-brand-navy">
+   420→   420→                                  {formatDateLabel(appt.date, lang)}
+   421→   421→                                </p>
+   422→   422→                                <p className="mt-0.5 text-sm font-semibold text-brand-blue">
+   423→   423→                                  {isPast ? t.wasScheduledAt : t.scheduledAt} {appt.time}
+   424→   424→                                </p>
+   425→   425→                                <p className="mt-2 text-sm leading-relaxed text-slate-600">{blurb}</p>
+   426→   426→                              </div>
+   427→   427→                            </div>
+   428→   428→
+   429→   429→                            {appt.notes && (
+   430→   430→                              <div className="flex items-start gap-2.5 rounded-2xl bg-ice/70 px-4 py-3 text-xs leading-relaxed text-brand-navy/80 ring-1 ring-blue-100/60">
+   431→   431→                                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+   432→   432→                                <span>
+   433→   433→                                  <span className="font-semibold">{t.yourNote}</span> {appt.notes}
+   434→   434→                                </span>
+   435→   435→                              </div>
+   436→   436→                            )}
+   437→   437→                          </div>
+   438→   438→
+   439→   439→                          <div className="space-y-3 rounded-2xl bg-ice/50 p-5 ring-1 ring-blue-100/50">
+   440→   440→                            <div className="flex items-center gap-2.5 text-sm">
+   441→   441→                              <UserRound className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   442→   442→                              <span className="text-slate-500">{t.patient}</span>
+   443→   443→                              <span className="ml-auto font-semibold text-brand-navy">{appt.name}</span>
+   444→   444→                            </div>
+   445→   445→                            <div className="flex items-center gap-2.5 text-sm">
+   446→   446→                              <Stethoscope className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   447→   447→                              <span className="text-slate-500">{t.service}</span>
+   448→   448→                              <span className="ml-auto text-right font-semibold text-brand-navy">
+   449→   449→                                {service
+   450→   450→                                  ? bn && service.nameBn
+   451→   451→                                    ? service.nameBn
+   452→   452→                                    : service.name
+   453→   453→                                  : t.general}
+   454→   454→                              </span>
+   455→   455→                            </div>
+   456→   456→                            <div className="flex items-center gap-2.5 text-sm">
+   457→   457→                              <BadgeCheck className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   458→   458→                              <span className="text-slate-500">{t.specialist}</span>
+   459→   459→                              <span className="ml-auto text-right font-semibold text-brand-navy">
+   460→   460→                                {doctor?.name ?? t.assignedLater}
+   461→   461→                              </span>
+   462→   462→                            </div>
+   463→   463→                            <div className="flex items-center gap-2.5 border-t border-blue-100/70 pt-3 text-xs text-slate-500">
+   464→   464→                              <Clock className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+   465→   465→                              {t.requested} {formatShortDate(appt.createdAt, lang)}
+   466→   466→                            </div>
+   467→   467→                          </div>
+   468→   468→                        </div>
+   469→   469→
+   470→   470→                        {cancellable && !isPast && (
+   471→   471→                          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-blue-50/80 bg-slate-50/60 px-6 py-4 sm:px-8">
+   472→   472→                            <p className="text-xs leading-relaxed text-slate-500">
+   473→   473→                              {t.cantMakeIt.replace("{phone}", site.phone)}
+   474→   474→                            </p>
+   475→   475→                            <Button
+   476→   476→                              type="button"
+   477→   477→                              variant="outline"
+   478→   478→                              onClick={() => {
+   479→   479→                                setCancelTarget(appt);
+   480→   480→                                setCancelPhone("");
+   481→   481→                              }}
+   482→   482→                              className="rounded-xl border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+   483→   483→                            >
+   484→   484→                              <CalendarX2 className="h-4 w-4" aria-hidden="true" />
+   485→   485→                              {t.cancel}
+   486→   486→                            </Button>
+   487→   487→                          </div>
+   488→   488→                        )}
+   489→   489→                      </article>
+   490→   490→                    </Reveal>
+   491→   491→                  );
+   492→   492→                })}
+   493→   493→              </motion.div>
+   494→   494→            )}
+   495→   495→          </AnimatePresence>
+   496→   496→
+   497→   497→          {/* Help strip */}
+   498→   498→          <Reveal delay={0.15}>
+   499→   499→            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+   500→   500→              {[
+   501→   501→                {
+   502→   502→                  icon: Hash,
+   503→   503→                  title: t.help[0].title,
+   504→   504→                  text: t.help[0].text.replace("{phone}", site.phone),
+   505→   505→                },
+   506→   506→                {
+   507→   507→                  icon: RefreshCw,
+   508→   508→                  title: t.help[1].title,
+   509→   509→                  text: t.help[1].text,
+   510→   510→                },
+   511→   511→                {
+   512→   512→                  icon: Phone,
+   513→   513→                  title: t.help[2].title,
+   514→   514→                  text: t.help[2].text
+   515→   515→                    .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)
+   516→   516→                    .replace("{phone}", site.phone),
+   517→   517→                },
+   518→   518→              ].map((item) => (
+   519→   519→                <div
+   520→   520→                  key={item.title}
+   521→   521→                  className="rounded-2xl border border-blue-100/70 bg-white/80 p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-100"
+   522→   522→                >
+   523→   523→                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue">
+   524→   524→                    <item.icon className="h-5 w-5" aria-hidden="true" />
+   525→   525→                  </span>
+   526→   526→                  <h3 className="font-heading mt-3 text-sm font-bold text-brand-navy">{item.title}</h3>
+   527→   527→                  <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{item.text}</p>
+   528→   528→                </div>
+   529→   529→              ))}
+   530→   530→            </div>
+   531→   531→          </Reveal>
+   532→   532→        </div>
+   533→   533→      </section>
+   534→   534→
+   535→   535→      {/* Cancel confirmation dialog */}
+   536→   536→      <AnimatePresence>
+   537→   537→        {cancelTarget && (
+   538→   538→          <>
+   539→   539→            <motion.div
+   540→   540→              className="fixed inset-0 z-50 bg-brand-navy/50 backdrop-blur-sm"
+   541→   541→              initial={{ opacity: 0 }}
+   542→   542→              animate={{ opacity: 1 }}
+   543→   543→              exit={{ opacity: 0 }}
+   544→   544→              onClick={() => setCancelTarget(null)}
+   545→   545→              aria-hidden="true"
+   546→   546→            />
+   547→   547→            <motion.div
+   548→   548→              role="dialog"
+   549→   549→              aria-modal="true"
+   550→   550→              aria-label="Cancel appointment"
+   551→   551→              className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-white p-7 shadow-2xl"
+   552→   552→              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+   553→   553→              animate={{ opacity: 1, scale: 1, y: 0 }}
+   554→   554→              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+   555→   555→              transition={{ type: "spring", stiffness: 340, damping: 30 }}
+   556→   556→            >
+   557→   557→              <div className="flex items-start gap-4">
+   558→   558→                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 ring-1 ring-rose-100">
+   559→   559→                  <CalendarX2 className="h-6 w-6" aria-hidden="true" />
+   560→   560→                </span>
+   561→   561→                <div>
+   562→   562→                  <h2 className="font-heading text-lg font-bold text-brand-navy">{t.cancelTitle}</h2>
+   563→   563→                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+   564→   564→                    <span className="font-semibold text-brand-navy">
+   565→   565→                      {formatDateLabel(cancelTarget.date, lang)} — {cancelTarget.time}
+   566→   566→                    </span>{" "}
+   567→   567→                    {t.cancelText.replace("{ref}", cancelTarget.refCode)}
+   568→   568→                  </p>
+   569→   569→                </div>
+   570→   570→              </div>
+   571→   571→
+   572→   572→              <form onSubmit={performCancel} className="mt-5">
+   573→   573→                <Label htmlFor="cancel-phone" className="text-sm font-semibold text-brand-navy">
+   574→   574→                  {t.cancelPhoneLabel} <span className="text-rose-500">*</span>
+   575→   575→                </Label>
+   576→   576→                <Input
+   577→   577→                  id="cancel-phone"
+   578→   578→                  value={cancelPhone}
+   579→   579→                  onChange={(e) => setCancelPhone(e.target.value.replace(/[^\d]/g, "").slice(0, 11))}
+   580→   580→                  inputMode="numeric"
+   581→   581→                  placeholder="01XXXXXXXXX"
+   582→   582→                  autoComplete="off"
+   583→   583→                  className="mt-2 h-12 rounded-2xl border-blue-100 bg-ice/60 text-base font-semibold tracking-wide text-brand-navy placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+   584→   584→                />
+   585→   585→                <div className="mt-5 flex gap-3">
+   586→   586→                  <Button
+   587→   587→                    type="button"
+   588→   588→                    variant="outline"
+   589→   589→                    onClick={() => setCancelTarget(null)}
+   590→   590→                    className="h-12 flex-1 rounded-2xl border-blue-100 bg-white text-brand-navy hover:bg-ice"
+   591→   591→                  >
+   592→   592→                    {t.keepBooking}
+   593→   593→                  </Button>
+   594→   594→                  <Button
+   595→   595→                    type="submit"
+   596→   596→                    disabled={cancelPhone.length !== 11 || cancelling}
+   597→   597→                    className="h-12 flex-1 rounded-2xl bg-rose-500 font-bold text-white shadow-lg shadow-rose-500/25 hover:bg-rose-600 disabled:opacity-50"
+   598→   598→                  >
+   599→   599→                    {cancelling ? (
+   600→   600→                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+   601→   601→                    ) : (
+   602→   602→                      t.yesCancel
+   603→   603→                    )}
+   604→   604→                  </Button>
+   605→   605→                </div>
+   606→   606→              </form>
+   607→   607→            </motion.div>
+   608→   608→          </>
+   609→   609→        )}
+   610→   610→      </AnimatePresence>
+   611→   611→    </>
+   612→   612→  );
+   613→   613→}
+   614→   614→
