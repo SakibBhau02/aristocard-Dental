@@ -11,7 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { services } from "@/lib/data/services";
+import { useBundle } from "@/components/site/content-provider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,10 +56,6 @@ type ReviewsResponse = {
   aggregate: { average: number; count: number };
 };
 
-const SERVICE_LABELS = new Map(
-  services.map((s) => [s.slug, { en: s.shortName, bn: s.shortNameBn }])
-);
-
 /* --- read-only star row (gold filled) --- */
 function Stars({ value, className }: { value: number; className?: string }) {
   return (
@@ -87,6 +83,13 @@ export function PatientReviews() {
   const bn = lang === "bn";
   const t = d.reviews;
   const { toast } = useToast();
+  const { services } = useBundle();
+
+  /* Service short-name lookup over the live CMS services */
+  const serviceLabels = useMemo(
+    () => new Map(services.map((s) => [s.slug, { en: s.shortName, bn: s.shortNameBn }])),
+    [services]
+  );
 
   const [data, setData] = useState<ReviewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -338,9 +341,9 @@ export function PatientReviews() {
                       {r.serviceSlug && (
                         <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
                           {bn
-                            ? SERVICE_LABELS.get(r.serviceSlug)?.bn ??
-                              SERVICE_LABELS.get(r.serviceSlug)?.en
-                            : SERVICE_LABELS.get(r.serviceSlug)?.en}
+                            ? serviceLabels.get(r.serviceSlug)?.bn ??
+                              serviceLabels.get(r.serviceSlug)?.en
+                            : serviceLabels.get(r.serviceSlug)?.en}
                         </span>
                       )}
                       <time

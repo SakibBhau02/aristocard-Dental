@@ -27,9 +27,7 @@ import {
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { getService, services } from "@/lib/data/services";
-import { relatedPostsForService } from "@/lib/data/blog";
-import { getCasesForService } from "@/lib/data/smile-cases";
+import { useBundle } from "@/components/site/content-provider";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/components/site/motion";
@@ -38,7 +36,6 @@ import { ServiceReviews } from "@/components/site/service-reviews";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
 import type { HeroSlide } from "@/lib/data/hero-media";
-import { site } from "@/lib/site";
 import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
@@ -57,7 +54,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.serviceDetail;
-  const service = getService(slug);
+  const { services, posts, cases, settings } = useBundle();
+  const service = services.find((s) => s.slug === slug);
 
   usePageMeta({
     title: service
@@ -74,8 +72,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
             provider: {
               "@type": "Dentist",
-              name: site.name,
-              telephone: site.phoneRaw,
+              name: settings.name,
+              telephone: settings.phoneRaw,
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Uttara",
@@ -125,8 +123,8 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
 
   const colors = categoryColors[service.category] ?? categoryColors.Restorative;
   const related = services.filter((s) => service.related.includes(s.slug));
-  const serviceCases = getCasesForService(service.slug);
-  const relatedPosts = relatedPostsForService(service.slug);
+  const serviceCases = cases.filter((c) => c.serviceSlug === service.slug);
+  const relatedPosts = posts.filter((p) => (p.serviceRefs ?? []).includes(service.slug));
 
   /* localized service naming */
   const name = bn && service.nameBn ? service.nameBn : service.name;
@@ -212,11 +210,11 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 {t.bookFor.replace("{service}", shortName)}
               </button>
               <a
-                href={`tel:${site.phoneRaw}`}
+                href={`tel:${settings.phoneRaw}`}
                 className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
               >
                 <Phone className="h-4.5 w-4.5" aria-hidden="true" />
-                {t.callWith.replace("{phone}", site.phone)}
+                {t.callWith.replace("{phone}", settings.phone)}
               </a>
             </div>
 
@@ -531,11 +529,11 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 {t.faqCta}
               </p>
               <a
-                href={`tel:${site.phoneRaw}`}
+                href={`tel:${settings.phoneRaw}`}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-navy px-6 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-brand-blue"
               >
                 <Phone className="h-4 w-4" aria-hidden="true" />
-                {site.phone}
+                {settings.phone}
               </a>
             </div>
           </Reveal>
@@ -653,7 +651,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
 
       <CtaBanner
         title={t.ctaTitle.replace("{service}", shortName)}
-        description={t.ctaDescription.replace("{serviceFull}", name).replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)}
+        description={t.ctaDescription.replace("{serviceFull}", name).replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : settings.hours)}
       />
     </>
   );

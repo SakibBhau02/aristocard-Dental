@@ -1,0 +1,1171 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Admin shared layer — UI atoms, row types and small helpers used     */
+     5→/*  by every admin panel (shell + extracted views + CMS editors).      */
+     6→/*  Keep this file client-safe and free of panel imports.              */
+     7→/* ------------------------------------------------------------------ */
+     8→
+     9→import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+    10→import Image from "next/image";
+    11→import type { LucideIcon } from "lucide-react";
+    12→import {
+    13→  BadgeCheck,
+    14→  Loader2,
+    15→  Minus,
+    16→  RefreshCw,
+    17→  RotateCcw,
+    18→  Save,
+    19→  Star,
+    20→  TrendingDown,
+    21→  TrendingUp,
+    22→  Upload,
+    23→  X,
+    24→} from "lucide-react";
+    25→import { cn } from "@/lib/utils";
+    26→import { Button } from "@/components/ui/button";
+    27→import { Input } from "@/components/ui/input";
+    28→import { Textarea } from "@/components/ui/textarea";
+    29→import { Skeleton } from "@/components/ui/skeleton";
+    30→import {
+    31→  AlertDialog,
+    32→  AlertDialogAction,
+    33→  AlertDialogCancel,
+    34→  AlertDialogContent,
+    35→  AlertDialogDescription,
+    36→  AlertDialogFooter,
+    37→  AlertDialogHeader,
+    38→  AlertDialogTitle,
+    39→} from "@/components/ui/alert-dialog";
+    40→import { useToast } from "@/hooks/use-toast";
+    41→
+    42→/* ------------------------------------------------------------------ */
+    43→/*  View keys + common panel props                                      */
+    44→/* ------------------------------------------------------------------ */
+    45→
+    46→/** Every admin sidebar module (panels switch on this union). */
+    47→export type AdminView =
+    48→  | "overview"
+    49→  | "appointments"
+    50→  | "reviews"
+    51→  | "messages"
+    52→  | "subscribers"
+    53→  | "patients"
+    54→  | "doctors"
+    55→  | "blog"
+    56→  | "faqs"
+    57→  | "cases"
+    58→  | "services"
+    59→  | "homepage"
+    60→  | "about"
+    61→  | "hero"
+    62→  | "settings";
+    63→
+    64→/** Props every panel understands (the shell owns login/logout). */
+    65→export type PanelProps = {
+    66→  onSessionExpired: () => void;
+    67→};
+    68→
+    69→/* ------------------------------------------------------------------ */
+    70→/*  Row types (moved verbatim from the former monolithic admin page)    */
+    71→/* ------------------------------------------------------------------ */
+    72→
+    73→export type AppointmentRow = {
+    74→  id: number;
+    75→  refCode: string;
+    76→  name: string;
+    77→  phone: string;
+    78→  email: string | null;
+    79→  date: string;
+    80→  time: string;
+    81→  doctorSlug: string | null;
+    82→  serviceSlug: string | null;
+    83→  notes: string | null;
+    84→  status: string;
+    85→  source: string | null;
+    86→  createdAt: string;
+    87→};
+    88→
+    89→export type Stats = {
+    90→  total: number;
+    91→  pending: number;
+    92→  confirmed: number;
+    93→  completed: number;
+    94→  cancelled: number;
+    95→  today: number;
+    96→  upcoming: number;
+    97→};
+    98→
+    99→export type ReviewRow = {
+   100→  id: string;
+   101→  name: string;
+   102→  phone: string | null;
+   103→  rating: number;
+   104→  serviceSlug: string | null;
+   105→  title: string | null;
+   106→  message: string;
+   107→  approved: boolean;
+   108→  createdAt: string;
+   109→};
+   110→
+   111→export type ReviewStats = {
+   112→  total: number;
+   113→  pending: number;
+   114→  approved: number;
+   115→  average: number;
+   116→};
+   117→
+   118→export type OverviewData = {
+   119→  appointmentStats: Stats;
+   120→  reviewStats: {
+   121→    total: number;
+   122→    pendingApproval: number;
+   123→    approved: number;
+   124→    avgRating: number;
+   125→  };
+   126→  messageStats: { total: number; unhandled: number };
+   127→  subscriberStats: { total: number };
+   128→  patientStats: { total: number };
+   129→  trend: { date: string; count: number }[];
+   130→  topServices: { slug: string; name: string; count: number }[];
+   131→  generatedAt: string;
+   132→};
+   133→
+   134→export type ContactMessageRow = {
+   135→  id: string;
+   136→  name: string;
+   137→  email: string;
+   138→  phone: string | null;
+   139→  subject: string | null;
+   140→  message: string;
+   141→  handled: boolean;
+   142→  createdAt: string;
+   143→};
+   144→
+   145→export type MessageStats = {
+   146→  total: number;
+   147→  unhandled: number;
+   148→  handled: number;
+   149→  today: number;
+   150→};
+   151→
+   152→export type SubscriberRow = {
+   153→  id: string;
+   154→  email: string;
+   155→  createdAt: string;
+   156→};
+   157→
+   158→export type SubscriberStats = {
+   159→  total: number;
+   160→  last7Days: number;
+   161→  last30Days: number;
+   162→};
+   163→
+   164→export type PatientRow = {
+   165→  id: string;
+   166→  name: string;
+   167→  phone: string;
+   168→  email: string | null;
+   169→  createdAt: string;
+   170→  updatedAt: string;
+   171→  appointmentCount: number;
+   172→};
+   173→
+   174→export type PatientStats = {
+   175→  total: number;
+   176→  newThisWeek: number;
+   177→  withAppointments: number;
+   178→};
+   179→
+   180→export type PatientDetail = {
+   181→  patient: PatientRow;
+   182→  appointments: AppointmentRow[];
+   183→};
+   184→
+   185→export type ReviewFilter = "ALL" | "PENDING" | "APPROVED";
+   186→export type MessageFilter = "ALL" | "NEW" | "HANDLED";
+   187→export type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+   188→
+   189→/* ------------------------------------------------------------------ */
+   190→/*  Small shared constants                                             */
+   191→/* ------------------------------------------------------------------ */
+   192→
+   193→export const statusStyles: Record<string, string> = {
+   194→  PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
+   195→  CONFIRMED: "bg-blue-50 text-brand-blue ring-blue-200",
+   196→  COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+   197→  CANCELLED: "bg-rose-50 text-rose-600 ring-rose-200",
+   198→};
+   199→
+   200→/* ------------------------------------------------------------------ */
+   201→/*  Date helpers (client timezone) — moved verbatim                     */
+   202→/* ------------------------------------------------------------------ */
+   203→
+   204→function toIsoDate(d: Date): string {
+   205→  const p = (n: number) => String(n).padStart(2, "0");
+   206→  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+   207→}
+   208→
+   209→export function localToday(): string {
+   210→  return toIsoDate(new Date());
+   211→}
+   212→
+   213→function addDaysIso(iso: string, days: number): string {
+   214→  const [y, m, d] = iso.split("-").map(Number);
+   215→  return toIsoDate(new Date(y, m - 1, d + days));
+   216→}
+   217→
+   218→/** Date-range presets (computed client-side, staff's local timezone). */
+   219→export type DatePreset = "all" | "today" | "next7" | "next30" | "past30" | "custom";
+   220→
+   221→export const DATE_PRESETS: {
+   222→  id: Exclude<DatePreset, "custom">;
+   223→  label: string;
+   224→  range: () => [string, string];
+   225→}[] = [
+   226→  { id: "all", label: "All time", range: () => ["", ""] },
+   227→  { id: "today", label: "Today", range: () => [localToday(), localToday()] },
+   228→  { id: "next7", label: "Next 7 days", range: () => [localToday(), addDaysIso(localToday(), 6)] },
+   229→  { id: "next30", label: "Next 30 days", range: () => [localToday(), addDaysIso(localToday(), 29)] },
+   230→  { id: "past30", label: "Past 30 days", range: () => [addDaysIso(localToday(), -29), localToday()] },
+   231→];
+   232→
+   233→/* ------------------------------------------------------------------ */
+   234→/*  Formatting helpers — moved verbatim                                 */
+   235→/* ------------------------------------------------------------------ */
+   236→
+   237→/** "Oct 12, 2026" from an ISO date or full timestamp. */
+   238→export function prettyDay(iso: string): string {
+   239→  const d = new Date(iso);
+   240→  if (Number.isNaN(d.getTime())) return iso;
+   241→  return d.toLocaleDateString("en-US", {
+   242→    month: "short",
+   243→    day: "numeric",
+   244→    year: "numeric",
+   245→  });
+   246→}
+   247→
+   248→/** "Oct 12, 2026 · 4:26 PM" from an ISO timestamp. */
+   249→export function prettyStamp(iso: string): string {
+   250→  const d = new Date(iso);
+   251→  if (Number.isNaN(d.getTime())) return iso;
+   252→  return `${prettyDay(iso)} · ${d.toLocaleTimeString("en-US", {
+   253→    hour: "numeric",
+   254→    minute: "2-digit",
+   255→  })}`;
+   256→}
+   257→
+   258→/** "3 days ago" style relative label (best-effort, local clock). */
+   259→export function relativeTime(iso: string): string {
+   260→  const then = new Date(iso).getTime();
+   261→  if (Number.isNaN(then)) return "";
+   262→  const mins = Math.round((Date.now() - then) / 60_000);
+   263→  if (mins < 1) return "just now";
+   264→  if (mins < 60) return `${mins} min ago`;
+   265→  const hours = Math.round(mins / 60);
+   266→  if (hours < 24) return `${hours} hr ago`;
+   267→  const days = Math.round(hours / 24);
+   268→  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+   269→  const weeks = Math.round(days / 7);
+   270→  if (weeks < 5) return `${weeks} wk ago`;
+   271→  const months = Math.round(days / 30);
+   272→  if (months < 12) return `${months} mo ago`;
+   273→  return `${Math.round(months / 12)} yr ago`;
+   274→}
+   275→
+   276→/** "Mon 29" chart label from a YYYY-MM-DD date. */
+   277→export function chartDayLabel(iso: string): string {
+   278→  const [y, m, d] = iso.split("-").map(Number);
+   279→  if (!y || !m || !d) return iso;
+   280→  const dt = new Date(Date.UTC(y, m - 1, d));
+   281→  const weekday = dt.toLocaleDateString("en-US", {
+   282→    timeZone: "UTC",
+   283→    weekday: "short",
+   284→  });
+   285→  return `${weekday} ${d}`;
+   286→}
+   287→
+   288→/** Avatar initials, e.g. "Demo Patient" → "DP". */
+   289→export function initialsOf(name: string): string {
+   290→  const parts = name.trim().split(/\s+/).filter(Boolean);
+   291→  if (parts.length === 0) return "?";
+   292→  return parts
+   293→    .slice(0, 2)
+   294→    .map((p) => p.charAt(0).toUpperCase())
+   295→    .join("");
+   296→}
+   297→
+   298→/** SVG rect path with rounded TOP corners only (for the trend bars). */
+   299→export function topRoundedBarPath(
+   300→  x: number,
+   301→  y: number,
+   302→  w: number,
+   303→  h: number,
+   304→  r: number
+   305→): string {
+   306→  const rr = Math.min(r, h / 2, w / 2);
+   307→  return [
+   308→    `M ${x} ${y + h}`,
+   309→    `L ${x} ${y + rr}`,
+   310→    `Q ${x} ${y} ${x + rr} ${y}`,
+   311→    `L ${x + w - rr} ${y}`,
+   312→    `Q ${x + w} ${y} ${x + w} ${y + rr}`,
+   313→    `L ${x + w} ${y + h}`,
+   314→    "Z",
+   315→  ].join(" ");
+   316→}
+   317→
+   318→/** Shared CSV download — the filename comes from Content-Disposition. */
+   319→export async function downloadCsvFile(
+   320→  path: string,
+   321→  fallbackName: string
+   322→): Promise<"ok" | "unauthorized" | "error"> {
+   323→  try {
+   324→    const res = await fetch(path);
+   325→    if (res.status === 401) return "unauthorized";
+   326→    if (!res.ok) return "error";
+   327→    const blob = await res.blob();
+   328→    const disposition = res.headers.get("Content-Disposition") ?? "";
+   329→    const filename =
+   330→      /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName;
+   331→    const url = URL.createObjectURL(blob);
+   332→    const a = document.createElement("a");
+   333→    a.href = url;
+   334→    a.download = filename;
+   335→    document.body.appendChild(a);
+   336→    a.click();
+   337→    a.remove();
+   338→    URL.revokeObjectURL(url);
+   339→    return "ok";
+   340→  } catch {
+   341→    return "error";
+   342→  }
+   343→}
+   344→
+   345→/* ------------------------------------------------------------------ */
+   346→/*  Tiny presentational helpers — moved verbatim                        */
+   347→/* ------------------------------------------------------------------ */
+   348→
+   349→export function SmallAction({
+   350→  label,
+   351→  tone,
+   352→  onClick,
+   353→}: {
+   354→  label: string;
+   355→  tone: "confirm" | "complete" | "cancel" | "neutral" | "warn";
+   356→  onClick: () => void;
+   357→}) {
+   358→  const tones = {
+   359→    confirm: "bg-blue-50 text-brand-blue ring-blue-200 hover:bg-brand-blue hover:text-white",
+   360→    complete: "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-600 hover:text-white",
+   361→    cancel: "bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-500 hover:text-white",
+   362→    neutral: "bg-slate-50 text-slate-600 ring-slate-200 hover:bg-slate-600 hover:text-white",
+   363→    warn: "bg-amber-50 text-amber-700 ring-amber-200 hover:bg-brand-gold hover:text-brand-navy",
+   364→  };
+   365→  return (
+   366→    <button
+   367→      type="button"
+   368→      onClick={onClick}
+   369→      className={cn(
+   370→        "rounded-full px-3.5 py-1.5 text-[11px] font-bold ring-1 transition-all duration-300",
+   371→        tones[tone]
+   372→      )}
+   373→    >
+   374→      {label}
+   375→    </button>
+   376→  );
+   377→}
+   378→
+   379→export function StarsRow({ value }: { value: number }) {
+   380→  return (
+   381→    <span role="img" aria-label={`${value} out of 5 stars`} className="flex items-center gap-0.5">
+   382→      {Array.from({ length: 5 }).map((_, i) => (
+   383→        <Star
+   384→          key={i}
+   385→          aria-hidden="true"
+   386→          className={cn(
+   387→            "h-3.5 w-3.5",
+   388→            i < value ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"
+   389→          )}
+   390→        />
+   391→      ))}
+   392→    </span>
+   393→  );
+   394→}
+   395→
+   396→/* ------------------------------------------------------------------ */
+   397→/*  useAdminFetch — cookie-auth wrappers for the admin CRUD APIs        */
+   398→/*  (same-origin fetch; 401 routes to onUnauthorized so the shell can   */
+   399→/*   return to the login gate)                                          */
+   400→/* ------------------------------------------------------------------ */
+   401→
+   402→export function useAdminFetch(onUnauthorized: () => void) {
+   403→  const [loading, setLoading] = useState(false);
+   404→  const [error, setError] = useState<string | null>(null);
+   405→  const onAuthRef = useRef(onUnauthorized);
+   406→  onAuthRef.current = onUnauthorized;
+   407→
+   408→  const handle401 = useCallback((res: Response): boolean => {
+   409→    if (res.status === 401) {
+   410→      onAuthRef.current();
+   411→      return true;
+   412→    }
+   413→    return false;
+   414→  }, []);
+   415→
+   416→  const get = useCallback(
+   417→    async <T,>(path: string): Promise<T | null> => {
+   418→      setLoading(true);
+   419→      setError(null);
+   420→      try {
+   421→        const res = await fetch(path);
+   422→        if (handle401(res)) return null;
+   423→        const data = await res.json().catch(() => null);
+   424→        if (!res.ok) {
+   425→          throw new Error(
+   426→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`
+   427→          );
+   428→        }
+   429→        return data as T;
+   430→      } catch (err) {
+   431→        setError(err instanceof Error ? err.message : "Request failed.");
+   432→        return null;
+   433→      } finally {
+   434→        setLoading(false);
+   435→      }
+   436→    },
+   437→    [handle401]
+   438→  );
+   439→
+   440→  const post = useCallback(
+   441→    async <T,>(
+   442→      path: string,
+   443→      payload: unknown
+   444→    ): Promise<{ ok: boolean; data: T | null; status: number }> => {
+   445→      setLoading(true);
+   446→      setError(null);
+   447→      try {
+   448→        const res = await fetch(path, {
+   449→          method: "POST",
+   450→          headers: { "Content-Type": "application/json" },
+   451→          body: JSON.stringify(payload ?? {}),
+   452→        });
+   453→        if (handle401(res)) return { ok: false, data: null, status: 401 };
+   454→        const data = await res.json().catch(() => null);
+   455→        if (!res.ok) {
+   456→          const message =
+   457→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+   458→          setError(message);
+   459→          return { ok: false, data: data as T | null, status: res.status };
+   460→        }
+   461→        return { ok: true, data: data as T, status: res.status };
+   462→      } catch (err) {
+   463→        setError(err instanceof Error ? err.message : "Request failed.");
+   464→        return { ok: false, data: null, status: 0 };
+   465→      } finally {
+   466→        setLoading(false);
+   467→      }
+   468→    },
+   469→    [handle401]
+   470→  );
+   471→
+   472→  const del = useCallback(
+   473→    async <T,>(path: string): Promise<{ ok: boolean; data: T | null; status: number }> => {
+   474→      setLoading(true);
+   475→      setError(null);
+   476→      try {
+   477→        const res = await fetch(path, { method: "DELETE" });
+   478→        if (handle401(res)) return { ok: false, data: null, status: 401 };
+   479→        const data = await res.json().catch(() => null);
+   480→        if (!res.ok) {
+   481→          const message =
+   482→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+   483→          setError(message);
+   484→          return { ok: false, data: data as T | null, status: res.status };
+   485→        }
+   486→        return { ok: true, data: data as T, status: res.status };
+   487→      } catch (err) {
+   488→        setError(err instanceof Error ? err.message : "Request failed.");
+   489→        return { ok: false, data: null, status: 0 };
+   490→      } finally {
+   491→        setLoading(false);
+   492→      }
+   493→    },
+   494→    [handle401]
+   495→  );
+   496→
+   497→  const clearError = useCallback(() => setError(null), []);
+   498→
+   499→  return { get, post, del, loading, error, handle401, clearError };
+   500→}
+   501→
+   502→/* ------------------------------------------------------------------ */
+   503→/*  adminToast — thin helpers over the site-wide shadcn toaster         */
+   504→/*  (same useToast system the public pages use)                         */
+   505→/* ------------------------------------------------------------------ */
+   506→
+   507→export function useAdminToast() {
+   508→  const { toast } = useToast();
+   509→  return useMemo(
+   510→    () => ({
+   511→      toast,
+   512→      ok: (title: string, description?: string) => toast({ title, description }),
+   513→      fail: (title: string, description?: string) =>
+   514→        toast({ title, description, variant: "destructive" }),
+   515→    }),
+   516→    [toast]
+   517→  );
+   518→}
+   519→
+   520→/* ------------------------------------------------------------------ */
+   521→/*  PanelHeader — module-local heading inside a panel body              */
+   522→/* ------------------------------------------------------------------ */
+   523→
+   524→export function PanelHeader({
+   525→  title,
+   526→  description,
+   527→  actions,
+   528→}: {
+   529→  title: string;
+   530→  description?: string;
+   531→  actions?: React.ReactNode;
+   532→}) {
+   533→  return (
+   534→    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+   535→      <div className="min-w-0">
+   536→        <h2 className="font-heading text-base font-bold text-brand-navy">{title}</h2>
+   537→        {description ? (
+   538→          <p className="mt-0.5 text-sm leading-relaxed text-slate-500">{description}</p>
+   539→        ) : null}
+   540→      </div>
+   541→      {actions ? (
+   542→        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+   543→      ) : null}
+   544→    </div>
+   545→  );
+   546→}
+   547→
+   548→/* ------------------------------------------------------------------ */
+   549→/*  PanelToolbar — refresh + "last updated" row shared by live panels   */
+   550→/* ------------------------------------------------------------------ */
+   551→
+   552→export function PanelToolbar({
+   553→  lastUpdated,
+   554→  loading,
+   555→  onRefresh,
+   556→}: {
+   557→  lastUpdated: Date | null;
+   558→  loading: boolean;
+   559→  onRefresh: () => void;
+   560→}) {
+   561→  return (
+   562→    <div className="flex flex-wrap items-center justify-between gap-2">
+   563→      <p className="text-xs font-medium text-slate-400">
+   564→        {lastUpdated
+   565→          ? `Last updated ${lastUpdated.toLocaleTimeString("en-US", {
+   566→              hour: "2-digit",
+   567→              minute: "2-digit",
+   568→              second: "2-digit",
+   569→            })} · auto-refreshes every 60s`
+   570→          : "Loading…"}
+   571→      </p>
+   572→      <Button
+   573→        onClick={onRefresh}
+   574→        disabled={loading}
+   575→        variant="outline"
+   576→        size="sm"
+   577→        className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   578→      >
+   579→        <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden="true" />
+   580→        Refresh
+   581→      </Button>
+   582→    </div>
+   583→  );
+   584→}
+   585→
+   586→/* ------------------------------------------------------------------ */
+   587→/*  StatCard — KPI card matching the Overview styling                   */
+   588→/* ------------------------------------------------------------------ */
+   589→
+   590→export function StatCard({
+   591→  icon: Icon,
+   592→  label,
+   593→  value,
+   594→  tone,
+   595→  trend,
+   596→}: {
+   597→  icon: LucideIcon;
+   598→  label: string;
+   599→  value: string | number;
+   600→  tone?: string;
+   601→  trend?: { value: string; direction: "up" | "down" | "flat" };
+   602→}) {
+   603→  return (
+   604→    <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]">
+   605→      <div className="flex items-start justify-between gap-2">
+   606→        <span
+   607→          className={cn(
+   608→            "inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1",
+   609→            tone ?? "text-brand-navy bg-ice ring-blue-100"
+   610→          )}
+   611→        >
+   612→          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   613→        </span>
+   614→        {trend ? (
+   615→          <span
+   616→            className={cn(
+   617→              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+   618→              trend.direction === "up"
+   619→                ? "bg-emerald-50 text-emerald-700"
+   620→                : trend.direction === "down"
+   621→                  ? "bg-rose-50 text-rose-600"
+   622→                  : "bg-slate-100 text-slate-500"
+   623→            )}
+   624→          >
+   625→            {trend.direction === "up" ? (
+   626→              <TrendingUp className="h-3 w-3" aria-hidden="true" />
+   627→            ) : trend.direction === "down" ? (
+   628→              <TrendingDown className="h-3 w-3" aria-hidden="true" />
+   629→            ) : (
+   630→              <Minus className="h-3 w-3" aria-hidden="true" />
+   631→            )}
+   632→            {trend.value}
+   633→          </span>
+   634→        ) : null}
+   635→      </div>
+   636→      <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+   637→        {value}
+   638→      </p>
+   639→      <p className="text-[11px] font-semibold uppercase leading-snug tracking-wider text-slate-400">
+   640→        {label}
+   641→      </p>
+   642→    </div>
+   643→  );
+   644→}
+   645→
+   646→/* ------------------------------------------------------------------ */
+   647→/*  ConfirmDeleteDialog — destructive AlertDialog with loading state    */
+   648→/* ------------------------------------------------------------------ */
+   649→
+   650→export function ConfirmDeleteDialog({
+   651→  open,
+   652→  onOpenChange,
+   653→  onConfirm,
+   654→  title = "Delete this item?",
+   655→  description,
+   656→  confirmLabel = "Delete",
+   657→  loading = false,
+   658→}: {
+   659→  open: boolean;
+   660→  onOpenChange: (open: boolean) => void;
+   661→  onConfirm: () => void;
+   662→  title?: string;
+   663→  description: React.ReactNode;
+   664→  confirmLabel?: string;
+   665→  loading?: boolean;
+   666→}) {
+   667→  return (
+   668→    <AlertDialog open={open} onOpenChange={onOpenChange}>
+   669→      <AlertDialogContent className="rounded-2xl border-blue-100 sm:max-w-md">
+   670→        <AlertDialogHeader>
+   671→          <AlertDialogTitle className="font-heading text-lg text-brand-navy">
+   672→            {title}
+   673→          </AlertDialogTitle>
+   674→          <AlertDialogDescription className="text-sm leading-relaxed text-slate-500">
+   675→            {description}
+   676→          </AlertDialogDescription>
+   677→        </AlertDialogHeader>
+   678→        <AlertDialogFooter>
+   679→          <AlertDialogCancel
+   680→            disabled={loading}
+   681→            className="rounded-full hover:bg-blue-50 hover:text-brand-navy"
+   682→          >
+   683→            Cancel
+   684→          </AlertDialogCancel>
+   685→          <AlertDialogAction
+   686→            onClick={(e) => {
+   687→              /* keep the dialog open while the delete request runs */
+   688→              e.preventDefault();
+   689→              onConfirm();
+   690→            }}
+   691→            disabled={loading}
+   692→            className="rounded-full bg-rose-600 text-white shadow-md shadow-rose-900/25 hover:bg-rose-700 focus-visible:ring-rose-300 disabled:opacity-60"
+   693→          >
+   694→            {loading ? (
+   695→              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   696→            ) : null}
+   697→            {confirmLabel}
+   698→          </AlertDialogAction>
+   699→        </AlertDialogFooter>
+   700→      </AlertDialogContent>
+   701→    </AlertDialog>
+   702→  );
+   703→}
+   704→
+   705→/* ------------------------------------------------------------------ */
+   706→/*  ImageUploadField — upload via /api/admin/upload + manual path       */
+   707→/* ------------------------------------------------------------------ */
+   708→
+   709→export function ImageUploadField({
+   710→  value,
+   711→  onChange,
+   712→  label,
+   713→  hint,
+   714→  onUnauthorized,
+   715→}: {
+   716→  value: string | undefined;
+   717→  onChange: (url: string | undefined) => void;
+   718→  label?: string;
+   719→  hint?: string;
+   720→  onUnauthorized?: () => void;
+   721→}) {
+   722→  const inputRef = useRef<HTMLInputElement | null>(null);
+   723→  const [uploading, setUploading] = useState(false);
+   724→  const { fail } = useAdminToast();
+   725→
+   726→  async function uploadFile(file: File) {
+   727→    if (uploading) return;
+   728→    setUploading(true);
+   729→    try {
+   730→      const body = new FormData();
+   731→      body.append("file", file);
+   732→      const res = await fetch("/api/admin/upload", { method: "POST", body });
+   733→      const data = (await res.json().catch(() => null)) as
+   734→        | { url?: string; error?: string }
+   735→        | null;
+   736→      if (res.status === 401) {
+   737→        onUnauthorized?.();
+   738→        fail("Session expired", "Please sign in again and retry the upload.");
+   739→        return;
+   740→      }
+   741→      if (!res.ok || !data?.url) {
+   742→        throw new Error(data?.error ?? "The upload was rejected by the server.");
+   743→      }
+   744→      onChange(data.url);
+   745→    } catch (err) {
+   746→      fail("Upload failed", err instanceof Error ? err.message : "Please try again.");
+   747→    } finally {
+   748→      setUploading(false);
+   749→      if (inputRef.current) inputRef.current.value = "";
+   750→    }
+   751→  }
+   752→
+   753→  return (
+   754→    <div className="min-w-0">
+   755→      {label ? (
+   756→        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+   757→      ) : null}
+   758→      {hint ? <p className="mt-0.5 text-xs text-slate-400">{hint}</p> : null}
+   759→      <div className="mt-2 flex flex-wrap items-start gap-4">
+   760→        {/* Preview thumbnail */}
+   761→        <div className="relative h-24 w-24 shrink-0">
+   762→          <div
+   763→            className={cn(
+   764→              "h-24 w-24 overflow-hidden rounded-xl bg-ice ring-1",
+   765→              value ? "ring-blue-200" : "ring-inset ring-blue-200/70"
+   766→            )}
+   767→          >
+   768→            {value ? (
+   769→              <Image
+   770→                src={value}
+   771→                alt="Selected image preview"
+   772→                fill
+   773→                sizes="96px"
+   774→                className="object-cover"
+   775→              />
+   776→            ) : (
+   777→              <div className="flex h-full w-full items-center justify-center border-2 border-dashed border-blue-200 text-slate-300">
+   778→                <Upload className="h-6 w-6" aria-hidden="true" />
+   779→              </div>
+   780→            )}
+   781→          </div>
+   782→          {value ? (
+   783→            <button
+   784→              type="button"
+   785→              onClick={() => onChange(undefined)}
+   786→              title="Remove image"
+   787→              aria-label="Remove image"
+   788→              className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-rose-600 shadow ring-1 ring-rose-200 transition hover:bg-rose-50"
+   789→            >
+   790→              <X className="h-3.5 w-3.5" aria-hidden="true" />
+   791→            </button>
+   792→          ) : null}
+   793→          {uploading ? (
+   794→            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
+   795→              <Loader2 className="h-6 w-6 animate-spin text-brand-blue" aria-label="Uploading" />
+   796→            </div>
+   797→          ) : null}
+   798→        </div>
+   799→
+   800→        {/* Controls */}
+   801→        <div className="min-w-0 flex-1 space-y-2">
+   802→          <input
+   803→            ref={inputRef}
+   804→            type="file"
+   805→            accept="image/png,image/jpeg,image/webp,image/gif"
+   806→            className="hidden"
+   807→            onChange={(e) => {
+   808→              const file = e.target.files?.[0];
+   809→              if (file) void uploadFile(file);
+   810→            }}
+   811→          />
+   812→          <div>
+   813→            <Button
+   814→              type="button"
+   815→              variant="outline"
+   816→              size="sm"
+   817→              disabled={uploading}
+   818→              onClick={() => inputRef.current?.click()}
+   819→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   820→            >
+   821→              {uploading ? (
+   822→                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   823→              ) : (
+   824→                <Upload className="h-4 w-4" aria-hidden="true" />
+   825→              )}
+   826→              {uploading ? "Uploading…" : "Upload image"}
+   827→            </Button>
+   828→          </div>
+   829→          <Input
+   830→            value={value ?? ""}
+   831→            onChange={(e) => onChange(e.target.value || undefined)}
+   832→            placeholder="/images/example.png — or an /uploads/… path"
+   833→            aria-label="Image path"
+   834→            className="h-9 rounded-xl border-blue-100 bg-ice text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:ring-brand-blue/25"
+   835→          />
+   836→          <p className="text-[11px] leading-relaxed text-slate-400">
+   837→            PNG, JPG, WEBP or GIF — uploads land in <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/uploads</code>; you can also paste an existing path from <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/public</code>.
+   838→          </p>
+   839→        </div>
+   840→      </div>
+   841→    </div>
+   842→  );
+   843→}
+   844→
+   845→/* ------------------------------------------------------------------ */
+   846→/*  BilingualField — EN + optional বাংলা inputs side by side            */
+   847→/* ------------------------------------------------------------------ */
+   848→
+   849→export function BilingualField({
+   850→  label,
+   851→  enValue,
+   852→  bnValue,
+   853→  onEnChange,
+   854→  onBnChange,
+   855→  textarea,
+   856→  placeholder,
+   857→  rows = 4,
+   858→  maxLength,
+   859→}: {
+   860→  label: string;
+   861→  enValue: string;
+   862→  bnValue?: string;
+   863→  onEnChange: (value: string) => void;
+   864→  onBnChange?: (value: string) => void;
+   865→  textarea?: boolean;
+   866→  placeholder?: string;
+   867→  rows?: number;
+   868→  maxLength?: number;
+   869→}) {
+   870→  const withBn = typeof onBnChange === "function";
+   871→  return (
+   872→    <div className="min-w-0">
+   873→      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+   874→      <div className={cn("mt-1.5 grid gap-2", withBn && "sm:grid-cols-2")}>
+   875→        <label className="min-w-0 block">
+   876→          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   877→            English
+   878→          </span>
+   879→          {textarea ? (
+   880→            <Textarea
+   881→              value={enValue}
+   882→              onChange={(e) => onEnChange(e.target.value)}
+   883→              placeholder={placeholder}
+   884→              rows={rows}
+   885→              maxLength={maxLength}
+   886→              className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   887→            />
+   888→          ) : (
+   889→            <Input
+   890→              value={enValue}
+   891→              onChange={(e) => onEnChange(e.target.value)}
+   892→              placeholder={placeholder}
+   893→              maxLength={maxLength}
+   894→              className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   895→            />
+   896→          )}
+   897→        </label>
+   898→        {withBn ? (
+   899→          <label className="min-w-0 block">
+   900→            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   901→              বাংলা
+   902→            </span>
+   903→            {textarea ? (
+   904→              <Textarea
+   905→                value={bnValue ?? ""}
+   906→                onChange={(e) => onBnChange?.(e.target.value)}
+   907→                placeholder={placeholder}
+   908→                rows={rows}
+   909→                maxLength={maxLength}
+   910→                lang="bn"
+   911→                className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   912→              />
+   913→            ) : (
+   914→              <Input
+   915→                value={bnValue ?? ""}
+   916→                onChange={(e) => onBnChange?.(e.target.value)}
+   917→                placeholder={placeholder}
+   918→                maxLength={maxLength}
+   919→                lang="bn"
+   920→                className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   921→              />
+   922→            )}
+   923→          </label>
+   924→        ) : null}
+   925→      </div>
+   926→    </div>
+   927→  );
+   928→}
+   929→
+   930→/* ------------------------------------------------------------------ */
+   931→/*  SaveBar — sticky bottom bar with dirty state + Reset / Save         */
+   932→/* ------------------------------------------------------------------ */
+   933→
+   934→export function SaveBar({
+   935→  dirty,
+   936→  saving,
+   937→  onSave,
+   938→  onReset,
+   939→  saveLabel = "Save changes",
+   940→  resetLabel = "Reset",
+   941→  dirtyHint = "Unsaved changes",
+   942→  savedHint = "All changes saved",
+   943→}: {
+   944→  dirty: boolean;
+   945→  saving: boolean;
+   946→  onSave: () => void;
+   947→  onReset: () => void;
+   948→  saveLabel?: string;
+   949→  resetLabel?: string;
+   950→  dirtyHint?: string;
+   951→  savedHint?: string;
+   952→}) {
+   953→  return (
+   954→    <div className="sticky bottom-4 z-20 mt-6">
+   955→      <div
+   956→        className={cn(
+   957→          "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border bg-white/95 px-4 py-3 shadow-[0_18px_44px_-20px_rgba(0,32,96,0.4)] backdrop-blur transition-colors duration-300",
+   958→          dirty ? "border-amber-200" : "border-blue-100/70"
+   959→        )}
+   960→      >
+   961→        <span
+   962→          aria-hidden="true"
+   963→          className={cn(
+   964→            "inline-flex h-2.5 w-2.5 shrink-0 rounded-full transition-colors duration-300",
+   965→            dirty ? "bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.25)]" : "bg-slate-200"
+   966→          )}
+   967→        />
+   968→        <p className="text-xs font-semibold text-slate-500">
+   969→          {dirty ? dirtyHint : savedHint}
+   970→        </p>
+   971→        <div className="ml-auto flex items-center gap-2">
+   972→          <Button
+   973→            type="button"
+   974→            variant="outline"
+   975→            size="sm"
+   976→            disabled={!dirty || saving}
+   977→            onClick={onReset}
+   978→            className="rounded-full border-blue-200 text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+   979→          >
+   980→            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+   981→            {resetLabel}
+   982→          </Button>
+   983→          <Button
+   984→            type="button"
+   985→            size="sm"
+   986→            disabled={!dirty || saving}
+   987→            onClick={onSave}
+   988→            className="rounded-full bg-brand-navy font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+   989→          >
+   990→            {saving ? (
+   991→              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   992→            ) : (
+   993→              <Save className="h-4 w-4" aria-hidden="true" />
+   994→            )}
+   995→            {saving ? "Saving…" : saveLabel}
+   996→          </Button>
+   997→        </div>
+   998→      </div>
+   999→    </div>
+  1000→  );
+  1001→}
+  1002→
+  1003→/* ------------------------------------------------------------------ */
+  1004→/*  EmptyState — icon + title + description + optional action           */
+  1005→/* ------------------------------------------------------------------ */
+  1006→
+  1007→export function EmptyState({
+  1008→  icon: Icon,
+  1009→  title,
+  1010→  description,
+  1011→  action,
+  1012→  tone = "blue",
+  1013→}: {
+  1014→  icon: LucideIcon;
+  1015→  title: string;
+  1016→  description?: React.ReactNode;
+  1017→  action?: React.ReactNode;
+  1018→  tone?: "blue" | "amber";
+  1019→}) {
+  1020→  return (
+  1021→    <div className="rounded-3xl border border-dashed border-blue-200 bg-white/60 py-14 text-center">
+  1022→      <span
+  1023→        className={cn(
+  1024→          "mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1",
+  1025→          tone === "amber"
+  1026→            ? "bg-amber-50 text-amber-500 ring-amber-100"
+  1027→            : "bg-blue-50 text-brand-blue ring-blue-100"
+  1028→        )}
+  1029→      >
+  1030→        <Icon className="h-6 w-6" aria-hidden="true" />
+  1031→      </span>
+  1032→      <p className="font-heading mt-4 text-lg font-bold text-brand-navy">{title}</p>
+  1033→      {description ? (
+  1034→        <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-slate-500">
+  1035→          {description}
+  1036→        </p>
+  1037→      ) : null}
+  1038→      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
+  1039→    </div>
+  1040→  );
+  1041→}
+  1042→
+  1043→/* ------------------------------------------------------------------ */
+  1044→/*  PanelSkeleton — loading placeholder for panel bodies                */
+  1045→/* ------------------------------------------------------------------ */
+  1046→
+  1047→export function PanelSkeleton({ rows = 4 }: { rows?: number }) {
+  1048→  return (
+  1049→    <div className="space-y-4" role="status" aria-label="Loading module">
+  1050→      <div className="flex items-center justify-between gap-4">
+  1051→        <Skeleton className="h-5 w-44 rounded-lg" />
+  1052→        <Skeleton className="h-8 w-24 rounded-full" />
+  1053→      </div>
+  1054→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  1055→        {Array.from({ length: 4 }).map((_, i) => (
+  1056→          <Skeleton key={i} className="h-28 rounded-2xl" />
+  1057→        ))}
+  1058→      </div>
+  1059→      <div className="rounded-2xl border border-blue-100/70 bg-white p-4">
+  1060→        {Array.from({ length: rows }).map((_, i) => (
+  1061→          <Skeleton
+  1062→            key={i}
+  1063→            className={cn("h-12 w-full rounded-xl", i < rows - 1 && "mb-2.5")}
+  1064→          />
+  1065→        ))}
+  1066→      </div>
+  1067→    </div>
+  1068→  );
+  1069→}
+  1070→
+  1071→/* ------------------------------------------------------------------ */
+  1072→/*  WiredStub — proves a CMS module endpoint is reachable + counted     */
+  1073→/*  (placeholder panels; subagents 3-b / 3-c replace these files)       */
+  1074→/* ------------------------------------------------------------------ */
+  1075→
+  1076→export function WiredStub({
+  1077→  endpoint,
+  1078→  icon: Icon,
+  1079→  title,
+  1080→  hint,
+  1081→  summarize,
+  1082→  onSessionExpired,
+  1083→}: {
+  1084→  endpoint: string;
+  1085→  icon: LucideIcon;
+  1086→  title: string;
+  1087→  hint?: string;
+  1088→  summarize: (data: Record<string, unknown>) => string;
+  1089→  onSessionExpired: () => void;
+  1090→}) {
+  1091→  const [phase, setPhase] = useState<"loading" | "error" | "ready">("loading");
+  1092→  const [summary, setSummary] = useState("");
+  1093→  const [error, setError] = useState("");
+  1094→  const [tick, setTick] = useState(0);
+  1095→  const summarizeRef = useRef(summarize);
+  1096→  summarizeRef.current = summarize;
+  1097→  const expiredRef = useRef(onSessionExpired);
+  1098→  expiredRef.current = onSessionExpired;
+  1099→
+  1100→  useEffect(() => {
+  1101→    let cancelled = false;
+  1102→    setPhase("loading");
+  1103→    (async () => {
+  1104→      try {
+  1105→        const res = await fetch(endpoint);
+  1106→        if (res.status === 401) {
+  1107→          if (!cancelled) expiredRef.current();
+  1108→          return;
+  1109→        }
+  1110→        const data = await res.json().catch(() => null);
+  1111→        if (!res.ok) {
+  1112→          throw new Error(
+  1113→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`
+  1114→          );
+  1115→        }
+  1116→        if (cancelled) return;
+  1117→        setSummary(summarizeRef.current((data ?? {}) as Record<string, unknown>));
+  1118→        setPhase("ready");
+  1119→      } catch (err) {
+  1120→        if (cancelled) return;
+  1121→        setError(err instanceof Error ? err.message : "Could not load this module.");
+  1122→        setPhase("error");
+  1123→      }
+  1124→    })();
+  1125→    return () => {
+  1126→      cancelled = true;
+  1127→    };
+  1128→  }, [endpoint, tick]);
+  1129→
+  1130→  if (phase === "loading") return <PanelSkeleton />;
+  1131→
+  1132→  if (phase === "error") {
+  1133→    return (
+  1134→      <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center">
+  1135→        <p className="font-heading text-lg font-bold text-rose-700">
+  1136→          Could not reach {title}
+  1137→        </p>
+  1138→        <p className="mx-auto mt-1 max-w-sm text-sm text-rose-600">{error}</p>
+  1139→        <Button
+  1140→          onClick={() => setTick((t) => t + 1)}
+  1141→          variant="outline"
+  1142→          size="sm"
+  1143→          className="mt-5 rounded-full border-rose-200 text-rose-600 hover:bg-rose-100"
+  1144→        >
+  1145→          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+  1146→          Try again
+  1147→        </Button>
+  1148→      </div>
+  1149→    );
+  1150→  }
+  1151→
+  1152→  return (
+  1153→    <div className="rounded-2xl border border-blue-100/70 bg-white p-5 shadow-sm sm:p-6">
+  1154→      <EmptyState
+  1155→        icon={Icon}
+  1156→        title="Editor landing here"
+  1157→        description={
+  1158→          hint ??
+  1159→          "Module wired and authenticated — the full editor for this section arrives with this update."
+  1160→        }
+  1161→      />
+  1162→      <div className="mt-4 flex justify-center">
+  1163→        <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-bold text-brand-navy ring-1 ring-blue-100">
+  1164→          <BadgeCheck className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1165→          {summary}
+  1166→        </span>
+  1167→      </div>
+  1168→    </div>
+  1169→  );
+  1170→}
+  1171→

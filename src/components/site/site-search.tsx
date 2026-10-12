@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "@/lib/router";
 import { toBnDigits, useLang } from "@/lib/i18n";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import {
   buildSearchIndex,
   filterEntriesScored,
@@ -114,6 +114,7 @@ function saveRecent(queries: string[]) {
 export function SiteSearch() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { settings } = useBundle();
   const bn = lang === "bn";
   const t = d.search;
 
@@ -193,12 +194,14 @@ export function SiteSearch() {
 
   const callClinic = useCallback(() => {
     setOpen(false);
-    window.location.href = `tel:${site.phoneRaw}`;
-  }, []);
+    window.location.href = `tel:${settings.phoneRaw}`;
+  }, [settings.phoneRaw]);
 
   /* --- index + filtering (multi-word, both languages) --------------- */
 
-  const index = useMemo(() => buildSearchIndex(lang), [lang]);
+  /* Built from the LIVE CMS bundle — admin edits appear on next open. */
+  const bundle = useBundle();
+  const index = useMemo(() => buildSearchIndex(bundle, lang), [bundle, lang]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -345,7 +348,7 @@ export function SiteSearch() {
                   <span className="mt-1.5 block text-xs text-slate-500">
                     {t.noResultsHint.replace(
                       "{phone}",
-                      bn ? toBnDigits(site.phone) : site.phone
+                      bn ? toBnDigits(settings.phone) : settings.phone
                     )}
                   </span>
                 </CommandEmpty>

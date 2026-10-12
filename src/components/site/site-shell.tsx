@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { LanguageProvider } from "@/lib/i18n";
+import { ContentProvider } from "@/components/site/content-provider";
+import type { ContentBundle } from "@/lib/content/shared";
 import { ScrollProgress } from "@/components/site/motion";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
@@ -21,7 +23,7 @@ import { FaqsPage } from "@/components/site/pages/faqs-page";
 import { AssessmentPage } from "@/components/site/pages/assessment-page";
 import { StatusPage } from "@/components/site/pages/status-page";
 import { PortalPage } from "@/components/site/pages/portal-page";
-import { AdminPage } from "@/components/site/pages/admin-page";
+import { AdminPage } from "@/components/site/admin/admin-page";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 
 /* ------------------------------------------------------------------ */
@@ -91,25 +93,27 @@ function PageRouter() {
   );
 }
 
-export function SiteShell() {
+export function SiteShell({ initialContent }: { initialContent?: ContentBundle }) {
   return (
     <RouterProvider>
       <LanguageProvider>
-        <div className="flex min-h-screen flex-col bg-white">
-          {/* Accessibility: skip link */}
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-navy focus:px-4 focus:py-2 focus:text-sm focus:text-white"
-          >
-            Skip to main content
-          </a>
-          <ScrollProgress />
-          <Navbar />
-          <PageRouter />
-          <Footer />
-          <FloatingContact />
-          <SiteSearch />
-        </div>
+        <ContentProvider initial={initialContent}>
+          <div className="flex min-h-screen flex-col bg-white">
+            {/* Accessibility: skip link */}
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-navy focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+            >
+              Skip to main content
+            </a>
+            <ScrollProgress />
+            <Navbar />
+            <PageRouter />
+            <Footer />
+            <FloatingContact />
+            <SiteSearch />
+          </div>
+        </ContentProvider>
       </LanguageProvider>
     </RouterProvider>
   );

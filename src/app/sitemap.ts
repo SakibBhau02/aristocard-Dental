@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
-import { services } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { blogPosts } from "@/lib/data/blog";
+import { getContentBundle } from "@/lib/content/server";
 
 const BASE = "https://aristocratdentalcarebd.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  /* Slugs come from the live CMS bundle (DB with static fallback), so new
+     services / doctors / published posts enter the sitemap automatically. */
+  const bundle = await getContentBundle();
+
   const staticPages: MetadataRoute.Sitemap = [
     { path: "/", priority: 1.0, changeFrequency: "weekly" },
     { path: "/#/about", priority: 0.8, changeFrequency: "monthly" },
@@ -25,21 +27,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority,
   }));
 
-  const servicePages: MetadataRoute.Sitemap = services.map((s) => ({
+  const servicePages: MetadataRoute.Sitemap = bundle.services.map((s) => ({
     url: `${BASE}/#/services/${s.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.85,
   }));
 
-  const doctorPages: MetadataRoute.Sitemap = doctors.map((d) => ({
+  const doctorPages: MetadataRoute.Sitemap = bundle.doctors.map((d) => ({
     url: `${BASE}/#/doctors/${d.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
 
-  const blogPages: MetadataRoute.Sitemap = blogPosts.map((p) => ({
+  const blogPages: MetadataRoute.Sitemap = bundle.posts.map((p) => ({
     url: `${BASE}/#/blog/${p.slug}`,
     lastModified: new Date(p.updated),
     changeFrequency: "monthly" as const,

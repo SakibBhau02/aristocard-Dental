@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
-import { doctors, getDoctor } from "@/lib/data/doctors";
-import { testimonials } from "@/lib/data/doctors";
+import { useBundle } from "@/components/site/content-provider";
+import { testimonials } from "@/lib/content/shared";
 import type { Doctor } from "@/lib/types";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
@@ -34,7 +34,6 @@ import { Badge } from "@/components/ui/badge";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
 import { slidesForRoute } from "@/lib/data/hero-media";
-import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
 /*  DOCTORS LIST PAGE (EN / বাংলা)                                     */
@@ -380,6 +379,7 @@ function DoctorProfileCard({
 export function DoctorsPage() {
   const { lang, d } = useLang();
   const t = d.doctorsPage;
+  const { doctors, settings } = useBundle();
 
   usePageMeta({
     title: "Our Doctors — Specialist Dentists in Uttara, Dhaka",
@@ -400,7 +400,7 @@ export function DoctorsPage() {
         jobTitle: doc.role,
         medicalSpecialty: doc.department,
         url: `https://aristocratdentalcarebd.com/#/doctors/${doc.slug}`,
-        worksFor: { "@type": "Dentist", name: site.name },
+        worksFor: { "@type": "Dentist", name: settings.name },
       },
     })),
   };
@@ -461,14 +461,15 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.doctorDetail;
-  const doctor = getDoctor(slug);
+  const { doctors, settings } = useBundle();
+  const doctor = doctors.find((doc) => doc.slug === slug);
 
   usePageMeta({
     title: doctor
       ? `${doctor.name} — ${doctor.role} | Uttara, Dhaka`
       : "Doctor Not Found",
     description: doctor
-      ? `${doctor.name}, ${doctor.credentials.join(", ")} — ${doctor.role} at Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka. Book a consultation: ${site.phone}.`
+      ? `${doctor.name}, ${doctor.credentials.join(", ")} — ${doctor.role} at Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka. Book a consultation: ${settings.phone}.`
       : undefined,
     jsonLd: doctor
       ? {
@@ -480,8 +481,8 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
           url: `https://aristocratdentalcarebd.com/#/doctors/${doctor.slug}`,
           worksFor: {
             "@type": "Dentist",
-            name: site.name,
-            telephone: site.phoneRaw,
+            name: settings.name,
+            telephone: settings.phoneRaw,
           },
           aggregateRating: {
             "@type": "AggregateRating",
@@ -616,10 +617,10 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                   {t.book}
                 </button>
                 <a
-                  href={`tel:${site.phoneRaw}`}
+                  href={`tel:${settings.phoneRaw}`}
                   className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
                 >
-                  {t.callWith.replace("{phone}", site.phone)}
+                  {t.callWith.replace("{phone}", settings.phone)}
                 </a>
               </div>
             </motion.div>
@@ -869,7 +870,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
         title={t.ctaTitle.replace("{doctor}", doctor.name)}
         description={t.ctaDescription
           .replace("{doctor}", doctor.name)
-          .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)}
+          .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : settings.hours)}
       />
     </>
   );

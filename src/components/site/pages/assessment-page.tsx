@@ -18,8 +18,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { site } from "@/lib/site";
-import { getService } from "@/lib/data/services";
+import { useBundle } from "@/components/site/content-provider";
 import type { Dictionary } from "@/lib/data/dictionary";
 import { PageHeader } from "@/components/site/shared";
 import { Reveal, StaggerContainer, StaggerItem } from "@/components/site/motion";
@@ -144,6 +143,7 @@ const questionVariants = {
 export function AssessmentPage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { settings } = useBundle();
   const bn = lang === "bn";
   const t = d.assessmentPage;
   const num = (v: string | number) => (bn ? toBnDigits(v) : String(v));
@@ -469,13 +469,13 @@ export function AssessmentPage() {
                       </p>
                     </div>
                     <a
-                      href={`tel:${site.phoneRaw}`}
+                      href={`tel:${settings.phoneRaw}`}
                       className="btn-shine inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-gold px-5 py-2.5 text-sm font-bold text-brand-navy shadow-lg shadow-amber-500/30 transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <Phone className="h-4 w-4" aria-hidden="true" />
                       {t.urgencyAction.replace(
                         "{phone}",
-                        bn ? toBnDigits(site.phone) : site.phone
+                        bn ? toBnDigits(settings.phone) : settings.phone
                       )}
                     </a>
                   </div>
@@ -559,8 +559,9 @@ function RecommendationCard({ rec, index }: { rec: Rec; index: number }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.assessmentPage;
+  const { services, settings } = useBundle();
 
-  const service = getService(rec.slug);
+  const service = services.find((s) => s.slug === rec.slug);
   const special = SPECIALS[rec.slug];
   if (!service && !special) return null;
 

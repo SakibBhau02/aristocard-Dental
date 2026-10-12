@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { site } from "@/lib/site";
-import { generalFaqs } from "@/lib/data/faqs";
-import { services } from "@/lib/data/services";
+import { useBundle } from "@/components/site/content-provider";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { cn } from "@/lib/utils";
@@ -47,12 +45,13 @@ export function FaqsPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.faqsPage;
+  const { faqs, services, settings } = useBundle();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string>("all");
 
   /* flatten all FAQs into one searchable list */
   const allFaqs = useMemo<FaqEntry[]>(() => {
-    const clinic: FaqEntry[] = generalFaqs.map((f) => ({
+    const clinic: FaqEntry[] = faqs.map((f) => ({
       question: f.question,
       answer: f.answer,
       questionBn: f.questionBn,
@@ -71,7 +70,7 @@ export function FaqsPage() {
       }))
     );
     return [...clinic, ...serviceFaqs];
-  }, [bn, t.groupClinic]);
+  }, [faqs, services, bn, t.groupClinic]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -300,11 +299,11 @@ export function FaqsPage() {
               </div>
               <div className="flex shrink-0 gap-2.5">
                 <a
-                  href={`tel:${site.phoneRaw}`}
+                  href={`tel:${settings.phoneRaw}`}
                   className="btn-shine inline-flex items-center gap-2 rounded-full bg-brand-blue px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy"
                 >
                   <Phone className="h-4 w-4" aria-hidden="true" />
-                  {site.phone}
+                  {settings.phone}
                 </a>
                 <button
                   type="button"

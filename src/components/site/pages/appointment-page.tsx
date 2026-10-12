@@ -19,9 +19,7 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import type { Lang } from "@/lib/data/dictionary";
-import { services } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { Reveal } from "@/components/site/motion";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
 import { slidesForRoute } from "@/lib/data/hero-media";
@@ -68,6 +66,7 @@ export function AppointmentPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.appointmentPage;
+  const { services, doctors, settings } = useBundle();
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +99,7 @@ export function AppointmentPage() {
     if (note) {
       setForm((f) => (f.notes ? f : { ...f, notes: note.slice(0, 900) }));
     }
-  }, [query]);
+  }, [query, services, doctors]);
 
   usePageMeta({
     title: "Book a Dental Appointment — Online Booking in Uttara, Dhaka",
@@ -121,11 +120,11 @@ export function AppointmentPage() {
 
   const selectedService = useMemo(
     () => services.find((s) => s.slug === form.serviceSlug),
-    [form.serviceSlug]
+    [services, form.serviceSlug]
   );
   const selectedDoctor = useMemo(
     () => doctors.find((doc) => doc.slug === form.doctorSlug),
-    [form.doctorSlug]
+    [doctors, form.doctorSlug]
   );
 
   const serviceName = selectedService
@@ -295,7 +294,7 @@ export function AppointmentPage() {
           <p className="mt-6 text-sm text-slate-500">
             {t.successCallNote
               .replace("{phone}", form.phone)
-              .replace("{phone2}", site.phone)}
+              .replace("{phone2}", settings.phone)}
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -844,9 +843,9 @@ export function AppointmentPage() {
           <Reveal className="mt-6">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                { icon: Phone, text: t.helpCall.replace("{phone}", site.phone) },
+                { icon: Phone, text: t.helpCall.replace("{phone}", settings.phone) },
                 { icon: Clock, text: t.helpHours },
-                { icon: Mail, text: site.email },
+                { icon: Mail, text: settings.email },
               ].map(({ icon: Icon, text }) => (
                 <div
                   key={text}

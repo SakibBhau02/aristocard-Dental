@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, CalendarCheck, MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 
 /* ------------------------------------------------------------------ */
 /*  Floating quick-contact buttons (mobile-first) + scroll-to-top      */
@@ -20,6 +20,7 @@ const RING_C = 2 * Math.PI * RING_R;
 export function FloatingContact() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { settings } = useBundle();
   const [showTop, setShowTop] = useState(false);
   const [progress, setProgress] = useState(0);
   const ticking = useRef(false);
@@ -58,7 +59,7 @@ export function FloatingContact() {
         transition={{ delay: 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <a
-          href={`https://wa.me/${site.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
+          href={`https://wa.me/${settings.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
             lang === "bn"
               ? "আসসালামু আলাইকুম, আমি Aristocrat Dental Care-এ অ্যাপয়েন্টমেন্ট নিতে চাই।"
               : "Hello, I would like to book an appointment at Aristocrat Dental Care."
@@ -79,13 +80,13 @@ export function FloatingContact() {
         </a>
 
         <a
-          href={`tel:${site.phoneRaw}`}
-          aria-label={`Call ${site.phone}`}
+          href={`tel:${settings.phoneRaw}`}
+          aria-label={`Call ${settings.phone}`}
           className="group relative inline-flex h-13 w-13 items-center justify-center rounded-full bg-brand-blue text-white shadow-xl shadow-blue-600/40 ring-4 ring-white/60 backdrop-blur transition-all duration-300 hover:scale-110 hover:shadow-2xl"
         >
           <Phone className="h-5.5 w-5.5" aria-hidden="true" />
           <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-brand-navy px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-300 group-hover:opacity-100 sm:block">
-            {site.phone}
+            {settings.phone}
           </span>
         </a>
 

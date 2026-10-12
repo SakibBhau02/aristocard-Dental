@@ -71,3 +71,142 @@ model Patient {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+/* ------------------------------------------------------------------ */
+/*  CMS models — every editable piece of the public site               */
+/*  (SQLite has no array type → JSON strings, parsed in src/lib/content)*/
+/* ------------------------------------------------------------------ */
+
+/* Doctors — full CRUD from the admin panel */
+model Doctor {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  legacyId         Int      @default(0)
+  sort             Int      @default(0)
+  name             String
+  credentialsJson  String   @default("[]") // ["BDS","MDS"]
+  role             String
+  roleBn           String?
+  department       String
+  departmentBn     String?
+  bio              String
+  experienceYears  Int      @default(1)
+  patientsTreated  Int      @default(0)
+  rating           Float    @default(4.8)
+  specializationsJson String @default("[]")
+  languagesJson    String   @default("[\"Bangla\",\"English\"]")
+  consultationDaysJson String @default("[]")
+  accent           String   @default("#012c5f")
+  photo            String?  // /public/uploads/... or /images/...
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/* Blog posts — CRUD with bilingual sections */
+model BlogPost {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  titleBn           String?
+  excerpt           String
+  excerptBn         String?
+  category          String   @default("General")
+  readTime          String   @default("5 min read")
+  date              String   // YYYY-MM-DD
+  updated           String?
+  author            String   @default("Dr. Shazia Khanam")
+  authorCredentials String   @default("BDS, MDS")
+  featured          Boolean  @default(false)
+  tagsJson          String   @default("[]")
+  serviceRefsJson   String?  // curated related service slugs
+  image             String?
+  imageAlt          String?
+  quickAnswer       String
+  quickAnswerBn     String?
+  sectionsJson      String   // EN sections [{heading,body[],list?[]}]
+  sectionsBnJson    String?
+  status            String   @default("PUBLISHED") // PUBLISHED | DRAFT
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+/* FAQs — CRUD, ordered */
+model Faq {
+  id          String   @id @default(cuid())
+  sort        Int      @default(0)
+  question    String
+  questionBn  String?
+  answer      String
+  answerBn    String?
+  active      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+/* Smile gallery case studies — CRUD with before/after images */
+model SmileCase {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  sort          Int      @default(0)
+  treatment     String
+  category      String   @default("Cosmetic") // Cosmetic|Orthodontics|Restorative|Preventive
+  serviceSlug   String?
+  beforeSrc     String
+  afterSrc      String
+  beforeAlt     String?
+  afterAlt      String?
+  title         String
+  patient       String
+  age           Int      @default(30)
+  duration      String
+  proceduresJson String  @default("[]")
+  result        String
+  featured      Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+}
+
+/* Service content overlay — slug is LOCKED (referential integrity for
+   appointments/blog/cases/search); everything else is editable.      */
+model ServiceContent {
+  slug          String   @id
+  name          String?
+  nameBn        String?
+  shortName     String?
+  shortNameBn   String?
+  tagline       String?
+  taglineBn     String?
+  excerpt       String?
+  excerptBn     String?
+  image         String?
+  icon          String?
+  duration      String?
+  longevity     String?
+  anesthesia    String?
+  featured      Boolean?
+  overviewJson  String?  // string[]
+  benefitsJson  String?  // [{title,description}]
+  processJson   String?  // [{step,title,description}]
+  idealJson     String?  // string[]
+  faqsJson      String?  // [{question,answer}]
+  updatedAt     DateTime @updatedAt
+}
+
+/* Home hero slides — images and YouTube videos, ordered */
+model HeroSlide {
+  id        String   @id @default(cuid())
+  scope     String   @default("home")
+  sort      Int      @default(0)
+  kind      String   @default("image") // image | youtube
+  src       String   // image path OR full YouTube URL
+  alt       String?
+  active    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+/* Key → JSON blobs for page-level editable content.
+   Keys: "home" | "about" | "settings"                                  */
+model PageBlock {
+  key       String   @id
+  dataJson  String   @default("{}")
+  updatedAt DateTime @updatedAt
+}

@@ -10,7 +10,7 @@ import {
   Star,
 } from "lucide-react";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { getService, services } from "@/lib/data/services";
+import { useBundle } from "@/components/site/content-provider";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/lib/router";
 import { Button } from "@/components/ui/button";
@@ -39,10 +39,6 @@ type ReviewsResponse = {
   aggregate: { average: number; count: number };
 };
 
-const SERVICE_LABELS = new Map(
-  services.map((s) => [s.slug, { en: s.shortName, bn: s.shortNameBn }])
-);
-
 /* --- read-only star row (gold filled, same language as home) --- */
 function Stars({ value, className }: { value: number; className?: string }) {
   return (
@@ -70,6 +66,13 @@ export function ServiceReviews({ serviceSlug }: { serviceSlug: string }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.serviceDetail.reviews;
+  const { services } = useBundle();
+
+  /* Service short-name lookup over the live CMS services */
+  const serviceLabels = useMemo(
+    () => new Map(services.map((s) => [s.slug, { en: s.shortName, bn: s.shortNameBn }])),
+    [services]
+  );
 
   const [data, setData] = useState<ReviewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +99,7 @@ export function ServiceReviews({ serviceSlug }: { serviceSlug: string }) {
   }, [load]);
 
   /* localized treatment name for the heading (parent guarantees it exists) */
-  const service = getService(serviceSlug);
+  const service = services.find((s) => s.slug === serviceSlug);
   const shortName =
     bn && service?.shortNameBn
       ? service.shortNameBn
@@ -270,9 +273,9 @@ export function ServiceReviews({ serviceSlug }: { serviceSlug: string }) {
                       {r.serviceSlug && (
                         <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-brand-blue ring-1 ring-blue-100">
                           {bn
-                            ? SERVICE_LABELS.get(r.serviceSlug)?.bn ??
-                              SERVICE_LABELS.get(r.serviceSlug)?.en
-                            : SERVICE_LABELS.get(r.serviceSlug)?.en}
+                            ? serviceLabels.get(r.serviceSlug)?.bn ??
+                              serviceLabels.get(r.serviceSlug)?.en
+                            : serviceLabels.get(r.serviceSlug)?.en}
                         </span>
                       )}
                       <time

@@ -33,9 +33,7 @@ import {
 } from "lucide-react";
 import { usePageMeta, useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { services } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { PageHeader } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
@@ -177,19 +175,6 @@ function initialsOf(name: string): string {
       .join("")
       .toUpperCase() || "?"
   );
-}
-
-/* Localized service / doctor names (slug → display name) */
-function serviceNameFor(slug: string | null, bn: boolean, fallback: string): string {
-  if (!slug) return fallback;
-  const svc = services.find((s) => s.slug === slug);
-  return svc ? (bn && svc.nameBn ? svc.nameBn : svc.name) : fallback;
-}
-
-function doctorNameFor(slug: string | null, fallback: string): string {
-  if (!slug) return fallback;
-  const doc = doctors.find((d) => d.slug === slug);
-  return doc?.name ?? fallback;
 }
 
 /* ------------------------------------------------------------------ */
@@ -346,6 +331,7 @@ export function PortalPage() {
   const t = d.portalPage;
   const { toast } = useToast();
   const { navigate } = useRouter();
+  const { services, doctors, settings } = useBundle();
 
   usePageMeta({
     title: "Patient Portal — Bookings & Dental Records",
@@ -417,7 +403,7 @@ export function PortalPage() {
         if (found.length === 0) setQuickError(t.quickEmpty);
       }
     } catch {
-      setQuickError(t.toastGenericFailDesc.replace("{phone}", site.phone));
+      setQuickError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
     } finally {
       setQuickLoading(false);
     }
@@ -469,7 +455,7 @@ export function PortalPage() {
       setLoginForm((f) => ({ ...f, password: "" }));
       await refreshDashboard({ silent: true });
     } catch {
-      setLoginError(t.toastGenericFailDesc.replace("{phone}", site.phone));
+      setLoginError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
     } finally {
       setLoggingIn(false);
     }
@@ -540,7 +526,7 @@ export function PortalPage() {
       setRegisterForm({ name: "", phone: "", email: "", password: "", confirm: "" });
       await refreshDashboard({ silent: true });
     } catch {
-      setRegisterError(t.toastGenericFailDesc.replace("{phone}", site.phone));
+      setRegisterError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
     } finally {
       setRegistering(false);
     }
@@ -584,7 +570,7 @@ export function PortalPage() {
       if (!res.ok) {
         toast({
           title: t.toastCancelFail,
-          description: data.error ?? t.toastGenericFailDesc.replace("{phone}", site.phone),
+          description: data.error ?? t.toastGenericFailDesc.replace("{phone}", settings.phone),
           variant: "destructive",
         });
         return;
@@ -610,7 +596,7 @@ export function PortalPage() {
     } catch {
       toast({
         title: t.toastCancelFail,
-        description: t.toastGenericFailDesc.replace("{phone}", site.phone),
+        description: t.toastGenericFailDesc.replace("{phone}", settings.phone),
         variant: "destructive",
       });
     } finally {
@@ -662,7 +648,7 @@ export function PortalPage() {
       setEditingProfile(false);
       await refreshDashboard({ silent: true });
     } catch {
-      setProfileError(t.toastGenericFailDesc.replace("{phone}", site.phone));
+      setProfileError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
     } finally {
       setSavingProfile(false);
     }
@@ -702,7 +688,7 @@ export function PortalPage() {
       toast({ title: t.toastPasswordOk, description: data.message });
       setPwForm({ current: "", next: "", confirm: "" });
     } catch {
-      setPwError(t.toastGenericFailDesc.replace("{phone}", site.phone));
+      setPwError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
     } finally {
       setSavingPw(false);
     }
@@ -985,7 +971,7 @@ export function PortalPage() {
                         </p>
                         <p className="mt-3 flex items-start justify-center gap-1.5 rounded-2xl bg-ice/60 px-4 py-3 text-center text-[11px] leading-relaxed text-slate-500 ring-1 ring-blue-100/50">
                           <Phone className="mt-0.5 h-3 w-3 shrink-0 text-brand-blue" aria-hidden="true" />
-                          {t.loginForgot.replace("{phone}", bn ? toBnDigits(site.phone) : site.phone)}
+                          {t.loginForgot.replace("{phone}", bn ? toBnDigits(settings.phone) : settings.phone)}
                         </p>
                       </form>
 
@@ -1857,6 +1843,7 @@ function PortalAppointmentCard({
   const bn = lang === "bn";
   const t = d.portalPage;
   const st = d.statusPage;
+  const { services, doctors } = useBundle();
 
   const style = statusStyles[appt.status] ?? statusStyles.PENDING;
   const label = st.status[appt.status]?.label ?? appt.status;

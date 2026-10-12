@@ -1,0 +1,250 @@
+---
+Task ID: 2-a
+Agent: full-stack-developer
+Task: Complete removal of all pricing-related content from the entire site (client order: "আর pricing-related কোনো কথাবার্তা একদমই থাকবে না; সম্পূর্ণরূপে বাদ দিয়া দাও") — price estimator feature deleted, all price/cost/payment/EMI/bKash/৳ mentions and খরচ/মূল্য/দাম/কিস্তি/টাকা words removed from EN + BN content, keeping dictionary key parity and AEO FAQ/blog counts.
+
+## Work Log
+- Read worklog rounds 8–10 conventions first (double-fork dev server left untouched; CSS cache-bust trick; 5 tolerated tsc errors; EN/BN parity discipline).
+- DELETED `src/components/site/pages/estimator-page.tsx` (683 lines) and removed its route branch + import from `site-shell.tsx`, its `Pricing` nav item from `site.ts` (8→7), `d.chrome.nav.pricing` from `navbar.tsx` navLabels, its `/#/estimator` sitemap entry, and the footer quickLinks row (re-indexed quickLinks[6..9] → contact/appointment/status/faqs).
+- `dictionary.ts`: removed entire `estimatorPage` sections from BOTH blocks (EN+BN incl. breadcrumb keys), `chrome.nav.pricing`, `search.actionEstimate`, `home.galleryPreview.ctaEstimate`, `assessmentPage.ctaSecondary`, footer quickLinks "Cost Estimator"/"খরচ হিসাব" (11→10 both langs). Reworded every remaining pricing string in both languages: shared.ctaDescription, home.hero.trust[3], home.faq.description, about.values Integrity, serviceDetail.safetyList[3], faqsPage description + groupClinic ("Clinic, Booking & Costs"→"Clinic & Booking"), assessmentPage nextSteps/urgencyText/ctaDescription, appointmentPage trust (["Instant confirmation","Easy rescheduling","Same-week availability"] / BN mirror) + callNote (no "payment"), statusPage cantMakeIt + help[1] (free-of-charge → neutral), blogPage.description. All "free"-of-charge phrasing reworded; pain-free/stress-free etc. kept.
+- `site-search.tsx`: removed the qa-estimate quick action + Calculator icon; reworded POPULAR_QUERIES "Braces cost"→"Braces treatment" and "ব্রেসের খরচ"→"ব্রেসেস" (chips still match real index entries). `search-index.ts`: removed /estimator page row + icon-map entry + dental-implants-cost-bangladesh keywords; trimmed দাম/খরচ/cost/price from invisalign + root-canal keyword strings; counts comment updated (10 pages / 5 posts).
+- `faqs.ts`: REPLACED the 2 pricing FAQs (AEO count kept at 12): checkup-cost → "Is root canal treatment painful?" (rotary endo answer), implants-cost → "Do you use laser dentistry in treatments?" — fully bilingual.
+- `blog.ts`: DELETED the dental-implants-cost-bangladesh post (92 lines); reworded how-often body (EN+BN), root-canal-myths myth 2 + myth 7 (myth 7 now about post-treatment fracture, not expense), invisalign excerpt/quickAnswer (budget→priorities, বাজেট→প্রয়োজন) and comparison Cost row → Cleaning row (EN+BN, row parity kept).
+- `services.ts`: dental-implants FAQ → "How long do dental implants last?"; root-canal benefit "Cost-Effective" → "Better Than Any Replacement" (task's "Keeps Your Natural Tooth" would duplicate the existing "Keep Your Natural Tooth" benefit two rows up — used the task's exact description text with a non-duplicative title); root-canal FAQ "costly replacement" → "a gap that is harder to restore"; overview "…your bite, your bone and your wallet…" → "…your bite and your bone…".
+- `assessment-page.tsx`: removed the secondary "Estimate Your Cost" ghost button + Calculator import (primary Book CTA kept). `home-page.tsx`: removed the gallery-preview outline Wallet button + Wallet import (hero untouched). `faqs-page.tsx` + `blog-page.tsx`: meta descriptions cleaned of "implant costs"/"pricing" (blog-page was outside the listed scope but pricing content required it). `appointment-page.tsx`: deep-link comment → "(e.g. from smile assessment)".
+- `layout.tsx`: removed priceRange/currenciesAccepted/paymentAccepted from the Dentist JSON-LD. `globals.css`: removed the has-mobile-bar estimate-bar coordination block (media query + FAB bottom/transition rule that only served the estimator's sticky bar) and the .chip-month EMI chip styles; applied the Turbopack cache-bust trick (`/* cache-bust r11-a */` appended and kept; 624ms recompile observed in dev.log).
+- smile-cases.ts / doctors.ts / patient-review components swept: ZERO pricing words (only "stress free" testimonial + Quote icons).
+
+## Stage Summary
+- Verification all green: `bun run lint` exit 0 zero output; `bunx tsc --noEmit` ONLY the 5 pre-existing excluded errors (examples/×2, skills/×2, language-toggle.tsx); one-off parity script (deleted after) — EN 685 keys = BN 685 keys, zero asymmetries, quickLinks 10/10 both languages; one-off index script (deleted after) — search index EN+BN = 10 pages + 11 services + 4 doctors + 5 blog + 45 FAQs = 75, unique ids, no /estimator; rg sweeps under src/ = ZERO matches for ৳/estimator/Estimate/pricing/EMI/installment/bKash/currenciesAccepted/priceRange/estimat(i) and zero user-visible খরচ/মূল্য/দাম/কিস্তি/সাশ্রয়/টাকা/বিনামূল্যে/ব্যয়বহুল/পেমেন্ট/বাজেট (only allowed মূল্যবোধ/মূল্যায়ন); served HTML GET / 200 with no pricing tokens or #/estimator links; /sitemap.xml clean; dev.log clean ✓ recompiles, zero new ⨯; git footprint = the 18 in-scope files (+blog-page.tsx, required by pricing content).
+- Flags for main agent: (1) hero trust chip used the task's sanctioned fallback "Advanced dental technology"/"অত্যাধুনিক ডেন্টাল প্রযুক্তি" because "Sterilized, modern facility" would echo the existing "Strict sterilization" chip; (2) assessment nextSteps step 2 "Personalized written plan" + step 3 "Clear treatment plan in writing" and the invisalign comparison "Hygiene"+"Cleaning" rows (BN পরিষ্কার-পরিচ্ছন্নতা ×2) are near-duplicates introduced by the spec's own replacement strings — kept verbatim for EN↔BN parity, worth a glance during browser QA; (3) veneers overview keeps the metaphor "a long-term investment in your confidence" (no money/price wording — judged non-pricing); (4) browser QA of all 10 remaining routes + palette + BN mode left to the main agent per instructions. Full details: agent-ctx/2-a-full-stack-developer.md.
+
+---
+Task ID: 11 (main agent round 11)
+Agent: Z.ai Code (main) + full-stack-developer subagent (Task 2-a)
+Task: Round 11 — full hero redesign (professional centered heroes over sliding media backdrop + YouTube video support), relevant image per service, dual-direction testimonial marquee, COMPLETE pricing removal. Client's Bengali brief: "প্রতিটি পেজের হিরো সেকশন আরও প্রফেশনাল ও পলিশড হবে… কার্ভড ডিজাইন পছন্দ হচ্ছে না… লেখাগুলো Middle alignment-এ থাকবে… ছবিগুলো পেছনে scroll করতে থাকবে এবং একটা overlay থাকবে… YouTube link অনুযায়ী ভিডিও চলবে + ছবি slide করবে… প্রতিটা সার্ভিসের জন্য প্রাসঙ্গিক ছবি… testimony বাম↔ডান scroll করতে থাকবে… pricing-related কথাবার্তা একদমই থাকবে না।"
+
+## SECTION 1 — Current project status assessment (start of round 11)
+- Dev server healthy (double-fork pattern, GET / 200), lint 0 errors, tsc only the 5 pre-existing excluded errors. 10 content routes + admin/status. Round 10 shipped search palette, doctor expandable profiles, blog↔services cross-links.
+- Client feedback (this round): current heroes are NOT professional enough — the curved/wave bottom divider is disliked, hero copy must be CENTER-aligned, background must be sliding images under an overlay (with optional YouTube video), every service needs a relevant image, testimonials must scroll continuously in both directions, and ALL pricing-related content must be completely removed (estimator page included).
+
+## SECTION 2 — Goals, completed modifications, verification results
+
+### 2-a (subagent) — COMPLETE PRICING REMOVAL (18 files: 17 modified + estimator-page.tsx DELETED 683 lines)
+- Removed: estimator page + route + sitemap entry + navbar "Pricing" item (nav 8→7) + footer quickLink + search palette quick-action + search-index entries/keywords; dictionary estimatorPage sections (EN+BN) + ~25 reworded strings (hero trust, CTA banner, about values, appointment trust/callNote, assessment steps/urgency/CTA, blog/FAQ descriptions, footer quickLinks 11→10).
+- faqs.ts: 2 pricing FAQs REPLACED (root-canal pain + laser dentistry — AEO count kept at 12, bilingual). blog.ts: implants-cost post DELETED (5 posts remain); how-often/myth-2/myth-7/invisalign cost rows reworded EN+BN. services.ts: implant FAQ → longevity; "Cost-Effective" benefit → "Better Than Any Replacement". layout.tsx JSON-LD: priceRange/currenciesAccepted/paymentAccepted removed. globals.css: EMI chips + estimator sticky-bar rules removed (+ cache-bust r11-a).
+- Verified by subagent: lint 0, tsc clean, EN/BN dictionary parity 685=685 keys, quickLinks 10/10, search index 75 entries (10 pages+11 services+4 doctors+5 blog+45 FAQs), rg sweeps ZERO pricing words (৳/BDT/pricing/estimator/EMI/installment/bKash/খরচ/দাম/মূল্য-price sense).
+
+### Main agent — HERO SYSTEM REDESIGN + SERVICE IMAGES + TESTIMONIAL MARQUEE
+- NEW src/lib/data/hero-media.ts: HeroSlide type (image | youtube); **heroVideoUrls config — the client pastes YouTube links here** (Bangla-commented, accepts watch/youtu.be/shorts/embed/bare-ID); parseYouTubeId(); buildHeroSlides() interleaves videos among images; homeHeroImages (5 slides); pageHeroSlides (themed per-route sets); slidesForRoute().
+- NEW src/components/site/hero-backdrop.tsx: HeroBackdrop component — stacked image layers with 1600ms crossfade + 9s Ken-Burns zoom on active (hero-kenburns), YouTube iframe layer (muted/autoplay/loop/playlist, controls=0, cover-fit via container-query units width:max(100cqw,177.78cqh) — verified 1440×810 covering), triple navy overlay (uniform + vertical gradient + side vignette, "deep"/"medium" variants), clickable gold indicator bars OUTSIDE the aria-hidden layer (a11y), visibility-aware auto-advance (6.5s images / 26s videos), reduced-motion disables kenburns/marquee only.
+- NEW src/components/site/testimonial-marquee.tsx: TestimonialMarquee — TWO rows (even/odd testimonials), top row drifts LEFT, bottom row drifts RIGHT (animation-direction: reverse), 4× card duplication + translateX(-50%) seamless loop (row width 7580px ≥ any viewport), hover pause via .marquee-edge-fade:hover, edge fade masks, compact cards (stars/quote/avatar/treatment, line-clamp-4).
+- 14 AI-generated images (z-ai image CLI, 1344×768): service-crowns/implants/smile-design/aligners/laser/surgery/pediatric/gum/veneers/rootcanal/braces.png + hero-slide-smile/team/care.png.
+- types.ts Service.image? field + all 11 services in services.ts got their image.
+- ServiceCard redesigned: full-bleed 16:9 cover image (hover zoom 1.06, gradient + glass category badge) + overlapping icon tile (-mt-12 ring-4 white) + body.
+- HOME hero rewritten: min-h-[88vh] flex centered — glass amber badge, white h1 with gold-text shimmer accent, centered description, gold gradient CTA (btn-shine) + glass outline CTA, centered glass trust chips, scroll cue above indicator bars. Old left/right-card hero removed.
+- PageHeader (shared.tsx — used by 9 pages) rewritten: HeroBackdrop (route-themed slides, 8s interval) + ALL content centered (breadcrumb/eyebrow/h1/description/divider) — WAVE SVG REMOVED.
+- Custom heroes rewritten centered + backdrop: service-detail (service's own image first + quick-facts glassy strip + category/verified/icon chips; aside card & wave removed), appointment (wave removed), blog-detail (wave removed, meta centered), doctors-detail (avatar centered above name/role/credentials/CTAs, wave removed). Curved design now GONE site-wide (all 5 wave instances removed).
+- Home + About testimonial sections swapped to TestimonialMarquee; old testimonial-carousel.tsx DELETED (no imports left).
+- globals.css ROUND 11 block: hero-kenburns keyframes, .hero-video-frame cover-fit, marquee-x keyframes + .marquee-reverse + .marquee-edge-fade + hover pause, reduced-motion guards, cache-bust r11 comment.
+
+### Verification (agent-browser, 1440×900 + 390×844)
+- Home hero: VLM confirms centered text, photo behind navy overlay, gold active indicator bar, scroll cue — "8/10 professional, no critical issues". Auto-advance verified (aria-current moves 1→4 after ~8s+). Kenburns computed animationName=hero-kenburns ✓.
+- YouTube mechanism: temporarily configured test video → iframe rendered with correct embed URL (autoplay/mute/loop/playlist) and cover-fit geometry (1440×810, coverOK=true); reverted, slide count back to 5.
+- ALL 11 routes DOM-verified: hero backdrop image present, h1 text-align=center, ZERO pricing words (৳/BDT/Pricing/Estimate/estimator/EMI/installment/খরচ/দাম). Services hub: 11 card images all service-*.png; hero backdrop = service-smile-design/implants/aligners.
+- Marquee: 2 rows, animationName=marquee-x running, 48s/56s durations, direction normal+reverse, 20 cards per row; VLM confirms two styled rows + edge fades + no overflow (BN review text wraps correctly).
+- Mobile 390px: NO horizontal overflow on home/services/service-detail/about/appointment/doctors-detail; VLM confirms clean mobile hero + readable implant page.
+- BN mode: hero renders বাংলা ("প্রতিটি হাসিতে শ্রেষ্ঠত্ব"), footer quickLinks 10 items with NO খরচ হিসাব.
+- Zero page/console errors across all visited routes. Final: lint exit 0, tsc clean (5 pre-existing only), dev.log clean recompiles + GET / 200.
+
+## SECTION 3 — Unresolved issues/risks + next-phase priorities
+- **CLIENT ACTION (hero video)**: YouTube links not yet supplied. To activate: paste links into `heroVideoUrls` array in `src/lib/data/hero-media.ts` (Bangla instructions in-file). Videos then interleave with image slides (26s per video slide). Note: muted autoplay requires playsinline (set); YouTube must be reachable from visitors' browsers.
+- VLM QA note: one vision call hallucinated a full HTML page instead of describing the screenshot — switched to DOM-based assertions for all structural checks (more reliable); do not trust VLM output containing code blocks.
+- Old hero dictionary keys (home.hero.cardBadge/cardItems/doctorRole/badge1*/badge2*, serviceDetail.proceed) are now unused — harmless data, cleanup optional.
+- Hero LCP: first backdrop image has priority — acceptable; could add preload link if LCP regresses.
+- Carried risks: real clinic photos pending (imagery is AI-representative incl. new service images); admin passcode demo-grade; blog bodies EN-only; clinic-status hardcoded schedule.
+- Next-phase priorities: (1) client's YouTube links → heroVideoUrls; (2) real clinic/service photos when available; (3) optional cleanup of unused dictionary keys; (4) consider per-service hero fine-tuning if client wants video per service page; (5) blog BN translations; (6) admin auth hardening.
+
+---
+Task ID: 11 (main agent round 11) — IN PROGRESS (backend complete, frontend in flight)
+Agent: Z.ai Code (user-driven round: "admin panel fully ready + Patient Portal")
+Task: Make the Admin Panel fully ready AND build a Patient Portal (#/portal) — patients can look up bookings by phone number WITHOUT an account, and can register/login for a full-detail dashboard.
+
+Work Log (so far):
+- Read worklog; assessed project (round 10 stable, dev server healthy, 200 on /).
+- Prisma: added `Patient` model (phone unique, name, email?, scrypt passwordHash) → `bun run db:push` OK. RESTARTED the dev server because the running process held a stale global PrismaClient singleton (`db.patient` undefined → 500). Lesson: after schema changes ALWAYS restart dev server.
+- New lib `src/lib/patient-auth.ts`: scrypt password hashing ("scrypt:salt:hash", N=16384, keylen 64) + HMAC-signed session cookie `adc_patient_session` (30d TTL, httpOnly, sameSite=lax, token binds patientId+expiry).
+- New patient APIs (all rate-limited, all verified with curl):
+  - POST /api/patient/register {name,phone,password,email?} → creates account + session cookie (409 if phone registered)
+  - POST /api/patient/login {phone,password} → generic 401 on unknown phone OR wrong password
+  - POST /api/patient/logout → clears cookie
+  - GET /api/patient/me → {patient, appointments (FULL fields incl. notes/source), reviews (by phone), stats} — richer than anonymous lookup by design
+  - PUT /api/patient/profile {name?,email?}
+  - PUT /api/patient/password {currentPassword,newPassword}
+  - POST /api/patient/cancel {refCode} → session-verified cancel (booking must belong to session phone)
+- New admin APIs (x-admin-code or admin session cookie; verified with curl):
+  - GET /api/admin/overview → cross-module stats + 14-day booking-created trend + topServices + review/message/subscriber/patient stats
+  - GET /api/admin/messages (+?format=csv) → inbox + stats; POST {id,handled} → toggle handled
+  - GET /api/admin/subscribers (+csv) → list + stats
+  - GET /api/admin/patients (+csv; ?phone=01… → account + their bookings) — passwordHash NEVER selected
+- Extended src/lib/admin-csv.ts with messagesToCsv / subscribersToCsv / patientsToCsv.
+- Dictionary: added full bilingual `portalPage` namespace (EN+BN, ~120 keys: quick-check/login/register/dashboard/profile/security/toasts) + `chrome.nav.portal` ("Patient Portal"/"পেশেন্ট পোর্টাল"). Dictionary type = typeof en → both languages must stay shape-identical.
+- DB cleanup + demo seed: removed ALL QA-noise appointments/patients/messages/subscribers; seeded realistic demo data — **demo patient account: phone 01601000950, password demo1234** (5 bookings: 2 upcoming, 2 completed, 1 cancelled), 5 other-patient bookings, 3 inbox messages (1 unhandled), 4 subscribers. Reviews (6 seeded) kept.
+
+Stage Summary:
+- Backend for BOTH features is complete and curl-verified end-to-end (register→me→cancel→profile→password→re-login→logout all PASS; admin overview/messages/subscribers/patients all PASS incl. auth-gating 401s).
+- Dictionary + chrome.nav.portal done centrally by main agent to avoid subagent edit conflicts on dictionary.ts.
+- NEXT (in flight): subagent 2-a builds PortalPage (#/portal) + nav/footer/search integration; subagent 2-b expands AdminPage with Overview/Messages/Subscribers/Patients tabs. Then agent-browser E2E QA + lint + final worklog update.
+---
+Task ID: 2-a
+Agent: fullstack-developer (patient portal frontend)
+Task: Patient Portal page (#/portal) + navbar/footer/search integration
+
+Work Log:
+- Read worklog Task 11 + reference files (status-page, appointment-page, shared, motion, site-shell, navbar, footer, search-index/site-search, dictionary portalPage/statusPage namespaces); curl-verified all patient APIs + demo seed (01601000950/demo1234 → 5 bookings, stats 2/2/1/0).
+- CREATED src/components/site/pages/portal-page.tsx (~1990 lines): PageHeader hero + session probe (GET /api/patient/me → checking/guest/authed, httpOnly cookie only). Guest: elevated auth card with 3-way segmented control (layoutId pill "portal-mode-pill", icon+label+hint per tab), AnimatePresence mode slides. Quick Check (GET /api/appointments?phone=, status-page-style result cards, upsell box → login tab w/ phone prefill). Login (Eye/EyeOff, inline+toast errors). Register (name/phone/email?/pw/confirm, client validation: 01[3-9]XXXXXXXX + 8-char letter+digit + mismatch, auto-login). Dashboard: navy welcome banner (initials avatar, memberSince, logout), 4 stat cards (bn digits), upcoming section (highlighted cards + shadcn AlertDialog cancel via POST /api/patient/cancel, local state+stats update), full visit-history timeline (status dots on dashed rail, service/doctor lookups w/ nameBn, notes, requested/updated, source), my reviews (stars + pendingReview badge), profile settings (edit mode → PUT /api/patient/profile) + change password (PUT /api/patient/password) side-by-side on lg. Bilingual via d.portalPage + d.statusPage.status labels/statusStyles copied from status-page; toBnDigits for phones/counts/dates.
+- MODIFIED site-shell.tsx (route + import), navbar.tsx (desktop UserRound ghost pill w/ isActive state near Book CTA + mobile drawer item), footer.tsx (quickLinks[10] → /portal), search-index.ts (PAGE_ICONS "/portal":"UserRound" + pageEntries row + optional 5th "extra keywords" column so "portal/patient/account/login/পোর্টাল" queries match — the portal title never says "portal"), site-search.tsx (UserRound import + ICONS).
+- QA (agent-browser + dev.log + VLM spot-checks), DB restored (ADC-DMO2405 → PENDING via admin API; test patient 01770000001 deleted).
+
+Stage Summary:
+- Golden path: (1) PASS — header+3 tabs render, title correct, ZERO console/page errors, dev.log clean. (2) PASS — quick check 01601000950 → 5 cards (PENDING/CONFIRMED/CANCELLED/COMPLETED/COMPLETED) + upsell box. (3) PASS — login demo1234 → "Welcome back, Demo Patient", stats 2/2/5/0, 2 upcoming cards w/ cancel, history timeline shows all 5, profile shows name/email. (4) PASS — wrong password → inline "Incorrect phone number or password." + destructive toast, no crash. (5) PASS — register 01770000001/testpass1 → auto-login → 0-appt empty states (upcoming w/ Book CTA, history, reviews) → logout; account cleaned up. (6) PASS — full BN render (tabs/labels/hints/dates/phones/stats in Bangla digits). (7) PASS — navbar pill (aria-current) + footer quick link + Ctrl+K "portal" → PAGES hit → Enter navigates to #/portal; mobile drawer entry also verified. (8) PASS — 390px: scrollWidth=clientWidth=390 across guest+dashboard, stat grid 2×2, timeline dots centered on rail; VLM: no overlaps. (9) PASS — AlertDialog cancel ADC-DMO2405 → CANCELLED (DB verified) → restored to PENDING.
+- Extras verified: profile no-op save (toast + view refresh), password change wrong-current → 403 inline error, client mismatch error, logout flow, session probe 401→guest.
+- Files lint clean (eslint on the 6 touched files: 0 errors/0 warnings), tsc clean for all touched files (pre-existing estimator/language-toggle errors untouched).
+- Deviations: (a) visit history shows ALL bookings (QA said "history shows 5" = full timeline incl. upcoming, not just past 3); (b) search-index rows gained an optional 5th keywords column (needed for "portal" query match); (c) client-side validation error strings for phone/name reuse the backend's canonical English messages (no dictionary keys exist for them) — disabled submits + hints cover the bilingual case.
+
+---
+Task ID: 2-b (completed by subagent, verified + finalized by main agent)
+Agent: full-stack-developer (admin panel expansion) — context deadline hit before its own worklog append; main agent performed the QA below and documents it here.
+Task: Admin panel fully-ready — Overview + Messages + Subscribers + Patients modules
+
+Work Log (reconstructed from the shipped code + main-agent QA):
+- Rewrote AdminDashboard into SIX tabs: Overview (new DEFAULT), Appointments (unchanged), Reviews (unchanged), Messages (new), Subscribers (new), Patients (new); AdminView type extended.
+- OverviewPanel: 7 KPI stat cards (today/upcoming/pending/unhandled-messages/reviews-to-approve/patients/subscribers), hand-rolled SVG 14-day bookings-created bar chart (counts above bars, weekday+day labels, today highlighted), segmented appointment-status bar with legend, Top-services list with proportional progress bars, Quick-jump cards.
+- MessagesPanel: stats row, All/New/Handled filter tabs + search, expandable message cards (email/phone/reply links, mark handled ↔ mark new toggle), CSV export.
+- SubscribersPanel: stats + search + table + CSV export.
+- PatientsPanel: stats + search + avatar rows with appointmentCount badges, expandable drilldown fetching /api/admin/patients?phone=… showing that patient's bookings, CSV export (password hashes never selected).
+- Tab badges: live count pills (Appointments=pending, Messages=unhandled, Reviews=pendingApproval).
+
+Stage Summary (main-agent QA via agent-browser, session adminqa-03e363425671):
+- Gate login (passcode) → lands on Overview; 7 KPI cards show correct values (1 today / 6 upcoming / 3 pending / 1 unhandled / 0 reviews / 1 patient / 4 subscribers).
+- Bar chart verified visually via VLM: 14 bars, counts above non-zero bars, weekday labels, today highlighted. Status segmented bar + Top services progress bars render cleanly.
+- Messages: Farhana Akter (NEW) expand → Mark handled → flips to HANDLED, New filter count 1→0, tab badge 1→(none). Toggled back via DB restore (handled=0). Search + CSV buttons present.
+- Subscribers: 4 rows with dates. Patients: Demo Patient row (5 bookings badge, tel/email links) → drilldown shows all 5 bookings w/ statuses.
+- FIXED by main agent: seed data used 3 invalid service slugs (scaling-polishing/general-checkup/teeth-whitening + braces-aligners) → replaced with real slugs or NULL; drilldown/overview now show friendly names.
+- Mobile 390px: both #/admin and #/portal scrollWidth === 390 (no overflow). Zero console/page errors; dev.log clean.
+
+---
+Task ID: 11 (main agent round 11) — COMPLETE
+Agent: Z.ai Code (user-driven: "admin panel fully ready + Patient Portal")
+Task: Finish round 11 — frontend integration, E2E QA, hardening, cleanup.
+
+Work Log:
+- Subagent 2-a shipped portal-page.tsx (~1990 lines: 3-mode auth card w/ layoutId pill, quick check, login/register w/ validation + password visibility toggles, dashboard w/ avatar initials welcome banner, 4 stat cards, upcoming + AlertDialog cancel, history timeline, my reviews, profile + password cards) + route registration in site-shell + navbar UserRound portal pill (desktop + mobile drawer) + footer quick link + search-index entry (+ optional keywords column so "portal" query matches) + site-search UserRound icon. Its 9-item golden path: ALL PASS (documented above in its own section).
+- Main agent independent QA re-verified: quick check 01601000950 → 5 cards; login demo1234 → dashboard (stats 2/2/5/0, upcoming cards, profile); Bangla render incl. Bangla digits; mobile 390px no overflow; VLM design review 9/10.
+- Portal polish: appointment-card times now convert to Bangla digits in BN mode (matches the cancel dialog; 2 occurrences).
+- Pre-existing defects found via tsc and FIXED: (1) deleted src/components/site/pages/estimator-page.tsx — dead code, unrouted since an earlier round, referenced non-existent dictionary namespace `estimatorPage` (route showed 404, file was TS-broken); (2) language-toggle.tsx imported `type Lang` from @/lib/i18n (not re-exported there) → now imports from @/lib/data/dictionary. `bunx tsc --noEmit` now reports ZERO errors under src/ (examples/ + skills/ folders retain their own pre-existing errors — out of scope).
+- bun run lint: 0 errors / 0 warnings project-wide.
+- Demo data restorations after QA: Farhana Akter message back to unhandled; ADC-DMO2405 PENDING; test patient accounts removed.
+- Dev server healthy throughout (single instance, port 3000); no restarts needed after the initial Prisma-client reload.
+
+Stage Summary:
+- USER-FACING RESULT: (A) Patient Portal live at #/portal — patients look up bookings by phone WITHOUT an account; registered patients log in for the full dashboard (history + notes + reviews + profile + password + one-tap cancel). Demo login: 01601000950 / demo1234. (B) Admin panel now "fully ready": 6 modules (Overview dashboard w/ charts, Appointments, Reviews, Messages inbox, Subscribers, Patients w/ drilldown).
+- New routes/APIs this round: #/portal; /api/patient/{register,login,logout,me,profile,password,cancel}; /api/admin/{overview,messages,subscribers,patients}. Prisma Patient model added (dev server restart REQUIRED after schema push — stale global PrismaClient).
+- Remaining risks/next-phase ideas: (1) password reset is call-the-clinic only (no SMS/email infra) — documented in UI; (2) patient sessions cannot be revoked server-side per-account (HMAC secret is global) — acceptable at this scale; (3) portal booking creation could pre-fill logged-in patient's name/phone on the appointment page; (4) admin Patients panel could gain "book on behalf" action; (5) overview chart could add date-range switching.
+
+---
+Task ID: 12 (main agent round 12) — IN PROGRESS
+Agent: Z.ai Code (user-driven: "পূর্ণাঙ্গ modular admin panel — edit blog, FAQ, About, homepage, doctors, EVERYTHING")
+Task: Full CMS: DB-backed content for doctors/blog/faqs/cases/services/hero/pages/settings + modular professional admin UI + public pages consuming DB content with static fallback.
+
+Work Log (so far):
+- Read worklog tail (round 11 complete: portal + 6-module admin). Explored data layer: types.ts, doctors.ts, blog.ts (5 posts), faqs.ts (12), smile-cases.ts (6), hero-media.ts, services.ts (1186 lines, 11 services), site.ts, home/about pages, admin-auth.ts (passcode + HMAC session), admin-page.tsx (3542 lines, 6 tabs).
+- ARCHITECTURE DECIDED: (1) Prisma models Doctor/BlogPost/Faq/SmileCase/ServiceContent/HeroSlide/PageBlock (JSON blobs for home/about/settings); (2) /api/content public bundle + getContentBundle() server helper w/ static fallback; (3) page.tsx (server) loads bundle → ContentProvider context → pages consume useContent(); (4) modular admin: src/components/site/admin/ shell + panels/ per module; (5) /api/admin/upload for images to /public/uploads.
+- Backend CMS COMPLETE + curl-verified end-to-end: Prisma models (Doctor/BlogPost/Faq/SmileCase/ServiceContent/HeroSlide/PageBlock) pushed + seeded (4/5/12/6/11/5/3 rows); /api/content public bundle (DEEP sparse merge over defaults — found+fixed shallow-merge bug); admin CRUD APIs all verified (doctors create→update→delete PASS, blog draft gating PASS, faq create+reorder+delete PASS, cases list PASS, service overlay edit→public reflection PASS + restored, pages deep-merge sparse edit PASS + restored, hero youtube slide add→public interleave PASS + cleanup, settings phone/video edit PASS + restored, upload PNG→/uploads served 200 + non-image rejected + 401 gate). tsc: 0 src errors; lint clean.
+- INFRA: dev server kept alive ONLY via double-fork `( bun run dev >> dev.log 2>&1 & )` (setsid+nohup all die at invocation end — re-confirmed).
+- Architectural core wired by main agent: page.tsx now server-loads getContentBundle() → SiteShell initialContent → ContentProvider (client context, /api/content refresh on focus debounce 10s + refresh() for admin live preview). site-shell.tsx imports AdminPage from @/components/site/admin/admin-page (temp bridge re-export → 3-a replaces). src/lib/content/{shared,server,admin-api}.ts + scripts/seed-content.ts created.
+
+---
+Task ID: 3-d1
+Agent: fullstack-developer (home/about/navbar/footer CMS migration)
+Task: Migrate HOME page, ABOUT page, NAVBAR and FOOTER to consume live CMS data from useBundle() instead of static imports (data-source swap, pixel-identical output).
+
+Work Log:
+- Read worklog tail + key files: src/lib/content/shared.ts (ContentBundle types/defaults/mappers), content-provider.tsx (useBundle/useContent), home-page.tsx (677L), about-page.tsx (438L), navbar.tsx, footer.tsx, site.ts, dictionary home/about sections, services.ts (6 featured), AnimatedCounter, icon-map, admin pages/settings routes, content/server.ts (5s cache, deep-merge).
+- shared.ts: appended ONLY the pickBn<T>(en, bn, isBn) bilingual resolver at file end (no existing exports modified).
+- home-page.tsx: removed static imports (site, services/getFeaturedServices, doctors, testimonials, generalFaqs, homeHeroSlides) → useBundle() {home, settings, heroSlides, faqs, services, doctors} + featuredServices(services, 6)/pickBn/testimonials from @/lib/content/shared. FAQ JSON-Ld moved from module scope into useMemo over live faqs (EN canonical, stable identity for usePageMeta). Hero (badge/titleA/titleB/description/ctaBook/ctaExplore/trust[] via pickBn + HeroBackdrop slides=heroSlides), stats (icons/tones kept as presentation literal; value/suffix/decimals/label now home.stats[i] with pickBn labels; bn formatBn suffix behavior intact), services marquee (bundle services), why section (quote/quoteBy/ratingNote + section head + highlights now home.why.highlights with h.icon), services preview (SectionHead + cta from home.services.cta/ctaBn; featuredServices(services, 6)), facility (head + cards[i] pickBn w/ optional chaining), gallery preview (head + cta; sliderChip stays d.*), testimonials/doctors heads (pickBn; doctors.cta=viewBoard), FAQ (head + stillTitle pickBn + settings.phoneRaw/phone + faqs.slice(0,6) with pickBn + cta). Kept d.* for fields with NO CMS twin: hero.scroll, why.premiumBadge, why.plusSpecialists, galleryPreview.sliderChip, faq.or/sendMsg/replyNote/readMore.
+- about-page.tsx: removed clinicStats/site/doctors/testimonials static imports → useBundle() {home, about, settings, doctors} + pickBn/testimonials. PageHeader (eyebrow/title/description pickBn + replace("{site}", settings.name)), story (storyBadge/storyQuote/storyP2 pickBn; storyP1a keeps d.* but substitutes settings.name), mission/vision (all heads+texts pickBn), timeline (journey head pickBn; items = about.timeline[i] w/ pickBn title/description — timelineMeta years/icons kept as index-paired presentation), founder (founderRole/founderChipTitle/founderChipNote + founderItems pickBn), values (valuesEyebrow/valuesTitle pickBn; about.values[] with v.icon replacing valueIcons array — valueIcons const removed), stats (home.stats map, stat.decimals ?? 0, pickBn labels), doctors (bundle doctors + specialistsTitle/Description pickBn), CtaBanner (ctaTitle/ctaDescription pickBn). t.* kept for non-CMS fields (storyStats, ratingChip, storyEyebrow/Title, storyChecklist, founderEyebrow/Title, viewFullProfile, specialistsEyebrow, trustEyebrow/Title).
+- navbar.tsx: dropped `site` import (navItems kept — nav structure not CMS-managed); useBundle() settings; top-bar hours → pickBn(settings.hours, settings.hoursBn) (was d.chrome.hours — identical strings EN/BN); hotline phone + mobile-drawer tel link/phone → settings.phone/phoneRaw.
+- footer.tsx: dropped services/site static imports → useBundle() {services, settings}; brand name, social links (settings.facebook/instagram/linkedin), services list renders live services.slice(0, 8) with shortNameBn logic intact, tel/mailto/addressShort → settings, hours → pickBn(settings.hours, settings.hoursBn), © name → settings.name. Newsletter + quickLinks + trust strip untouched.
+- Cleaned stale tool-results/*.txt read-persist outputs from repo.
+
+Stage Summary:
+- Files modified (5): src/lib/content/shared.ts (pickBn append only), home-page.tsx, about-page.tsx, navbar.tsx, footer.tsx. site-shell/content-provider/other pages/APIs/hero-backdrop/shared.tsx untouched.
+- Static-import sweep clean: zero remaining imports of homeHeroSlides/clinicStats/highlights(static)/generalFaqs/getFeaturedServices/site.*/doctors/testimonials(static) in the 4 migrated files (testimonials now imported from @/lib/content/shared, the sanctioned static re-export; TestimonialMarquee untouched, receives same Testimonial[] props).
+- `bun run lint` exit 0 (zero output project-wide); `bunx tsc --noEmit` → ONLY the 4 pre-existing errors in examples/ + skills/ (zero under src/).
+- Browser QA (agent-browser, 1440×900): home renders identically — hero "Excellence in Every Smile", 4 stat counters + labels, 4 why-cards, 6 featured service cards + footer 8 service links, 3 facility cards, gallery slider chip, testimonial marquee (2 rows/40 cards), 6 FAQ accordion items matching static generalFaqs order, FAQ JSON-LD injected from live faqs, 4 doctor cards, CTA. Zero console errors; dev.log clean during session (old ⨯ entries pre-date task).
+- Bangla mode: hero "প্রতিটি হাসিতে শ্রেষ্ঠত্ব", badge, stat labels (সন্তুষ্ট রোগী…), why quote, FAQ "দাঁতে ক্ষয় কেন হয়?", services CTA "সব ১১টি সেবা দেখুন", navbar+footer hours "শনি – বৃহঃ: সকাল ১০টা – রাত ৯টা" — all from CMS Bn twins via pickBn. About in BN: h1/timeline/founderItems/values/cta all Bangla.
+- #/about EN: story card + mission/vision + 4 timeline + 4 values (icons render) + stats + 4 doctors + marquee + CTA all correct.
+- 390px viewport: scrollWidth === clientWidth === 390 on home (top + scrolled) and #/about — no horizontal overflow.
+- LIVE-CMS WIRING PROVEN + RESTORED (raw PageBlock rows backed up first, byte-verified after): POST /api/admin/pages {"hero":{"titleA":"CMS Live Test"}} → hero rendered "CMS Live Test Every Smile" → restored original row → "Excellence in Every Smile" + badge intact. POST /api/admin/settings {"phone":"01715-111222"} → navbar top bar + footer hotline showed 01715-111222 → restored full settings row → 01715-027522 + tel:+8801715027522 back. DB verify script: home/about/settings rows all IDENTICAL to pre-test bytes.
+- Notes/deviations: (a) featuredServices called with count=6 (old getFeaturedServices() returned ALL 6 featured; default count=4 would have regressed the 6-card grid); (b) stats icons/tones and timeline years/icons remain presentation literals paired by index (CMS drives values/labels/text only); (c) navbar top-bar hours switched from dictionary d.chrome.hours to pickBn(settings.hours, settings.hoursBn) — string-identical both languages, now admin-editable; (d) stats divider + grid remain hard-coded to 4 columns (matches seeded data); (e) home usePageMeta SEO title/description strings left as literals (not CMS-managed this round).
+---
+Task ID: 3-a (completed by subagent; context deadline hit before its own log — main agent performed the QA below and documents it here)
+Agent: fullstack-developer (admin shell modularization)
+Task: Refactor 3542-line monolithic admin-page.tsx into modular sidebar shell + 15 panel files + shared admin UI atoms.
+
+Work Log:
+- Created src/components/site/admin/admin-page.tsx (856 lines — login gate w/ polished navy card, session probe, professional sidebar: Dashboard/Bookings/Engagement/Content/Configuration groups, 15 modules w/ count badges, View-site + Sign-out footer, mobile Sheet drawer, AnimatePresence panel transitions).
+- Created admin-shared.tsx (1170 lines): useAdminFetch (401 handling), PanelHeader, StatCard, ConfirmDeleteDialog, ImageUploadField (multipart upload + preview + manual path), BilingualField (EN/BN side-by-side), SaveBar (dirty state), EmptyState, PanelSkeleton.
+- Extracted 6 real panels (overview 506 / appointments 674 / reviews 474 / messages 405 / subscribers 253 / patients 403 lines) + 9 functional placeholders (each fetches its list endpoint and shows live row count).
+- Deleted old pages/admin-page.tsx (site-shell already imports from admin/admin-page).
+
+Stage Summary (main-agent QA via agent-browser):
+- Login gate → passcode aristocrat-2026 → dashboard; logout → gate returns; session persistence OK.
+- Sidebar: all 5 groups + 15 items; badges Appointments 4 / Messages 1 live.
+- Overview: 7 KPI cards (1 today/7 upcoming/4 pending/1 unhandled/0 reviews/2 patients/4 subscribers), 14-day chart, 60s auto-refresh.
+- Doctors placeholder shows "4 doctors in database"; Appointments panel table loads.
+- Mobile 390px: scrollWidth 390 === clientWidth 390. lint 0, tsc 0 src errors, dev.log clean.
+
+---
+Task ID: 3-b
+Agent: fullstack-developer (doctors/blog/faqs/cases editors)
+Task: Build the 4 production CMS content editors (doctors, blog, FAQs, smile cases) replacing the WiredStub placeholders.
+
+Work Log:
+- Read worklog tail (round 12 CMS backend + 3-a shell + 3-d1 home/about), admin-shared.tsx COMPLETE (atoms: useAdminFetch, useAdminToast, PanelHeader, StatCard, ConfirmDeleteDialog, ImageUploadField, BilingualField, SaveBar, EmptyState, PanelSkeleton, WiredStub, localToday, prettyDay, initialsOf), the 4 placeholder panels, content/shared.ts row types + mappers, the 4 API routes (doctors/blog/faqs/cases POST validation + faqs reorder contract), admin-page.tsx shell routing (named-export panels, {onSessionExpired} props), content-provider.tsx (useContent().refresh), site-shell routes (#/doctors, #/blog, #/gallery, #/faqs), services.ts (11 slugs), eslint config, Select/Switch shadcn APIs.
+- Wrote src/components/site/admin/panels/doctors-panel.tsx (~830 lines): list (4 StatCards, search, roster cards w/ photo-or-initials accent-ring avatar, role/department/slug, years+patients+rating row, consultation-day mini pills, Active/Hidden pill, Edit/Delete) + full editor (name, auto-slugify-on-create + slug warning on edit, BilingualField role/department, bio, 3 numeric fields, credentials/specializations/languages ChipsEditor, 7 weekday toggle pills, native color input + hex sync, ImageUploadField photo, active Switch, dirty tracking via useState snapshot, SaveBar, window.confirm leave-guard, client+server validation inline destructive).
+- Wrote faqs-panel.tsx (~600 lines): numbered list rows (position badge IS display order), বাংলা indicator chip, Active/Hidden pill, ↑/↓ swap + POST {action:"reorder", ids} full array (optimistic + server-echo restore on failure), stats Total/With Bangla/Hidden, editor with BilingualField question + answer, active switch; create passes no sort (server appends at max+1), update passes row.sort to preserve position.
+- Wrote cases-panel.tsx (~700 lines): list rows with before→after 80px thumbnail pairs + gold arrow, title/treatment/patient, 4-tone category pill, Featured star, linked-service pill (resolved from services.ts), Edit/Delete; editor with basics (title/slug/treatment/category Select/serviceSlug Select over 11 services + none), patient story (patient/age/duration, repeatable StringListEditor procedures, result Textarea), before/after ImageUploadFields + optional alts, featured switch, full validation incl. /-prefixed image paths.
+- Wrote blog-panel.tsx (~1000 lines, flagship): list (4 StatCards, search, status segmented filter All/Published/Drafts, category Select union, cover-thumb cards w/ category + status + Featured pills, date·readTime·author) + 5-card editor (Basics: bilingual title, auto-slug, category/readTime/date/author/credentials, featured switch, status Select + amber draft banner + "View" link for published; Cover: upload + alt; Summary: bilingual excerpt + AEO quick-answer; Sections: collapsible EN section cards — heading/paragraphs/optional list, per-item move-up/down/remove, add section/paragraph/list-item — with AUTO-SYNCED বাংলা mirror (every structural op mutates both sides), "Sync structure" repair button, bn-complete status pill, partial-BN amber notice; payload builds EN+BN with identical pair-filtering so sectionsBn mirrors sections 1:1 and is only sent when fully translated — otherwise omitted so the site falls back to English, per the BlogPost contract; Connections: tags chips + 11 linked-service checkbox grid; update bumps `updated` to today).
+- All saves: useAdminFetch.post → toast → useContent().refresh() (live bundle) → reload list → return to list mode. Errors: inline destructive banner + toast.
+- Fix round: replaced useRef snapshot with useState snapshot in all 4 editors (eslint react-hooks/refs forbids ref reads during render); removed unused useRef imports. eslint clean on all 4 files; bunx tsc --noEmit zero errors in my files (only pre-existing examples/skills errors + a transient homepage-panel.tsx error from the concurrently-running 3-d/3-c subagent mid-write — not mine).
+- Dev server died once mid-session (unrelated to edits) → restarted with the double-fork pattern; dev.log clean (no compile/runtime errors).
+- Browser E2E (agent-browser, logged-in session): DOCTORS: 4 rows → edit Dr. Shazia Khanam → form pre-filled → role → "Chief QA Test" → Save → list shows new role + DB/API updated → reverted to "Chief Dental Surgeon & Founder" ✓. BLOG: 5 rows → created "QA Test Post" (DRAFT, one section) → amber Draft pill in list, absent from /api/content bundle → edited → status PUBLISHED → present in /api/content → deleted → gone, 5 posts ✓. FAQS: 12 rows → moved item 2 up (list + DB order changed) → moved back (DB order restored) → created test FAQ (appended #13) → deleted → 12 ✓. CASES: 6 rows → edited case title → "QA Temp Case Title" → save → /api/content reflects it → reverted ✓. 390px: no horizontal overflow on #/admin list, case editor, or blog editor (scrollWidth 390 = clientWidth). Console: zero errors (one transient next/image warning during HMR, not reproducible after clear). VLM visual QA on 5 screenshots (doctors/faqs/blog lists + blog/doctors editors): "no issues". Final DB state exactly as found: 4 doctors / 5 posts / 12 FAQs / 6 cases.
+
+Stage Summary:
+- PASS: 4 files written (doctors/blog/faqs/cases panels), same named-export signatures as placeholders; shell routes unchanged.
+- PASS: eslint clean (4 files); tsc --noEmit zero new src errors from my files.
+- PASS: full CRUD E2E in browser for all 4 modules (create/read/update/delete + FAQ reorder round-trip).
+- PASS: saves invalidate the server content cache and /api/content reflects changes instantly; ContentProvider.refresh() wired into every save.
+- PASS: 390px no-overflow; console + dev.log clean; VLM screenshot QA clean.
+- PASS: DB left exactly as found (no test rows; FAQ order restored; doctor role + case title reverted).
+- DEVIATION (documented, not a 3-b bug): public #/doctors, #/blog, #/faqs, #/gallery pages still import STATIC data files (only home/about/navbar/footer were migrated to useBundle by 3-d1), so the "verify live on public page" steps were verified at the CMS-pipeline level instead: DB row + public /api/content bundle update within one save round-trip (curl-verified for doctors role, blog draft→publish→delete, case title). Migrating those 4 public pages to useBundle() is the remaining step for true live rendering (out of 3-b's file scope per HARD RULES).
+---
+Task ID: 3-c (completed by subagent; request deadline hit before its own log — main agent QA'd and documents here)
+Agent: fullstack-developer (homepage/about/services/hero/settings editors)
+Task: 5 content editors replacing placeholders.
+
+Work Log:
+- panels/homepage-panel.tsx (1047 lines): collapsible group cards (Hero/Stats/Why/6 section heads) w/ edited-dots, BilingualField everywhere, trust chips + stat rows + highlight repeaters.
+- panels/about-panel.tsx (848): Page Head/Story/Mission-Vision/Journey timeline/founder/Values(icons)/CTA groups.
+- panels/services-panel.tsx (826): list of 11 w/ thumbs + featured + "slug locked" notice → full overlay editor (tagline/excerpt/image/icon/duration/overview/benefits/process/ideal/faqs repeaters).
+- panels/hero-panel.tsx (677): slide cards (thumb/alt/active/reorder/delete + Add slide image|youtube) + YouTube background URLs section (BN helper text, max 6).
+- panels/settings-panel.tsx (472): Identity/Contact/Hours/Stats/Social groups → POST full settings.
+- All use admin-shared atoms; every save → toast + useContent().refresh().
+
+Stage Summary (main-agent QA via agent-browser):
+- GOLDEN PATH PASS: Homepage editor → badge changed to "QA Badge Live Test 12" → Save → public #/ hero rendered it LIVE (ContentProvider refresh) → reverted via API.
+- Services editor opens w/ full pre-filled content; Hero panel lists 5 slides w/ alt/active + "Add slide" + YouTube URLs section (BN helper); Settings groups render w/ restored canonical phone.
+- FOUND + FIXED: settings blob had leftover QA phone 01715-111222 (subagent died between test-save and revert) → reset to defaultSettings() canonical (phone 01715-027522); hero slides verified clean (5 images).
+- lint 0; tsc 0 src errors; server 200.

@@ -18,9 +18,8 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { clinicStats, site } from "@/lib/site";
-import { doctors } from "@/lib/data/doctors";
-import { testimonials } from "@/lib/data/doctors";
+import { useBundle } from "@/components/site/content-provider";
+import { pickBn, testimonials } from "@/lib/content/shared";
 import { PageHeader, CtaBanner, DoctorCard } from "@/components/site/shared";
 import {
   AnimatedCounter,
@@ -33,7 +32,7 @@ import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
-/*  ABOUT PAGE (EN / বাংলা)                                             */
+/*  ABOUT PAGE (EN / বাংলা) — content served live from the CMS bundle  */
 /* ------------------------------------------------------------------ */
 
 const timelineMeta = [
@@ -43,11 +42,10 @@ const timelineMeta = [
   { year: "2025", icon: "Users" },
 ];
 
-const valueIcons = ["BadgeCheck", "ShieldCheck", "HeartHandshake", "Award"];
-
 export function AboutPage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { home, about, settings, doctors } = useBundle();
   const bn = lang === "bn";
   const t = d.about;
 
@@ -66,12 +64,12 @@ export function AboutPage() {
   return (
     <>
       <PageHeader
-        eyebrow={t.eyebrow}
-        title={t.title}
-        description={t.description.replace("{site}", site.name)}
+        eyebrow={pickBn(about.eyebrow, about.eyebrowBn, bn)}
+        title={pickBn(about.title, about.titleBn, bn)}
+        description={pickBn(about.description, about.descriptionBn, bn).replace("{site}", settings.name)}
         breadcrumb={[
           { label: d.chrome.nav.home, to: "/" },
-          { label: t.eyebrow },
+          { label: pickBn(about.eyebrow, about.eyebrowBn, bn) },
         ]}
       />
 
@@ -85,10 +83,10 @@ export function AboutPage() {
                   <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/15">
                     <Award className="h-3.5 w-3.5" aria-hidden="true" />
-                    {t.storyBadge}
+                    {pickBn(about.storyBadge, about.storyBadgeBn, bn)}
                   </span>
                   <blockquote className="font-heading relative mt-8 text-2xl font-bold leading-snug text-white sm:text-[1.75rem]">
-                    {t.storyQuote}
+                    {pickBn(about.storyQuote, about.storyQuoteBn, bn)}
                   </blockquote>
                   <div className="relative mt-10 grid grid-cols-3 gap-4">
                     {storyStats.map((stat) => (
@@ -131,13 +129,13 @@ export function AboutPage() {
               <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
                 <Reveal delay={0.05}>
                   <p>
-                    {t.storyP1a.replace("{site}", site.name)}
+                    {t.storyP1a.replace("{site}", settings.name)}
                     <strong className="text-brand-navy">{t.storyDoctor}</strong>
                     {t.storyP1b}
                   </p>
                 </Reveal>
                 <Reveal delay={0.1}>
-                  <p>{t.storyP2}</p>
+                  <p>{pickBn(about.storyP2, about.storyP2Bn, bn)}</p>
                 </Reveal>
                 <Reveal delay={0.15}>
                   <ul className="grid gap-3 pt-2 sm:grid-cols-2">
@@ -165,8 +163,8 @@ export function AboutPage() {
       <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="mission-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow={t.missionEyebrow}
-            title={t.missionTitle}
+            eyebrow={pickBn(about.missionEyebrow, about.missionEyebrowBn, bn)}
+            title={pickBn(about.missionTitle, about.missionTitleBn, bn)}
           />
           <div className="mt-12 grid gap-6 lg:grid-cols-2">
             <Reveal>
@@ -175,10 +173,10 @@ export function AboutPage() {
                   <Target className="h-7 w-7" aria-hidden="true" />
                 </span>
                 <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
-                  {t.missionHeading}
+                  {pickBn(about.missionHeading, about.missionHeadingBn, bn)}
                 </h3>
                 <p className="mt-4 text-base leading-relaxed text-slate-600">
-                  {t.missionText}
+                  {pickBn(about.missionText, about.missionTextBn, bn)}
                 </p>
               </article>
             </Reveal>
@@ -188,10 +186,10 @@ export function AboutPage() {
                   <Telescope className="h-7 w-7" aria-hidden="true" />
                 </span>
                 <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
-                  {t.visionHeading}
+                  {pickBn(about.visionHeading, about.visionHeadingBn, bn)}
                 </h3>
                 <p className="mt-4 text-base leading-relaxed text-slate-600">
-                  {t.visionText}
+                  {pickBn(about.visionText, about.visionTextBn, bn)}
                 </p>
               </article>
             </Reveal>
@@ -203,8 +201,8 @@ export function AboutPage() {
       <section className="relative py-16 sm:py-20" aria-labelledby="timeline-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow={t.journeyEyebrow}
-            title={t.journeyTitle}
+            eyebrow={pickBn(about.journeyEyebrow, about.journeyEyebrowBn, bn)}
+            title={pickBn(about.journeyTitle, about.journeyTitleBn, bn)}
           />
           <div className="relative mt-14">
             <span
@@ -212,28 +210,31 @@ export function AboutPage() {
               aria-hidden="true"
             />
             <ol className="space-y-10">
-              {timelineMeta.map((meta, i) => (
-                <li key={meta.year}>
-                  <Reveal delay={i * 0.06}>
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                      <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
-                        {bn ? toBnDigits(meta.year) : meta.year}
-                      </span>
-                      <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
-                        <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+              {timelineMeta.map((meta, i) => {
+                const item = about.timeline[i];
+                return (
+                  <li key={meta.year}>
+                    <Reveal delay={i * 0.06}>
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                        <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
                           {bn ? toBnDigits(meta.year) : meta.year}
                         </span>
-                        <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
-                          {t.timeline[i].title}
-                        </h3>
-                        <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
-                          {t.timeline[i].description}
-                        </p>
+                        <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
+                          <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+                            {bn ? toBnDigits(meta.year) : meta.year}
+                          </span>
+                          <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy sm:mt-0">
+                            {item ? pickBn(item.title, item.titleBn, bn) : ""}
+                          </h3>
+                          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+                            {item ? pickBn(item.description, item.descriptionBn, bn) : ""}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </Reveal>
-                </li>
-              ))}
+                    </Reveal>
+                  </li>
+                );
+              })}
             </ol>
           </div>
         </div>
@@ -255,7 +256,7 @@ export function AboutPage() {
                       {bn ? "ডা. শাজিয়া খানম" : "Dr. Shazia Khanam"}
                     </h3>
                     <p className="mt-1 text-sm font-medium text-blue-200">
-                      {t.founderRole}
+                      {pickBn(about.founderRole, about.founderRoleBn, bn)}
                     </p>
                     <div className="mt-5 flex items-center gap-2" aria-label="Rating 4.9">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -274,10 +275,10 @@ export function AboutPage() {
                     <Stethoscope className="h-6 w-6 text-brand-blue" aria-hidden="true" />
                     <span>
                       <span className="block font-heading text-sm font-bold text-brand-navy">
-                        {t.founderChipTitle}
+                        {pickBn(about.founderChipTitle, about.founderChipTitleBn, bn)}
                       </span>
                       <span className="block text-[11px] text-slate-500">
-                        {t.founderChipNote}
+                        {pickBn(about.founderChipNote, about.founderChipNoteBn, bn)}
                       </span>
                     </span>
                   </span>
@@ -305,7 +306,7 @@ export function AboutPage() {
                 </p>
               </Reveal>
               <StaggerContainer className="mt-8 space-y-4">
-                {t.founderItems.map((item, i) => (
+                {about.founderItems.map((item, i) => (
                   <StaggerItem key={i}>
                     <div className="flex items-start gap-4 rounded-2xl bg-white/8 p-5 ring-1 ring-white/12 transition-colors duration-300 hover:bg-white/12">
                       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/90 text-brand-navy">
@@ -313,10 +314,10 @@ export function AboutPage() {
                       </span>
                       <span>
                         <span className="font-heading block text-sm font-bold text-white">
-                          {item.title}
+                          {pickBn(item.title, item.titleBn, bn)}
                         </span>
                         <span className="mt-1 block text-sm text-blue-100/80">
-                          {item.text}
+                          {pickBn(item.text, item.textBn, bn)}
                         </span>
                       </span>
                     </div>
@@ -349,21 +350,21 @@ export function AboutPage() {
       <section className="py-16 sm:py-20" aria-labelledby="values-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow={t.valuesEyebrow}
-            title={t.valuesTitle}
+            eyebrow={pickBn(about.valuesEyebrow, about.valuesEyebrowBn, bn)}
+            title={pickBn(about.valuesTitle, about.valuesTitleBn, bn)}
           />
           <StaggerContainer className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {t.values.map((v, i) => (
+            {about.values.map((v, i) => (
               <StaggerItem key={i}>
                 <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
                   <span className="inline-flex h-13 w-13 items-center justify-center rounded-2xl bg-blue-50 text-brand-blue ring-1 ring-blue-100 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                    <DynamicIconImport name={valueIcons[i]} />
+                    <DynamicIconImport name={v.icon} />
                   </span>
                   <h3 className="font-heading mt-4 text-base font-bold text-brand-navy">
-                    {v.title}
+                    {pickBn(v.title, v.titleBn, bn)}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                    {v.description}
+                    {pickBn(v.description, v.descriptionBn, bn)}
                   </p>
                 </div>
               </StaggerItem>
@@ -376,17 +377,17 @@ export function AboutPage() {
       <section className="relative bg-ice py-14" aria-label="Clinic statistics">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <StaggerContainer className="grid grid-cols-2 gap-6 text-center lg:grid-cols-4">
-            {clinicStats.map((stat, i) => (
+            {home.stats.map((stat, i) => (
               <StaggerItem key={i}>
                 <span className="font-heading block text-3xl font-bold text-brand-navy sm:text-4xl">
                   <AnimatedCounter
                     value={stat.value}
                     suffix={stat.suffix}
-                    decimals={"decimals" in stat ? stat.decimals : 0}
+                    decimals={stat.decimals ?? 0}
                   />
                 </span>
                 <span className="mt-1 block text-xs font-medium uppercase tracking-wider text-slate-500">
-                  {d.home.stats[i]?.label ?? stat.label}
+                  {pickBn(stat.label, stat.labelBn, bn)}
                 </span>
               </StaggerItem>
             ))}
@@ -399,8 +400,8 @@ export function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             eyebrow={t.specialistsEyebrow}
-            title={t.specialistsTitle}
-            description={t.specialistsDescription}
+            title={pickBn(about.specialistsTitle, about.specialistsTitleBn, bn)}
+            description={pickBn(about.specialistsDescription, about.specialistsDescriptionBn, bn)}
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {doctors.map((doctor, i) => (
@@ -424,8 +425,8 @@ export function AboutPage() {
       </section>
 
       <CtaBanner
-        title={t.ctaTitle}
-        description={t.ctaDescription}
+        title={pickBn(about.ctaTitle, about.ctaTitleBn, bn)}
+        description={pickBn(about.ctaDescription, about.ctaDescriptionBn, bn)}
       />
     </>
   );

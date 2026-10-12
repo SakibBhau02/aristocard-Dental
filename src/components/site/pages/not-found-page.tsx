@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 export function NotFoundPage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { settings } = useBundle();
   const bn = lang === "bn";
 
   usePageMeta({
@@ -158,10 +159,10 @@ export function NotFoundPage() {
           <Phone className="h-4 w-4 text-brand-blue" aria-hidden="true" />
           {bn ? "সাহায্য দরকার? কল করুন" : "Need help? Call"}{" "}
           <a
-            href={`tel:${site.phoneRaw}`}
+            href={`tel:${settings.phoneRaw}`}
             className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
           >
-            {site.phone}
+            {settings.phone}
           </a>
         </p>
       </div>

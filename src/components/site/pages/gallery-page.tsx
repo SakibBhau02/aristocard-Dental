@@ -21,7 +21,7 @@ import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, StaggerContainer, StaggerItem } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { smileCases as cases } from "@/lib/data/smile-cases";
+import { useBundle } from "@/components/site/content-provider";
 
 /* ------------------------------------------------------------------ */
 /*  GALLERY PAGE — Smile transformations (EN / বাংলা)                   */
@@ -35,11 +35,12 @@ export function GalleryPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.galleryPage;
+  const { cases } = useBundle();
   const [filter, setFilter] = useState<FilterKey>("All");
 
   const visibleCases = useMemo(
     () => (filter === "All" ? cases : cases.filter((c) => c.category === filter)),
-    [filter]
+    [cases, filter]
   );
 
   usePageMeta({

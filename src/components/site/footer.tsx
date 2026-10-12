@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { services } from "@/lib/data/services";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
+import { pickBn } from "@/lib/content/shared";
 import { useToast } from "@/hooks/use-toast";
 import { ClinicStatusBadge } from "@/components/site/clinic-status";
 
@@ -34,6 +34,7 @@ import { ClinicStatusBadge } from "@/components/site/clinic-status";
 export function Footer() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { services, settings } = useBundle();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -90,7 +91,7 @@ export function Footer() {
               className="h-11 w-auto object-contain"
             />
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-blue-100/85">
-              {site.name} — {lang === "bn"
+              {settings.name} — {lang === "bn"
                 ? "উত্তরা, ঢাকার একটি আধুনিক, সুসজ্জিত ডেন্টাল ক্লিনিক — অত্যাধুনিক প্রযুক্তি, কঠোর জীবাণুমুক্তকরণ ও বিশেষজ্ঞ চিকিৎসার সমন্বয়ে।"
                 : "a modern, well-equipped dental clinic in Uttara, Dhaka combining advanced technology, strict sterilization and specialist care."}{" "}
               {d.chrome.tagline}
@@ -112,9 +113,9 @@ export function Footer() {
             </div>
             <div className="mt-6 flex items-center gap-3">
               {[
-                { label: "Facebook", href: site.social.facebook, Icon: Facebook, hover: "hover:bg-[#1877F2] hover:ring-[#1877F2]" },
-                { label: "Instagram", href: site.social.instagram, Icon: Instagram, hover: "hover:bg-[#E1306C] hover:ring-[#E1306C]" },
-                { label: "LinkedIn", href: site.social.linkedin, Icon: Linkedin, hover: "hover:bg-[#0A66C2] hover:ring-[#0A66C2]" },
+                { label: "Facebook", href: settings.facebook, Icon: Facebook, hover: "hover:bg-[#1877F2] hover:ring-[#1877F2]" },
+                { label: "Instagram", href: settings.instagram, Icon: Instagram, hover: "hover:bg-[#E1306C] hover:ring-[#E1306C]" },
+                { label: "LinkedIn", href: settings.linkedin, Icon: Linkedin, hover: "hover:bg-[#0A66C2] hover:ring-[#0A66C2]" },
               ].map(({ label, href, Icon, hover }) => (
                 <a
                   key={label}
@@ -204,7 +205,7 @@ export function Footer() {
             <ul className="mt-5 space-y-4 text-sm">
               <li>
                 <a
-                  href={`tel:${site.phoneRaw}`}
+                  href={`tel:${settings.phoneRaw}`}
                   className="flex items-start gap-3 text-blue-100/85 transition-colors hover:text-white"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
@@ -214,13 +215,13 @@ export function Footer() {
                     <span className="block text-xs text-blue-200/70">
                       {d.footer.hotlineLabel}
                     </span>
-                    <span className="font-semibold">{site.phone}</span>
+                    <span className="font-semibold">{settings.phone}</span>
                   </span>
                 </a>
               </li>
               <li>
                 <a
-                  href={`mailto:${site.email}`}
+                  href={`mailto:${settings.email}`}
                   className="flex items-start gap-3 text-blue-100/85 transition-colors hover:text-white"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
@@ -228,7 +229,7 @@ export function Footer() {
                   </span>
                   <span className="break-all">
                     <span className="block text-xs text-blue-200/70">{d.footer.emailLabel}</span>
-                    {site.email}
+                    {settings.email}
                   </span>
                 </a>
               </li>
@@ -238,7 +239,7 @@ export function Footer() {
                 </span>
                 <span>
                   <span className="block text-xs text-blue-200/70">{d.footer.locationLabel}</span>
-                  {site.addressShort}
+                  {settings.addressShort}
                 </span>
               </li>
               <li className="flex items-start gap-3 text-blue-100/85">
@@ -247,7 +248,7 @@ export function Footer() {
                 </span>
                 <span>
                   <span className="block text-xs text-blue-200/70">{d.footer.hoursLabel}</span>
-                  {d.footer.hours}
+                  {pickBn(settings.hours, settings.hoursBn, lang === "bn")}
                   <ClinicStatusBadge variant="on-dark" className="mt-1.5 text-xs" showTime={false} />
                 </span>
               </li>
@@ -286,7 +287,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-blue-200/70 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {site.name}. {d.footer.rights}
+            © {new Date().getFullYear()} {settings.name}. {d.footer.rights}
           </p>
           <p className="text-center sm:text-right">{d.footer.credit}</p>
         </div>

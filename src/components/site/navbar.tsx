@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Clock, Menu, Phone, Search, UserRound, X } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { navItems, site } from "@/lib/site";
+import { navItems } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
+import { pickBn } from "@/lib/content/shared";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/site/language-toggle";
@@ -18,7 +20,8 @@ import { ClinicStatusBadge } from "@/components/site/clinic-status";
 
 export function Navbar() {
   const { path, navigate } = useRouter();
-  const { d } = useLang();
+  const { lang, d } = useLang();
+  const { settings } = useBundle();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -67,11 +70,11 @@ export function Navbar() {
             <ClinicStatusBadge variant="on-dark" className="text-xs" />
             <span className="hidden items-center gap-1.5 xl:inline-flex">
               <Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-              {d.chrome.hours}
+              {pickBn(settings.hours, settings.hoursBn, lang === "bn")}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Phone className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-              {d.chrome.hotline} {site.phone}
+              {d.chrome.hotline} {settings.phone}
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -386,11 +389,11 @@ export function Navbar() {
                   </a>
                 </Button>
                 <a
-                  href={`tel:${site.phoneRaw}`}
+                  href={`tel:${settings.phoneRaw}`}
                   className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-brand-navy ring-1 ring-blue-100"
                 >
                   <Phone className="h-4 w-4" aria-hidden="true" />
-                  {site.phone}
+                  {settings.phone}
                 </a>
               </div>
             </motion.aside>

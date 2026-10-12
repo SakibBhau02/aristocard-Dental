@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { BD_WEEK_ORDER, WEEKDAYS_BN, WEEKDAYS_EN } from "@/lib/clinic-hours";
 import { ClinicStatusBadge, useClinicStatus } from "@/components/site/clinic-status";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
@@ -34,16 +34,21 @@ import { cn } from "@/lib/utils";
 /*  CONTACT PAGE (EN / বাংলা)                                          */
 /* ------------------------------------------------------------------ */
 
-const contactJsonLd = {
+export function ContactPage() {
+  const { navigate } = useRouter();
+  const { toast } = useToast();
+  const { lang, d } = useLang();
+  const { settings } = useBundle();
+  const contactJsonLd = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Contact Aristocrat Dental Care & Orthodontic Center",
   url: "https://aristocratdentalcarebd.com/#/contact",
   mainEntity: {
     "@type": "Organization",
-    name: site.name,
-    telephone: site.phoneRaw,
-    email: site.email,
+    name: settings.name,
+    telephone: settings.phoneRaw,
+    email: settings.email,
     address: {
       "@type": "PostalAddress",
       addressLocality: "Uttara",
@@ -53,11 +58,6 @@ const contactJsonLd = {
     openingHours: "Sa-Th 10:00-21:00",
   },
 };
-
-export function ContactPage() {
-  const { navigate } = useRouter();
-  const { toast } = useToast();
-  const { lang, d } = useLang();
   const status = useClinicStatus();
   const bn = lang === "bn";
   const t = d.contactPage;
@@ -125,8 +125,8 @@ export function ContactPage() {
     {
       icon: Phone,
       label: t.callLabel,
-      value: site.phone,
-      href: `tel:${site.phoneRaw}`,
+      value: settings.phone,
+      href: `tel:${settings.phoneRaw}`,
       note: t.callNote,
       accent: "bg-brand-blue",
     },
@@ -134,7 +134,7 @@ export function ContactPage() {
       icon: MessageCircle,
       label: t.waLabel,
       value: t.waValue,
-      href: `https://wa.me/${site.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
+      href: `https://wa.me/${settings.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
         lang === "bn"
           ? "আসসালামু আলাইকুম, আমি Aristocrat Dental Care-এ অ্যাপয়েন্টমেন্ট নিতে চাই।"
           : "Hello, I would like to book an appointment at Aristocrat Dental Care."
@@ -145,8 +145,8 @@ export function ContactPage() {
     {
       icon: Mail,
       label: t.emailLabel,
-      value: site.email,
-      href: `mailto:${site.email}`,
+      value: settings.email,
+      href: `mailto:${settings.email}`,
       note: t.emailNote,
       accent: "bg-brand-navy",
     },
@@ -256,9 +256,9 @@ export function ContactPage() {
                   </p>
                   <div className="mt-6 flex items-center gap-3">
                     {[
-                      { label: "Facebook", href: site.social.facebook, Icon: Facebook },
-                      { label: "Instagram", href: site.social.instagram, Icon: Instagram },
-                      { label: "LinkedIn", href: site.social.linkedin, Icon: Linkedin },
+                      { label: "Facebook", href: settings.facebook, Icon: Facebook },
+                      { label: "Instagram", href: settings.instagram, Icon: Instagram },
+                      { label: "LinkedIn", href: settings.linkedin, Icon: Linkedin },
                     ].map(({ label, href, Icon }) => (
                       <a
                         key={label}
@@ -292,7 +292,7 @@ export function ContactPage() {
                       {t.successTitle}
                     </h3>
                     <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-600">
-                      {t.successText.replace("{phone}", site.phone)}
+                      {t.successText.replace("{phone}", settings.phone)}
                     </p>
                     <Button
                       variant="outline"

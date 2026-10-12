@@ -24,8 +24,7 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
-import { blogPosts, blogCategories, getPost } from "@/lib/data/blog";
-import { services } from "@/lib/data/services";
+import { useBundle } from "@/components/site/content-provider";
 import { DynamicIcon } from "@/components/site/icon-map";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal, SectionHeading } from "@/components/site/motion";
@@ -56,6 +55,7 @@ export function BlogPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.blogPage;
+  const { posts, services } = useBundle();
 
   usePageMeta({
     title: "Dental Health Blog — Expert Advice from Uttara's Trusted Dentists",
@@ -72,10 +72,16 @@ export function BlogPage() {
 
   const searching = search.trim().length > 0;
 
+  /* Category chips — derived from the live posts (same as the static list) */
+  const blogCategories = useMemo(
+    () => ["All", ...Array.from(new Set(posts.map((p) => p.category)))],
+    [posts]
+  );
+
   /* Category filter combined with text search (EN + BN content) */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return blogPosts.filter((p) => {
+    return posts.filter((p) => {
       const matchCategory = category === "All" || p.category === category;
       const matchSearch =
         !q ||
@@ -86,8 +92,8 @@ export function BlogPage() {
         (p.excerptBn?.toLowerCase().includes(q) ?? false);
       return matchCategory && matchSearch;
     });
-  }, [category, search]);
-  const featured = blogPosts.find((p) => p.featured) ?? blogPosts[0];
+  }, [posts, category, search]);
+  const featured = posts.find((p) => p.featured) ?? posts[0];
   /* While searching, the hero is hidden and every match goes into the grid */
   const rest = searching
     ? filtered
@@ -266,12 +272,12 @@ export function BlogPage() {
                     {bn
                       ? toBnDigits(
                           c === "All"
-                            ? blogPosts.length
-                            : blogPosts.filter((p) => p.category === c).length
+                            ? posts.length
+                            : posts.filter((p) => p.category === c).length
                         )
                       : c === "All"
-                        ? blogPosts.length
-                        : blogPosts.filter((p) => p.category === c).length}
+                        ? posts.length
+                        : posts.filter((p) => p.category === c).length}
                   </span>
                 </button>
               ))}
@@ -458,7 +464,8 @@ export function BlogDetailPage({ slug }: { slug: string }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.blogPage;
-  const post = getPost(slug);
+  const { posts, services } = useBundle();
+  const post = posts.find((p) => p.slug === slug);
   const [activeSection, setActiveSection] = useActiveSection(post?.sections.length ?? 0);
 
   const goToSection = (i: number) => {
@@ -539,7 +546,7 @@ export function BlogDetailPage({ slug }: { slug: string }) {
 
   if (!post) return <NotFoundPage />;
 
-  const related = blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
+  const related = posts.filter((p) => p.slug !== post.slug).slice(0, 3);
   const authorInitials = post.author
     .replace("Dr. ", "")
     .split(" ")

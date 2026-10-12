@@ -21,9 +21,7 @@ import {
 } from "lucide-react";
 import { usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { services } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { PageHeader } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
@@ -101,6 +99,7 @@ export function StatusPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.statusPage;
+  const { services, doctors, settings } = useBundle();
 
   usePageMeta({
     title: "Check Your Appointment Status",
@@ -470,7 +469,7 @@ export function StatusPage() {
                         {cancellable && !isPast && (
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-blue-50/80 bg-slate-50/60 px-6 py-4 sm:px-8">
                             <p className="text-xs leading-relaxed text-slate-500">
-                              {t.cantMakeIt.replace("{phone}", site.phone)}
+                              {t.cantMakeIt.replace("{phone}", settings.phone)}
                             </p>
                             <Button
                               type="button"
@@ -501,7 +500,7 @@ export function StatusPage() {
                 {
                   icon: Hash,
                   title: t.help[0].title,
-                  text: t.help[0].text.replace("{phone}", site.phone),
+                  text: t.help[0].text.replace("{phone}", settings.phone),
                 },
                 {
                   icon: RefreshCw,
@@ -512,8 +511,8 @@ export function StatusPage() {
                   icon: Phone,
                   title: t.help[2].title,
                   text: t.help[2].text
-                    .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : site.hours)
-                    .replace("{phone}", site.phone),
+                    .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : settings.hours)
+                    .replace("{phone}", settings.phone),
                 },
               ].map((item) => (
                 <div

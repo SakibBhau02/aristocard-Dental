@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { services, serviceCategories } from "@/lib/data/services";
-import { site } from "@/lib/site";
+import { useBundle } from "@/components/site/content-provider";
 import { ServiceCard, PageHeader, CtaBanner, QuizTeaser } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { Input } from "@/components/ui/input";
@@ -16,22 +15,6 @@ import { cn } from "@/lib/utils";
 /*  SERVICES PAGE — filter + search + full grid (EN / বাংলা)            */
 /* ------------------------------------------------------------------ */
 
-const servicesJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: "Dental Services at Aristocrat Dental Care & Orthodontic Center",
-  itemListElement: services.map((s, i) => ({
-    "@type": "ListItem",
-    position: i + 1,
-    item: {
-      "@type": "MedicalTherapy",
-      name: s.name,
-      description: s.excerpt,
-      url: `https://aristocratdentalcarebd.com/#/services/${s.slug}`,
-    },
-  })),
-};
-
 export function ServicesPage() {
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -39,6 +22,40 @@ export function ServicesPage() {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.servicesPage;
+  const { services, settings } = useBundle();
+
+  /* Category chips with live counts (same shape as the static list) */
+  const serviceCategories = useMemo(
+    () => [
+      { value: "all", label: "All Services", count: services.length },
+      { value: "Restorative", label: "Restorative", count: services.filter((s) => s.category === "Restorative").length },
+      { value: "Cosmetic", label: "Cosmetic", count: services.filter((s) => s.category === "Cosmetic").length },
+      { value: "Orthodontics", label: "Orthodontics", count: services.filter((s) => s.category === "Orthodontics").length },
+      { value: "Surgical", label: "Surgical", count: services.filter((s) => s.category === "Surgical").length },
+      { value: "Preventive", label: "Preventive", count: services.filter((s) => s.category === "Preventive").length },
+    ],
+    [services]
+  );
+
+  /* Services ItemList JSON-LD over the live CMS services */
+  const servicesJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Dental Services at Aristocrat Dental Care & Orthodontic Center",
+      itemListElement: services.map((s, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "MedicalTherapy",
+          name: s.name,
+          description: s.excerpt,
+          url: `https://aristocratdentalcarebd.com/#/services/${s.slug}`,
+        },
+      })),
+    }),
+    [services]
+  );
 
   usePageMeta({
     title: "Dental Services — Implants, Braces, Invisalign, Root Canal & More",
@@ -59,7 +76,7 @@ export function ServicesPage() {
         s.excerpt.toLowerCase().includes(q);
       return matchCategory && matchSearch;
     });
-  }, [category, search, bn]);
+  }, [services, category, search, bn]);
 
   return (
     <>
@@ -177,7 +194,7 @@ export function ServicesPage() {
                   {t.emptyTitle}
                 </h3>
                 <p className="mt-2 text-sm text-slate-500">
-                  {t.emptyText.replace("{phone}", site.phone)}
+                  {t.emptyText.replace("{phone}", settings.phone)}
                 </p>
               </motion.div>
             )}
@@ -211,7 +228,7 @@ export function ServicesPage() {
                     href="tel:+8801715027522"
                     className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-bold text-brand-navy ring-2 ring-brand-blue/30 transition-all duration-300 hover:bg-blue-50"
                   >
-                    {t.unsureCall.replace("{phone}", site.phone)}
+                    {t.unsureCall.replace("{phone}", settings.phone)}
                   </a>
                 </div>
               </div>

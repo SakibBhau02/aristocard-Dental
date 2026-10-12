@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -25,11 +26,8 @@ import {
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
-import { site } from "@/lib/site";
-import { services, getFeaturedServices } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { testimonials } from "@/lib/data/doctors";
-import { generalFaqs } from "@/lib/data/faqs";
+import { useBundle } from "@/components/site/content-provider";
+import { featuredServices, pickBn, testimonials } from "@/lib/content/shared";
 import { DynamicIcon } from "@/components/site/icon-map";
 import {
   AnimatedCounter,
@@ -43,26 +41,31 @@ import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
-import { homeHeroSlides } from "@/lib/data/hero-media";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
-/*  HOME PAGE (EN / বাংলা)                                             */
+/*  HOME PAGE (EN / বাংলা) — content served live from the CMS bundle   */
 /* ------------------------------------------------------------------ */
-
-const heroFaqsJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: generalFaqs.map((f) => ({
-    "@type": "Question",
-    name: f.question,
-    acceptedAnswer: { "@type": "Answer", text: f.answer },
-  })),
-};
 
 export function HomePage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { home, settings, heroSlides, faqs, services, doctors } = useBundle();
+  const bn = lang === "bn";
+
+  /* FAQ JSON-LD over the live CMS FAQs (EN question/answer canonical). */
+  const heroFaqsJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.question,
+        acceptedAnswer: { "@type": "Answer", text: f.answer },
+      })),
+    }),
+    [faqs]
+  );
 
   usePageMeta({
     title:
@@ -72,8 +75,7 @@ export function HomePage() {
     jsonLd: heroFaqsJsonLd,
   });
 
-  const featured = getFeaturedServices();
-  const bn = lang === "bn";
+  const featured = featuredServices(services, 6);
 
   return (
     <>
@@ -83,7 +85,7 @@ export function HomePage() {
         aria-labelledby="hero-heading"
       >
         {/* sliding background images (+ optional YouTube video) + navy overlay */}
-        <HeroBackdrop slides={homeHeroSlides} indicators priority overlay="deep" />
+        <HeroBackdrop slides={heroSlides} indicators priority overlay="deep" />
 
         {/* centered copy */}
         <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
@@ -94,7 +96,7 @@ export function HomePage() {
             className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20 backdrop-blur-sm"
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            {d.home.hero.badge}
+            {pickBn(home.hero.badge, home.hero.badgeBn, bn)}
           </motion.div>
 
           <motion.h1
@@ -104,8 +106,8 @@ export function HomePage() {
             transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
             className="font-heading mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.08] text-white text-balance sm:text-5xl sm:leading-[1.06] lg:text-[3.75rem]"
           >
-            {d.home.hero.titleA}{" "}
-            <span className="gold-text text-shimmer">{d.home.hero.titleB}</span>
+            {pickBn(home.hero.titleA, home.hero.titleABn, bn)}{" "}
+            <span className="gold-text text-shimmer">{pickBn(home.hero.titleB, home.hero.titleBBn, bn)}</span>
           </motion.h1>
 
           <motion.p
@@ -114,7 +116,7 @@ export function HomePage() {
             transition={{ duration: 0.7, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-blue-100/90 sm:text-lg"
           >
-            {d.home.hero.description}
+            {pickBn(home.hero.description, home.hero.descriptionBn, bn)}
           </motion.p>
 
           <motion.div
@@ -137,7 +139,7 @@ export function HomePage() {
                 className="inline-flex items-center gap-2"
               >
                 <CalendarCheck className="h-5 w-5" aria-hidden="true" />
-                {d.home.hero.ctaBook}
+                {pickBn(home.hero.ctaBook, home.hero.ctaBookBn, bn)}
               </a>
             </Button>
             <Button
@@ -155,7 +157,7 @@ export function HomePage() {
                 className="inline-flex items-center gap-2"
               >
                 <PlayCircle className="h-5 w-5 text-amber-300" aria-hidden="true" />
-                {d.home.hero.ctaExplore}
+                {pickBn(home.hero.ctaExplore, home.hero.ctaExploreBn, bn)}
               </a>
             </Button>
           </motion.div>
@@ -167,7 +169,7 @@ export function HomePage() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5"
           >
-            {d.home.hero.trust.map((item) => (
+            {pickBn(home.hero.trust, home.hero.trustBn, bn).map((item) => (
               <li
                 key={item}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-4 py-1.5 text-sm text-blue-100/90 ring-1 ring-white/12 backdrop-blur-sm"
@@ -198,38 +200,42 @@ export function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <StaggerContainer className="card-accent-top relative grid grid-cols-2 gap-4 rounded-[2rem] border border-blue-100/70 bg-white/80 p-6 shadow-[0_20px_60px_-30px_rgba(0,32,96,0.25)] backdrop-blur sm:p-8 lg:grid-cols-4">
             {[
-              { icon: Users, value: 50000, suffix: "+", decimals: 0, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
-              { icon: Sparkles, value: 11, suffix: "+", decimals: 0, tone: "text-brand-teal bg-teal-50 ring-teal-100" },
-              { icon: Stethoscope, value: 4, suffix: "+", decimals: 0, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
-              { icon: Star, value: 4.9, suffix: "/5", decimals: 1, tone: "text-amber-500 bg-amber-50 ring-amber-100" },
-            ].map((stat, i) => (
-              <StaggerItem key={i} className="text-center">
-                <span
-                  className={`mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${stat.tone}`}
-                  aria-hidden="true"
-                >
-                  <stat.icon className="h-5 w-5" />
-                </span>
-                <span className="font-heading block text-3xl font-bold text-brand-navy sm:text-4xl">
-                  <AnimatedCounter
-                    value={stat.value}
-                    suffix={bn ? undefined : stat.suffix}
-                    decimals={stat.decimals}
-                    formatBn={bn ? { suffix: stat.suffix } : undefined}
-                  />
-                </span>
-                <span className="mt-1 block text-xs font-medium uppercase tracking-wider text-slate-500 sm:text-sm">
-                  {d.home.stats[i].label}
-                </span>
-                {i > 0 && (
+              { icon: Users, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
+              { icon: Sparkles, tone: "text-brand-teal bg-teal-50 ring-teal-100" },
+              { icon: Stethoscope, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+              { icon: Star, tone: "text-amber-500 bg-amber-50 ring-amber-100" },
+            ].map(({ icon: Icon, tone }, i) => {
+              const stat = home.stats[i];
+              if (!stat) return null;
+              return (
+                <StaggerItem key={i} className="text-center">
                   <span
-                    className="absolute top-1/2 hidden h-14 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-100 to-transparent lg:block"
-                    style={{ left: `${(i / 4) * 100}%` }}
+                    className={`mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${tone}`}
                     aria-hidden="true"
-                  />
-                )}
-              </StaggerItem>
-            ))}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="font-heading block text-3xl font-bold text-brand-navy sm:text-4xl">
+                    <AnimatedCounter
+                      value={stat.value}
+                      suffix={bn ? undefined : stat.suffix}
+                      decimals={stat.decimals ?? 0}
+                      formatBn={bn ? { suffix: stat.suffix } : undefined}
+                    />
+                  </span>
+                  <span className="mt-1 block text-xs font-medium uppercase tracking-wider text-slate-500 sm:text-sm">
+                    {pickBn(stat.label, stat.labelBn, bn)}
+                  </span>
+                  {i > 0 && (
+                    <span
+                      className="absolute top-1/2 hidden h-14 w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-100 to-transparent lg:block"
+                      style={{ left: `${(i / 4) * 100}%` }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </StaggerItem>
+              );
+            })}
           </StaggerContainer>
         </div>
       </section>
@@ -268,10 +274,10 @@ export function HomePage() {
                     </span>
                     <div>
                       <p className="font-heading text-2xl font-bold leading-snug text-white">
-                        {d.home.why.quote}
+                        {pickBn(home.why.quote, home.why.quoteBn, bn)}
                       </p>
                       <p className="mt-3 text-sm text-blue-200/85">
-                        {d.home.why.quoteBy}
+                        {pickBn(home.why.quoteBy, home.why.quoteByBn, bn)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -307,7 +313,7 @@ export function HomePage() {
                     ))}
                   </span>
                   <span className="mt-1 block text-xs font-semibold text-brand-navy">
-                    {d.home.why.ratingNote}
+                    {pickBn(home.why.ratingNote, home.why.ratingNoteBn, bn)}
                   </span>
                 </div>
               </div>
@@ -317,30 +323,30 @@ export function HomePage() {
             <div className="order-1 lg:order-2">
               <SectionHeading
                 align="left"
-                eyebrow={d.home.why.eyebrow}
+                eyebrow={pickBn(home.why.eyebrow, home.why.eyebrowBn, bn)}
                 title={
                   <>
-                    {d.home.why.titleA}
-                    <span className="gradient-text">{d.home.why.titleB}</span>
+                    {pickBn(home.why.titleA, home.why.titleABn, bn)}
+                    <span className="gradient-text">{pickBn(home.why.titleB, home.why.titleBBn, bn)}</span>
                   </>
                 }
-                description={d.home.why.description}
+                description={pickBn(home.why.description, home.why.descriptionBn, bn)}
               />
               <StaggerContainer className="mt-10 grid gap-4 sm:grid-cols-2">
-                {d.home.why.highlights.map((h, i) => (
+                {home.why.highlights.map((h) => (
                   <StaggerItem key={h.title}>
                     <div className="card-shine group h-full rounded-2xl border border-blue-100/70 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.3)]">
                       <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-brand-blue ring-1 ring-blue-100 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
                         <DynamicIcon
-                          name={["ShieldCheck", "Microscope", "HeartHandshake", "BadgeCheck"][i]}
+                          name={h.icon}
                           className="h-6 w-6"
                         />
                       </span>
                       <h3 className="font-heading mt-4 text-base font-bold text-brand-navy">
-                        {h.title}
+                        {pickBn(h.title, h.titleBn, bn)}
                       </h3>
                       <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                        {h.description}
+                        {pickBn(h.description, h.descriptionBn, bn)}
                       </p>
                     </div>
                   </StaggerItem>
@@ -355,14 +361,14 @@ export function HomePage() {
       <section className="relative bg-ice py-20 sm:py-24" aria-labelledby="services-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow={d.home.services.eyebrow}
+            eyebrow={pickBn(home.services.eyebrow, home.services.eyebrowBn, bn)}
             title={
               <>
-                {d.home.services.titleA}
-                <span className="gradient-text">{d.home.services.titleB}</span>
+                {pickBn(home.services.titleA, home.services.titleABn, bn)}
+                <span className="gradient-text">{pickBn(home.services.titleB, home.services.titleBBn, bn)}</span>
               </>
             }
-            description={d.home.services.description}
+            description={pickBn(home.services.description, home.services.descriptionBn, bn)}
           />
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -385,7 +391,7 @@ export function HomePage() {
                 }}
                 className="inline-flex items-center gap-2"
               >
-                {d.home.services.viewAll}
+                {pickBn(home.services.cta, home.services.ctaBn, bn)}
                 <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </a>
             </Button>
@@ -404,14 +410,14 @@ export function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             dark
-            eyebrow={d.home.facility.eyebrow}
+            eyebrow={pickBn(home.facility.eyebrow, home.facility.eyebrowBn, bn)}
             title={
               <>
-                {d.home.facility.titleA}
-                <span className="gold-text">{d.home.facility.titleB}</span>
+                {pickBn(home.facility.titleA, home.facility.titleABn, bn)}
+                <span className="gold-text">{pickBn(home.facility.titleB, home.facility.titleBBn, bn)}</span>
               </>
             }
-            description={d.home.facility.description}
+            description={pickBn(home.facility.description, home.facility.descriptionBn, bn)}
           />
 
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
@@ -452,10 +458,10 @@ export function HomePage() {
                 </div>
                 <div className="p-6">
                   <h3 className="font-heading text-lg font-bold text-white transition-colors group-hover:text-amber-300">
-                    {d.home.facility.cards[i].title}
+                    {pickBn(home.facility.cards[i]?.title, home.facility.cards[i]?.titleBn, bn)}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-blue-100/80">
-                    {d.home.facility.cards[i].text}
+                    {pickBn(home.facility.cards[i]?.text, home.facility.cards[i]?.textBn, bn)}
                   </p>
                 </div>
               </motion.article>
@@ -471,14 +477,14 @@ export function HomePage() {
             <Reveal>
               <SectionHeading
                 align="left"
-                eyebrow={d.home.galleryPreview.eyebrow}
+                eyebrow={pickBn(home.galleryPreview.eyebrow, home.galleryPreview.eyebrowBn, bn)}
                 title={
                   <>
-                    {d.home.galleryPreview.titleA}
-                    <span className="gradient-text">{d.home.galleryPreview.titleB}</span>
+                    {pickBn(home.galleryPreview.titleA, home.galleryPreview.titleABn, bn)}
+                    <span className="gradient-text">{pickBn(home.galleryPreview.titleB, home.galleryPreview.titleBBn, bn)}</span>
                   </>
                 }
-                description={d.home.galleryPreview.description}
+                description={pickBn(home.galleryPreview.description, home.galleryPreview.descriptionBn, bn)}
               />
               <Reveal delay={0.15} className="mt-8">
                 <div className="flex flex-wrap gap-3">
@@ -495,7 +501,7 @@ export function HomePage() {
                       className="inline-flex items-center gap-2"
                     >
                       <Camera className="h-4.5 w-4.5" aria-hidden="true" />
-                      {d.home.galleryPreview.ctaGallery}
+                      {pickBn(home.galleryPreview.cta, home.galleryPreview.ctaBn, bn)}
                     </a>
                   </Button>
                 </div>
@@ -524,14 +530,14 @@ export function HomePage() {
       <section className="section-wash relative py-20 sm:py-24" aria-labelledby="testimonials-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow={d.home.testimonials.eyebrow}
+            eyebrow={pickBn(home.testimonials.eyebrow, home.testimonials.eyebrowBn, bn)}
             title={
               <>
-                {d.home.testimonials.titleA}
-                <span className="gradient-text">{d.home.testimonials.titleB}</span>
+                {pickBn(home.testimonials.titleA, home.testimonials.titleABn, bn)}
+                <span className="gradient-text">{pickBn(home.testimonials.titleB, home.testimonials.titleBBn, bn)}</span>
               </>
             }
-            description={d.home.testimonials.description}
+            description={pickBn(home.testimonials.description, home.testimonials.descriptionBn, bn)}
           />
           <Reveal className="mt-12">
             <TestimonialMarquee testimonials={testimonials} />
@@ -548,14 +554,14 @@ export function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
             dark
-            eyebrow={d.home.doctors.eyebrow}
+            eyebrow={pickBn(home.doctors.eyebrow, home.doctors.eyebrowBn, bn)}
             title={
               <>
-                {d.home.doctors.titleA}
-                <span className="gold-text">{d.home.doctors.titleB}</span>
+                {pickBn(home.doctors.titleA, home.doctors.titleABn, bn)}
+                <span className="gold-text">{pickBn(home.doctors.titleB, home.doctors.titleBBn, bn)}</span>
               </>
             }
-            description={d.home.doctors.description}
+            description={pickBn(home.doctors.description, home.doctors.descriptionBn, bn)}
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {doctors.map((doctor, i) => (
@@ -571,7 +577,7 @@ export function HomePage() {
               }}
               className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-bold text-white ring-2 ring-white/30 transition-all duration-300 hover:bg-white/10 hover:ring-white"
             >
-              {d.home.doctors.viewBoard}
+              {pickBn(home.doctors.cta, home.doctors.ctaBn, bn)}
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </a>
           </Reveal>
@@ -585,26 +591,26 @@ export function HomePage() {
             <div>
               <SectionHeading
                 align="left"
-                eyebrow={d.home.faq.eyebrow}
+                eyebrow={pickBn(home.faq.eyebrow, home.faq.eyebrowBn, bn)}
                 title={
                   <>
-                    {d.home.faq.titleA}
-                    <span className="gradient-text">{d.home.faq.titleB}</span>
+                    {pickBn(home.faq.titleA, home.faq.titleABn, bn)}
+                    <span className="gradient-text">{pickBn(home.faq.titleB, home.faq.titleBBn, bn)}</span>
                   </>
                 }
-                description={d.home.faq.description}
+                description={pickBn(home.faq.description, home.faq.descriptionBn, bn)}
               />
               <Reveal className="mt-8">
                 <div className="rounded-2xl border border-blue-100 bg-ice p-6">
                   <p className="flex items-start gap-3 text-sm leading-relaxed text-slate-700">
                     <Phone className="mt-0.5 h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
                     <span>
-                      {d.home.faq.stillTitle}{" "}
+                      {pickBn(home.faq.stillTitle, home.faq.stillTitleBn, bn)}{" "}
                       <a
-                        href={`tel:${site.phoneRaw}`}
+                        href={`tel:${settings.phoneRaw}`}
                         className="font-bold text-brand-blue underline decoration-blue-200 underline-offset-4 hover:text-brand-navy"
                       >
-                        {site.phone}
+                        {settings.phone}
                       </a>{" "}
                       {d.home.faq.or}{" "}
                       <a
@@ -626,17 +632,17 @@ export function HomePage() {
 
             <Reveal delay={0.1}>
               <Accordion type="single" collapsible className="w-full">
-                {generalFaqs.slice(0, 6).map((faq, i) => (
+                {faqs.slice(0, 6).map((faq, i) => (
                   <AccordionItem
                     key={faq.question}
                     value={`faq-${i}`}
                     className="faq-row border-b border-blue-100/80 data-[state=open]:border-brand-blue/30"
                   >
                     <AccordionTrigger className="py-5 text-left font-heading text-base font-semibold text-brand-navy hover:text-brand-blue hover:no-underline">
-                      {bn && faq.questionBn ? faq.questionBn : faq.question}
+                      {pickBn(faq.question, faq.questionBn, bn)}
                     </AccordionTrigger>
                     <AccordionContent className="pb-5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
-                      {bn && faq.answerBn ? faq.answerBn : faq.answer}
+                      {pickBn(faq.answer, faq.answerBn, bn)}
                     </AccordionContent>
                   </AccordionItem>
                 ))}
@@ -651,7 +657,7 @@ export function HomePage() {
                   className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
                 >
                   <HelpCircle className="h-4 w-4" aria-hidden="true" />
-                  {d.home.faq.viewAll}
+                  {pickBn(home.faq.cta, home.faq.ctaBn, bn)}
                 </a>
                 <a
                   href="#/blog"

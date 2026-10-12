@@ -1,15 +1,13 @@
 import type { Lang } from "@/lib/data/dictionary";
 import { dictionary } from "@/lib/data/dictionary";
-import { services } from "@/lib/data/services";
-import { doctors } from "@/lib/data/doctors";
-import { blogPosts } from "@/lib/data/blog";
-import { generalFaqs } from "@/lib/data/faqs";
+import type { ContentBundle } from "@/lib/content/shared";
 import { site } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
 /*  Global search index — powers the ⌘K / Ctrl+K command palette       */
-/*  Flat, pre-localized list of everything searchable on the site:     */
-/*  11 pages + 11 services + 4 doctors + 5 blog posts + 45 FAQs        */
+/*  Flat, pre-localized list of everything searchable on the site.     */
+/*  Built per render from the LIVE CMS bundle (buildSearchIndex),      */
+/*  so admin edits (doctors/blog/faqs/services) appear immediately.    */
 /* ------------------------------------------------------------------ */
 
 export type SearchGroup = "pages" | "services" | "doctors" | "blog" | "faqs";
@@ -106,7 +104,7 @@ function pageEntries(lang: Lang): SearchEntry[] {
   }));
 }
 
-function serviceEntries(lang: Lang): SearchEntry[] {
+function serviceEntries(lang: Lang, services: ContentBundle["services"]): SearchEntry[] {
   const bn = lang === "bn";
   return services.map((s) => ({
     id: `service:${s.slug}`,
@@ -149,7 +147,7 @@ const DOCTOR_KEYWORDS: Record<string, string> = {
     "kids dentist pediatric children dentist শিশু ডেন্টিস্ট",
 };
 
-function doctorEntries(lang: Lang): SearchEntry[] {
+function doctorEntries(lang: Lang, doctors: ContentBundle["doctors"]): SearchEntry[] {
   const bn = lang === "bn";
   /* Doctor names render identically in both languages (site convention —
      no nameBn field on the Doctor type). */
@@ -174,9 +172,9 @@ function doctorEntries(lang: Lang): SearchEntry[] {
   }));
 }
 
-function blogEntries(lang: Lang): SearchEntry[] {
+function blogEntries(lang: Lang, posts: ContentBundle["posts"]): SearchEntry[] {
   const bn = lang === "bn";
-  return blogPosts.map((post) => ({
+  return posts.map((post) => ({
     id: `blog:${post.slug}`,
     group: "blog" as const,
     title: bn && post.titleBn ? post.titleBn : post.title,
@@ -199,12 +197,16 @@ function blogEntries(lang: Lang): SearchEntry[] {
   }));
 }
 
-function faqEntries(lang: Lang): SearchEntry[] {
+function faqEntries(
+  lang: Lang,
+  faqs: ContentBundle["faqs"],
+  services: ContentBundle["services"]
+): SearchEntry[] {
   const bn = lang === "bn";
   const entries: SearchEntry[] = [];
 
   /* General FAQs — fully bilingual, land on the FAQ hub */
-  for (const faq of generalFaqs) {
+  for (const faq of faqs) {
     entries.push({
       id: `faq:general:${faq.question.slice(0, 40)}`,
       group: "faqs",
@@ -240,14 +242,15 @@ function faqEntries(lang: Lang): SearchEntry[] {
   return entries;
 }
 
-/** Build the full searchable index for a language (pure — safe to memoize). */
-export function buildSearchIndex(lang: Lang): SearchEntry[] {
+/** Build the full searchable index for a language over the live content
+ *  bundle (pure — safe to memoize). */
+export function buildSearchIndex(bundle: ContentBundle, lang: Lang): SearchEntry[] {
   return [
     ...pageEntries(lang),
-    ...serviceEntries(lang),
-    ...doctorEntries(lang),
-    ...blogEntries(lang),
-    ...faqEntries(lang),
+    ...serviceEntries(lang, bundle.services),
+    ...doctorEntries(lang, bundle.doctors),
+    ...blogEntries(lang, bundle.posts),
+    ...faqEntries(lang, bundle.faqs, bundle.services),
   ];
 }
 
