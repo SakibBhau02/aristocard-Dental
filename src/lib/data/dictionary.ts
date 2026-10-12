@@ -293,6 +293,11 @@ const en = {
     Implantology: "Implantology",
     Pediatric: "Pediatric",
     Cosmetic: "Cosmetic",
+    Periodontics: "Periodontics",
+    "Oral Surgery": "Oral Surgery",
+    Restorative: "Restorative",
+    "Laser Dentistry": "Laser Dentistry",
+    "General Dentistry": "General Dentistry",
   },
 
   /* ---------------- Shared deep-page strings ---------------- */
@@ -1365,6 +1370,11 @@ const bn: Dictionary = {
     Implantology: "ইমপ্ল্যান্টোলজি",
     Pediatric: "শিশু ডেন্টিস্ট্রি",
     Cosmetic: "কসমেটিক",
+    Periodontics: "পেরিওডন্টিক্স",
+    "Oral Surgery": "ওরাল সার্জারি",
+    Restorative: "রেস্টোরেটিভ",
+    "Laser Dentistry": "লেজার ডেন্টিস্ট্রি",
+    "General Dentistry": "জেনারেল ডেন্টিস্ট্রি",
   },
 
   /* ---------------- Shared deep-page strings ---------------- */

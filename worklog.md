@@ -877,3 +877,25 @@ Task: (1) Professional admin auth architecture (login, roles, audit); (2) every 
 4. BN llms.txt variant + submitting sitemap/llms.txt to Search Console/Bing (client action).
 5. Round-12 backlog: content export/backup button, admin "book on behalf", blog scheduled publishing, image library browser, soft-delete recycle bin.
 6. Street address is still area-level (Uttara, Dhaka) — need exact address from client for LocalBusiness/llms.txt.
+
+---
+Task ID: 14 (main agent round 14) — COMPLETE
+Agent: Z.ai Code (user-driven: 24 new professional SEO/AEO/GEO blog posts)
+Task: Write 20–24 new blog posts — ≥2 per service/category, including cross-service connected posts; topics researched from what people ask search engines/AI; SEO/AEO/GEO-friendly; published as admin.
+
+## SECTION 1 — Project status (start of round 14)
+- Dev server healthy (double-fork), lint 0/0, tsc clean under src/. Round 13 complete (admin auth architecture + every-small-detail CMS + mobile logo + SEO/AEO/GEO pass). DB held 5 blog posts (the original seed set).
+
+## SECTION 2 — Goals / completed modifications / verification
+- **TOPIC RESEARCH (web-search skill)**: Confirmed BD market facts (implant costs BDT 35k–150k across Dhaka clinics; sealants cut childhood molar cavities ~80% per AAPD-aligned sources). Mapped top PAA/AI-assistant dental query patterns (cost guides, pain/recovery timelines, myth-debunks, "which is better" comparisons, emergency protocols) to the clinic's 11 services.
+- **24 NEW BILINGUAL POSTS** (EN + full BN mirror incl. quickAnswer/sections/lists): authored in scripts/blog-seed/posts-01..06.ts + type.ts, seeded via scripts/seed-blogs.ts (idempotent upsert by slug — re-runnable). Topics: implants (cost guide/pain-recovery/candidacy), veneers (enamel truth/veneers-vs-crowns), Invisalign rules, adult braces, crown lifespan, bridge-vs-implant, root-canal-vs-extraction, bleeding gums, diabetes-gum two-way street, scaling-damage myth (massive BD query), wisdom teeth, knocked-out-tooth emergency, baby-teeth cavities, fluoride+sealants, laser-dentistry honesty, tooth-sensitivity 9 causes, DSD preview, smile-makeover journey, bad-breath 8 causes, dental anxiety, tobacco/gul/betel-nut oral cancer (BD-critical). Dates spread 2025-12-06 → 2026-10-06 (natural cadence); authors rotated across the 4 real doctors with topic-matched credentials; implant cost guide = featured (newest).
+- **COVERAGE (user requirement: ≥2 per service)**: crowns-bridges 9, laser-fillings 10, gum 10, pediatric 8, implants 7, root-canal 7, oral-surgery 7, veneers 5, DSD 5, braces 4, invisalign 3 — ALL ≥3. Cross-service posts (2–4 services linked) throughout, e.g. root-canal-vs-extraction links RCT+implants+crowns.
+- **SUPPORTING CODE**: dictionary.ts blogCategories +5 bilingual entries (Periodontics/Oral Surgery/Restorative/Laser Dentistry/General Dentistry — EN identity + BN labels). No other source files touched; posts flow DB→getContentBundle→public pages (5s cache).
+- **E2E VERIFIED (agent-browser)**: blog index 29 posts (featured + 28 grid), 12 category chips with correct counts (All29); detail pages render full bilingual content + Related Treatments chips (serviceRefs cross-links working); BN mode renders Bangla headings/sections; JSON-LD per detail page = Dentist+WebSite+MedicalWebPage+**BlogPosting** (wordCount 449, articleSection Implantology, speakable h1/.quick-answer, author Person, absolute image)+BreadcrumbList — zero parse errors; meta title/og:title correct; sitemap.xml auto-grew 31→55 URLs; admin API (/api/admin/blog, x-admin-code) sees all 29 posts (editable in Admin Panel); mobile 390px scrollWidth==innerWidth (no overflow); console zero errors; VLM mobile visual check PASS.
+- **AEO/GEO QUALITY BUILT-IN**: every post leads with 40–60-word standalone quickAnswer (featured-snippet/AI-citation ready), question-form titles mirroring real queries, list-formatted answers, E-E-A-T author credentials, Dhaka/BD-localized content (tea culture, betel nut/gul/jorda, diabetes prevalence, market price ranges), internal links via serviceRefs, no fabricated citations (only well-established figures: 95% RCT success, 0.3–0.7mm veneer enamel, 80% sealant reduction, 30-min avulsion window, 20–22h aligner wear).
+
+## SECTION 3 — Unresolved issues / risks + next-phase priorities
+1. Image reuse: 24 posts share 23 existing images (blog-* / service-* / case-after-implant / hero-slide-*); 3 images reused once. Could generate dedicated images per post later.
+2. BN llms.txt variant + Search Console/Bing submission remain client-side actions (round 13 leftovers).
+3. Round-12/13 backlog unchanged: OWNER change-password UI, about dictionary-only strings migration, appointment timeSlots CMS, content export/backup, admin book-on-behalf, scheduled publishing, image library, soft-delete.
+4. Next content candidates (if another round is wanted): teeth-grinding/bruxism night guards, pregnancy gingivitis detail, dental X-ray safety, mouthguards for sports (Dhaka leagues), dry mouth solutions, kids' orthodontic timing (phase 1).
