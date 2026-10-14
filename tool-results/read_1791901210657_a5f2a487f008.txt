@@ -1,0 +1,622 @@
+   551→            </Reveal>
+   552→          </div>
+   553→        </section>
+   554→      )}
+   555→
+   556→      {/* Search + category chips + article grid + desktop sidebar */}
+   557→      <section className="pb-16 sm:pb-20" aria-label={t.allArticles}>
+   558→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   559→          <h2 className="sr-only">{t.allArticles}</h2>
+   560→          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 xl:gap-12">
+   561→            {/* Main column */}
+   562→            <div className="min-w-0">
+   563→              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   564→                {/* Search — filters by title, excerpt, category and tags (EN + BN) */}
+   565→                <div className="relative w-full sm:w-64">
+   566→                  <Search
+   567→                    className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+   568→                    aria-hidden="true"
+   569→                  />
+   570→                  <Input
+   571→                    type="search"
+   572→                    value={search}
+   573→                    onChange={(e) => setSearch(e.target.value)}
+   574→                    placeholder={t.searchPlaceholder}
+   575→                    aria-label={t.searchPlaceholder}
+   576→                    className="h-11 rounded-full border-blue-200/80 bg-white pl-11 pr-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
+   577→                  />
+   578→                  {search && (
+   579→                    <button
+   580→                      type="button"
+   581→                      onClick={() => setSearch("")}
+   582→                      aria-label={t.searchClear}
+   583→                      title={t.searchClear}
+   584→                      className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy"
+   585→                    >
+   586→                      <X className="h-4 w-4" aria-hidden="true" />
+   587→                    </button>
+   588→                  )}
+   589→                </div>
+   590→                <div className="scroll-area flex flex-1 items-center gap-2 overflow-x-auto pb-2">
+   591→                  <Tag className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+   592→                  {blogCategories.map((c) => (
+   593→                    <button
+   594→                      key={c}
+   595→                      type="button"
+   596→                      onClick={() => setCategory(c)}
+   597→                      aria-pressed={category === c}
+   598→                      className={cn(
+   599→                        "min-h-11 shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   600→                        category === c
+   601→                          ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   602→                          : "bg-blue-50 text-brand-navy hover:bg-blue-100"
+   603→                      )}
+   604→                    >
+   605→                      {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+   606→                      <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
+   607→                        {localizeCount(
+   608→                          bn,
+   609→                          c === "All"
+   610→                            ? posts.length
+   611→                            : posts.filter((p) => p.category === c).length
+   612→                        )}
+   613→                      </span>
+   614→                    </button>
+   615→                  ))}
+   616→                </div>
+   617→              </div>
+   618→
+   619→              {(searching || category !== "All") && rest.length > 0 && (
+   620→                <p className="mt-6 text-sm text-slate-500" aria-live="polite">
+   621→                  {resultCountText}
+   622→                </p>
+   623→              )}
+   624→
+   625→              <AnimatePresence mode="wait">
+   626→                {rest.length > 0 ? (
+   627→                  <motion.div
+   628→                    key={`${category}-${search}`}
+   629→                    className="mt-8 grid gap-6 sm:grid-cols-2"
+   630→                    initial={{ opacity: 0, y: 14 }}
+   631→                    animate={{ opacity: 1, y: 0 }}
+   632→                    exit={{ opacity: 0 }}
+   633→                    transition={{ duration: 0.35 }}
+   634→                  >
+   635→                    {shown.map((post, i) => (
+   636→                      <PostCard key={post.slug} post={post} index={i} />
+   637→                    ))}
+   638→                  </motion.div>
+   639→                ) : (
+   640→                  <motion.div
+   641→                    key="empty"
+   642→                    className="mx-auto mt-8 max-w-md rounded-3xl border border-dashed border-blue-200 bg-ice p-10 text-center sm:p-12"
+   643→                    initial={{ opacity: 0, y: 16 }}
+   644→                    animate={{ opacity: 1, y: 0 }}
+   645→                    exit={{ opacity: 0 }}
+   646→                  >
+   647→                    <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white ring-1 ring-blue-100">
+   648→                      <Search className="h-6 w-6 text-brand-blue/60" aria-hidden="true" />
+   649→                    </span>
+   650→                    <h3 className="font-heading mt-4 text-base font-bold text-brand-navy">
+   651→                      {t.noResultsTitle}
+   652→                    </h3>
+   653→                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+   654→                      {t.noResults}
+   655→                    </p>
+   656→                    {(searching || category !== "All") && (
+   657→                      <button
+   658→                        type="button"
+   659→                        onClick={clearFilters}
+   660→                        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-navy px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-navy-900/20 transition-all duration-300 hover:bg-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   661→                      >
+   662→                        <X className="h-4 w-4" aria-hidden="true" />
+   663→                        {t.clearFilters}
+   664→                      </button>
+   665→                    )}
+   666→                  </motion.div>
+   667→                )}
+   668→              </AnimatePresence>
+   669→
+   670→              {/* Load more */}
+   671→              {hasMore && (
+   672→                <div className="mt-10 text-center">
+   673→                  <p className="text-xs text-slate-400" aria-live="polite">
+   674→                    {showingOfText}
+   675→                  </p>
+   676→                  <button
+   677→                    type="button"
+   678→                    onClick={showMore}
+   679→                    className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-blue-200 bg-white px-8 py-3 text-sm font-bold text-brand-navy shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:text-brand-blue hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   680→                  >
+   681→                    {t.loadMore}
+   682→                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+   683→                  </button>
+   684→                </div>
+   685→              )}
+   686→            </div>
+   687→
+   688→            {/* Desktop sidebar */}
+   689→            <aside className="mt-12 space-y-6 lg:mt-0">
+   690→              {/* Browse by category */}
+   691→              <nav
+   692→                className="rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]"
+   693→                aria-label={t.browseCategories}
+   694→              >
+   695→                <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   696→                  <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+   697→                  {t.browseCategories}
+   698→                </h2>
+   699→                <ul className="mt-3 space-y-1">
+   700→                  {blogCategories.map((c) => {
+   701→                    const count =
+   702→                      c === "All"
+   703→                        ? posts.length
+   704→                        : posts.filter((p) => p.category === c).length;
+   705→                    const isActive = category === c;
+   706→                    return (
+   707→                      <li key={c}>
+   708→                        <button
+   709→                          type="button"
+   710→                          onClick={() => setCategory(c)}
+   711→                          aria-current={isActive ? "true" : undefined}
+   712→                          className={cn(
+   713→                            "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   714→                            isActive
+   715→                              ? "bg-blue-50 font-semibold text-brand-blue"
+   716→                              : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+   717→                          )}
+   718→                        >
+   719→                          <span className="leading-snug">
+   720→                            {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+   721→                          </span>
+   722→                          <span
+   723→                            className={cn(
+   724→                              "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums",
+   725→                              isActive
+   726→                                ? "bg-brand-blue text-white"
+   727→                                : "bg-blue-50 text-brand-blue"
+   728→                            )}
+   729→                          >
+   730→                            {localizeCount(bn, count)}
+   731→                          </span>
+   732→                        </button>
+   733→                      </li>
+   734→                    );
+   735→                  })}
+   736→                </ul>
+   737→              </nav>
+   738→
+   739→              {/* Latest articles — top 5 by date */}
+   740→              <div className="rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]">
+   741→                <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   742→                  <Clock3 className="h-4 w-4" aria-hidden="true" />
+   743→                  {t.latestArticles}
+   744→                </h2>
+   745→                <ul className="mt-3 space-y-1">
+   746→                  {latestPosts.map((p) => {
+   747→                    const title = bn && p.titleBn ? p.titleBn : p.title;
+   748→                    return (
+   749→                      <li key={p.slug}>
+   750→                        <a
+   751→                          href={`/blog/${p.slug}`}
+   752→                          aria-label={`${t.readMore}: ${title}`}
+   753→                          className="group flex items-start gap-3 rounded-xl p-2 transition-colors duration-300 hover:bg-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   754→                        >
+   755→                          {p.image && (
+   756→                            <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100">
+   757→                              <Image
+   758→                                src={p.image}
+   759→                                alt=""
+   760→                                width={112}
+   761→                                height={112}
+   762→                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+   763→                              />
+   764→                            </span>
+   765→                          )}
+   766→                          <span className="min-w-0">
+   767→                            <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
+   768→                              {title}
+   769→                            </span>
+   770→                            <span className="mt-1 block text-[11px] text-slate-400">
+   771→                              {formatPostDate(p.date, bn)}
+   772→                            </span>
+   773→                          </span>
+   774→                        </a>
+   775→                      </li>
+   776→                    );
+   777→                  })}
+   778→                </ul>
+   779→              </div>
+   780→
+   781→              {/* Book appointment + newsletter — sticky on desktop */}
+   782→              <div className="space-y-6 lg:sticky lg:top-24">
+   783→                <div className="hero-mesh-dark relative overflow-hidden rounded-3xl p-6 text-white shadow-[0_18px_45px_-18px_rgba(0,32,96,0.5)]">
+   784→                  <div
+   785→                    className="dot-grid-light pointer-events-none absolute inset-0 opacity-30"
+   786→                    aria-hidden="true"
+   787→                  />
+   788→                  <div className="relative">
+   789→                    <h2 className="font-heading text-lg font-bold text-white">
+   790→                      {t.sidebarBookTitle}
+   791→                    </h2>
+   792→                    <p className="mt-2 text-xs leading-relaxed text-blue-100/85">
+   793→                      {t.sidebarBookText}
+   794→                    </p>
+   795→                    <a
+   796→                      href="/appointment"
+   797→                      className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+   798→                    >
+   799→                      <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+   800→                      {t.bookConsultation}
+   801→                    </a>
+   802→                    <a
+   803→                      href="tel:+8801715027522"
+   804→                      className="mt-3 flex items-center gap-2 text-xs text-blue-100/85 transition-colors hover:text-white"
+   805→                    >
+   806→                      {t.sidebarCallNote}: 01715-027522
+   807→                    </a>
+   808→                  </div>
+   809→                </div>
+   810→                <SidebarNewsletter />
+   811→              </div>
+   812→            </aside>
+   813→          </div>
+   814→        </div>
+   815→      </section>
+   816→
+   817→      <CtaBanner
+   818→        title={t.ctaTitle}
+   819→        description={t.ctaDescription}
+   820→      />
+   821→    </>
+   822→  );
+   823→}
+   824→
+   825→/* ------------------------------------------------------------------ */
+   826→/*  BLOG DETAIL PAGE — premium reading experience (EN / বাংলা)         */
+   827→/* ------------------------------------------------------------------ */
+   828→
+   829→/* ------------------------------------------------------------------ */
+   830→/*  Reading progress bar — top of viewport while reading an article    */
+   831→/* ------------------------------------------------------------------ */
+   832→
+   833→function ReadingProgress() {
+   834→  const [progress, setProgress] = useState(0);
+   835→
+   836→  useEffect(() => {
+   837→    let raf = 0;
+   838→    const update = () => {
+   839→      raf = 0;
+   840→      const el = document.documentElement;
+   841→      const total = el.scrollHeight - el.clientHeight;
+   842→      setProgress(total > 0 ? Math.min(1, el.scrollTop / total) : 0);
+   843→    };
+   844→    const onScroll = () => {
+   845→      if (!raf) raf = requestAnimationFrame(update);
+   846→    };
+   847→    update();
+   848→    window.addEventListener("scroll", onScroll, { passive: true });
+   849→    window.addEventListener("resize", onScroll, { passive: true });
+   850→    return () => {
+   851→      window.removeEventListener("scroll", onScroll);
+   852→      window.removeEventListener("resize", onScroll);
+   853→      if (raf) cancelAnimationFrame(raf);
+   854→    };
+   855→  }, []);
+   856→
+   857→  return (
+   858→    <div
+   859→      className="reading-progress"
+   860→      style={{ transform: `scaleX(${progress})` }}
+   861→      aria-hidden="true"
+   862→    />
+   863→  );
+   864→}
+   865→
+   866→/* Active-section tracking for the article table of contents.
+   867→   `routeKey` (the post slug) re-runs the observer when navigating
+   868→   between articles that happen to have the same section count; the
+   869→   active index is DERIVED against the key so it resets on navigation
+   870→   without setState-in-effect. */
+   871→function useActiveSection(count: number, routeKey: string) {
+   872→  const [state, setState] = useState({ key: routeKey, active: 0 });
+   873→  const active = state.key === routeKey ? state.active : 0;
+   874→
+   875→  useEffect(() => {
+   876→    if (count < 2) return;
+   877→    const headings = Array.from({ length: count }, (_, i) =>
+   878→      document.getElementById(`section-${i}`)
+   879→    );
+   880→    const visible = headings.filter(Boolean) as HTMLElement[];
+   881→    if (visible.length === 0) return;
+   882→    const observer = new IntersectionObserver(
+   883→      (entries) => {
+   884→        entries.forEach((entry) => {
+   885→          if (entry.isIntersecting) {
+   886→            const idx = Number(entry.target.id.replace("section-", ""));
+   887→            setState({ key: routeKey, active: idx });
+   888→          }
+   889→        });
+   890→      },
+   891→      { rootMargin: "-25% 0px -65% 0px", threshold: 0 }
+   892→    );
+   893→    visible.forEach((h) => observer.observe(h));
+   894→    return () => observer.disconnect();
+   895→  }, [count, routeKey]);
+   896→  return [active, (i: number) => setState({ key: routeKey, active: i })] as const;
+   897→}
+   898→
+   899→/* Numbered TOC entries — shared by the desktop sticky sidebar
+   900→   and the mobile collapsible accordion. */
+   901→function TocList({
+   902→  post,
+   903→  activeSection,
+   904→  onNavigate,
+   905→}: {
+   906→  post: BlogPost;
+   907→  activeSection: number;
+   908→  onNavigate: (i: number) => void;
+   909→}) {
+   910→  const { lang } = useLang();
+   911→  const bn = lang === "bn";
+   912→  return (
+   913→    <ol className="mt-3 space-y-1">
+   914→      {post.sections.map((section, i) => {
+   915→        const label = bn
+   916→          ? post.sectionsBn?.[i]?.heading ?? section.heading
+   917→          : section.heading;
+   918→        const isActive = activeSection === i;
+   919→        return (
+   920→          <li key={section.heading}>
+   921→            <button
+   922→              type="button"
+   923→              onClick={() => onNavigate(i)}
+   924→              aria-current={isActive ? "location" : undefined}
+   925→              className={cn(
+   926→                "flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left text-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   927→                isActive
+   928→                  ? "bg-blue-50 font-semibold text-brand-blue"
+   929→                  : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+   930→              )}
+   931→            >
+   932→              <span
+   933→                className={cn(
+   934→                  "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold tabular-nums transition-colors",
+   935→                  isActive
+   936→                    ? "bg-brand-blue text-white"
+   937→                    : "bg-blue-50 text-brand-blue"
+   938→                )}
+   939→              >
+   940→                {bn ? toBnDigits(i + 1) : i + 1}
+   941→              </span>
+   942→              <span className="leading-snug">{label}</span>
+   943→            </button>
+   944→          </li>
+   945→        );
+   946→      })}
+   947→    </ol>
+   948→  );
+   949→}
+   950→
+   951→/* Prev / next post navigation card */
+   952→function PostNavCard({
+   953→  post,
+   954→  direction,
+   955→}: {
+   956→  post: BlogPost;
+   957→  direction: "prev" | "next";
+   958→}) {
+   959→  const { lang, d } = useLang();
+   960→  const bn = lang === "bn";
+   961→  const t = d.blogPage;
+   962→  const title = bn && post.titleBn ? post.titleBn : post.title;
+   963→  const label = direction === "prev" ? t.prevArticle : t.nextArticle;
+   964→  return (
+   965→    <a
+   966→      href={`/blog/${post.slug}`}
+   967→      aria-label={`${label}: ${title}`}
+   968→      className={cn(
+   969→        "group flex items-center gap-4 rounded-3xl border border-blue-100/80 bg-white p-5 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   970→        direction === "next" && "sm:flex-row-reverse sm:text-right"
+   971→      )}
+   972→    >
+   973→      {direction === "prev" ? (
+   974→        <ArrowLeft
+   975→          className="h-5 w-5 shrink-0 text-brand-blue transition-transform duration-300 group-hover:-translate-x-1"
+   976→          aria-hidden="true"
+   977→        />
+   978→      ) : (
+   979→        <ArrowRight
+   980→          className="h-5 w-5 shrink-0 text-brand-blue transition-transform duration-300 group-hover:translate-x-1"
+   981→          aria-hidden="true"
+   982→        />
+   983→      )}
+   984→      {post.image && (
+   985→        <span className="relative hidden h-14 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100 sm:block">
+   986→          <Image
+   987→            src={post.image}
+   988→            alt=""
+   989→            width={160}
+   990→            height={112}
+   991→            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+   992→          />
+   993→        </span>
+   994→      )}
+   995→      <span className="min-w-0">
+   996→        <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue">
+   997→          {label}
+   998→        </span>
+   999→        <span className="font-heading mt-1 line-clamp-2 block text-sm font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue sm:text-[15px]">
+  1000→          {title}
+  1001→        </span>
+  1002→      </span>
+  1003→    </a>
+  1004→  );
+  1005→}
+  1006→
+  1007→export function BlogDetailPage({ slug }: { slug: string }) {
+  1008→  const { lang, d } = useLang();
+  1009→  const bn = lang === "bn";
+  1010→  const t = d.blogPage;
+  1011→  const { posts, services, doctors } = useBundle();
+  1012→  const post = posts.find((p) => p.slug === slug);
+  1013→  const [activeSection, setActiveSection] = useActiveSection(
+  1014→    post?.sections.length ?? 0,
+  1015→    slug
+  1016→  );
+  1017→  /* mobile "On this page" accordion — derived against the slug so it
+  1018→     collapses automatically when navigating to another article */
+  1019→  const [tocState, setTocState] = useState<{ slug: string; open: boolean }>({
+  1020→    slug,
+  1021→    open: false,
+  1022→  });
+  1023→  const tocOpen = tocState.slug === slug && tocState.open;
+  1024→  const { toast } = useToast();
+  1025→  const [copied, setCopied] = useState(false);
+  1026→
+  1027→  const goToSection = (i: number) => {
+  1028→    /* NOTE: never use href="#section-x" — a plain hash would collide
+  1029→       with legacy hash-route handling; smooth-scroll programmatically */
+  1030→    setTocState({ slug, open: false });
+  1031→    setActiveSection(i);
+  1032→    const el = document.getElementById(`section-${i}`);
+  1033→    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  1034→    el?.focus({ preventScroll: true });
+  1035→  };
+  1036→
+  1037→  /* Deep-linkable article URL (falls back to the canonical production URL) */
+  1038→  const pageUrl =
+  1039→    typeof window === "undefined"
+  1040→      ? `https://aristocratdentalcarebd.com/blog/${slug}`
+  1041→      : `${window.location.origin}/blog/${slug}`;
+  1042→  const shareTitle = bn && post?.titleBn ? post.titleBn : post?.title ?? "Dental health article";
+  1043→  const waHref = `https://wa.me/?text=${encodeURIComponent(`${shareTitle} — ${pageUrl}`)}`;
+  1044→  const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+  1045→  const xHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(pageUrl)}`;
+  1046→
+  1047→  const copyLink = async () => {
+  1048→    try {
+  1049→      await navigator.clipboard.writeText(pageUrl);
+  1050→      setCopied(true);
+  1051→      toast({
+  1052→        title: t.shareCopied,
+  1053→        description: t.shareCopiedDesc,
+  1054→      });
+  1055→      window.setTimeout(() => setCopied(false), 2600);
+  1056→    } catch {
+  1057→      toast({
+  1058→        title: t.shareFail,
+  1059→        description: t.shareFailDesc,
+  1060→        variant: "destructive",
+  1061→      });
+  1062→    }
+  1063→  };
+  1064→
+  1065→  /* AEO: full BlogPosting (headline, author Person w/ worksFor, dates,
+  1066→     image, keywords, wordCount, speakable) + BreadcrumbList, on top of the
+  1067→     baseline MedicalWebPage block — all from the live CMS post content. */
+  1068→  const postJsonLd = useMemo(() => {
+  1069→    if (!post) return undefined;
+  1070→    /* wordCount over the EN article body (quick answer + section bodies + lists) */
+  1071→    const bodyText = [
+  1072→      post.quickAnswer,
+  1073→      ...post.sections.flatMap((s) => [...s.body, ...(s.list ?? [])]),
+  1074→    ].join(" ");
+  1075→    const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
+  1076→    const postUrl = `https://aristocratdentalcarebd.com/blog/${post.slug}`;
+  1077→    return [
+  1078→      {
+  1079→        "@context": "https://schema.org",
+  1080→        "@type": "MedicalWebPage",
+  1081→        headline: post.title,
+  1082→        description: post.excerpt,
+  1083→        datePublished: post.date,
+  1084→        dateModified: post.updated,
+  1085→        author: {
+  1086→          "@type": "Person",
+  1087→          name: post.author,
+  1088→          jobTitle: post.authorCredentials,
+  1089→        },
+  1090→        publisher: {
+  1091→          "@type": "Organization",
+  1092→          name: "Aristocrat Dental Care & Orthodontic Center",
+  1093→        },
+  1094→        about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
+  1095→        lastReviewed: post.updated,
+  1096→      },
+  1097→      {
+  1098→        "@context": "https://schema.org",
+  1099→        "@type": "BlogPosting",
+  1100→        headline: post.title,
+  1101→        description: post.excerpt,
+  1102→        author: {
+  1103→          "@type": "Person",
+  1104→          name: post.author,
+  1105→          jobTitle: post.authorCredentials,
+  1106→          worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+  1107→        },
+  1108→        publisher: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+  1109→        datePublished: post.date,
+  1110→        dateModified: post.updated ?? post.date,
+  1111→        image: [
+  1112→          post.image
+  1113→            ? `https://aristocratdentalcarebd.com${post.image}`
+  1114→            : "https://aristocratdentalcarebd.com/og-image.png",
+  1115→        ],
+  1116→        mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+  1117→        url: postUrl,
+  1118→        inLanguage: "en",
+  1119→        keywords: post.tags.join(", "),
+  1120→        articleSection: post.category,
+  1121→        wordCount,
+  1122→        speakable: {
+  1123→          "@type": "SpeakableSpecification",
+  1124→          cssSelector: ["h1", ".quick-answer"],
+  1125→        },
+  1126→      },
+  1127→      {
+  1128→        "@context": "https://schema.org",
+  1129→        "@type": "BreadcrumbList",
+  1130→        itemListElement: [
+  1131→          {
+  1132→            "@type": "ListItem",
+  1133→            position: 1,
+  1134→            name: "Home",
+  1135→            item: "https://aristocratdentalcarebd.com/",
+  1136→          },
+  1137→          {
+  1138→            "@type": "ListItem",
+  1139→            position: 2,
+  1140→            name: "Blog",
+  1141→            item: "https://aristocratdentalcarebd.com/blog",
+  1142→          },
+  1143→          {
+  1144→            "@type": "ListItem",
+  1145→            position: 3,
+  1146→            name: post.title,
+  1147→            item: postUrl,
+  1148→          },
+  1149→        ],
+  1150→      },
+  1151→    ];
+  1152→  }, [post]);
+  1153→
+  1154→  usePageMeta({
+  1155→    title: post
+  1156→      ? bn && post.titleBn
+  1157→        ? post.titleBn
+  1158→        : post.title
+  1159→      : "Article Not Found",
+  1160→    description: post ? (bn && post.excerptBn ? post.excerptBn : post.excerpt) : undefined,
+  1161→    jsonLd: postJsonLd,
+  1162→  });
+  1163→
+  1164→  if (!post) return <NotFoundPage />;
+  1165→
+  1166→  /* --- derived navigation & relations ----------------------------- */
+  1167→  const authorDoctor = doctors.find((doc) => doc.name === post.author);
+  1168→  const authorInitials = initialsOf(post.author);
+  1169→
+  1170→  /* chronological prev/next (by publish date) */
+
+[showing lines 551-1170 of 1765; use offset=1171 with limit to continue reading]

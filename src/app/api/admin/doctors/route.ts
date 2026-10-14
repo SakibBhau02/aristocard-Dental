@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { mapDoctor } from "@/lib/content/shared";
+import { services as staticServices } from "@/lib/data/services";
 import {
   guard, readJson, bad, notFound, serverError, ok,
   s, os, n, b, strList, validSlug, clamp, clampLen,
@@ -12,6 +13,37 @@ import {
 /*  POST   /api/admin/doctors          → create (no id) / update (id)  */
 /*  DELETE /api/admin/doctors?id=…     → remove                         */
 /* ------------------------------------------------------------------ */
+
+const SERVICE_SLUGS = new Set(staticServices.map((svc) => svc.slug));
+
+/* [{degree, institution?, year?}] — entries without a degree are dropped. */
+function educationList(v: unknown): { degree: string; institution?: string; year?: string }[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((e) => {
+      const o = (typeof e === "object" && e !== null ? e : {}) as Record<string, unknown>;
+      return {
+        degree: clampLen(s(o.degree).trim(), 120),
+        institution: clampLen(s(o.institution).trim(), 160) || undefined,
+        year: clampLen(s(o.year).trim(), 16) || undefined,
+      };
+    })
+    .filter((e) => e.degree.length > 0);
+}
+
+/* [{title, year?}] — entries without a title are dropped. */
+function awardList(v: unknown): { title: string; year?: string }[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((e) => {
+      const o = (typeof e === "object" && e !== null ? e : {}) as Record<string, unknown>;
+      return {
+        title: clampLen(s(o.title).trim(), 160),
+        year: clampLen(s(o.year).trim(), 16) || undefined,
+      };
+    })
+    .filter((a) => a.title.length > 0);
+}
 
 export async function GET(req: NextRequest) {
   const denied = await guard(req);
@@ -71,6 +103,26 @@ export async function POST(req: NextRequest) {
       ),
       accent: /^#[0-9a-fA-F]{6}$/.test(s(body.accent)) ? s(body.accent) : "#012c5f",
       photo: os(body.photo),
+      /* Round 17-a dossier fields — all optional; empty → null so old
+         rows stay untouched when the payload omits them. */
+      educationJson: (() => {
+        const list = educationList(body.education);
+        return list.length ? JSON.stringify(list) : null;
+      })(),
+      membershipsJson: (() => {
+        const list = strList(body.memberships);
+        return list.length ? JSON.stringify(list) : null;
+      })(),
+      awardsJson: (() => {
+        const list = awardList(body.awards);
+        return list.length ? JSON.stringify(list) : null;
+      })(),
+      quote: clampLen(s(body.quote).trim(), 500) || null,
+      quoteBn: clampLen(s(body.quoteBn).trim(), 500) || null,
+      focusServicesJson: (() => {
+        const list = strList(body.focusServices).filter((slug) => SERVICE_SLUGS.has(slug));
+        return list.length ? JSON.stringify(list) : null;
+      })(),
       active: b(body.active, true),
     };
 

@@ -7,7 +7,7 @@
 /*   • admin editor panels         (form defaults)                     */
 /* ------------------------------------------------------------------ */
 
-import type { BlogPost, Doctor, FAQ, Service } from "@/lib/types";
+import type { BlogPost, Doctor, DoctorAward, DoctorEducation, FAQ, Service } from "@/lib/types";
 import type { SmileCase } from "@/lib/data/smile-cases";
 import type { HeroSlide } from "@/lib/data/hero-media";
 import { parseYouTubeId, buildHeroSlides } from "@/lib/data/hero-media";
@@ -113,6 +113,10 @@ export type AboutContent = {
   timeline: TimelineItem[];
   founderName: string; founderNameBn?: string;
   founderRole: string; founderRoleBn?: string;
+  /* Founder portrait — uploaded from the admin panel (ImageUploadField
+     → /api/admin/upload). Empty string = elegant initials fallback.   */
+  founderImage?: string;
+  founderImageAlt?: string;
   founderChipTitle: string; founderChipTitleBn?: string;
   founderChipNote: string; founderChipNoteBn?: string;
   founderItems: { title: string; titleBn?: string; text: string; textBn?: string }[];
@@ -273,6 +277,8 @@ export function defaultAboutContent(): AboutContent {
     founderName: "Dr. Shazia Khanam",
     founderNameBn: "ডা. শাজিয়া খানম",
     founderRole: a.founderRole, founderRoleBn: ab.founderRole,
+    founderImage: "/images/founder-shazia-khanam.jpg",
+    founderImageAlt: "Dr. Shazia Khanam — Founder and Chief Dental Surgeon, Aristocrat Dental Care",
     founderChipTitle: a.founderChipTitle, founderChipTitleBn: ab.founderChipTitle,
     founderChipNote: a.founderChipNote, founderChipNoteBn: ab.founderChipNote,
     founderItems: a.founderItems.map((f, i) => ({
@@ -329,6 +335,10 @@ export function normalizeAboutContent(about: AboutContent): AboutContent {
     timeline,
     storyStats,
     founderName: str(about.founderName).trim() || defaults.founderName,
+    founderImage:
+      about.founderImage === undefined ? defaults.founderImage : str(about.founderImage),
+    founderImageAlt:
+      about.founderImageAlt === undefined ? defaults.founderImageAlt : str(about.founderImageAlt),
   };
 }
 
@@ -368,6 +378,10 @@ export type ContentBundle = {
   cases: SmileCase[];
   services: Service[];
   heroSlides: HeroSlide[];
+  /* Admin-managed per-page hero backdrops, keyed by route segment
+     (about / services / doctors / blog / contact / gallery / faqs /
+     appointment). Empty record → pages use their curated static sets. */
+  pageHeroSlides: Record<string, HeroSlide[]>;
   home: HomeContent;
   about: AboutContent;
   settings: SiteSettings;
@@ -386,6 +400,7 @@ export function staticBundle(): ContentBundle {
     cases: staticCases,
     services: staticServices,
     heroSlides: buildHeroSlides(homeHeroImages, videos),
+    pageHeroSlides: {},
     home: defaultHomeContent(),
     about: defaultAboutContent(),
     settings,
@@ -463,9 +478,48 @@ export type DoctorRow = {
   bio: string; experienceYears: number; patientsTreated: number; rating: number;
   specializations: string[]; languages: string[]; consultationDays: string[];
   accent: string; photo?: string; active: boolean;
+  /* Round 17-a dossier fields (all optional for older rows). */
+  education?: DoctorEducation[];
+  memberships?: string[];
+  awards?: DoctorAward[];
+  quote?: string;
+  quoteBn?: string;
+  focusServices?: string[];
 };
 
-type RawDoctor = Record<string, unknown> & { credentialsJson?: string; specializationsJson?: string; languagesJson?: string; consultationDaysJson?: string };
+type RawDoctor = Record<string, unknown> & {
+  credentialsJson?: string; specializationsJson?: string; languagesJson?: string;
+  consultationDaysJson?: string; educationJson?: string; membershipsJson?: string;
+  awardsJson?: string; focusServicesJson?: string;
+};
+
+/* Defensive parsers for the dossier JSON columns — malformed or
+   shape-mismatched entries are dropped rather than crashing the page. */
+function parseEducation(raw: string | null | undefined): DoctorEducation[] | undefined {
+  const list = parseJson<unknown[]>(raw, []);
+  if (!Array.isArray(list)) return undefined;
+  const entries = list.flatMap((e) => {
+    if (typeof e !== "object" || e === null) return [];
+    const rec = e as Record<string, unknown>;
+    const degree = typeof rec.degree === "string" ? rec.degree.trim() : "";
+    if (!degree) return [];
+    return [{ degree, institution: ostr(rec.institution), year: ostr(rec.year) }];
+  });
+  return entries.length ? entries : undefined;
+}
+
+function parseAwards(raw: string | null | undefined): DoctorAward[] | undefined {
+  const list = parseJson<unknown[]>(raw, []);
+  if (!Array.isArray(list)) return undefined;
+  const entries = list.flatMap((e) => {
+    if (typeof e !== "object" || e === null) return [];
+    const rec = e as Record<string, unknown>;
+    const title = typeof rec.title === "string" ? rec.title.trim() : "";
+    if (!title) return [];
+    return [{ title, year: ostr(rec.year) }];
+  });
+  return entries.length ? entries : undefined;
+}
 
 export function mapDoctor(row: RawDoctor): DoctorRow {
   return {
@@ -489,6 +543,18 @@ export function mapDoctor(row: RawDoctor): DoctorRow {
     accent: str(row.accent, "#012c5f"),
     photo: ostr(row.photo),
     active: row.active === undefined ? true : Boolean(row.active),
+    education: parseEducation(row.educationJson),
+    memberships: (() => {
+      const list = parseJson<string[]>(row.membershipsJson, []);
+      return list.length ? list : undefined;
+    })(),
+    awards: parseAwards(row.awardsJson),
+    quote: ostr(row.quote),
+    quoteBn: ostr(row.quoteBn),
+    focusServices: (() => {
+      const list = parseJson<string[]>(row.focusServicesJson, []);
+      return list.length ? list : undefined;
+    })(),
   };
 }
 
@@ -515,6 +581,13 @@ export function doctorRowToDoctor(row: DoctorRow): Doctor {
     consultationDays: row.consultationDays,
     verified: true,
     accent: row.accent,
+    photo: row.photo,
+    education: row.education,
+    memberships: row.memberships,
+    awards: row.awards,
+    quote: row.quote,
+    quoteBn: row.quoteBn,
+    focusServices: row.focusServices,
   };
 }
 
@@ -709,6 +782,16 @@ export function buildHomeHeroSlides(rows: HeroSlideRow[], videoUrls: string[]): 
     .map((id) => ({ type: "youtube", id }) as HeroSlide);
   const slides = buildHeroSlides(images, [...dbVideos, ...settingsVideos]);
   return slides.length ? slides : buildHeroSlides(homeHeroImages, settingsVideos);
+}
+
+/* Page-scope slides: active rows in sort order (images + YouTube both OK).
+   Used for the per-page hero backdrops managed from the admin panel. */
+export function buildPageHeroSlides(rows: HeroSlideRow[]): HeroSlide[] {
+  return rows
+    .filter((r) => r.active)
+    .sort((a, b) => a.sort - b.sort)
+    .map(heroSlideRowToSlide)
+    .filter((s) => (s.type === "youtube" ? Boolean(s.id) : Boolean(s.src)));
 }
 
 /* ------------------------------------------------------------------ */

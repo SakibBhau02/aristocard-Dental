@@ -59,6 +59,9 @@ const en = {
     quizTeaserTitle: "Not sure which treatment you need?",
     quizTeaserText: "Answer 5 quick questions and get a personalized starting plan in 60 seconds.",
     quizTeaserCta: "Take the Smile Check",
+    costTeaserTitle: "Wondering what it will cost?",
+    costTeaserText: "Build an instant estimate from transparent Dhaka price ranges — EMI options included.",
+    costTeaserCta: "Estimate My Cost",
     relatedTreatments: "Explore related treatments",
     relatedTreatmentsSub:
       "Written about this topic — jump straight to the treatment pages",
@@ -114,6 +117,21 @@ const en = {
       plusSpecialists: "+ 4 specialists",
       ratingNote: "4.9/5 • 3,200+ reviews",
       premiumBadge: "Premium Facility",
+      /* Doctor Search panel (round 12-e) — interactive widget replacing
+         the old static quote card next to the Why-Choose-Us copy */
+      searchTitle: "Doctor Search",
+      searchSubtitle: "Find the right specialist for your smile",
+      searchPlaceholder: "Search by name or specialty…",
+      searchClear: "Clear search",
+      searchAll: "All",
+      searchCatOrtho: "Braces",
+      searchCatSurgery: "Surgery",
+      searchCatCosmetic: "Cosmetic",
+      searchCatKids: "Kids",
+      searchNoResults: "No doctors match your search. Try a different name or specialty.",
+      searchResultCount: "{shown} of {total} specialists",
+      searchVerified: "BMDC-verified specialists",
+      searchViewAll: "View all doctors",
       highlights: [
         {
           title: "Strict Sterilization",
@@ -504,6 +522,15 @@ const en = {
     yearsExp: "{count}+ years experience",
     patientsTreatedLabel: "Patients treated",
     ratingLabel: "Rating",
+    /* Round 17-a — enriched profile dossier */
+    educationTitle: "Education & training",
+    focusTreatmentsTitle: "Focus treatments",
+    scheduleTitle: "Weekly consultation schedule",
+    membershipsTitle: "Memberships",
+    awardsTitle: "Awards & recognition",
+    philosophyTitle: "Philosophy of care",
+    availableDay: "Consulting",
+    offDay: "Off day",
   },
 
   doctorDetail: {
@@ -648,6 +675,94 @@ const en = {
     ctaDescription: "Your Smile Plan is ready — the next step takes two minutes. Book your consultation online now.",
     ctaButton: "Book Your Consultation",
     retake: "Retake the quiz",
+  },
+
+  /* ---------------- Cost estimator page (round 12 — wiring the
+     orphaned estimator-page.tsx: dictionary + shell route) ---------------- */
+  estimatorPage: {
+    eyebrow: "Transparent Pricing",
+    title: "Estimate your treatment cost before you visit",
+    description:
+      "Pick the treatments you're considering and see an instant estimated range in BDT — honest numbers from Dhaka market rates, before you ever sit in the chair.",
+    breadcrumb: "Cost Estimator",
+    stepEyebrow: "Step 1 — Build Your Estimate",
+    stepTitle: "Select your treatments",
+    stepText:
+      "Tap + to add each treatment you're considering. The estimate updates instantly — no sign-up, nothing sent anywhere.",
+    items: {
+      consultation: "Consultation & Checkup",
+      scaling: "Scaling & Polishing",
+      whitening: "Teeth Whitening",
+      filling: "Tooth-Colored Filling",
+      "root-canal": "Root Canal Treatment",
+      crown: "Crown (Zirconia/PFM)",
+      bridge: "Bridge (per unit)",
+      implant: "Dental Implant + Crown",
+      extraction: "Wisdom Tooth Extraction",
+      veneer: "Porcelain Veneer",
+      "braces-metal": "Metal Braces (Full Case)",
+      "braces-ceramic": "Ceramic Braces (Full Case)",
+      invisalign: "Invisalign® Clear Aligners",
+      gum: "Gum Treatment (Deep Cleaning)",
+      kids: "Kids' Checkup + Fluoride",
+    },
+    units: {
+      "per visit": "per visit",
+      "per session": "per session",
+      "full treatment": "full treatment",
+      "per tooth": "per tooth",
+      "per unit": "per unit",
+    },
+    removeOne: "Remove one {item}",
+    addOne: "Add one {item}",
+    removeItem: "Remove {item}",
+    totalTitle: "Your Estimate",
+    itemSelected: "{count} item selected",
+    itemsSelected: "{count} items selected",
+    selectToBegin: "Select treatments to begin",
+    emptyText: "Your estimate will appear here once you add treatments.",
+    rangeNote: "Estimated range — final price confirmed after examination",
+    emiTitle: "EMI available",
+    emiFrom: "from",
+    emiPerMonth: "/month",
+    emiMonths: "{n} months",
+    emiNote:
+      "Indicative instalments on major credit cards (3–12 months). Subject to card issuer approval.",
+    book: "Book an Appointment",
+    bookWithEstimate: "Book with this Estimate",
+    print: "Print Estimate",
+    reset: "Reset",
+    whyRange: "Why a range, not one price?",
+    whyRangeText:
+      "Every mouth is different — the exact plan (and price) is confirmed after examination and digital diagnostics.",
+    installments: "Installments available.",
+    payTitle: "Ways to Pay",
+    payCash: "Cash",
+    payCard: "Card",
+    payMobile: "Mobile Banking",
+    payEmi: "EMI",
+    assurance: [
+      {
+        title: "Honest, market-checked rates",
+        text: "Ranges reflect typical Dhaka private-clinic pricing for 2026 — updated regularly, never inflated.",
+      },
+      {
+        title: "No surprises at the counter",
+        text: "Your written plan from the consultation is what you pay — if the plan changes, you approve it first.",
+      },
+      {
+        title: "Plan before you commit",
+        text: "Compare options and budgets at home, then book when you're ready — no pressure, ever.",
+      },
+    ],
+    disclaimerTitle: "Please note:",
+    disclaimerText:
+      "This estimator reflects typical market rates for planning purposes only — it is not a binding quote. Your personalized plan with exact pricing is confirmed by our specialists after examination.",
+    mobileDetails: "View estimate details",
+    mobileBook: "Book Now",
+    ctaTitle: "Ready to lock in your real price?",
+    ctaDescription:
+      "A consultation gives you an exact, written treatment plan with final pricing — book yours in two minutes.",
   },
 
   /* ---------------- Status page ---------------- */
@@ -826,6 +941,49 @@ const en = {
     searchResults: "Showing {count} articles",
     searchClear: "Clear search",
     noResults: "No articles match your search — try a different keyword or category.",
+
+    /* --- Magazine index enhancements --- */
+    statsGuides: "Expert guides",
+    statsTopics: "Topic categories",
+    statsAuthors: "Specialist authors",
+    browseCategories: "Browse by category",
+    latestArticles: "Latest articles",
+    sidebarBookTitle: "Need a dentist?",
+    sidebarBookText:
+      "Book a consultation with our specialists — modern technology and gentle care, all under one roof in Uttara.",
+    sidebarCallNote: "Or call us directly",
+    loadMore: "Load more articles",
+    allArticles: "All articles",
+    showingOf: "Showing {shown} of {total} articles",
+    noResultsTitle: "No articles found",
+    clearFilters: "Clear search & category",
+    newsletterTitle: "Smile tips, once a month",
+    newsletterText:
+      "New guides and clinic updates in your inbox — no spam, unsubscribe anytime.",
+    newsletterPlaceholder: "you@example.com",
+    newsletterCta: "Subscribe",
+    newsletterDone: "You're on the list!",
+    newsletterDoneDesc:
+      "Thanks for subscribing — new guides will land in your inbox.",
+    newsletterFail: "Couldn't subscribe",
+    newsletterFailDesc: "Please check your email address and try again.",
+
+    /* --- Detail page enhancements --- */
+    published: "Published",
+    shareX: "Share on X (Twitter)",
+    backToAll: "Back to all articles",
+    prevArticle: "Previous article",
+    nextArticle: "Next article",
+    writtenBy: "Written by",
+    authorAtClinic:
+      "Practicing at Aristocrat Dental Care & Orthodontic Center, Uttara — Dhaka.",
+    viewAuthor: "View full profile",
+    bookWithDoctor: "Book with {name}",
+    relatedTopics: "Explore related topics",
+    stillQuestions: "Still have questions?",
+    bookConsultation: "Book a consultation",
+    consultNote:
+      "Every mouth is different — our specialists will examine, explain and guide you honestly, with no pressure to decide on the spot.",
   },
 
   /* ---------------- Contact page ---------------- */
@@ -942,6 +1100,7 @@ const en = {
     groupFaqs: "Questions",
     actionBook: "Book an appointment",
     actionQuiz: "Take the smile quiz",
+    actionEstimate: "Estimate treatment cost",
     actionCall: "Call the clinic",
     shortcutHint: "to search",
     hintNavigate: "to open",
@@ -952,7 +1111,7 @@ const en = {
     popularSearches: "Popular right now",
   },
 
-  /* ---------------- Patient portal (#/portal) ---------------- */
+  /* ---------------- Patient portal (/portal) ---------------- */
   portalPage: {
     eyebrow: "Patient Portal",
     title: "Your dental care, all in one place",
@@ -1020,7 +1179,9 @@ const en = {
     statUpcoming: "Upcoming visits",
     statCompleted: "Completed visits",
     statTotal: "Lifetime bookings",
+    statCancelled: "Cancelled visits",
     statReviews: "Reviews shared",
+    portalBadge: "Patient Portal",
     upcomingTitle: "Upcoming appointments",
     upcomingEmpty: "No upcoming appointments right now.",
     upcomingEmptyCta: "Book a visit",
@@ -1062,6 +1223,24 @@ const en = {
     keepBooking: "Keep my booking",
     yesCancel: "Yes, cancel it",
 
+    /* --- Reschedule --- */
+    rescheduleBooking: "Reschedule",
+    rescheduleTitle: "Reschedule this appointment",
+    rescheduleDesc:
+      "Pick a new date and time — your reference code and confirmed status stay the same.",
+    rescheduleCurrent: "Current slot",
+    rescheduleNewDate: "New date",
+    rescheduleNewTime: "New time",
+    rescheduleNoteLabel: "Note (optional)",
+    rescheduleNotePlaceholder: "Anything we should know about the change?",
+    rescheduleNoteHint: "Replaces the note on your booking.",
+    rescheduleSubmit: "Confirm new slot",
+    rescheduleSubmitting: "Rescheduling…",
+    rescheduleDateRequired: "Please choose a new date.",
+    rescheduleTimeRequired: "Please choose a time slot.",
+    reschedulePastDate: "The new date cannot be in the past.",
+    rescheduleSameSlot: "Pick a different slot — this is already your appointment time.",
+
     /* --- Toasts --- */
     toastLoginOk: "Logged in",
     toastLoginOkDesc: "Welcome back to your patient portal.",
@@ -1076,6 +1255,9 @@ const en = {
     toastCancelOk: "Appointment cancelled",
     toastCancelOkDesc: "Your slot has been released. Book again anytime.",
     toastCancelFail: "Couldn't cancel",
+    toastRescheduleOk: "Appointment rescheduled",
+    toastRescheduleOkDesc: "Your new date and time are confirmed.",
+    toastRescheduleFail: "Couldn't reschedule",
     toastGenericFail: "Something went wrong",
     toastGenericFailDesc: "Please try again or call {phone}.",
   },
@@ -1137,6 +1319,9 @@ const bn: Dictionary = {
     quizTeaserTitle: "কোন চিকিৎসাটি আপনার দরকার বুঝতে পারছেন না?",
     quizTeaserText: "৫টি ছোট প্রশ্নের উত্তর দিন — ৬০ সেকেন্ডে পেয়ে যান আপনার জন্য প্রস্তাবিত শুরুর পরিকল্পনা।",
     quizTeaserCta: "স্মাইল চেক নিন",
+    costTeaserTitle: "খরচ কত পড়বে ভাবছেন?",
+    costTeaserText: "ঢাকার স্বচ্ছ দামের পরিসর থেকে সঙ্গে সঙ্গে হিসাব করুন — ইএমআই সুবিধাসহ।",
+    costTeaserCta: "খরচ হিসাব করুন",
     relatedTreatments: "সম্পর্কিত চিকিৎসা দেখুন",
     relatedTreatmentsSub:
       "আর্টিকেলে যেসব চিকিৎসার কথা বলা হয়েছে — সরাসরি সেই সেবার পেজে যান",
@@ -1191,6 +1376,19 @@ const bn: Dictionary = {
       plusSpecialists: "+ ৪ জন বিশেষজ্ঞ",
       ratingNote: "৪.৯/৫ • ৩,২০০+ রিভিউ",
       premiumBadge: "প্রিমিয়াম সুবিধা",
+      searchTitle: "ডাক্তার খুঁজুন",
+      searchSubtitle: "আপনার হাসির জন্য সঠিক বিশেষজ্ঞ খুঁজুন",
+      searchPlaceholder: "নাম বা বিশেষত্ব দিয়ে খুঁজুন…",
+      searchClear: "খোঁজা মুছে ফেলুন",
+      searchAll: "সব",
+      searchCatOrtho: "ব্রেস",
+      searchCatSurgery: "সার্জারি",
+      searchCatCosmetic: "কসমেটিক",
+      searchCatKids: "শিশু",
+      searchNoResults: "আপনার খোঁজের সাথে কোনো ডাক্তার মেলেনি।\nঅন্য নাম বা বিশেষত্ব দিয়ে চেষ্টা করুন।",
+      searchResultCount: "{total} বিশেষজ্ঞের মধ্যে {shown} জন",
+      searchVerified: "বিএমডিসি-ভেরিফায়েড বিশেষজ্ঞ",
+      searchViewAll: "সব ডাক্তার দেখুন",
       highlights: [
         {
           title: "কঠোর জীবাণুমুক্তকরণ",
@@ -1581,6 +1779,15 @@ const bn: Dictionary = {
     yearsExp: "{count}+ বছরের অভিজ্ঞতা",
     patientsTreatedLabel: "রোগী সেবা",
     ratingLabel: "রেটিং",
+    /* Round 17-a — enriched profile dossier */
+    educationTitle: "শিক্ষা ও প্রশিক্ষণ",
+    focusTreatmentsTitle: "ফোকাস ট্রিটমেন্ট",
+    scheduleTitle: "সাপ্তাহিক কনসালটেশন সময়সূচি",
+    membershipsTitle: "সদস্যপদ",
+    awardsTitle: "পুরস্কার ও স্বীকৃতি",
+    philosophyTitle: "চিকিৎসার দর্শন",
+    availableDay: "কনসালটেশন",
+    offDay: "ছুটি",
   },
 
   doctorDetail: {
@@ -1725,6 +1932,93 @@ const bn: Dictionary = {
     disclaimerText: "দেখানো ছবিগুলো চিকিৎসার ফলাফলের প্রতিনিধিত্বমূলক উদাহরণ। প্রতিটি হাসি অনন্য — আপনার ফলাফল নির্ভর করে মুখের স্বাস্থ্য, গঠন ও চিকিৎসা পরিকল্পনার উপর, যা চিকিৎসা শুরুর আগে কনসালটেশনে আমাদের বিশেষজ্ঞরা নিশ্চিত করেন।",
     ctaTitle: "আপনার হাসি বদলে যাওয়ার যাত্রা শুরু এখানেই",
     ctaDescription: "ডিজিটাল স্মাইল ডিজাইন কনসালটেশন বুক করুন — কোনো চিকিৎসার আগেই নিজের নতুন হাসি দেখে নিন, ঠিক ওপরের রোগীদের মতো।",
+  },
+
+  /* ---------------- Cost estimator (BN — round 12) ---------------- */
+  estimatorPage: {
+    eyebrow: "স্বচ্ছ মূল্য",
+    title: "ভিজিটের আগেই আপনার চিকিৎসার খরচ হিসাব করুন",
+    description:
+      "যে চিকিৎসাগুলো ভাবছেন সেগুলো বাছুন আর সঙ্গে সঙ্গে টাকায় আনুমানিক খরচ দেখুন — চেয়ারে বসার আগেই সৎ সংখ্যা, ঢাকার বাজারদর অনুযায়ী।",
+    breadcrumb: "খরচ হিসাব",
+    stepEyebrow: "ধাপ ১ — হিসাব তৈরি করুন",
+    stepTitle: "আপনার চিকিৎসা বাছুন",
+    stepText:
+      "যে চিকিৎসা ভাবছেন সেটিতে + চাপুন। হিসাব সঙ্গে সঙ্গে আপডেট হয় — কোনো সাইন-আপ নেই, কিছুই কোথাও পাঠানো হয় না।",
+    items: {
+      consultation: "কনসালটেশন ও চেকআপ",
+      scaling: "স্কেলিং ও পলিশিং",
+      whitening: "দাঁত সাদা করা (হোয়াইটেনিং)",
+      filling: "টুথ-কালার্ড ফিলিং",
+      "root-canal": "রুট ক্যানাল চিকিৎসা",
+      crown: "ক্রাউন (জিরকোনিয়া/PFM)",
+      bridge: "ব্রিজ (প্রতি ইউনিট)",
+      implant: "ডেন্টাল ইমপ্লান্ট + ক্রাউন",
+      extraction: "উইজডম টুথ তোলা",
+      veneer: "পোরসেলিন ভিনিয়ার",
+      "braces-metal": "মেটাল ব্রেস (সম্পূর্ণ কেস)",
+      "braces-ceramic": "সিরামিক ব্রেস (সম্পূর্ণ কেস)",
+      invisalign: "ইনভিজালাইন® ক্লিয়ার অ্যালাইনার",
+      gum: "মাড়ির চিকিৎসা (ডিপ ক্লিনিং)",
+      kids: "শিশু চেকআপ + ফ্লোরাইড",
+    },
+    units: {
+      "per visit": "প্রতি ভিজিট",
+      "per session": "প্রতি সেশন",
+      "full treatment": "সম্পূর্ণ চিকিৎসা",
+      "per tooth": "প্রতি দাঁত",
+      "per unit": "প্রতি ইউনিট",
+    },
+    removeOne: "{item} একটি কমান",
+    addOne: "{item} একটি যোগ করুন",
+    removeItem: "{item} বাদ দিন",
+    totalTitle: "আপনার হিসাব",
+    itemSelected: "{count}টি নির্বাচিত",
+    itemsSelected: "{count}টি নির্বাচিত",
+    selectToBegin: "শুরু করতে চিকিৎসা বাছুন",
+    emptyText: "চিকিৎসা যোগ করলে আপনার হিসাব এখানে দেখা যাবে।",
+    rangeNote: "আনুমানিক পরিসর — পরীক্ষার পর চূড়ান্ত মূল্য নিশ্চিত হয়",
+    emiTitle: "ইএমআই সুবিধা",
+    emiFrom: "শুরু",
+    emiPerMonth: "/মাসে",
+    emiMonths: "{n} মাস",
+    emiNote:
+      "প্রধান ক্রেডিট কার্ডে আনুমানিক কিস্তি (৩–১২ মাস)। কার্ড ইস্যুকারীর অনুমোদন সাপেক্ষে।",
+    book: "অ্যাপয়েন্টমেন্ট বুক করুন",
+    bookWithEstimate: "এই হিসাব নিয়ে বুক করুন",
+    print: "হিসাব প্রিন্ট করুন",
+    reset: "রিসেট",
+    whyRange: "একটি দাম নয়, কেন পরিসর?",
+    whyRangeText:
+      "প্রতিটি মুখই আলাদা — পরীক্ষা ও ডিজিটাল রোগনির্ণয়ের পর সঠিক প্লান (ও দাম) নিশ্চিত হয়।",
+    installments: "কিস্তিতে দেওয়ার সুবিধা আছে।",
+    payTitle: "পেমেন্টের মাধ্যম",
+    payCash: "নগদ টাকা",
+    payCard: "কার্ড",
+    payMobile: "মোবাইল ব্যাংকিং",
+    payEmi: "ইএমআই",
+    assurance: [
+      {
+        title: "সৎ, বাজার-যাচাই দাম",
+        text: "২০২৬ সালের ঢাকার বেসরকারি ক্লিনিকের সাধারণ দামের পরিসর — নিয়মিত হালনাগাদ, কখনো ফুলানো নয়।",
+      },
+      {
+        title: "কাউন্টারে চমক নেই",
+        text: "কনসালটেশনের লিখিত প্লানটাই আপনার দেওয়ার দাম — প্লান বদলালে আগে আপনার সম্মতি নেওয়া হয়।",
+      },
+      {
+        title: "দৃঢ় হওয়ার আগে প্লান করুন",
+        text: "ঘরে বসে অপশন ও বাজেট তুলনা করুন, তারপর প্রস্তুত হলে বুক করুন — কোনো চাপ নেই, কখনোই না।",
+      },
+    ],
+    disclaimerTitle: "অনুগ্রহ করে খেয়াল করুন:",
+    disclaimerText:
+      "এই হিসাব পরিকল্পনার সুবিধার্থে সাধারণ বাজারদর দেখায় — এটি চূড়ান্ত দাম নয়। পরীক্ষার পর আমাদের বিশেষজ্ঞদের দেওয়া ব্যক্তিগত প্লানেই সঠিক মূল্য নিশ্চিত হয়।",
+    mobileDetails: "হিসাবের বিস্তারিত দেখুন",
+    mobileBook: "এখনই বুক করুন",
+    ctaTitle: "আসল দাম জানতে প্রস্তুত?",
+    ctaDescription:
+      "একটি কনসালটেশনেই লিখিত চিকিৎসা প্লান ও চূড়ান্ত মূল্য — মাত্র দুই মিনিটে বুক করে ফেলুন।",
   },
 
   /* ---------------- Status page ---------------- */
@@ -1903,6 +2197,48 @@ const bn: Dictionary = {
     searchResults: "{count}টি আর্টিকেল দেখানো হচ্ছে",
     searchClear: "সার্চ মুছুন",
     noResults: "আপনার খোঁজার সাথে কোনো আর্টিকেল মেলেনি — অন্য শব্দ বা ক্যাটাগরি দিয়ে চেষ্টা করুন।",
+
+    /* --- ম্যাগাজিন ইনডেক্স সংযোজন --- */
+    statsGuides: "বিশেষজ্ঞ গাইড",
+    statsTopics: "বিষয়ভিত্তিক ক্যাটেগরি",
+    statsAuthors: "বিশেষজ্ঞ লেখক",
+    browseCategories: "ক্যাটেগরি অনুযায়ী দেখুন",
+    latestArticles: "সর্বশেষ আর্টিকেল",
+    sidebarBookTitle: "ডেন্টিস্ট দরকার?",
+    sidebarBookText:
+      "আমাদের বিশেষজ্ঞদের সাথে কনসালটেশন বুক করুন — আধুনিক প্রযুক্তি ও স্নেহময় যত্ন, সবই উত্তরায় এক ছাদের নিচে।",
+    sidebarCallNote: "বা সরাসরি কল করুন",
+    loadMore: "আরও আর্টিকেল দেখুন",
+    allArticles: "সব আর্টিকেল",
+    showingOf: "{total}টির মধ্যে {shown}টি দেখানো হচ্ছে",
+    noResultsTitle: "কোনো আর্টিকেল পাওয়া যায়নি",
+    clearFilters: "সার্চ ও ক্যাটেগরি মুছুন",
+    newsletterTitle: "মাসে একবার হাসির টিপস",
+    newsletterText:
+      "নতুন গাইড ও ক্লিনিক আপডেট সরাসরি আপনার ইনবক্সে — কোনো স্প্যাম নেই, যখন খুশি আনসাবস্ক্রাইব করতে পারবেন।",
+    newsletterPlaceholder: "apnar@email.com",
+    newsletterCta: "সাবস্ক্রাইব করুন",
+    newsletterDone: "আপনি তালিকায় যুক্ত হয়ে গেছেন!",
+    newsletterDoneDesc: "সাবস্ক্রাইবের জন্য ধন্যবাদ — নতুন গাইড আপনার ইনবক্সে পৌঁছে যাবে।",
+    newsletterFail: "সাবস্ক্রাইব করা যায়নি",
+    newsletterFailDesc: "ইমেইল ঠিক আছে কিনা দেখে আবার চেষ্টা করুন।",
+
+    /* --- ডিটেইল পেজ সংযোজন --- */
+    published: "প্রকাশ",
+    shareX: "এক্স (টুইটার)-এ শেয়ার করুন",
+    backToAll: "সব আর্টিকেল দেখুন",
+    prevArticle: "পূর্ববর্তী আর্টিকেল",
+    nextArticle: "পরবর্তী আর্টিকেল",
+    writtenBy: "লিখেছেন",
+    authorAtClinic:
+      "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ার অ্যান্ড অর্থোডন্টিক সেন্টার, উত্তরা, ঢাকা-তে কর্মরত।",
+    viewAuthor: "সম্পূর্ণ প্রোফাইল দেখুন",
+    bookWithDoctor: "{name}-এর সাথে বুক করুন",
+    relatedTopics: "সম্পর্কিত বিষয়গুলো ঘুরে দেখুন",
+    stillQuestions: "এখনও প্রশ্ন আছে?",
+    bookConsultation: "কনসালটেশন বুক করুন",
+    consultNote:
+      "প্রতিটি মুখের চাহিদা আলাদা — আমাদের বিশেষজ্ঞরা পরীক্ষা করে সবকিছু বুঝিয়ে বলবেন, সিদ্ধান্ত নিতে কোনো চাপ দেবেন না।",
   },
 
   /* ---------------- Contact page ---------------- */
@@ -2018,6 +2354,7 @@ const bn: Dictionary = {
     groupFaqs: "প্রশ্নোত্তর",
     actionBook: "অ্যাপয়েন্টমেন্ট বুক করুন",
     actionQuiz: "স্মাইল কুইজ দিন",
+    actionEstimate: "চিকিৎসার খরচ হিসাব করুন",
     actionCall: "ক্লিনিকে কল করুন",
     shortcutHint: "দিয়ে খুঁজুন",
     hintNavigate: "দিয়ে খুলুন",
@@ -2028,7 +2365,7 @@ const bn: Dictionary = {
     popularSearches: "এখন জনপ্রিয়",
   },
 
-  /* ---------------- Patient portal (#/portal) ---------------- */
+  /* ---------------- Patient portal (/portal) ---------------- */
   portalPage: {
     eyebrow: "পেশেন্ট পোর্টাল",
     title: "আপনার ডেন্টাল কেয়ার, এক জায়গায়",
@@ -2096,7 +2433,9 @@ const bn: Dictionary = {
     statUpcoming: "আসন্ন ভিজিট",
     statCompleted: "সম্পন্ন ভিজিট",
     statTotal: "মোট বুকিং",
+    statCancelled: "বাতিল হওয়া ভিজিট",
     statReviews: "দেওয়া রিভিউ",
+    portalBadge: "পেশেন্ট পোর্টাল",
     upcomingTitle: "আসন্ন অ্যাপয়েন্টমেন্ট",
     upcomingEmpty: "এই মুহূর্তে কোনো আসন্ন অ্যাপয়েন্টমেন্ট নেই।",
     upcomingEmptyCta: "ভিজিট বুক করুন",
@@ -2138,6 +2477,24 @@ const bn: Dictionary = {
     keepBooking: "বুকিং রাখুন",
     yesCancel: "হ্যাঁ, বাতিল করুন",
 
+    /* --- Reschedule --- */
+    rescheduleBooking: "রিশিডিউল করুন",
+    rescheduleTitle: "অ্যাপয়েন্টমেন্ট রিশিডিউল করুন",
+    rescheduleDesc:
+      "নতুন তারিখ ও সময় বেছে নিন — আপনার রেফারেন্স কোড ও কনফার্ম করা স্ট্যাটাস একই থাকবে।",
+    rescheduleCurrent: "বর্তমান স্লট",
+    rescheduleNewDate: "নতুন তারিখ",
+    rescheduleNewTime: "নতুন সময়",
+    rescheduleNoteLabel: "নোট (ঐচ্ছিক)",
+    rescheduleNotePlaceholder: "পরিবর্তন সম্পর্কে আমাদের কিছু জানানোর আছে?",
+    rescheduleNoteHint: "বুকিংয়ের নোট এটি দিয়ে বদলে যাবে।",
+    rescheduleSubmit: "নতুন স্লট নিশ্চিত করুন",
+    rescheduleSubmitting: "রিশিডিউল হচ্ছে…",
+    rescheduleDateRequired: "নতুন একটি তারিখ বেছে নিন।",
+    rescheduleTimeRequired: "একটি সময় বেছে নিন।",
+    reschedulePastDate: "নতুন তারিখ অতীতের হতে পারে না।",
+    rescheduleSameSlot: "ভিন্ন স্লট বেছে নিন — এটি এখনই আপনার অ্যাপয়েন্টমেন্টের সময়।",
+
     /* --- Toasts --- */
     toastLoginOk: "লগ ইন সফল",
     toastLoginOkDesc: "পেশেন্ট পোর্টালে আবার স্বাগতম।",
@@ -2152,6 +2509,9 @@ const bn: Dictionary = {
     toastCancelOk: "অ্যাপয়েন্টমেন্ট বাতিল হয়েছে",
     toastCancelOkDesc: "আপনার স্লট খালি হয়েছে। যেকোনো সময় আবার বুক করতে পারবেন।",
     toastCancelFail: "বাতিল করা যায়নি",
+    toastRescheduleOk: "অ্যাপয়েন্টমেন্ট রিশিডিউল হয়েছে",
+    toastRescheduleOkDesc: "আপনার নতুন তারিখ ও সময় নিশ্চিত হয়েছে।",
+    toastRescheduleFail: "রিশিডিউল করা যায়নি",
     toastGenericFail: "কিছু একটা সমস্যা হয়েছে",
     toastGenericFailDesc: "আবার চেষ্টা করুন বা {phone} নম্বরে কল করুন।",
   },

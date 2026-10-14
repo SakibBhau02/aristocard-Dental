@@ -1,0 +1,727 @@
+     1→/* ------------------------------------------------------------------ */
+     2→/*  CMS shared layer — types, defaults, row↔domain mappers.             */
+     3→/*  Client-safe (NO Prisma imports). Used by:                          */
+     4→/*   • src/lib/content/server.ts  (DB → ContentBundle)                 */
+     5→/*   • /api/admin/* routes         (payload → DB rows)                 */
+     6→/*   • content-provider.tsx        (public site context)               */
+     7→/*   • admin editor panels         (form defaults)                     */
+     8→/* ------------------------------------------------------------------ */
+     9→
+    10→import type { BlogPost, Doctor, FAQ, Service } from "@/lib/types";
+    11→import type { SmileCase } from "@/lib/data/smile-cases";
+    12→import type { HeroSlide } from "@/lib/data/hero-media";
+    13→import { parseYouTubeId, buildHeroSlides } from "@/lib/data/hero-media";
+    14→import { services as staticServices } from "@/lib/data/services";
+    15→import { doctors as staticDoctors, testimonials as staticTestimonials } from "@/lib/data/doctors";
+    16→import { blogPosts as staticPosts } from "@/lib/data/blog";
+    17→import { generalFaqs as staticFaqs } from "@/lib/data/faqs";
+    18→import { smileCases as staticCases } from "@/lib/data/smile-cases";
+    19→import { homeHeroImages, heroVideoUrls } from "@/lib/data/hero-media";
+    20→import { dictionary } from "@/lib/data/dictionary";
+    21→const en = dictionary.en;
+    22→const bn = dictionary.bn;
+    23→import { site, clinicStats, highlights as staticHighlights } from "@/lib/site";
+    24→
+    25→/* ------------------------------------------------------------------ */
+    26→/*  Page-level editable content shapes                                 */
+    27→/* ------------------------------------------------------------------ */
+    28→
+    29→export type HomeHeroContent = {
+    30→  badge: string; badgeBn?: string;
+    31→  titleA: string; titleABn?: string;
+    32→  titleB: string; titleBBn?: string;
+    33→  description: string; descriptionBn?: string;
+    34→  ctaBook: string; ctaBookBn?: string;
+    35→  ctaExplore: string; ctaExploreBn?: string;
+    36→  trust: string[]; trustBn?: string[];
+    37→};
+    38→
+    39→export type StatItem = {
+    40→  value: number;
+    41→  suffix: string;
+    42→  label: string;
+    43→  labelBn?: string;
+    44→  decimals?: number;
+    45→};
+    46→
+    47→export type WhyContent = {
+    48→  eyebrow: string; eyebrowBn?: string;
+    49→  titleA: string; titleABn?: string;
+    50→  titleB: string; titleBBn?: string;
+    51→  description: string; descriptionBn?: string;
+    52→  quote: string; quoteBn?: string;
+    53→  quoteBy: string; quoteByBn?: string;
+    54→  ratingNote: string; ratingNoteBn?: string;
+    55→  highlights: { icon: string; title: string; titleBn?: string; description: string; descriptionBn?: string }[];
+    56→};
+    57→
+    58→export type SectionHead = {
+    59→  eyebrow: string; eyebrowBn?: string;
+    60→  titleA: string; titleABn?: string;
+    61→  titleB: string; titleBBn?: string;
+    62→  description: string; descriptionBn?: string;
+    63→  cta?: string; ctaBn?: string;
+    64→};
+    65→
+    66→export type FacilityContent = SectionHead & {
+    67→  cards: { title: string; titleBn?: string; text: string; textBn?: string }[];
+    68→};
+    69→
+    70→export type HomeContent = {
+    71→  hero: HomeHeroContent;
+    72→  stats: StatItem[];
+    73→  why: WhyContent;
+    74→  services: SectionHead;
+    75→  facility: FacilityContent;
+    76→  galleryPreview: SectionHead;
+    77→  testimonials: SectionHead;
+    78→  doctors: SectionHead;
+    79→  faq: SectionHead & { stillTitle?: string; stillTitleBn?: string };
+    80→};
+    81→
+    82→export type TimelineItem = {
+    83→  year: string;
+    84→  icon: string;
+    85→  title: string;
+    86→  titleBn?: string;
+    87→  description: string;
+    88→  descriptionBn?: string;
+    89→};
+    90→
+    91→export type StoryStatItem = {
+    92→  value: string;
+    93→  label: string;
+    94→  labelBn?: string;
+    95→};
+    96→
+    97→export type AboutContent = {
+    98→  eyebrow: string; eyebrowBn?: string;
+    99→  title: string; titleBn?: string;
+   100→  description: string; descriptionBn?: string;
+   101→  storyBadge: string; storyBadgeBn?: string;
+   102→  storyQuote: string; storyQuoteBn?: string;
+   103→  storyP2: string; storyP2Bn?: string;
+   104→  storyStats: StoryStatItem[];
+   105→  missionEyebrow: string; missionEyebrowBn?: string;
+   106→  missionTitle: string; missionTitleBn?: string;
+   107→  missionHeading: string; missionHeadingBn?: string;
+   108→  missionText: string; missionTextBn?: string;
+   109→  visionHeading: string; visionHeadingBn?: string;
+   110→  visionText: string; visionTextBn?: string;
+   111→  journeyEyebrow: string; journeyEyebrowBn?: string;
+   112→  journeyTitle: string; journeyTitleBn?: string;
+   113→  timeline: TimelineItem[];
+   114→  founderName: string; founderNameBn?: string;
+   115→  founderRole: string; founderRoleBn?: string;
+   116→  founderChipTitle: string; founderChipTitleBn?: string;
+   117→  founderChipNote: string; founderChipNoteBn?: string;
+   118→  founderItems: { title: string; titleBn?: string; text: string; textBn?: string }[];
+   119→  valuesEyebrow: string; valuesEyebrowBn?: string;
+   120→  valuesTitle: string; valuesTitleBn?: string;
+   121→  values: { icon: string; title: string; titleBn?: string; description: string; descriptionBn?: string }[];
+   122→  specialistsTitle: string; specialistsTitleBn?: string;
+   123→  specialistsDescription: string; specialistsDescriptionBn?: string;
+   124→  ctaTitle: string; ctaTitleBn?: string;
+   125→  ctaDescription: string; ctaDescriptionBn?: string;
+   126→};
+   127→
+   128→export type SiteSettings = {
+   129→  name: string;
+   130→  shortName: string;
+   131→  tagline: string; taglineBn?: string;
+   132→  phone: string;
+   133→  phoneRaw: string;
+   134→  emergencyPhone: string;
+   135→  email: string;
+   136→  address: string;
+   137→  addressShort: string;
+   138→  hours: string; hoursBn?: string;
+   139→  hoursFriday: string; hoursFridayBn?: string;
+   140→  established: number;
+   141→  patientsServed: number;
+   142→  facebook: string;
+   143→  instagram: string;
+   144→  linkedin: string;
+   145→  heroVideoUrls: string[];
+   146→};
+   147→
+   148→/* ------------------------------------------------------------------ */
+   149→/*  Defaults (mirrors today's static content — seed + fallback)         */
+   150→/* ------------------------------------------------------------------ */
+   151→
+   152→export function defaultHomeContent(): HomeContent {
+   153→  const h = en.home;
+   154→  const hb = bn.home;
+   155→  return {
+   156→    hero: {
+   157→      badge: h.hero.badge, badgeBn: hb.hero.badge,
+   158→      titleA: h.hero.titleA, titleABn: hb.hero.titleA,
+   159→      titleB: h.hero.titleB, titleBBn: hb.hero.titleB,
+   160→      description: h.hero.description, descriptionBn: hb.hero.description,
+   161→      ctaBook: h.hero.ctaBook, ctaBookBn: hb.hero.ctaBook,
+   162→      ctaExplore: h.hero.ctaExplore, ctaExploreBn: hb.hero.ctaExplore,
+   163→      trust: h.hero.trust, trustBn: hb.hero.trust,
+   164→    },
+   165→    stats: clinicStats.map((s, i) => ({
+   166→      value: s.value,
+   167→      suffix: s.suffix,
+   168→      label: s.label,
+   169→      labelBn: hb.stats[i]?.label,
+   170→      decimals: (s as { decimals?: number }).decimals,
+   171→    })),
+   172→    why: {
+   173→      eyebrow: h.why.eyebrow, eyebrowBn: hb.why.eyebrow,
+   174→      titleA: h.why.titleA, titleABn: hb.why.titleA,
+   175→      titleB: h.why.titleB, titleBBn: hb.why.titleB,
+   176→      description: h.why.description, descriptionBn: hb.why.description,
+   177→      quote: h.why.quote, quoteBn: hb.why.quote,
+   178→      quoteBy: h.why.quoteBy, quoteByBn: hb.why.quoteBy,
+   179→      ratingNote: h.why.ratingNote, ratingNoteBn: hb.why.ratingNote,
+   180→      highlights: h.why.highlights.map((hi, i) => ({
+   181→        icon: staticHighlights[i]?.icon ?? "ShieldCheck",
+   182→        title: hi.title, titleBn: hb.why.highlights[i]?.title,
+   183→        description: hi.description, descriptionBn: hb.why.highlights[i]?.description,
+   184→      })),
+   185→    },
+   186→    services: {
+   187→      eyebrow: h.services.eyebrow, eyebrowBn: hb.services.eyebrow,
+   188→      titleA: h.services.titleA, titleABn: hb.services.titleA,
+   189→      titleB: h.services.titleB, titleBBn: hb.services.titleB,
+   190→      description: h.services.description, descriptionBn: hb.services.description,
+   191→      cta: h.services.viewAll, ctaBn: hb.services.viewAll,
+   192→    },
+   193→    facility: {
+   194→      eyebrow: h.facility.eyebrow, eyebrowBn: hb.facility.eyebrow,
+   195→      titleA: h.facility.titleA, titleABn: hb.facility.titleA,
+   196→      titleB: h.facility.titleB, titleBBn: hb.facility.titleB,
+   197→      description: h.facility.description, descriptionBn: hb.facility.description,
+   198→      cards: h.facility.cards.map((c, i) => ({
+   199→        title: c.title, titleBn: hb.facility.cards[i]?.title,
+   200→        text: c.text, textBn: hb.facility.cards[i]?.text,
+   201→      })),
+   202→    },
+   203→    galleryPreview: {
+   204→      eyebrow: h.galleryPreview.eyebrow, eyebrowBn: hb.galleryPreview.eyebrow,
+   205→      titleA: h.galleryPreview.titleA, titleABn: hb.galleryPreview.titleA,
+   206→      titleB: h.galleryPreview.titleB, titleBBn: hb.galleryPreview.titleB,
+   207→      description: h.galleryPreview.description, descriptionBn: hb.galleryPreview.description,
+   208→      cta: h.galleryPreview.ctaGallery, ctaBn: hb.galleryPreview.ctaGallery,
+   209→    },
+   210→    testimonials: {
+   211→      eyebrow: h.testimonials.eyebrow, eyebrowBn: hb.testimonials.eyebrow,
+   212→      titleA: h.testimonials.titleA, titleABn: hb.testimonials.titleA,
+   213→      titleB: h.testimonials.titleB, titleBBn: hb.testimonials.titleB,
+   214→      description: h.testimonials.description, descriptionBn: hb.testimonials.description,
+   215→    },
+   216→    doctors: {
+   217→      eyebrow: h.doctors.eyebrow, eyebrowBn: hb.doctors.eyebrow,
+   218→      titleA: h.doctors.titleA, titleABn: hb.doctors.titleA,
+   219→      titleB: h.doctors.titleB, titleBBn: hb.doctors.titleB,
+   220→      description: h.doctors.description, descriptionBn: hb.doctors.description,
+   221→      cta: h.doctors.viewBoard, ctaBn: hb.doctors.viewBoard,
+   222→    },
+   223→    faq: {
+   224→      eyebrow: h.faq.eyebrow, eyebrowBn: hb.faq.eyebrow,
+   225→      titleA: h.faq.titleA, titleABn: hb.faq.titleA,
+   226→      titleB: h.faq.titleB, titleBBn: hb.faq.titleB,
+   227→      description: h.faq.description, descriptionBn: hb.faq.description,
+   228→      cta: h.faq.viewAll, ctaBn: hb.faq.viewAll,
+   229→      stillTitle: h.faq.stillTitle, stillTitleBn: hb.faq.stillTitle,
+   230→    },
+   231→  };
+   232→}
+   233→
+   234→/* Journey timeline presentation defaults — year + icon per milestone.
+   235→   Kept beside the defaults so blobs saved BEFORE these fields existed
+   236→   heal per-index (arrays are replaced wholesale by the deep merge). */
+   237→const TIMELINE_META = [
+   238→  { year: "2019", icon: "Heart" },
+   239→  { year: "2021", icon: "Microscope" },
+   240→  { year: "2023", icon: "Sparkles" },
+   241→  { year: "2025", icon: "Users" },
+   242→] as const;
+   243→
+   244→export function defaultAboutContent(): AboutContent {
+   245→  const a = en.about;
+   246→  const ab = bn.about;
+   247→  return {
+   248→    eyebrow: a.eyebrow, eyebrowBn: ab.eyebrow,
+   249→    title: a.title, titleBn: ab.title,
+   250→    description: a.description, descriptionBn: ab.description,
+   251→    storyBadge: a.storyBadge, storyBadgeBn: ab.storyBadge,
+   252→    storyQuote: a.storyQuote, storyQuoteBn: ab.storyQuote,
+   253→    storyP2: a.storyP2, storyP2Bn: ab.storyP2,
+   254→    storyStats: [
+   255→      { value: "6+", label: a.storyStats[0].label, labelBn: ab.storyStats[0].label },
+   256→      { value: "11", label: a.storyStats[1].label, labelBn: ab.storyStats[1].label },
+   257→      { value: "4.9★", label: a.storyStats[2].label, labelBn: ab.storyStats[2].label },
+   258→    ],
+   259→    missionEyebrow: a.missionEyebrow, missionEyebrowBn: ab.missionEyebrow,
+   260→    missionTitle: a.missionTitle, missionTitleBn: ab.missionTitle,
+   261→    missionHeading: a.missionHeading, missionHeadingBn: ab.missionHeading,
+   262→    missionText: a.missionText, missionTextBn: ab.missionText,
+   263→    visionHeading: a.visionHeading, visionHeadingBn: ab.visionHeading,
+   264→    visionText: a.visionText, visionTextBn: ab.visionText,
+   265→    journeyEyebrow: a.journeyEyebrow, journeyEyebrowBn: ab.journeyEyebrow,
+   266→    journeyTitle: a.journeyTitle, journeyTitleBn: ab.journeyTitle,
+   267→    timeline: a.timeline.map((t, i) => ({
+   268→      year: TIMELINE_META[i]?.year ?? "2024",
+   269→      icon: TIMELINE_META[i]?.icon ?? "Sparkles",
+   270→      title: t.title, titleBn: ab.timeline[i]?.title,
+   271→      description: t.description, descriptionBn: ab.timeline[i]?.description,
+   272→    })),
+   273→    founderName: "Dr. Shazia Khanam",
+   274→    founderNameBn: "ডা. শাজিয়া খানম",
+   275→    founderRole: a.founderRole, founderRoleBn: ab.founderRole,
+   276→    founderChipTitle: a.founderChipTitle, founderChipTitleBn: ab.founderChipTitle,
+   277→    founderChipNote: a.founderChipNote, founderChipNoteBn: ab.founderChipNote,
+   278→    founderItems: a.founderItems.map((f, i) => ({
+   279→      title: f.title, titleBn: ab.founderItems[i]?.title,
+   280→      text: f.text, textBn: ab.founderItems[i]?.text,
+   281→    })),
+   282→    valuesEyebrow: a.valuesEyebrow, valuesEyebrowBn: ab.valuesEyebrow,
+   283→    valuesTitle: a.valuesTitle, valuesTitleBn: ab.valuesTitle,
+   284→    values: a.values.map((v, i) => ({
+   285→      icon: ["BadgeCheck", "ShieldCheck", "HeartHandshake", "Award"][i] ?? "BadgeCheck",
+   286→      title: v.title, titleBn: ab.values[i]?.title,
+   287→      description: v.description, descriptionBn: ab.values[i]?.description,
+   288→    })),
+   289→    specialistsTitle: a.specialistsTitle, specialistsTitleBn: ab.specialistsTitle,
+   290→    specialistsDescription: a.specialistsDescription, specialistsDescriptionBn: ab.specialistsDescription,
+   291→    ctaTitle: a.ctaTitle, ctaTitleBn: ab.ctaTitle,
+   292→    ctaDescription: a.ctaDescription, ctaDescriptionBn: ab.ctaDescription,
+   293→  };
+   294→}
+   295→
+   296→/* Defensive healer for About blobs saved before a field existed.
+   297→   deepMerge replaces ARRAYS wholesale, so an old blob's timeline items
+   298→   keep lacking year/icon even after merging — refill per-index from
+   299→   the defaults so the public bundle is always complete. */
+   300→export function normalizeAboutContent(about: AboutContent): AboutContent {
+   301→  const defaults = defaultAboutContent();
+   302→  const obj = (v: unknown): Record<string, unknown> =>
+   303→    v !== null && typeof v === "object" ? (v as Record<string, unknown>) : {};
+   304→  const timeline = (Array.isArray(about.timeline) ? about.timeline : defaults.timeline).map(
+   305→    (t, i) => {
+   306→      const raw = obj(t);
+   307→      return {
+   308→        year: str(raw.year) || defaults.timeline[i]?.year || "2024",
+   309→        icon: str(raw.icon) || defaults.timeline[i]?.icon || "Sparkles",
+   310→        title: str(raw.title),
+   311→        titleBn: ostr(raw.titleBn),
+   312→        description: str(raw.description),
+   313→        descriptionBn: ostr(raw.descriptionBn),
+   314→      };
+   315→    }
+   316→  );
+   317→  const storyStats = Array.isArray(about.storyStats)
+   318→    ? about.storyStats.map((s) => {
+   319→        const raw = obj(s);
+   320→        return {
+   321→          value: str(raw.value),
+   322→          label: str(raw.label),
+   323→          labelBn: ostr(raw.labelBn),
+   324→        };
+   325→      })
+   326→    : defaults.storyStats;
+   327→  return {
+   328→    ...about,
+   329→    timeline,
+   330→    storyStats,
+   331→    founderName: str(about.founderName).trim() || defaults.founderName,
+   332→  };
+   333→}
+   334→
+   335→export function defaultSettings(): SiteSettings {
+   336→  return {
+   337→    name: site.name,
+   338→    shortName: site.shortName,
+   339→    tagline: site.tagline,
+   340→    taglineBn: site.taglineBn,
+   341→    phone: site.phone,
+   342→    phoneRaw: site.phoneRaw,
+   343→    emergencyPhone: site.emergencyPhone,
+   344→    email: site.email,
+   345→    address: site.address,
+   346→    addressShort: site.addressShort,
+   347→    hours: site.hours,
+   348→    hoursBn: bn.footer.hours,
+   349→    hoursFriday: site.hoursFriday,
+   350→    hoursFridayBn: undefined,
+   351→    established: site.established,
+   352→    patientsServed: site.patientsServed,
+   353→    facebook: site.social.facebook,
+   354→    instagram: site.social.instagram,
+   355→    linkedin: site.social.linkedin,
+   356→    heroVideoUrls: [...heroVideoUrls],
+   357→  };
+   358→}
+   359→
+   360→/* ------------------------------------------------------------------ */
+   361→/*  The full bundle served to the public site                          */
+   362→/* ------------------------------------------------------------------ */
+   363→
+   364→export type ContentBundle = {
+   365→  doctors: Doctor[];
+   366→  posts: BlogPost[];
+   367→  faqs: FAQ[];
+   368→  cases: SmileCase[];
+   369→  services: Service[];
+   370→  heroSlides: HeroSlide[];
+   371→  home: HomeContent;
+   372→  about: AboutContent;
+   373→  settings: SiteSettings;
+   374→};
+   375→
+   376→export function staticBundle(): ContentBundle {
+   377→  const settings = defaultSettings();
+   378→  const videos = settings.heroVideoUrls
+   379→    .map(parseYouTubeId)
+   380→    .filter((id): id is string => Boolean(id))
+   381→    .map((id) => ({ type: "youtube", id }) as HeroSlide);
+   382→  return {
+   383→    doctors: staticDoctors,
+   384→    posts: staticPosts,
+   385→    faqs: staticFaqs,
+   386→    cases: staticCases,
+   387→    services: staticServices,
+   388→    heroSlides: buildHeroSlides(homeHeroImages, videos),
+   389→    home: defaultHomeContent(),
+   390→    about: defaultAboutContent(),
+   391→    settings,
+   392→  };
+   393→}
+   394→
+   395→
+   396→/* ------------------------------------------------------------------ */
+   397→/*  Deep merge — DB sparse overrides over defaults                     */
+   398→/* ------------------------------------------------------------------ */
+   399→
+   400→export function deepMerge<T>(base: T, override: unknown): T {
+   401→  if (override === null || override === undefined) return base;
+   402→  if (Array.isArray(base) || Array.isArray(override)) {
+   403→    /* Arrays are replaced wholesale (never merged item-by-item). */
+   404→    return (Array.isArray(override) ? override : base) as T;
+   405→  }
+   406→  if (typeof base === "object" && typeof override === "object" && base !== null) {
+   407→    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+   408→    for (const [k, v] of Object.entries(override as Record<string, unknown>)) {
+   409→      const b = (base as Record<string, unknown>)[k];
+   410→      out[k] = b !== undefined && b !== null && typeof b === "object" && !Array.isArray(b) && v !== null && typeof v === "object" && !Array.isArray(v)
+   411→        ? deepMerge(b, v)
+   412→        : v;
+   413→    }
+   414→    return out as T;
+   415→  }
+   416→  return (override as T) ?? base;
+   417→}
+   418→
+   419→export function featuredServices(list: Service[], count = 4): Service[] {
+   420→  const f = list.filter((s) => s.featured);
+   421→  return (f.length >= count ? f : [...f, ...list.filter((s) => !s.featured)]).slice(0, count);
+   422→}
+   423→
+   424→/* ------------------------------------------------------------------ */
+   425→/*  Safe JSON helpers                                                  */
+   426→/* ------------------------------------------------------------------ */
+   427→
+   428→function parseJson<T>(raw: string | null | undefined, fallback: T): T {
+   429→  if (!raw) return fallback;
+   430→  try {
+   431→    const v = JSON.parse(raw);
+   432→    return (v === null || v === undefined) ? fallback : (v as T);
+   433→  } catch {
+   434→    return fallback;
+   435→  }
+   436→}
+   437→
+   438→function str(v: unknown, fallback = ""): string {
+   439→  return typeof v === "string" ? v : fallback;
+   440→}
+   441→
+   442→function ostr(v: unknown): string | undefined {
+   443→  const s = str(v).trim();
+   444→  return s.length ? s : undefined;
+   445→}
+   446→
+   447→function num(v: unknown, fallback: number): number {
+   448→  const n = Number(v);
+   449→  return Number.isFinite(n) ? n : fallback;
+   450→}
+   451→
+   452→function bool(v: unknown): boolean | undefined {
+   453→  return typeof v === "boolean" ? v : undefined;
+   454→}
+   455→
+   456→/* ------------------------------------------------------------------ */
+   457→/*  Row → domain mappers (shapes returned by admin GET endpoints)      */
+   458→/* ------------------------------------------------------------------ */
+   459→
+   460→export type DoctorRow = {
+   461→  id: string; slug: string; legacyId: number; sort: number; name: string;
+   462→  credentials: string[]; role: string; roleBn?: string; department: string; departmentBn?: string;
+   463→  bio: string; experienceYears: number; patientsTreated: number; rating: number;
+   464→  specializations: string[]; languages: string[]; consultationDays: string[];
+   465→  accent: string; photo?: string; active: boolean;
+   466→};
+   467→
+   468→type RawDoctor = Record<string, unknown> & { credentialsJson?: string; specializationsJson?: string; languagesJson?: string; consultationDaysJson?: string };
+   469→
+   470→export function mapDoctor(row: RawDoctor): DoctorRow {
+   471→  return {
+   472→    id: str(row.id),
+   473→    slug: str(row.slug),
+   474→    legacyId: num(row.legacyId, 0),
+   475→    sort: num(row.sort, 0),
+   476→    name: str(row.name),
+   477→    credentials: parseJson<string[]>(row.credentialsJson, []),
+   478→    role: str(row.role),
+   479→    roleBn: ostr(row.roleBn),
+   480→    department: str(row.department),
+   481→    departmentBn: ostr(row.departmentBn),
+   482→    bio: str(row.bio),
+   483→    experienceYears: num(row.experienceYears, 1),
+   484→    patientsTreated: num(row.patientsTreated, 0),
+   485→    rating: num(row.rating, 4.8),
+   486→    specializations: parseJson<string[]>(row.specializationsJson, []),
+   487→    languages: parseJson<string[]>(row.languagesJson, ["Bangla", "English"]),
+   488→    consultationDays: parseJson<string[]>(row.consultationDaysJson, []),
+   489→    accent: str(row.accent, "#012c5f"),
+   490→    photo: ostr(row.photo),
+   491→    active: row.active === undefined ? true : Boolean(row.active),
+   492→  };
+   493→}
+   494→
+   495→/** DB DoctorRow → public Doctor type (as consumed by the site). */
+   496→export function doctorRowToDoctor(row: DoctorRow): Doctor {
+   497→  const numericId = row.legacyId || Math.abs(
+   498→    Array.from(row.id).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7)
+   499→  ) % 100000;
+   500→  return {
+   501→    slug: row.slug,
+   502→    id: numericId,
+   503→    name: row.name,
+   504→    credentials: row.credentials,
+   505→    role: row.role,
+   506→    roleBn: row.roleBn,
+   507→    department: row.department,
+   508→    departmentBn: row.departmentBn,
+   509→    bio: row.bio,
+   510→    experienceYears: row.experienceYears,
+   511→    patientsTreated: row.patientsTreated,
+   512→    rating: row.rating,
+   513→    specializations: row.specializations,
+   514→    languages: row.languages,
+   515→    consultationDays: row.consultationDays,
+   516→    verified: true,
+   517→    accent: row.accent,
+   518→  };
+   519→}
+   520→
+   521→export type BlogRow = {
+   522→  id: string; slug: string; title: string; titleBn?: string; excerpt: string; excerptBn?: string;
+   523→  category: string; readTime: string; date: string; updated?: string; author: string;
+   524→  authorCredentials: string; featured: boolean; tags: string[]; serviceRefs?: string[];
+   525→  image?: string; imageAlt?: string; quickAnswer: string; quickAnswerBn?: string;
+   526→  sections: BlogPost["sections"]; sectionsBn?: BlogPost["sections"];
+   527→  status: "PUBLISHED" | "DRAFT";
+   528→};
+   529→
+   530→type RawPost = Record<string, unknown> & { tagsJson?: string; serviceRefsJson?: string; sectionsJson?: string; sectionsBnJson?: string };
+   531→
+   532→const emptySections: BlogPost["sections"] = [];
+   533→
+   534→export function mapBlogPost(row: RawPost): BlogRow {
+   535→  return {
+   536→    id: str(row.id),
+   537→    slug: str(row.slug),
+   538→    title: str(row.title),
+   539→    titleBn: ostr(row.titleBn),
+   540→    excerpt: str(row.excerpt),
+   541→    excerptBn: ostr(row.excerptBn),
+   542→    category: str(row.category, "General"),
+   543→    readTime: str(row.readTime, "5 min read"),
+   544→    date: str(row.date),
+   545→    updated: ostr(row.updated),
+   546→    author: str(row.author, "Dr. Shazia Khanam"),
+   547→    authorCredentials: str(row.authorCredentials, "BDS, MDS"),
+   548→    featured: Boolean(row.featured),
+   549→    tags: parseJson<string[]>(row.tagsJson, []),
+   550→    serviceRefs: parseJson<string[] | null>(row.serviceRefsJson, null) ?? undefined,
+   551→    image: ostr(row.image),
+   552→    imageAlt: ostr(row.imageAlt),
+   553→    quickAnswer: str(row.quickAnswer),
+   554→    quickAnswerBn: ostr(row.quickAnswerBn),
+   555→    sections: parseJson<BlogPost["sections"]>(row.sectionsJson, emptySections),
+   556→    sectionsBn: parseJson<BlogPost["sections"] | null>(row.sectionsBnJson, null) ?? undefined,
+   557→    status: row.status === "DRAFT" ? "DRAFT" : "PUBLISHED",
+   558→  };
+   559→}
+   560→
+   561→export function blogRowToPost(row: BlogRow): BlogPost {
+   562→  const { id: _id, status: _status, ...rest } = row;
+   563→  return { ...rest, updated: rest.updated ?? rest.date };
+   564→}
+   565→
+   566→export type FaqRow = {
+   567→  id: string; sort: number; question: string; questionBn?: string;
+   568→  answer: string; answerBn?: string; active: boolean;
+   569→};
+   570→
+   571→export function mapFaq(row: Record<string, unknown>): FaqRow {
+   572→  return {
+   573→    id: str(row.id),
+   574→    sort: num(row.sort, 0),
+   575→    question: str(row.question),
+   576→    questionBn: ostr(row.questionBn),
+   577→    answer: str(row.answer),
+   578→    answerBn: ostr(row.answerBn),
+   579→    active: row.active === undefined ? true : Boolean(row.active),
+   580→  };
+   581→}
+   582→
+   583→export type CaseRow = {
+   584→  id: string; slug: string; sort: number; treatment: string; category: SmileCase["category"];
+   585→  serviceSlug?: string; beforeSrc: string; afterSrc: string; beforeAlt?: string; afterAlt?: string;
+   586→  title: string; patient: string; age: number; duration: string; procedures: string[];
+   587→  result: string; featured: boolean;
+   588→};
+   589→
+   590→export function mapCase(row: Record<string, unknown>): CaseRow {
+   591→  const cat = str(row.category, "Cosmetic");
+   592→  const validCats = ["Cosmetic", "Orthodontics", "Restorative", "Preventive"] as const;
+   593→  return {
+   594→    id: str(row.id),
+   595→    slug: str(row.slug),
+   596→    sort: num(row.sort, 0),
+   597→    treatment: str(row.treatment),
+   598→    category: (validCats as readonly string[]).includes(cat) ? (cat as SmileCase["category"]) : "Cosmetic",
+   599→    serviceSlug: ostr(row.serviceSlug),
+   600→    beforeSrc: str(row.beforeSrc),
+   601→    afterSrc: str(row.afterSrc),
+   602→    beforeAlt: ostr(row.beforeAlt),
+   603→    afterAlt: ostr(row.afterAlt),
+   604→    title: str(row.title),
+   605→    patient: str(row.patient),
+   606→    age: num(row.age, 30),
+   607→    duration: str(row.duration),
+   608→    procedures: parseJson<string[]>(row.proceduresJson as string, []),
+   609→    result: str(row.result),
+   610→    featured: Boolean(row.featured),
+   611→  };
+   612→}
+   613→
+   614→export function caseRowToSmileCase(row: CaseRow): SmileCase {
+   615→  return {
+   616→    id: row.slug,
+   617→    treatment: row.treatment,
+   618→    category: row.category,
+   619→    serviceSlug: row.serviceSlug ?? "",
+   620→    beforeSrc: row.beforeSrc,
+   621→    afterSrc: row.afterSrc,
+   622→    beforeAlt: row.beforeAlt ?? row.title,
+   623→    afterAlt: row.afterAlt ?? row.title,
+   624→    title: row.title,
+   625→    patient: row.patient,
+   626→    age: row.age,
+   627→    duration: row.duration,
+   628→    procedures: row.procedures,
+   629→    result: row.result,
+   630→    featured: row.featured,
+   631→  };
+   632→}
+   633→
+   634→/* Service overlay: DB overlay (sparse) applied over the static base. */
+   635→type RawServiceContent = Record<string, unknown> & {
+   636→  overviewJson?: string; benefitsJson?: string; processJson?: string; idealJson?: string; faqsJson?: string;
+   637→};
+   638→
+   639→export function applyServiceOverlay(base: Service, o: RawServiceContent): Service {
+   640→  const benefits = parseJson<Service["benefits"] | null>(o.benefitsJson, null);
+   641→  const process = parseJson<Service["process"] | null>(o.processJson, null);
+   642→  const faqs = parseJson<Service["faqs"] | null>(o.faqsJson, null);
+   643→  return {
+   644→    ...base,
+   645→    name: str(o.name, base.name),
+   646→    nameBn: ostr(o.nameBn) ?? base.nameBn,
+   647→    shortName: str(o.shortName, base.shortName),
+   648→    shortNameBn: ostr(o.shortNameBn) ?? base.shortNameBn,
+   649→    icon: str(o.icon, base.icon) || base.icon,
+   650→    image: ostr(o.image) ?? base.image,
+   651→    tagline: str(o.tagline, base.tagline),
+   652→    taglineBn: ostr(o.taglineBn) ?? base.taglineBn,
+   653→    excerpt: str(o.excerpt, base.excerpt),
+   654→    excerptBn: ostr(o.excerptBn) ?? base.excerptBn,
+   655→    overview: parseJson<string[] | null>(o.overviewJson, null) ?? base.overview,
+   656→    benefits: Array.isArray(benefits) && benefits.length ? benefits : base.benefits,
+   657→    process: Array.isArray(process) && process.length ? process : base.process,
+   658→    ideal: parseJson<string[] | null>(o.idealJson, null) ?? base.ideal,
+   659→    faqs: Array.isArray(faqs) && faqs.length ? faqs : base.faqs,
+   660→    duration: str(o.duration, base.duration),
+   661→    longevity: str(o.longevity, base.longevity),
+   662→    anesthesia: str(o.anesthesia, base.anesthesia),
+   663→    featured: bool(o.featured) ?? base.featured,
+   664→  };
+   665→}
+   666→
+   667→export type HeroSlideRow = {
+   668→  id: string; scope: string; sort: number; kind: "image" | "youtube";
+   669→  src: string; alt?: string; active: boolean;
+   670→};
+   671→
+   672→export function mapHeroSlide(row: Record<string, unknown>): HeroSlideRow {
+   673→  const src = str(row.src);
+   674→  let kind: "image" | "youtube" = str(row.kind, "image") === "youtube" ? "youtube" : "image";
+   675→  if (kind === "image" && parseYouTubeId(src)) kind = "youtube";
+   676→  return {
+   677→    id: str(row.id),
+   678→    scope: str(row.scope, "home"),
+   679→    sort: num(row.sort, 0),
+   680→    kind,
+   681→    src,
+   682→    alt: ostr(row.alt),
+   683→    active: row.active === undefined ? true : Boolean(row.active),
+   684→  };
+   685→}
+   686→
+   687→export function heroSlideRowToSlide(row: HeroSlideRow): HeroSlide {
+   688→  if (row.kind === "youtube") {
+   689→    const id = parseYouTubeId(row.src);
+   690→    if (id) return { type: "youtube", id };
+   691→    return { type: "image", src: row.src, alt: row.alt ?? "" };
+   692→  }
+   693→  return { type: "image", src: row.src, alt: row.alt ?? "" };
+   694→}
+   695→
+   696→export function buildHomeHeroSlides(rows: HeroSlideRow[], videoUrls: string[]): HeroSlide[] {
+   697→  const images = rows
+   698→    .filter((r) => r.active && r.kind === "image")
+   699→    .sort((a, b) => a.sort - b.sort)
+   700→    .map(heroSlideRowToSlide);
+   701→  const dbVideos = rows
+   702→    .filter((r) => r.active && r.kind === "youtube")
+   703→    .sort((a, b) => a.sort - b.sort)
+   704→    .map(heroSlideRowToSlide)
+   705→    .filter((s) => s.type === "youtube");
+   706→  const settingsVideos = videoUrls
+   707→    .map(parseYouTubeId)
+   708→    .filter((id): id is string => Boolean(id))
+   709→    .map((id) => ({ type: "youtube", id }) as HeroSlide);
+   710→  const slides = buildHeroSlides(images, [...dbVideos, ...settingsVideos]);
+   711→  return slides.length ? slides : buildHeroSlides(homeHeroImages, settingsVideos);
+   712→}
+   713→
+   714→/* ------------------------------------------------------------------ */
+   715→/*  Testimonials remain static (patient-submitted reviews live in the  */
+   716→/*  Review table and are moderated from the admin panel).              */
+   717→/* ------------------------------------------------------------------ */
+   718→export { staticTestimonials as testimonials };
+   719→
+   720→/* ------------------------------------------------------------------ */
+   721→/*  Bilingual field resolution: prefer the Bangla twin when the site  */
+   722→/*  is in Bangla mode AND a non-empty twin exists.                     */
+   723→/* ------------------------------------------------------------------ */
+   724→export function pickBn<T>(en: T, bn: T | undefined | null, isBn: boolean): T {
+   725→  return isBn && bn !== undefined && bn !== null ? bn : en;
+   726→}
+   727→

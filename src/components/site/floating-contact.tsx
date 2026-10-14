@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, CalendarCheck, MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
+import { track } from "@/lib/tracker";
 import { useBundle } from "@/components/site/content-provider";
 
 /* ------------------------------------------------------------------ */
@@ -67,6 +68,7 @@ export function FloatingContact() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp (opens in new tab)"
+          onClick={() => track("cta_whatsapp", "floating")}
           className="group relative inline-flex h-13 w-13 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-600/40 ring-4 ring-white/60 backdrop-blur transition-all duration-300 hover:scale-110 hover:shadow-2xl"
         >
           <span
@@ -82,6 +84,7 @@ export function FloatingContact() {
         <a
           href={`tel:${settings.phoneRaw}`}
           aria-label={`Call ${settings.phone}`}
+          onClick={() => track("cta_call", "floating")}
           className="group relative inline-flex h-13 w-13 items-center justify-center rounded-full bg-brand-blue text-white shadow-xl shadow-blue-600/40 ring-4 ring-white/60 backdrop-blur transition-all duration-300 hover:scale-110 hover:shadow-2xl"
         >
           <Phone className="h-5.5 w-5.5" aria-hidden="true" />
@@ -92,7 +95,10 @@ export function FloatingContact() {
 
         <button
           type="button"
-          onClick={() => navigate("/appointment")}
+          onClick={() => {
+            track("booking_click", "floating");
+            navigate("/appointment");
+          }}
           aria-label="Book appointment online"
           className="group relative inline-flex h-13 w-13 items-center justify-center rounded-full bg-brand-navy text-white shadow-xl shadow-navy-900/50 ring-4 ring-white/60 backdrop-blur transition-all duration-300 hover:scale-110 hover:shadow-2xl"
         >

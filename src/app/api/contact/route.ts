@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { notifyMessageSent } from "@/lib/integrations";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/contact — save a contact message                         */
@@ -68,6 +69,15 @@ export async function POST(req: NextRequest) {
         subject: typeof subject === "string" ? subject.trim() || null : null,
         message: (message as string).trim(),
       },
+    });
+
+    /* Server-side analytics + optional Telegram alert (fail-silent). */
+    await notifyMessageSent(req, {
+      name: (name as string).trim(),
+      email: (email as string).trim(),
+      phone: typeof phone === "string" ? phone.trim() || null : null,
+      subject: typeof subject === "string" ? subject.trim() || null : null,
+      message: (message as string).trim(),
     });
 
     return NextResponse.json(

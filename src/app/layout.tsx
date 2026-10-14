@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Bengali, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { AnalyticsScripts } from "@/components/site/analytics-scripts";
+import { services as staticServices } from "@/lib/data/services";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -162,6 +164,27 @@ const organizationJsonLd = {
   ],
   medicalSpecialty: ["Dentistry", "Orthodontic", "Endodontic"],
   slogan: "Excellence in Every Smile!",
+  /* AEO enrichment: price band, service area, full treatment list and
+     topical expertise — the fields answer engines look for when ranking
+     local providers for dentist-related queries. */
+  priceRange: "৳৳",
+  areaServed: [
+    { "@type": "AdministrativeArea", name: "Uttara, Dhaka" },
+    { "@type": "City", name: "Dhaka" },
+  ],
+  availableService: staticServices.map((s) => ({
+    "@type": "MedicalProcedure",
+    name: s.name,
+    url: `https://aristocratdentalcarebd.com/services/${s.slug}`,
+  })),
+  knowsAbout: [
+    ...staticServices.map((s) => s.name),
+    "Laser Dentistry",
+    "Teeth Whitening",
+    "Dental Anxiety Management",
+    "Dental Emergencies",
+    "Children's Dentistry",
+  ],
   founder: {
     "@type": "Person",
     name: "Dr. Shazia Khanam",
@@ -190,7 +213,7 @@ const websiteJsonLd = {
     target: {
       "@type": "EntryPoint",
       urlTemplate:
-        "https://aristocratdentalcarebd.com/#/blog?q={search_term_string}",
+        "https://aristocratdentalcarebd.com/blog?q={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },
@@ -215,6 +238,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${poppins.variable} ${notoBengali.variable} font-sans min-h-screen flex flex-col`}
       >
+        {/* Admin-configured marketing pixels (GA4 / GTM / Meta / TikTok) —
+            rendered only for IDs saved in the Integrations panel.        */}
+        <AnalyticsScripts />
         {children}
         <Toaster />
       </body>

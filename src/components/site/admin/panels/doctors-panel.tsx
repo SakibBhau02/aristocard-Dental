@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { DoctorRow } from "@/lib/content/shared";
 import { useContent } from "@/components/site/content-provider";
+import { DynamicIcon } from "@/components/site/icon-map";
 import {
   BilingualField,
   ConfirmDeleteDialog,
@@ -255,6 +256,249 @@ function StatusPill({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Round 17-a — dossier editors                                       */
+/* ------------------------------------------------------------------ */
+
+type EducationDraft = { degree: string; institution: string; year: string };
+type AwardDraft = { title: string; year: string };
+
+const rowInputCls =
+  "h-9 rounded-xl border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25";
+
+/* Education & training rows — degree / institution / year + remove. */
+function EducationEditor({
+  value,
+  onChange,
+}: {
+  value: EducationDraft[];
+  onChange: (next: EducationDraft[]) => void;
+}) {
+  function update(i: number, patch: Partial<EducationDraft>) {
+    onChange(value.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+  }
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Education &amp; training
+      </p>
+      <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
+        Rendered as a timeline on the profile — degree is required; institution and year are optional.
+      </p>
+      {value.length ? (
+        <div className="mt-2 space-y-2">
+          {value.map((row, i) => (
+            <div
+              key={i}
+              className="grid gap-2 rounded-xl border border-blue-100 bg-ice/60 p-3 sm:grid-cols-[1.1fr_1.4fr_0.55fr_auto] sm:items-center"
+            >
+              <label className="min-w-0 block">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Degree
+                </span>
+                <Input
+                  value={row.degree}
+                  onChange={(e) => update(i, { degree: e.target.value })}
+                  placeholder="BDS"
+                  maxLength={120}
+                  aria-label={`Education row ${i + 1} degree`}
+                  className={cn(rowInputCls, "mt-1")}
+                />
+              </label>
+              <label className="min-w-0 block">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Institution
+                </span>
+                <Input
+                  value={row.institution}
+                  onChange={(e) => update(i, { institution: e.target.value })}
+                  placeholder="University of Dhaka"
+                  maxLength={160}
+                  aria-label={`Education row ${i + 1} institution`}
+                  className={cn(rowInputCls, "mt-1")}
+                />
+              </label>
+              <label className="min-w-0 block">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Year
+                </span>
+                <Input
+                  value={row.year}
+                  onChange={(e) => update(i, { year: e.target.value })}
+                  placeholder="2016"
+                  maxLength={16}
+                  aria-label={`Education row ${i + 1} year`}
+                  className={cn(rowInputCls, "mt-1")}
+                />
+              </label>
+              <div className="flex justify-end sm:pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onChange(value.filter((_, j) => j !== i))}
+                  aria-label={`Remove education row ${i + 1}`}
+                  className="h-9 w-9 rounded-full border-rose-200 p-0 text-rose-600 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => onChange([...value, { degree: "", institution: "", year: "" }])}
+        className="mt-2 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Add education
+      </Button>
+    </div>
+  );
+}
+
+/* Awards & recognition rows — title / year + remove. */
+function AwardsEditor({
+  value,
+  onChange,
+}: {
+  value: AwardDraft[];
+  onChange: (next: AwardDraft[]) => void;
+}) {
+  function update(i: number, patch: Partial<AwardDraft>) {
+    onChange(value.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+  }
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Awards &amp; recognition
+      </p>
+      <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
+        Only add real awards — the section stays hidden while empty.
+      </p>
+      {value.length ? (
+        <div className="mt-2 space-y-2">
+          {value.map((row, i) => (
+            <div
+              key={i}
+              className="grid gap-2 rounded-xl border border-blue-100 bg-ice/60 p-3 sm:grid-cols-[1fr_0.55fr_auto] sm:items-center"
+            >
+              <label className="min-w-0 block">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Title
+                </span>
+                <Input
+                  value={row.title}
+                  onChange={(e) => update(i, { title: e.target.value })}
+                  placeholder="Best Dental Surgeon Award"
+                  maxLength={160}
+                  aria-label={`Award row ${i + 1} title`}
+                  className={cn(rowInputCls, "mt-1")}
+                />
+              </label>
+              <label className="min-w-0 block">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Year
+                </span>
+                <Input
+                  value={row.year}
+                  onChange={(e) => update(i, { year: e.target.value })}
+                  placeholder="2024"
+                  maxLength={16}
+                  aria-label={`Award row ${i + 1} year`}
+                  className={cn(rowInputCls, "mt-1")}
+                />
+              </label>
+              <div className="flex justify-end sm:pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onChange(value.filter((_, j) => j !== i))}
+                  aria-label={`Remove award row ${i + 1}`}
+                  className="h-9 w-9 rounded-full border-rose-200 p-0 text-rose-600 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => onChange([...value, { title: "", year: "" }])}
+        className="mt-2 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Add award
+      </Button>
+    </div>
+  );
+}
+
+/* Focus treatments — toggle chips of the 11 real services. */
+function FocusServicesPicker({
+  value,
+  onChange,
+  services,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  services: { slug: string; name: string; icon: string }[];
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Focus treatments
+      </p>
+      <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
+        Selected treatments appear on the profile as links to their service pages.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {services.map((svc) => {
+          const on = value.includes(svc.slug);
+          return (
+            <button
+              key={svc.slug}
+              type="button"
+              aria-pressed={on}
+              title={svc.name}
+              onClick={() =>
+                onChange(
+                  on ? value.filter((x) => x !== svc.slug) : [...value, svc.slug]
+                )
+              }
+              className={cn(
+                "inline-flex min-h-11 items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-xs font-bold ring-1 transition-all duration-200",
+                on
+                  ? "bg-brand-navy text-white ring-brand-navy shadow-md shadow-navy-900/20"
+                  : "bg-white text-slate-500 ring-blue-100 hover:bg-blue-50 hover:text-brand-navy"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full",
+                  on ? "bg-white/15 text-white" : "bg-blue-50 text-brand-blue"
+                )}
+              >
+                <DynamicIcon name={svc.icon} className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 text-left">{svc.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Draft shape                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -276,6 +520,13 @@ type DoctorDraft = {
   accent: string;
   photo: string;
   active: boolean;
+  /* Round 17-a dossier */
+  education: EducationDraft[];
+  memberships: string[];
+  awards: AwardDraft[];
+  quote: string;
+  quoteBn: string;
+  focusServices: string[];
 };
 
 function rowToDraft(row: DoctorRow | null): DoctorDraft {
@@ -298,6 +549,19 @@ function rowToDraft(row: DoctorRow | null): DoctorDraft {
         accent: row.accent,
         photo: row.photo ?? "",
         active: row.active,
+        education: (row.education ?? []).map((e) => ({
+          degree: e.degree,
+          institution: e.institution ?? "",
+          year: e.year ?? "",
+        })),
+        memberships: [...(row.memberships ?? [])],
+        awards: (row.awards ?? []).map((a) => ({
+          title: a.title,
+          year: a.year ?? "",
+        })),
+        quote: row.quote ?? "",
+        quoteBn: row.quoteBn ?? "",
+        focusServices: [...(row.focusServices ?? [])],
       }
     : {
         name: "",
@@ -317,6 +581,12 @@ function rowToDraft(row: DoctorRow | null): DoctorDraft {
         accent: "#012c5f",
         photo: "",
         active: true,
+        education: [],
+        memberships: [],
+        awards: [],
+        quote: "",
+        quoteBn: "",
+        focusServices: [],
       };
 }
 
@@ -339,7 +609,7 @@ function DoctorsEditor({
 }) {
   const { post } = useAdminFetch(onSessionExpired);
   const { ok: toastOk, fail: toastFail } = useAdminToast();
-  const { refresh } = useContent();
+  const { refresh, bundle } = useContent();
   const [draft, setDraft] = useState<DoctorDraft>(() => rowToDraft(row));
   const [slugEdited, setSlugEdited] = useState(row !== null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -433,6 +703,24 @@ function DoctorsEditor({
         consultationDays: d.consultationDays,
         accent: d.accent,
         photo: d.photo.trim() || undefined,
+        /* Round 17-a dossier (empty rows are dropped server-side) */
+        education: d.education
+          .filter((e) => e.degree.trim())
+          .map((e) => ({
+            degree: e.degree.trim(),
+            institution: e.institution.trim() || undefined,
+            year: e.year.trim() || undefined,
+          })),
+        memberships: d.memberships,
+        awards: d.awards
+          .filter((a) => a.title.trim())
+          .map((a) => ({
+            title: a.title.trim(),
+            year: a.year.trim() || undefined,
+          })),
+        quote: d.quote.trim() || undefined,
+        quoteBn: d.quoteBn.trim() || undefined,
+        focusServices: d.focusServices,
         active: d.active,
       }
     );
@@ -647,6 +935,43 @@ function DoctorsEditor({
           value={draft.languages}
           onChange={(languages) => update({ languages })}
           placeholder="Bangla"
+        />
+      </EditorCard>
+
+      {/* Profile dossier (round 17-a) */}
+      <EditorCard
+        title="Profile dossier"
+        description="Enriches the expanded profile on the public Doctors page — everything below is optional."
+      >
+        <EducationEditor
+          value={draft.education}
+          onChange={(education) => update({ education })}
+        />
+        <ChipsEditor
+          label="Memberships"
+          hint="Professional bodies — press Enter to add (e.g. Bangladesh Dental Association)."
+          value={draft.memberships}
+          onChange={(memberships) => update({ memberships })}
+          placeholder="Bangladesh Dental Association"
+        />
+        <AwardsEditor
+          value={draft.awards}
+          onChange={(awards) => update({ awards })}
+        />
+        <BilingualField
+          label="Philosophy quote"
+          enValue={draft.quote}
+          bnValue={draft.quoteBn}
+          onEnChange={(v) => update({ quote: v })}
+          onBnChange={(v) => update({ quoteBn: v })}
+          textarea
+          rows={3}
+          placeholder="A one-line care philosophy shown as a pull-quote…"
+        />
+        <FocusServicesPicker
+          value={draft.focusServices}
+          onChange={(focusServices) => update({ focusServices })}
+          services={bundle.services}
         />
       </EditorCard>
 

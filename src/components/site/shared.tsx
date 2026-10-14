@@ -1,15 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Sparkles, Wallet } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal } from "@/components/site/motion";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
-import { slidesForRoute } from "@/lib/data/hero-media";
+import { useRouteHeroSlides } from "@/components/site/content-provider";
 import type { Service, Doctor } from "@/lib/types";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
@@ -30,8 +30,9 @@ export function PageHeader({
   breadcrumb: { label: string; to?: string }[];
 }) {
   const { navigate, segments } = useRouter();
-  /* themed backdrop per route (sliding images + overlay) */
-  const slides = slidesForRoute(segments[0] ?? "");
+  /* themed backdrop per route — DB-managed when the admin has uploaded
+     custom slides for this page, otherwise the curated static set */
+  const slides = useRouteHeroSlides(segments[0] ?? "");
   return (
     <section className="relative isolate overflow-hidden bg-brand-navy">
       <HeroBackdrop slides={slides} overlay="deep" interval={8000} />
@@ -50,7 +51,7 @@ export function PageHeader({
                   )}
                   {item.to ? (
                     <a
-                      href={`#${item.to}`}
+                      href={item.to}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate(item.to!);
@@ -163,7 +164,7 @@ export function ServiceCard({ service, index = 0 }: { service: Service; index?: 
             {lang === "bn" ? toBnDigits(service.duration) : service.duration}
           </span>
           <a
-            href={`#/services/${service.slug}`}
+            href={`/services/${service.slug}`}
             onClick={(e) => {
               e.preventDefault();
               navigate(`/services/${service.slug}`);
@@ -211,6 +212,13 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
       />
       <div className="relative">
         <Avatar className="h-24 w-24 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
+          {doctor.photo ? (
+            <AvatarImage
+              src={doctor.photo}
+              alt={`${doctor.name} — ${role}`}
+              className="aspect-square size-full object-cover"
+            />
+          ) : undefined}
           <AvatarFallback
             className="font-heading text-2xl font-bold"
             style={{ background: `${doctor.accent}18`, color: doctor.accent }}
@@ -299,7 +307,7 @@ export function QuizTeaser({ className = "" }: { className?: string }) {
         </div>
       </div>
       <a
-        href="#/assessment"
+        href="/assessment"
         onClick={(e) => {
           e.preventDefault();
           navigate("/assessment");
@@ -310,6 +318,49 @@ export function QuizTeaser({ className = "" }: { className?: string }) {
         <ArrowRight
           className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
           aria-hidden="true"
+        />
+      </a>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cost teaser band — routes price-curious visitors to the           */
+/*  treatment cost estimator (/estimator)                              */
+/* ------------------------------------------------------------------ */
+
+export function CostTeaser({ className = "" }: { className?: string }) {
+  const { navigate } = useRouter();
+  const { d } = useLang();
+  const t = d.shared;
+  return (
+    <div
+      className={`card-lift flex flex-col items-center gap-5 rounded-[2rem] border border-teal-100/80 bg-teal-50/50 px-6 py-6 text-center sm:flex-row sm:justify-between sm:px-8 sm:text-left ${className}`}
+    >
+      <div className="flex flex-col items-center gap-4 sm:flex-row">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-teal-600 shadow-sm ring-1 ring-teal-100">
+          <Wallet className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="font-heading text-base font-bold text-brand-navy">
+            {t.costTeaserTitle}
+          </p>
+          <p className="mt-0.5 max-w-md text-sm leading-relaxed text-slate-500">
+            {t.costTeaserText}
+          </p>
+        </div>
+      </div>
+      <a
+        href="/estimator"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate("/estimator");
+        }}
+        className="btn-shine group inline-flex shrink-0 items-center gap-2 rounded-full bg-teal-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-xl"
+      >
+        {t.costTeaserCta}
+        <ArrowRight
+          className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
         />
       </a>
     </div>

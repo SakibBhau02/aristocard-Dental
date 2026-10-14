@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { services } from "@/lib/data/services";
 import { doctors } from "@/lib/data/doctors";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { notifyAppointmentBooked } from "@/lib/integrations";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/appointments — create a new appointment booking          */
@@ -130,6 +131,19 @@ export async function POST(req: NextRequest) {
         serviceSlug: typeof serviceSlug === "string" ? serviceSlug || null : null,
         notes: typeof notes === "string" ? notes.trim() || null : null,
       },
+    });
+
+    /* Server-side analytics + Telegram alert to the clinic owner's phone
+       (both fail silently — a booking must never break on either).     */
+    await notifyAppointmentBooked(req, {
+      refCode: appointment.refCode,
+      name: appointment.name,
+      phone: appointment.phone,
+      date: appointment.date,
+      time: appointment.time,
+      serviceSlug: appointment.serviceSlug,
+      doctorSlug: appointment.doctorSlug,
+      notes: appointment.notes,
     });
 
     return NextResponse.json(

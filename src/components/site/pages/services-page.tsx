@@ -6,7 +6,7 @@ import { ArrowRight, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
-import { ServiceCard, PageHeader, CtaBanner, QuizTeaser } from "@/components/site/shared";
+import { ServiceCard, PageHeader, CtaBanner, QuizTeaser, CostTeaser } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function ServicesPage() {
           "@type": "MedicalTherapy",
           name: s.name,
           description: s.excerpt,
-          url: `https://aristocratdentalcarebd.com/#/services/${s.slug}`,
+          url: `https://aristocratdentalcarebd.com/services/${s.slug}`,
         },
       })),
     }),
@@ -237,10 +237,12 @@ export function ServicesPage() {
         </div>
       </section>
 
-      {/* Smile Check — guide unsure visitors before the CTA */}
+      {/* Smile Check + Cost Estimator — guide unsure & price-curious
+          visitors before the CTA (side-by-side from lg up) */}
       <Reveal className="pb-2">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-2">
           <QuizTeaser />
+          <CostTeaser />
         </div>
       </Reveal>
 

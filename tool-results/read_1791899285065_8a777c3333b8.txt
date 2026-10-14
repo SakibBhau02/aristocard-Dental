@@ -1,0 +1,562 @@
+  1100→                            }
+  1101→                          />
+  1102→                        </div>
+  1103→
+  1104→                        <Button
+  1105→                          type="submit"
+  1106→                          disabled={registering || !registerValid}
+  1107→                          className="mt-6 h-13 w-full rounded-2xl bg-brand-navy text-base font-bold text-white shadow-lg shadow-navy-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+  1108→                        >
+  1109→                          {registering ? (
+  1110→                            <>
+  1111→                              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+  1112→                              {t.registerSubmitting}
+  1113→                            </>
+  1114→                          ) : (
+  1115→                            <>
+  1116→                              <UserRoundPlus className="h-5 w-5" aria-hidden="true" />
+  1117→                              {t.registerSubmit}
+  1118→                            </>
+  1119→                          )}
+  1120→                        </Button>
+  1121→
+  1122→                        <div className="mt-4 flex items-start gap-2 rounded-2xl bg-ice/60 px-4 py-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-blue-100/50">
+  1123→                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1124→                          {t.registerLinkNote}
+  1125→                        </div>
+  1126→
+  1127→                        <p className="mt-4 text-center text-xs text-slate-500">
+  1128→                          {t.registerHaveAccount}{" "}
+  1129→                          <button
+  1130→                            type="button"
+  1131→                            onClick={() => switchMode("login")}
+  1132→                            className="font-semibold text-brand-blue underline-offset-4 transition-colors hover:text-brand-navy hover:underline"
+  1133→                          >
+  1134→                            {t.registerHaveAccountCta}
+  1135→                          </button>
+  1136→                        </p>
+  1137→                      </form>
+  1138→
+  1139→                      <AnimatePresence>
+  1140→                        {registerError && (
+  1141→                          <div className="mx-auto mt-5 max-w-md">
+  1142→                            <ErrorBanner message={registerError} />
+  1143→                          </div>
+  1144→                        )}
+  1145→                      </AnimatePresence>
+  1146→                    </motion.div>
+  1147→                  )}
+  1148→                </AnimatePresence>
+  1149→              </div>
+  1150→            </Reveal>
+  1151→          )}
+  1152→
+  1153→          {/* ---------- authed: dashboard ---------- */}
+  1154→          {session === "authed" && !dash && (
+  1155→            <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center" aria-live="polite">
+  1156→              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-lg shadow-blue-100 ring-1 ring-blue-100">
+  1157→                <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
+  1158→              </span>
+  1159→              <p className="text-sm font-semibold text-brand-navy/70">{t.loadingDashboard}</p>
+  1160→            </div>
+  1161→          )}
+  1162→
+  1163→          {session === "authed" && dash && (
+  1164→            <div className="space-y-8">
+  1165→              {/* ===== welcome banner ===== */}
+  1166→              <Reveal>
+  1167→                <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2rem] p-6 shadow-2xl shadow-navy-900/30 sm:p-8">
+  1168→                  <span
+  1169→                    className="animate-glow-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-blue/25 blur-3xl"
+  1170→                    aria-hidden="true"
+  1171→                  />
+  1172→                  <span
+  1173→                    className="animate-glow-drift pointer-events-none absolute -bottom-20 -left-14 h-48 w-48 rounded-full bg-teal-400/15 blur-3xl"
+  1174→                    style={{ animationDelay: "-7s" }}
+  1175→                    aria-hidden="true"
+  1176→                  />
+  1177→                  <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+  1178→                    <div className="flex items-center gap-4 sm:gap-5">
+  1179→                      {/* avatar initials */}
+  1180→                      <span
+  1181→                        className="font-heading inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/25 backdrop-blur-sm"
+  1182→                        aria-hidden="true"
+  1183→                      >
+  1184→                        {initialsOf(dash.patient.name)}
+  1185→                      </span>
+  1186→                      <div>
+  1187→                        <h2 className="font-heading text-xl font-bold leading-snug text-white sm:text-2xl">
+  1188→                          {t.welcome.replace("{name}", dash.patient.name)}
+  1189→                        </h2>
+  1190→                        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-blue-100/80">
+  1191→                          <span className="inline-flex items-center gap-1.5">
+  1192→                            <Phone className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+  1193→                            <span className="font-semibold tracking-wide">
+  1194→                              {bn ? toBnDigits(dash.patient.phone) : dash.patient.phone}
+  1195→                            </span>
+  1196→                          </span>
+  1197→                          <span className="hidden h-3 w-px bg-white/20 sm:block" aria-hidden="true" />
+  1198→                          <span className="inline-flex items-center gap-1.5">
+  1199→                            <CalendarCheck className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+  1200→                            {t.memberSince.replace(
+  1201→                              "{date}",
+  1202→                              formatShortDate(dash.patient.createdAt, lang)
+  1203→                            )}
+  1204→                          </span>
+  1205→                        </p>
+  1206→                      </div>
+  1207→                    </div>
+  1208→                    <Button
+  1209→                      type="button"
+  1210→                      onClick={doLogout}
+  1211→                      disabled={loggingOut}
+  1212→                      className="h-12 shrink-0 rounded-2xl bg-white/10 px-5 text-sm font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 hover:ring-white/40 disabled:opacity-60 sm:ml-auto"
+  1213→                    >
+  1214→                      {loggingOut ? (
+  1215→                        <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+  1216→                      ) : (
+  1217→                        <LogOut className="h-4.5 w-4.5" aria-hidden="true" />
+  1218→                      )}
+  1219→                      {t.logout}
+  1220→                    </Button>
+  1221→                  </div>
+  1222→                </div>
+  1223→              </Reveal>
+  1224→
+  1225→              {/* ===== stats ===== */}
+  1226→              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+  1227→                {[
+  1228→                  {
+  1229→                    label: t.statUpcoming,
+  1230→                    value: dash.stats.upcoming,
+  1231→                    icon: CalendarClock,
+  1232→                    tile: "bg-brand-blue/10 text-brand-blue ring-brand-blue/15",
+  1233→                  },
+  1234→                  {
+  1235→                    label: t.statCompleted,
+  1236→                    value: dash.stats.completed,
+  1237→                    icon: CheckCircle2,
+  1238→                    tile: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+  1239→                  },
+  1240→                  {
+  1241→                    label: t.statTotal,
+  1242→                    value: dash.stats.totalAppointments,
+  1243→                    icon: CalendarCheck,
+  1244→                    tile: "bg-amber-50 text-amber-600 ring-amber-100",
+  1245→                  },
+  1246→                  {
+  1247→                    label: t.statReviews,
+  1248→                    value: dash.stats.reviews,
+  1249→                    icon: Star,
+  1250→                    tile: "bg-teal-50 text-teal-600 ring-teal-100",
+  1251→                  },
+  1252→                ].map((card, i) => (
+  1253→                  <Reveal key={card.label} delay={i * 0.06}>
+  1254→                    <div className="card-lift group rounded-3xl border border-blue-100/80 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-100">
+  1255→                      <span
+  1256→                        className={cn(
+  1257→                          "inline-flex h-11 w-11 items-center justify-center rounded-2xl ring-1 transition-transform duration-300 group-hover:scale-110",
+  1258→                          card.tile
+  1259→                        )}
+  1260→                      >
+  1261→                        <card.icon className="h-5.5 w-5.5" aria-hidden="true" />
+  1262→                      </span>
+  1263→                      <p className="font-heading mt-4 text-3xl font-bold tabular-nums text-brand-navy">
+  1264→                        {bn ? toBnDigits(card.value) : String(card.value)}
+  1265→                      </p>
+  1266→                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+  1267→                        {card.label}
+  1268→                      </p>
+  1269→                    </div>
+  1270→                  </Reveal>
+  1271→                ))}
+  1272→              </div>
+  1273→
+  1274→              {/* ===== upcoming appointments ===== */}
+  1275→              <Reveal>
+  1276→                <section aria-labelledby="portal-upcoming">
+  1277→                  <div className="flex items-center gap-3">
+  1278→                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+  1279→                      <CalendarClock className="h-5 w-5" aria-hidden="true" />
+  1280→                    </span>
+  1281→                    <h2 id="portal-upcoming" className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+  1282→                      {t.upcomingTitle}
+  1283→                    </h2>
+  1284→                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-brand-blue ring-1 ring-blue-100">
+  1285→                      {bn ? toBnDigits(upcoming.length) : String(upcoming.length)}
+  1286→                    </span>
+  1287→                  </div>
+  1288→
+  1289→                  {upcoming.length === 0 ? (
+  1290→                    <div className="mt-5 flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-blue-200/80 bg-ice/40 px-6 py-10 text-center">
+  1291→                      <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
+  1292→                        <CalendarClock className="h-6 w-6" aria-hidden="true" />
+  1293→                      </span>
+  1294→                      <p className="max-w-sm text-sm leading-relaxed text-slate-500">{t.upcomingEmpty}</p>
+  1295→                      <Button
+  1296→                        type="button"
+  1297→                        onClick={() => navigate("/appointment")}
+  1298→                        className="btn-shine h-12 rounded-2xl bg-brand-blue px-6 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl"
+  1299→                      >
+  1300→                        <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+  1301→                        {t.upcomingEmptyCta}
+  1302→                      </Button>
+  1303→                    </div>
+  1304→                  ) : (
+  1305→                    <div className="mt-5 space-y-5">
+  1306→                      {upcoming.map((appt, i) => (
+  1307→                        <Reveal key={appt.refCode} delay={Math.min(i * 0.06, 0.3)}>
+  1308→                          <PortalAppointmentCard
+  1309→                            appt={appt}
+  1310→                            highlighted
+  1311→                            cancelLabel={t.cancelBooking}
+  1312→                            onCancel={() => setCancelTarget(appt)}
+  1313→                          />
+  1314→                        </Reveal>
+  1315→                      ))}
+  1316→                    </div>
+  1317→                  )}
+  1318→                </section>
+  1319→              </Reveal>
+  1320→
+  1321→              {/* ===== visit history timeline ===== */}
+  1322→              <Reveal>
+  1323→                <section aria-labelledby="portal-history">
+  1324→                  <div className="flex items-center gap-3">
+  1325→                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+  1326→                      <Clock className="h-5 w-5" aria-hidden="true" />
+  1327→                    </span>
+  1328→                    <h2 id="portal-history" className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+  1329→                      {t.historyTitle}
+  1330→                    </h2>
+  1331→                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-brand-blue ring-1 ring-blue-100">
+  1332→                      {bn ? toBnDigits(history.length) : String(history.length)}
+  1333→                    </span>
+  1334→                  </div>
+  1335→
+  1336→                  {history.length === 0 ? (
+  1337→                    <div className="mt-5 flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200/80 bg-ice/40 px-6 py-8 text-center">
+  1338→                      <Clock className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1339→                      <p className="text-sm leading-relaxed text-slate-500">{t.historyEmpty}</p>
+  1340→                    </div>
+  1341→                  ) : (
+  1342→                    <ol className="relative mt-6 space-y-6 border-l-2 border-dashed border-blue-200 pl-7 sm:pl-9">
+  1343→                      {history.map((appt, i) => {
+  1344→                        const style = statusStyles[appt.status] ?? statusStyles.PENDING;
+  1345→                        const svc = services.find((s) => s.slug === appt.serviceSlug);
+  1346→                        const doc = doctors.find((d2) => d2.slug === appt.doctorSlug);
+  1347→                        const isPast = new Date(`${appt.date}T23:59:59`) < new Date();
+  1348→                        return (
+  1349→                          <motion.li
+  1350→                            key={appt.refCode}
+  1351→                            initial={{ opacity: 0, x: -14 }}
+  1352→                            whileInView={{ opacity: 1, x: 0 }}
+  1353→                            viewport={{ once: true, margin: "-40px" }}
+  1354→                            transition={{ duration: 0.5, delay: Math.min(i * 0.05, 0.25), ease: [0.22, 1, 0.36, 1] }}
+  1355→                            className="relative"
+  1356→                          >
+  1357→                            {/* timeline dot */}
+  1358→                            <span
+  1359→                              className={cn(
+  1360→                                "absolute top-6 -left-[37px] h-3.5 w-3.5 rounded-full ring-4 ring-ice/80 sm:-left-[45px]",
+  1361→                                style.dot
+  1362→                              )}
+  1363→                              aria-hidden="true"
+  1364→                            />
+  1365→                            <article className="card-shine relative overflow-hidden rounded-[1.5rem] border border-blue-100/80 bg-white shadow-[0_10px_40px_-16px_rgba(0,32,96,0.18)]">
+  1366→                              <div
+  1367→                                className={cn(
+  1368→                                  "flex flex-wrap items-center justify-between gap-3 border-b border-blue-50/80 px-5 py-3.5 sm:px-6",
+  1369→                                  appt.status === "CANCELLED" ? "bg-rose-50/50" : "bg-ice/60"
+  1370→                                )}
+  1371→                              >
+  1372→                                <StatusBadge status={appt.status} lang={lang} />
+  1373→                                <span className="font-mono text-xs font-bold tracking-wider text-brand-navy/70">
+  1374→                                  {appt.refCode}
+  1375→                                </span>
+  1376→                              </div>
+  1377→                              <div className="space-y-3 p-5 sm:p-6">
+  1378→                                <div className="flex items-start gap-3.5">
+  1379→                                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+  1380→                                    <CalendarClock className="h-5 w-5" aria-hidden="true" />
+  1381→                                  </span>
+  1382→                                  <div>
+  1383→                                    <p className="font-heading text-base font-bold leading-snug text-brand-navy">
+  1384→                                      {formatDateLabel(appt.date, lang)}
+  1385→                                    </p>
+  1386→                                    <p className="mt-0.5 text-xs font-semibold text-brand-blue">
+  1387→                                      {isPast ? t.wasScheduledAt : t.scheduledAt} {bn ? toBnDigits(appt.time) : appt.time}
+  1388→                                    </p>
+  1389→                                  </div>
+  1390→                                </div>
+  1391→
+  1392→                                <div className="grid gap-2.5 text-xs sm:grid-cols-2">
+  1393→                                  <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2 ring-1 ring-blue-100/50">
+  1394→                                    <Stethoscope className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1395→                                    <span className="text-slate-500">{t.service}</span>
+  1396→                                    <span className="ml-auto text-right font-semibold text-brand-navy">
+  1397→                                      {svc
+  1398→                                        ? bn && svc.nameBn
+  1399→                                          ? svc.nameBn
+  1400→                                          : svc.name
+  1401→                                        : t.general}
+  1402→                                    </span>
+  1403→                                  </div>
+  1404→                                  <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2 ring-1 ring-blue-100/50">
+  1405→                                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1406→                                    <span className="text-slate-500">{t.specialist}</span>
+  1407→                                    <span className="ml-auto text-right font-semibold text-brand-navy">
+  1408→                                      {doc?.name ?? t.assignedLater}
+  1409→                                    </span>
+  1410→                                  </div>
+  1411→                                  <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2 ring-1 ring-blue-100/50">
+  1412→                                    <Clock className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1413→                                    <span className="text-slate-500">{t.requested}</span>
+  1414→                                    <span className="ml-auto font-semibold text-brand-navy">
+  1415→                                      {formatShortDate(appt.createdAt, lang)}
+  1416→                                    </span>
+  1417→                                  </div>
+  1418→                                  <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2 ring-1 ring-blue-100/50">
+  1419→                                    <Hash className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1420→                                    <span className="text-slate-500">{t.sourceLabel}</span>
+  1421→                                    <span className="ml-auto font-semibold text-brand-navy">
+  1422→                                      {appt.source === "WEBSITE" ? t.sourceWebsite : appt.source}
+  1423→                                    </span>
+  1424→                                  </div>
+  1425→                                </div>
+  1426→
+  1427→                                {appt.notes && (
+  1428→                                  <div className="flex items-start gap-2.5 rounded-xl bg-ice/70 px-3.5 py-2.5 text-xs leading-relaxed text-brand-navy/80 ring-1 ring-blue-100/60">
+  1429→                                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1430→                                    <span>
+  1431→                                      <span className="font-semibold">{t.yourNote}</span> {appt.notes}
+  1432→                                    </span>
+  1433→                                  </div>
+  1434→                                )}
+  1435→
+  1436→                                {appt.updatedAt !== appt.createdAt && (
+  1437→                                  <p className="flex items-center gap-1.5 text-[11px] text-slate-400">
+  1438→                                    <Clock className="h-3 w-3" aria-hidden="true" />
+  1439→                                    {t.updated} {formatShortDate(appt.updatedAt, lang)}
+  1440→                                  </p>
+  1441→                                )}
+  1442→                              </div>
+  1443→                            </article>
+  1444→                          </motion.li>
+  1445→                        );
+  1446→                      })}
+  1447→                    </ol>
+  1448→                  )}
+  1449→                </section>
+  1450→              </Reveal>
+  1451→
+  1452→              {/* ===== my reviews ===== */}
+  1453→              <Reveal>
+  1454→                <section aria-labelledby="portal-reviews">
+  1455→                  <div className="flex items-center gap-3">
+  1456→                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-500 ring-1 ring-amber-100">
+  1457→                      <Star className="h-5 w-5" aria-hidden="true" />
+  1458→                    </span>
+  1459→                    <h2 id="portal-reviews" className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+  1460→                      {t.reviewsTitle}
+  1461→                    </h2>
+  1462→                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-brand-blue ring-1 ring-blue-100">
+  1463→                      {bn ? toBnDigits(dash.reviews.length) : String(dash.reviews.length)}
+  1464→                    </span>
+  1465→                  </div>
+  1466→
+  1467→                  {dash.reviews.length === 0 ? (
+  1468→                    <div className="mt-5 flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200/80 bg-ice/40 px-6 py-8 text-center">
+  1469→                      <Star className="h-5 w-5 shrink-0 text-amber-400" aria-hidden="true" />
+  1470→                      <p className="max-w-md text-sm leading-relaxed text-slate-500">{t.reviewsEmpty}</p>
+  1471→                    </div>
+  1472→                  ) : (
+  1473→                    <div className="mt-5 grid gap-5 sm:grid-cols-2">
+  1474→                      {dash.reviews.map((rev, i) => {
+  1475→                        const svc = services.find((s) => s.slug === rev.serviceSlug);
+  1476→                        return (
+  1477→                          <motion.article
+  1478→                            key={rev.id}
+  1479→                            initial={{ opacity: 0, y: 16 }}
+  1480→                            whileInView={{ opacity: 1, y: 0 }}
+  1481→                            viewport={{ once: true, margin: "-40px" }}
+  1482→                            transition={{ duration: 0.5, delay: Math.min(i * 0.06, 0.25) }}
+  1483→                            className="card-lift flex flex-col rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-100"
+  1484→                          >
+  1485→                            <div className="flex items-center justify-between gap-3">
+  1486→                              <div className="flex items-center gap-1" aria-label={`Rating ${rev.rating} out of 5`}>
+  1487→                                {Array.from({ length: 5 }).map((_, s) => (
+  1488→                                  <Star
+  1489→                                    key={s}
+  1490→                                    className={cn(
+  1491→                                      "h-4 w-4",
+  1492→                                      s < rev.rating
+  1493→                                        ? "fill-amber-400 text-amber-400"
+  1494→                                        : "fill-slate-100 text-slate-200"
+  1495→                                    )}
+  1496→                                    aria-hidden="true"
+  1497→                                  />
+  1498→                                ))}
+  1499→                              </div>
+  1500→                              {!rev.approved && (
+  1501→                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 ring-1 ring-amber-200">
+  1502→                                  <Clock className="h-3 w-3" aria-hidden="true" />
+  1503→                                  {t.pendingReview}
+  1504→                                </span>
+  1505→                              )}
+  1506→                            </div>
+  1507→                            {rev.title && (
+  1508→                              <h3 className="font-heading mt-3 text-sm font-bold text-brand-navy">
+  1509→                                {rev.title}
+  1510→                              </h3>
+  1511→                            )}
+  1512→                            <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{rev.message}</p>
+  1513→                            <p className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-blue-50 pt-3 text-[11px] text-slate-400">
+  1514→                              {svc && (
+  1515→                                <span className="font-semibold text-brand-blue">
+  1516→                                  {bn && svc.nameBn ? svc.nameBn : svc.name}
+  1517→                                </span>
+  1518→                              )}
+  1519→                              <span aria-hidden="true">•</span>
+  1520→                              <span>{formatShortDate(rev.createdAt, lang)}</span>
+  1521→                            </p>
+  1522→                          </motion.article>
+  1523→                        );
+  1524→                      })}
+  1525→                    </div>
+  1526→                  )}
+  1527→                </section>
+  1528→              </Reveal>
+  1529→
+  1530→              {/* ===== profile + security ===== */}
+  1531→              <div className="grid gap-6 lg:grid-cols-2">
+  1532→                {/* profile settings */}
+  1533→                <Reveal>
+  1534→                  <section
+  1535→                    aria-labelledby="portal-profile"
+  1536→                    className="flex h-full flex-col rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_30px_-16px_rgba(0,32,96,0.16)] sm:p-7"
+  1537→                  >
+  1538→                    <div className="flex items-start justify-between gap-4">
+  1539→                      <div className="flex items-center gap-3">
+  1540→                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+  1541→                          <UserRound className="h-5.5 w-5.5" aria-hidden="true" />
+  1542→                        </span>
+  1543→                        <div>
+  1544→                          <h2 id="portal-profile" className="font-heading text-lg font-bold text-brand-navy">
+  1545→                            {t.profileTitle}
+  1546→                          </h2>
+  1547→                          <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{t.profileDesc}</p>
+  1548→                        </div>
+  1549→                      </div>
+  1550→                      {!editingProfile && (
+  1551→                        <Button
+  1552→                          type="button"
+  1553→                          variant="outline"
+  1554→                          onClick={startEditProfile}
+  1555→                          className="h-11 shrink-0 rounded-xl border-blue-100 bg-white text-brand-navy hover:bg-ice"
+  1556→                        >
+  1557→                          <Pencil className="h-4 w-4" aria-hidden="true" />
+  1558→                          <span className="hidden sm:inline">{t.profileEdit}</span>
+  1559→                          <span className="sr-only sm:hidden">{t.profileEdit}</span>
+  1560→                        </Button>
+  1561→                      )}
+  1562→                    </div>
+  1563→
+  1564→                    <AnimatePresence mode="wait">
+  1565→                      {editingProfile ? (
+  1566→                        <motion.form
+  1567→                          key="profile-edit"
+  1568→                          initial={{ opacity: 0, y: 8 }}
+  1569→                          animate={{ opacity: 1, y: 0 }}
+  1570→                          exit={{ opacity: 0, y: -8 }}
+  1571→                          transition={{ duration: 0.25 }}
+  1572→                          onSubmit={submitProfile}
+  1573→                          className="mt-5 flex flex-1 flex-col"
+  1574→                          noValidate
+  1575→                        >
+  1576→                          <div className="space-y-2">
+  1577→                            <Label htmlFor="profile-name" className="text-sm font-semibold text-brand-navy">
+  1578→                              {t.registerNameLabel}
+  1579→                            </Label>
+  1580→                            <Input
+  1581→                              id="profile-name"
+  1582→                              value={profileForm.name}
+  1583→                              onChange={(e) =>
+  1584→                                setProfileForm((f) => ({ ...f, name: e.target.value.slice(0, 80) }))
+  1585→                              }
+  1586→                              autoComplete="name"
+  1587→                              className="h-12 rounded-2xl border-blue-100 bg-ice/60 text-base font-semibold text-brand-navy focus:border-brand-blue focus:bg-white"
+  1588→                            />
+  1589→                          </div>
+  1590→                          <div className="mt-4 space-y-2">
+  1591→                            <Label htmlFor="profile-email" className="text-sm font-semibold text-brand-navy">
+  1592→                              {t.registerEmailLabel}
+  1593→                            </Label>
+  1594→                            <div className="relative">
+  1595→                              <Mail
+  1596→                                className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+  1597→                                aria-hidden="true"
+  1598→                              />
+  1599→                              <Input
+  1600→                                id="profile-email"
+  1601→                                type="email"
+  1602→                                value={profileForm.email}
+  1603→                                onChange={(e) =>
+  1604→                                  setProfileForm((f) => ({ ...f, email: e.target.value.slice(0, 120) }))
+  1605→                                }
+  1606→                                autoComplete="email"
+  1607→                                className="h-12 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base text-brand-navy focus:border-brand-blue focus:bg-white"
+  1608→                              />
+  1609→                            </div>
+  1610→                          </div>
+  1611→                          <FieldError id="profile-error" message={profileError} />
+  1612→                          <div className="mt-auto flex gap-3 pt-6">
+  1613→                            <Button
+  1614→                              type="button"
+  1615→                              variant="outline"
+  1616→                              onClick={() => setEditingProfile(false)}
+  1617→                              className="h-12 flex-1 rounded-2xl border-blue-100 bg-white text-brand-navy hover:bg-ice"
+  1618→                            >
+  1619→                              {t.profileCancel}
+  1620→                            </Button>
+  1621→                            <Button
+  1622→                              type="submit"
+  1623→                              disabled={savingProfile || profileForm.name.trim().length < 2}
+  1624→                              className="h-12 flex-1 rounded-2xl bg-brand-blue font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+  1625→                            >
+  1626→                              {savingProfile ? (
+  1627→                                <>
+  1628→                                  <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+  1629→                                  {t.profileSaving}
+  1630→                                </>
+  1631→                              ) : (
+  1632→                                t.profileSave
+  1633→                              )}
+  1634→                            </Button>
+  1635→                          </div>
+  1636→                        </motion.form>
+  1637→                      ) : (
+  1638→                        <motion.dl
+  1639→                          key="profile-view"
+  1640→                          initial={{ opacity: 0, y: 8 }}
+  1641→                          animate={{ opacity: 1, y: 0 }}
+  1642→                          exit={{ opacity: 0, y: -8 }}
+  1643→                          transition={{ duration: 0.25 }}
+  1644→                          className="mt-5 flex-1 space-y-3"
+  1645→                        >
+  1646→                          <div className="flex items-center gap-3 rounded-2xl bg-ice/50 px-4 py-3.5 ring-1 ring-blue-100/50">
+  1647→                            <UserRound className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+  1648→                            <dt className="text-xs text-slate-500">{t.registerNameLabel}</dt>
+  1649→                            <dd className="ml-auto text-right text-sm font-semibold text-brand-navy">
+  1650→                              {dash.patient.name}
+  1651→                            </dd>
+  1652→                          </div>
+  1653→                          <div className="flex items-center gap-3 rounded-2xl bg-ice/50 px-4 py-3.5 ring-1 ring-blue-100/50">
+  1654→                            <Phone className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+  1655→                            <dt className="text-xs text-slate-500">{t.loginPhoneLabel}</dt>
+  1656→                            <dd className="ml-auto text-right text-sm font-semibold tabular-nums text-brand-navy">
+  1657→                              {bn ? toBnDigits(dash.patient.phone) : dash.patient.phone}
+  1658→                            </dd>
+  1659→                          </div>
+
+[showing lines 1100-1659 of 1968; use offset=1660 with limit to continue reading]

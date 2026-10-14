@@ -9,7 +9,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 export { hashPassword, verifyPassword };
 
 /* ------------------------------------------------------------------ */
-/*  Patient account authentication — powers the Patient Portal (#/portal)
+/*  Patient account authentication — powers the Patient Portal (/portal)
     Passwords: scrypt with per-account random salt ("scrypt:salt:hash")
     Sessions:  signed httpOnly cookie `adc_patient_session`, 30-day TTL.
                Token = `${patientId}.${expiresAt}.${hmac(...)}` so the

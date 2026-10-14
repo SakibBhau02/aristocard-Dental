@@ -1,0 +1,616 @@
+   661→          </div>
+   662→        </div>
+   663→
+   664→        {filter === "FOLLOWUP" && (
+   665→          <p className="mt-3 text-xs font-medium text-slate-500">
+   666→            The follow-ups queue spans all dates — switch to a status tab to bring the
+   667→            date range back.
+   668→          </p>
+   669→        )}
+   670→
+   671→        {invalidRange && (
+   672→          <p className="mt-3 text-xs font-medium text-rose-600">
+   673→            The “From” date is after the “To” date — no appointments can match this range.
+   674→          </p>
+   675→        )}
+   676→      </div>
+   677→
+   678→      {/* Follow-ups daily summary */}
+   679→      {filter === "FOLLOWUP" && (
+   680→        <motion.div
+   681→          initial={{ opacity: 0, y: -6 }}
+   682→          animate={{ opacity: 1, y: 0 }}
+   683→          transition={{ duration: 0.3 }}
+   684→          className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"
+   685→        >
+   686→          {[
+   687→            { label: "Call-backs set", value: followUpCounts.total, tone: "text-brand-navy bg-ice ring-blue-100" },
+   688→            { label: "Overdue", value: followUpCounts.overdue, tone: "text-rose-600 bg-rose-50 ring-rose-100" },
+   689→            { label: "Due today", value: followUpCounts.dueToday, tone: "text-emerald-700 bg-emerald-50 ring-emerald-100" },
+   690→            { label: "Upcoming", value: followUpCounts.upcoming, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
+   691→          ].map((c) => (
+   692→            <div
+   693→              key={c.label}
+   694→              className={cn(
+   695→                "flex items-center gap-3 rounded-2xl border border-blue-100/70 bg-white px-4 py-3 shadow-sm"
+   696→              )}
+   697→            >
+   698→              <span className={cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold tabular-nums ring-1", c.tone)}>
+   699→                {c.value}
+   700→              </span>
+   701→              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+   702→                {c.label}
+   703→              </p>
+   704→            </div>
+   705→          ))}
+   706→        </motion.div>
+   707→      )}
+   708→
+   709→      {/* Active range indicator */}
+   710→      <AnimatePresence>
+   711→        {range && filter !== "FOLLOWUP" && (
+   712→          <motion.div
+   713→            initial={{ opacity: 0, y: -8 }}
+   714→            animate={{ opacity: 1, y: 0 }}
+   715→            exit={{ opacity: 0, y: -8 }}
+   716→            transition={{ duration: 0.3, ease: "easeOut" }}
+   717→            role="status"
+   718→            className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-2xl border border-amber-200/80 bg-brand-gold-soft/50 px-4 py-3 shadow-sm"
+   719→          >
+   720→            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-amber-200">
+   721→              <CalendarRange className="h-4.5 w-4.5" aria-hidden="true" />
+   722→            </span>
+   723→            <p className="text-sm text-slate-600">
+   724→              Showing{" "}
+   725→              <span className="font-heading text-base font-bold tabular-nums text-brand-navy">
+   726→                {range.total}
+   727→              </span>{" "}
+   728→              appointment{range.total === 1 ? "" : "s"} in range{" "}
+   729→              <span className="font-semibold text-brand-navy">{range.label}</span>
+   730→            </p>
+   731→            <button
+   732→              type="button"
+   733→              onClick={() => applyPreset("all")}
+   734→              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-xs font-bold text-slate-600 ring-1 ring-amber-200 transition-all duration-300 hover:text-rose-600 hover:ring-rose-200"
+   735→            >
+   736→              <X className="h-3.5 w-3.5" aria-hidden="true" />
+   737→              Clear filter
+   738→            </button>
+   739→          </motion.div>
+   740→        )}
+   741→      </AnimatePresence>
+   742→
+   743→      {loadError && (
+   744→        <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+   745→          {loadError}
+   746→        </p>
+   747→      )}
+   748→
+   749→      {/* List */}
+   750→      {loading && rows.length === 0 ? (
+   751→        <div className="mt-8 flex items-center justify-center py-20">
+   752→          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden="true" />
+   753→        </div>
+   754→      ) : filtered.length === 0 ? (
+   755→        <motion.div
+   756→          initial={{ opacity: 0, y: 10 }}
+   757→          animate={{ opacity: 1, y: 0 }}
+   758→          transition={{ duration: 0.35 }}
+   759→          className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white/60 py-20 text-center"
+   760→        >
+   761→          <CalendarDays className="mx-auto h-10 w-10 text-blue-300" aria-hidden="true" />
+   762→          <p className="font-heading mt-4 text-lg font-bold text-brand-navy">
+   763→            {filter === "FOLLOWUP"
+   764→              ? "No follow-ups scheduled"
+   765→              : rows.length === 0 && range
+   766→                ? "No appointments in this date range"
+   767→                : "No appointments found"}
+   768→          </p>
+   769→          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+   770→            {filter === "FOLLOWUP"
+   771→              ? "Set a follow-up date from any appointment's Edit dialog — the daily call-back queue lives here."
+   772→              : rows.length === 0 && range
+   773→                ? "No bookings fall inside the selected date range. Try widening it or clear the filter."
+   774→                : rows.length === 0
+   775→                  ? "New online bookings will appear here in real time."
+   776→                  : "Try a different filter or search term."}
+   777→          </p>
+   778→          {rows.length === 0 && range && filter !== "FOLLOWUP" && (
+   779→            <Button
+   780→              onClick={() => applyPreset("all")}
+   781→              variant="outline"
+   782→              className="mt-5 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   783→            >
+   784→              <X className="h-4 w-4" aria-hidden="true" />
+   785→              Clear date filter
+   786→            </Button>
+   787→          )}
+   788→        </motion.div>
+   789→      ) : (
+   790→        <>
+   791→          {/* Desktop table */}
+   792→          <div className="mt-6 hidden overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_14px_40px_-24px_rgba(0,32,96,0.25)] lg:block">
+   793→            <div className="max-h-[38rem] overflow-y-auto scroll-area">
+   794→              <table className="w-full text-left text-sm table-zebra">
+   795→                <thead className="sticky top-0 z-10 bg-ice/95 backdrop-blur">
+   796→                  <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+   797→                    <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+   798→                    <th scope="col" className="px-5 py-3.5 font-semibold">Service / Doctor</th>
+   799→                    <th scope="col" className="px-5 py-3.5 font-semibold">Schedule</th>
+   800→                    <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+   801→                    <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+   802→                  </tr>
+   803→                </thead>
+   804→                <tbody className="divide-y divide-blue-50">
+   805→                  {filtered.map((r) => {
+   806→                    const fu = followUpMeta(r.followUpDate, today);
+   807→                    const expanded = expandedRef === r.refCode;
+   808→                    const hasDetails = Boolean(r.adminNotes || r.notes || r.followUpDate);
+   809→                    return (
+   810→                      <Fragment key={r.id}>
+   811→                        <tr className="transition-colors hover:bg-blue-50/40">
+   812→                          <td className="px-5 py-4">
+   813→                            <p className="font-semibold text-brand-navy">{r.name}</p>
+   814→                            <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+   815→                            <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+   816→                          </td>
+   817→                          <td className="px-5 py-4">
+   818→                            <p className="text-xs font-semibold text-slate-700">
+   819→                              {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "—"}
+   820→                            </p>
+   821→                            <p className="mt-0.5 text-xs text-slate-500">
+   822→                              {r.doctorSlug ? doctorMap[r.doctorSlug] ?? r.doctorSlug : "Any available doctor"}
+   823→                            </p>
+   824→                            {r.notes && (
+   825→                              <p className="mt-1 line-clamp-1 max-w-56 text-[11px] italic text-slate-400" title={r.notes}>
+   826→                                “{r.notes}”
+   827→                              </p>
+   828→                            )}
+   829→                          </td>
+   830→                          <td className="px-5 py-4">
+   831→                            <p className="font-semibold tabular-nums text-slate-700">{r.date}</p>
+   832→                            <p className="mt-0.5 text-xs text-slate-500">{r.time}</p>
+   833→                            {fu && (
+   834→                              <span
+   835→                                className={cn(
+   836→                                  "mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1",
+   837→                                  fu.tone
+   838→                                )}
+   839→                              >
+   840→                                <span className={cn("h-1.5 w-1.5 rounded-full", fu.dot)} aria-hidden="true" />
+   841→                                {fu.label}
+   842→                              </span>
+   843→                            )}
+   844→                          </td>
+   845→                          <td className="px-5 py-4">
+   846→                            <span className={cn(
+   847→                              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1",
+   848→                              statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+   849→                            )}>
+   850→                              {r.status === "PENDING" && (
+   851→                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+   852→                              )}
+   853→                              {r.status}
+   854→                            </span>
+   855→                          </td>
+   856→                          <td className="px-5 py-4">
+   857→                            <div className="flex flex-wrap items-center justify-end gap-1.5">
+   858→                              {/* quick contact */}
+   859→                              <a
+   860→                                href={`tel:${r.phone}`}
+   861→                                title={`Call ${r.name}`}
+   862→                                aria-label={`Call ${r.name}`}
+   863→                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-brand-blue ring-1 ring-blue-200 transition-all duration-300 hover:bg-brand-blue hover:text-white"
+   864→                              >
+   865→                                <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+   866→                              </a>
+   867→                              <a
+   868→                                href={whatsappHref(r.phone, r.name, r.refCode)}
+   869→                                target="_blank"
+   870→                                rel="noopener noreferrer"
+   871→                                title={`WhatsApp ${r.name}`}
+   872→                                aria-label={`WhatsApp ${r.name}`}
+   873→                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200 transition-all duration-300 hover:bg-emerald-500 hover:text-white"
+   874→                              >
+   875→                                <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+   876→                              </a>
+   877→                              {busyRef === r.refCode ? (
+   878→                                <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+   879→                              ) : (
+   880→                                <>
+   881→                                  <SmallAction
+   882→                                    label="Edit"
+   883→                                    tone="neutral"
+   884→                                    onClick={() => openEdit(r)}
+   885→                                  />
+   886→                                  {r.status === "PENDING" && (
+   887→                                    <>
+   888→                                      <SmallAction
+   889→                                        label="Confirm"
+   890→                                        tone="confirm"
+   891→                                        onClick={() => updateStatus(r.refCode, "CONFIRMED")}
+   892→                                      />
+   893→                                      <SmallAction
+   894→                                        label="Cancel"
+   895→                                        tone="cancel"
+   896→                                        onClick={() => updateStatus(r.refCode, "CANCELLED")}
+   897→                                      />
+   898→                                    </>
+   899→                                  )}
+   900→                                  {r.status === "CONFIRMED" && (
+   901→                                    <>
+   902→                                      <SmallAction
+   903→                                        label="Complete"
+   904→                                        tone="complete"
+   905→                                        onClick={() => updateStatus(r.refCode, "COMPLETED")}
+   906→                                      />
+   907→                                      <SmallAction
+   908→                                        label="Cancel"
+   909→                                        tone="cancel"
+   910→                                        onClick={() => updateStatus(r.refCode, "CANCELLED")}
+   911→                                      />
+   912→                                    </>
+   913→                                  )}
+   914→                                  {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+   915→                                    <SmallAction
+   916→                                      label="Reopen"
+   917→                                      tone="neutral"
+   918→                                      onClick={() => updateStatus(r.refCode, "PENDING")}
+   919→                                    />
+   920→                                  )}
+   921→                                  {hasDetails && (
+   922→                                    <button
+   923→                                      type="button"
+   924→                                      onClick={() => setExpandedRef(expanded ? null : r.refCode)}
+   925→                                      aria-expanded={expanded}
+   926→                                      title={expanded ? "Hide details" : "Show notes & follow-up"}
+   927→                                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200 transition-all duration-300 hover:bg-slate-600 hover:text-white"
+   928→                                    >
+   929→                                      <ChevronDown
+   930→                                        className={cn(
+   931→                                          "h-3.5 w-3.5 transition-transform duration-300",
+   932→                                          expanded && "rotate-180"
+   933→                                        )}
+   934→                                        aria-hidden="true"
+   935→                                      />
+   936→                                    </button>
+   937→                                  )}
+   938→                                </>
+   939→                              )}
+   940→                            </div>
+   941→                          </td>
+   942→                        </tr>
+   943→                        {expanded && (
+   944→                          <tr className="bg-ice/40">
+   945→                            <td colSpan={5} className="px-5 py-4">
+   946→                              <div className="grid gap-3 sm:grid-cols-2">
+   947→                                <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-blue-100/70">
+   948→                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+   949→                                    Follow-up
+   950→                                  </p>
+   951→                                  {r.followUpDate ? (
+   952→                                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-brand-navy">
+   953→                                      {fu?.label}
+   954→                                      <button
+   955→                                        type="button"
+   956→                                        onClick={() => openEdit(r)}
+   957→                                        className="text-[11px] font-bold text-brand-blue underline-offset-4 hover:underline"
+   958→                                      >
+   959→                                        Change
+   960→                                      </button>
+   961→                                    </p>
+   962→                                  ) : (
+   963→                                    <p className="mt-1 text-sm text-slate-400">
+   964→                                      None — set one from Edit
+   965→                                    </p>
+   966→                                  )}
+   967→                                </div>
+   968→                                <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-blue-100/70">
+   969→                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+   970→                                    Admin notes
+   971→                                  </p>
+   972→                                  <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-brand-navy">
+   973→                                    {r.adminNotes || <span className="text-slate-400">No internal notes yet.</span>}
+   974→                                  </p>
+   975→                                </div>
+   976→                                {r.notes && (
+   977→                                  <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-blue-100/70 sm:col-span-2">
+   978→                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+   979→                                      Patient's note
+   980→                                    </p>
+   981→                                    <p className="mt-1 whitespace-pre-wrap text-sm italic leading-relaxed text-slate-600">
+   982→                                      “{r.notes}”
+   983→                                    </p>
+   984→                                  </div>
+   985→                                )}
+   986→                              </div>
+   987→                            </td>
+   988→                          </tr>
+   989→                        )}
+   990→                      </Fragment>
+   991→                    );
+   992→                  })}
+   993→                </tbody>
+   994→              </table>
+   995→            </div>
+   996→          </div>
+   997→
+   998→          {/* Mobile cards */}
+   999→          <div className="mt-6 space-y-3 lg:hidden">
+  1000→            {filtered.map((r) => {
+  1001→              const fu = followUpMeta(r.followUpDate, today);
+  1002→              return (
+  1003→                <motion.article
+  1004→                  key={r.id}
+  1005→                  initial={{ opacity: 0, y: 14 }}
+  1006→                  animate={{ opacity: 1, y: 0 }}
+  1007→                  className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+  1008→                >
+  1009→                  <div className="flex items-start justify-between gap-3">
+  1010→                    <div>
+  1011→                      <p className="font-semibold text-brand-navy">{r.name}</p>
+  1012→                      <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+  1013→                      <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+  1014→                    </div>
+  1015→                    <span className={cn(
+  1016→                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+  1017→                      statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+  1018→                    )}>
+  1019→                      {r.status === "PENDING" && (
+  1020→                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+  1021→                      )}
+  1022→                      {r.status}
+  1023→                    </span>
+  1024→                  </div>
+  1025→                  <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-ice px-3.5 py-3 text-xs text-slate-600">
+  1026→                    <p className="col-span-2">
+  1027→                      <Sparkles className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1028→                      {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "Service: —"}
+  1029→                      {r.doctorSlug ? ` • ${doctorMap[r.doctorSlug] ?? r.doctorSlug}` : ""}
+  1030→                    </p>
+  1031→                    <p className="col-span-2 font-semibold tabular-nums">
+  1032→                      <CalendarDays className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1033→                      {r.date} • {r.time}
+  1034→                    </p>
+  1035→                    {fu && (
+  1036→                      <p className="col-span-2">
+  1037→                        <span className={cn(
+  1038→                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1",
+  1039→                          fu.tone
+  1040→                        )}>
+  1041→                          <span className={cn("h-1.5 w-1.5 rounded-full", fu.dot)} aria-hidden="true" />
+  1042→                          {fu.label}
+  1043→                        </span>
+  1044→                      </p>
+  1045→                    )}
+  1046→                    {r.notes && (
+  1047→                      <p className="col-span-2 line-clamp-2 italic text-slate-400">“{r.notes}”</p>
+  1048→                    )}
+  1049→                    {r.adminNotes && (
+  1050→                      <p className="col-span-2 line-clamp-3 rounded-lg bg-amber-50/70 px-2.5 py-1.5 text-[11px] text-amber-800 ring-1 ring-amber-100">
+  1051→                        <span className="font-bold">Note:</span> {r.adminNotes}
+  1052→                      </p>
+  1053→                    )}
+  1054→                  </div>
+  1055→                  {busyRef === r.refCode ? (
+  1056→                    <div className="mt-3 flex justify-center py-1.5">
+  1057→                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+  1058→                    </div>
+  1059→                  ) : (
+  1060→                    <div className="mt-3 flex flex-wrap items-center gap-2">
+  1061→                      <a
+  1062→                        href={`tel:${r.phone}`}
+  1063→                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-brand-blue ring-1 ring-blue-200 transition-all duration-300 hover:bg-brand-blue hover:text-white"
+  1064→                        aria-label={`Call ${r.name}`}
+  1065→                      >
+  1066→                        <Phone className="h-4 w-4" aria-hidden="true" />
+  1067→                      </a>
+  1068→                      <a
+  1069→                        href={whatsappHref(r.phone, r.name, r.refCode)}
+  1070→                        target="_blank"
+  1071→                        rel="noopener noreferrer"
+  1072→                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200 transition-all duration-300 hover:bg-emerald-500 hover:text-white"
+  1073→                        aria-label={`WhatsApp ${r.name}`}
+  1074→                      >
+  1075→                        <MessageCircle className="h-4 w-4" aria-hidden="true" />
+  1076→                      </a>
+  1077→                      <SmallAction label="Edit / Reschedule" tone="neutral" onClick={() => openEdit(r)} />
+  1078→                      {r.status === "PENDING" && (
+  1079→                        <>
+  1080→                          <SmallAction label="Confirm" tone="confirm" onClick={() => updateStatus(r.refCode, "CONFIRMED")} />
+  1081→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1082→                        </>
+  1083→                      )}
+  1084→                      {r.status === "CONFIRMED" && (
+  1085→                        <>
+  1086→                          <SmallAction label="Complete" tone="complete" onClick={() => updateStatus(r.refCode, "COMPLETED")} />
+  1087→                          <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+  1088→                        </>
+  1089→                      )}
+  1090→                      {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+  1091→                        <SmallAction label="Reopen as Pending" tone="neutral" onClick={() => updateStatus(r.refCode, "PENDING")} />
+  1092→                      )}
+  1093→                    </div>
+  1094→                  )}
+  1095→                </motion.article>
+  1096→              );
+  1097→            })}
+  1098→          </div>
+  1099→        </>
+  1100→      )}
+  1101→
+  1102→      {/* ---------- Edit / Reschedule dialog ---------- */}
+  1103→      <Dialog open={!!editTarget} onOpenChange={(open) => !open && closeEdit()}>
+  1104→        <DialogContent className="rounded-2xl border-blue-100 sm:max-w-lg">
+  1105→          <DialogHeader>
+  1106→            <DialogTitle className="font-heading flex items-center gap-2 text-lg text-brand-navy">
+  1107→              <Pencil className="h-4.5 w-4.5 text-brand-blue" aria-hidden="true" />
+  1108→              Edit appointment
+  1109→            </DialogTitle>
+  1110→            <DialogDescription className="text-sm leading-relaxed text-slate-500">
+  1111→              {editTarget
+  1112→                ? `${editTarget.refCode} · ${editTarget.name} (${editTarget.phone})`
+  1113→                : ""}
+  1114→            </DialogDescription>
+  1115→          </DialogHeader>
+  1116→
+  1117→          <div className="grid gap-4 sm:grid-cols-2">
+  1118→            <div>
+  1119→              <label htmlFor="edit-date" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+  1120→                Date
+  1121→              </label>
+  1122→              <input
+  1123→                id="edit-date"
+  1124→                type="date"
+  1125→                value={editForm.date}
+  1126→                onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+  1127→                className="mt-1.5 h-11 w-full rounded-xl border border-blue-100 bg-ice px-3 text-sm font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+  1128→              />
+  1129→            </div>
+  1130→            <div>
+  1131→              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Time slot</p>
+  1132→              <Select
+  1133→                value={editForm.time}
+  1134→                onValueChange={(v) => setEditForm((f) => ({ ...f, time: v }))}
+  1135→              >
+  1136→                <SelectTrigger
+  1137→                  aria-label="Time slot"
+  1138→                  className="mt-1.5 h-11 rounded-xl border-blue-100 bg-ice text-sm font-medium text-brand-navy focus-visible:ring-brand-blue/25"
+  1139→                >
+  1140→                  <SelectValue placeholder="Pick a slot" />
+  1141→                </SelectTrigger>
+  1142→                <SelectContent className="rounded-xl border-blue-100">
+  1143→                  {timeOptions.map((slot) => (
+  1144→                    <SelectItem key={slot} value={slot}>
+  1145→                      {slot}
+  1146→                    </SelectItem>
+  1147→                  ))}
+  1148→                </SelectContent>
+  1149→              </Select>
+  1150→            </div>
+  1151→            <div>
+  1152→              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Doctor</p>
+  1153→              <Select
+  1154→                value={editForm.doctor || "any"}
+  1155→                onValueChange={(v) => setEditForm((f) => ({ ...f, doctor: v === "any" ? "" : v }))}
+  1156→              >
+  1157→                <SelectTrigger
+  1158→                  aria-label="Assigned doctor"
+  1159→                  className="mt-1.5 h-11 rounded-xl border-blue-100 bg-ice text-sm font-medium text-brand-navy focus-visible:ring-brand-blue/25"
+  1160→                >
+  1161→                  <SelectValue placeholder="Any available doctor" />
+  1162→                </SelectTrigger>
+  1163→                <SelectContent className="rounded-xl border-blue-100">
+  1164→                  <SelectItem value="any">Any available doctor</SelectItem>
+  1165→                  {doctors.map((doc) => (
+  1166→                    <SelectItem key={doc.slug} value={doc.slug}>
+  1167→                      {doc.name}
+  1168→                    </SelectItem>
+  1169→                  ))}
+  1170→                </SelectContent>
+  1171→              </Select>
+  1172→            </div>
+  1173→            <div>
+  1174→              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Treatment</p>
+  1175→              <Select
+  1176→                value={editForm.service || "none"}
+  1177→                onValueChange={(v) => setEditForm((f) => ({ ...f, service: v === "none" ? "" : v }))}
+  1178→              >
+  1179→                <SelectTrigger
+  1180→                  aria-label="Treatment"
+  1181→                  className="mt-1.5 h-11 rounded-xl border-blue-100 bg-ice text-sm font-medium text-brand-navy focus-visible:ring-brand-blue/25"
+  1182→                >
+  1183→                  <SelectValue placeholder="— none —" />
+  1184→                </SelectTrigger>
+  1185→                <SelectContent className="rounded-xl border-blue-100">
+  1186→                  <SelectItem value="none">— none —</SelectItem>
+  1187→                  {services.map((s) => (
+  1188→                    <SelectItem key={s.slug} value={s.slug}>
+  1189→                      {s.shortName}
+  1190→                    </SelectItem>
+  1191→                  ))}
+  1192→                </SelectContent>
+  1193→              </Select>
+  1194→            </div>
+  1195→            <div className="sm:col-span-2">
+  1196→              <label htmlFor="edit-followup" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+  1197→                Follow-up date
+  1198→              </label>
+  1199→              <div className="mt-1.5 flex items-center gap-2">
+  1200→                <input
+  1201→                  id="edit-followup"
+  1202→                  type="date"
+  1203→                  value={editForm.followUp}
+  1204→                  onChange={(e) => setEditForm((f) => ({ ...f, followUp: e.target.value }))}
+  1205→                  className="h-11 w-full rounded-xl border border-blue-100 bg-ice px-3 text-sm font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+  1206→                />
+  1207→                {editForm.followUp && (
+  1208→                  <Button
+  1209→                    type="button"
+  1210→                    variant="outline"
+  1211→                    size="sm"
+  1212→                    onClick={() => setEditForm((f) => ({ ...f, followUp: "" }))}
+  1213→                    className="h-11 shrink-0 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50"
+  1214→                  >
+  1215→                    <X className="h-4 w-4" aria-hidden="true" />
+  1216→                    Clear
+  1217→                  </Button>
+  1218→                )}
+  1219→              </div>
+  1220→              <p className="mt-1 text-[11px] text-slate-400">
+  1221→                The next day the front desk should call this patient — overdue follow-ups
+  1222→                surface in the Follow-ups queue.
+  1223→              </p>
+  1224→            </div>
+  1225→            <div className="sm:col-span-2">
+  1226→              <label htmlFor="edit-admin-notes" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+  1227→                Admin notes <span className="font-normal normal-case text-slate-400">(internal, max 2000 chars)</span>
+  1228→              </label>
+  1229→              <Textarea
+  1230→                id="edit-admin-notes"
+  1231→                rows={4}
+  1232→                maxLength={2000}
+  1233→                value={editForm.adminNotes}
+  1234→                onChange={(e) => setEditForm((f) => ({ ...f, adminNotes: e.target.value }))}
+  1235→                placeholder="Call outcomes, preferences, next steps…"
+  1236→                className="mt-1.5 resize-none border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+  1237→              />
+  1238→            </div>
+  1239→          </div>
+  1240→
+  1241→          {editError && (
+  1242→            <p className="rounded-xl bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-600 ring-1 ring-rose-100" role="alert">
+  1243→              {editError}
+  1244→            </p>
+  1245→          )}
+  1246→
+  1247→          <DialogFooter className="gap-2">
+  1248→            <Button
+  1249→              type="button"
+  1250→              variant="outline"
+  1251→              onClick={closeEdit}
+  1252→              disabled={savingEdit}
+  1253→              className="rounded-full border-blue-200 text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+  1254→            >
+  1255→              Cancel
+  1256→            </Button>
+  1257→            <Button
+  1258→              type="button"
+  1259→              onClick={() => void saveEdit()}
+  1260→              disabled={savingEdit}
+  1261→              className="rounded-full bg-brand-navy font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+  1262→            >
+  1263→              {savingEdit ? (
+  1264→                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  1265→              ) : (
+  1266→                <Pencil className="h-4 w-4" aria-hidden="true" />
+  1267→              )}
+  1268→              {savingEdit ? "Saving…" : "Save changes"}
+  1269→            </Button>
+  1270→          </DialogFooter>
+  1271→        </DialogContent>
+  1272→      </Dialog>
+  1273→    </div>
+  1274→  );
+  1275→}
+  1276→

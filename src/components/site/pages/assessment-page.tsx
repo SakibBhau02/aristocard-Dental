@@ -130,7 +130,7 @@ const ASSESSMENT_JSONLD = {
   name: "Smile Assessment — Find the Right Treatment in 60 Seconds",
   description:
     "60-second smile assessment quiz: answer five quick questions and get a personalized treatment direction from the specialists at Aristocrat Dental Care, Uttara Dhaka.",
-  url: "https://aristocratdentalcarebd.com/#/assessment",
+  url: "https://aristocratdentalcarebd.com/assessment",
 };
 
 /* Direction-aware slide variants for the one-at-a-time question card */
@@ -633,7 +633,7 @@ function RecommendationCard({ rec, index }: { rec: Rec; index: number }) {
 
       <div className="mt-5 border-t border-blue-50 pt-4">
         <a
-          href={`#/services/${service.slug}`}
+          href={`/services/${service.slug}`}
           onClick={(e) => {
             e.preventDefault();
             navigate(`/services/${service.slug}`);

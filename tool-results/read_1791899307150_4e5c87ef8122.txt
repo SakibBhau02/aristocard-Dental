@@ -1,0 +1,675 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Appointments panel — bookings table, filters, date ranges, CSV      */
+     5→/*  Extracted verbatim from the former monolithic admin page; the      */
+     6→/*  shell owns the module header + logout (refresh lives in the        */
+     7→/*  PanelToolbar below).                                               */
+     8→/* ------------------------------------------------------------------ */
+     9→
+    10→import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+    11→import { AnimatePresence, motion } from "framer-motion";
+    12→import {
+    13→  BadgeCheck,
+    14→  Ban,
+    15→  CalendarClock,
+    16→  CalendarDays,
+    17→  CalendarRange,
+    18→  CheckCircle2,
+    19→  Clock,
+    20→  Download,
+    21→  Inbox,
+    22→  Loader2,
+    23→  Search,
+    24→  Sparkles,
+    25→  X,
+    26→} from "lucide-react";
+    27→import { services } from "@/lib/data/services";
+    28→import { doctors } from "@/lib/data/doctors";
+    29→import { cn } from "@/lib/utils";
+    30→import { Button } from "@/components/ui/button";
+    31→import {
+    32→  type AppointmentRow,
+    33→  type DatePreset,
+    34→  type Stats,
+    35→  type StatusFilter,
+    36→  DATE_PRESETS,
+    37→  PanelToolbar,
+    38→  SmallAction,
+    39→  localToday,
+    40→  statusStyles,
+    41→} from "../admin-shared";
+    42→
+    43→export function AppointmentsPanel({
+    44→  onSessionExpired,
+    45→  onPendingChange,
+    46→}: {
+    47→  onSessionExpired: () => void;
+    48→  onPendingChange?: (pending: number) => void;
+    49→}) {
+    50→  const [rows, setRows] = useState<AppointmentRow[]>([]);
+    51→  const [stats, setStats] = useState<Stats | null>(null);
+    52→  const [loading, setLoading] = useState(true);
+    53→  const [loadError, setLoadError] = useState<string | null>(null);
+    54→  const [filter, setFilter] = useState<StatusFilter>("ALL");
+    55→  const [search, setSearch] = useState("");
+    56→  const [busyRef, setBusyRef] = useState<string | null>(null);
+    57→  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    58→  const [preset, setPreset] = useState<DatePreset>("all");
+    59→  const [fromDate, setFromDate] = useState("");
+    60→  const [toDate, setToDate] = useState("");
+    61→  const [range, setRange] = useState<{
+    62→    from: string | null;
+    63→    to: string | null;
+    64→    label: string;
+    65→    total: number;
+    66→  } | null>(null);
+    67→  const [exporting, setExporting] = useState(false);
+    68→  const loadIdRef = useRef(0);
+    69→
+    70→  const load = useCallback(async () => {
+    71→    const requestId = ++loadIdRef.current;
+    72→    setLoading(true);
+    73→    setLoadError(null);
+    74→    try {
+    75→      const qs = new URLSearchParams();
+    76→      if (fromDate) qs.set("from", fromDate);
+    77→      if (toDate) qs.set("to", toDate);
+    78→      const query = qs.toString();
+    79→      const res = await fetch(
+    80→        `/api/admin/appointments${query ? `?${query}` : ""}`
+    81→      );
+    82→      if (res.status === 401) {
+    83→        onSessionExpired();
+    84→        return;
+    85→      }
+    86→      const data = await res.json();
+    87→      if (!res.ok) throw new Error(data.error || "Failed to load");
+    88→      if (requestId !== loadIdRef.current) return; /* a newer request is in flight */
+    89→      setRows(data.appointments ?? []);
+    90→      setStats(data.stats ?? null);
+    91→      setRange(data.range ?? null);
+    92→      setLastUpdated(new Date());
+    93→      /* keep the tab badge live — but only while the list is unfiltered, since
+    94→         the server scopes stats to the active date range */
+    95→      if (!fromDate && !toDate) onPendingChange?.(data.stats?.pending ?? 0);
+    96→    } catch (err) {
+    97→      if (requestId !== loadIdRef.current) return;
+    98→      setLoadError(err instanceof Error ? err.message : "Failed to load appointments.");
+    99→    } finally {
+   100→      if (requestId === loadIdRef.current) setLoading(false);
+   101→    }
+   102→  }, [fromDate, toDate, onSessionExpired, onPendingChange]);
+   103→
+   104→  useEffect(() => {
+   105→    load();
+   106→  }, [load]);
+   107→
+   108→  /* auto-refresh every 60s (pause when tab hidden) */
+   109→  useEffect(() => {
+   110→    const id = window.setInterval(() => {
+   111→      if (document.visibilityState === "visible") load();
+   112→    }, 60_000);
+   113→    return () => window.clearInterval(id);
+   114→  }, [load]);
+   115→
+   116→  async function updateStatus(refCode: string, status: string) {
+   117→    setBusyRef(refCode);
+   118→    try {
+   119→      const res = await fetch("/api/admin/appointments", {
+   120→        method: "POST",
+   121→        headers: {
+   122→          "Content-Type": "application/json",
+   123→        },
+   124→        body: JSON.stringify({ refCode, status }),
+   125→      });
+   126→      const data = await res.json();
+   127→      if (res.status === 401) {
+   128→        onSessionExpired();
+   129→        return;
+   130→      }
+   131→      if (!res.ok) throw new Error(data.error || "Update failed");
+   132→      setRows((prev) =>
+   133→        prev.map((r) => (r.refCode === refCode ? { ...r, status } : r))
+   134→      );
+   135→      /* keep the tab badge in sync with the new pending count (unfiltered
+   136→         view only — rows/stats follow the active date range otherwise) */
+   137→      if (!fromDate && !toDate)
+   138→        onPendingChange?.(
+   139→          rows.filter(
+   140→            (r) => (r.refCode === refCode ? status : r.status) === "PENDING"
+   141→          ).length
+   142→        );
+   143→      setStats((prev) => {
+   144→        if (!prev) return prev;
+   145→        const statusOf = (r: AppointmentRow) =>
+   146→          r.refCode === refCode ? status : r.status;
+   147→        const today = localToday();
+   148→        return {
+   149→          ...prev,
+   150→          pending: rows.filter((r) => statusOf(r) === "PENDING").length,
+   151→          confirmed: rows.filter((r) => statusOf(r) === "CONFIRMED").length,
+   152→          completed: rows.filter((r) => statusOf(r) === "COMPLETED").length,
+   153→          cancelled: rows.filter((r) => statusOf(r) === "CANCELLED").length,
+   154→          today: rows.filter((r) => r.date === today && statusOf(r) !== "CANCELLED").length,
+   155→          upcoming: rows.filter(
+   156→            (r) => r.date >= today && (statusOf(r) === "PENDING" || statusOf(r) === "CONFIRMED")
+   157→          ).length,
+   158→        };
+   159→      });
+   160→    } catch {
+   161→      setLoadError("Could not update status. Please retry.");
+   162→    } finally {
+   163→      setBusyRef(null);
+   164→    }
+   165→  }
+   166→
+   167→  /* --- date-range filtering --- */
+   168→  function applyPreset(id: Exclude<DatePreset, "custom">) {
+   169→    const p = DATE_PRESETS.find((d) => d.id === id) ?? DATE_PRESETS[0];
+   170→    const [f, t] = p.range();
+   171→    setPreset(id);
+   172→    setFromDate(f);
+   173→    setToDate(t);
+   174→  }
+   175→
+   176→  function onFromDateChange(value: string) {
+   177→    setFromDate(value);
+   178→    setPreset(value || toDate ? "custom" : "all");
+   179→  }
+   180→
+   181→  function onToDateChange(value: string) {
+   182→    setToDate(value);
+   183→    setPreset(fromDate || value ? "custom" : "all");
+   184→  }
+   185→
+   186→  const invalidRange = Boolean(fromDate && toDate && fromDate > toDate);
+   187→
+   188→  /* --- CSV export of the currently filtered set --- */
+   189→  async function exportCsv() {
+   190→    if (exporting) return;
+   191→    setExporting(true);
+   192→    try {
+   193→      const qs = new URLSearchParams({ format: "csv" });
+   194→      if (fromDate) qs.set("from", fromDate);
+   195→      if (toDate) qs.set("to", toDate);
+   196→      if (filter !== "ALL") qs.set("status", filter);
+   197→      const res = await fetch(`/api/admin/appointments?${qs.toString()}`);
+   198→      if (res.status === 401) {
+   199→        onSessionExpired();
+   200→        return;
+   201→      }
+   202→      if (!res.ok) throw new Error("Export failed");
+   203→      const blob = await res.blob();
+   204→      const disposition = res.headers.get("Content-Disposition") ?? "";
+   205→      const filename =
+   206→        /filename="([^"]+)"/.exec(disposition)?.[1] ?? "appointments.csv";
+   207→      const url = URL.createObjectURL(blob);
+   208→      const a = document.createElement("a");
+   209→      a.href = url;
+   210→      a.download = filename;
+   211→      document.body.appendChild(a);
+   212→      a.click();
+   213→      a.remove();
+   214→      URL.revokeObjectURL(url);
+   215→    } catch {
+   216→      setLoadError("Could not export the CSV. Please try again.");
+   217→    } finally {
+   218→      setExporting(false);
+   219→    }
+   220→  }
+   221→
+   222→  const serviceMap = useMemo(() => {
+   223→    const m: Record<string, string> = {};
+   224→    services.forEach((s) => (m[s.slug] = s.shortName));
+   225→    return m;
+   226→  }, []);
+   227→  const doctorMap = useMemo(() => {
+   228→    const m: Record<string, string> = {};
+   229→    doctors.forEach((doc) => (m[doc.slug] = doc.name));
+   230→    return m;
+   231→  }, []);
+   232→
+   233→  const filtered = useMemo(() => {
+   234→    const q = search.trim().toLowerCase();
+   235→    return rows.filter((r) => {
+   236→      if (filter !== "ALL" && r.status !== filter) return false;
+   237→      if (!q) return true;
+   238→      return (
+   239→        r.name.toLowerCase().includes(q) ||
+   240→        r.phone.includes(q) ||
+   241→        r.refCode.toLowerCase().includes(q)
+   242→      );
+   243→    });
+   244→  }, [rows, filter, search]);
+   245→
+   246→  const statCards = stats
+   247→    ? [
+   248→        { label: "Total", value: stats.total, Icon: Inbox, tone: "text-brand-navy bg-blue-50 ring-blue-100" },
+   249→        { label: "Pending", value: stats.pending, Icon: Clock, tone: "text-amber-700 bg-amber-50 ring-amber-100" },
+   250→        { label: "Confirmed", value: stats.confirmed, Icon: BadgeCheck, tone: "text-brand-blue bg-blue-50 ring-blue-100" },
+   251→        { label: "Completed", value: stats.completed, Icon: CheckCircle2, tone: "text-emerald-700 bg-emerald-50 ring-emerald-100" },
+   252→        { label: "Cancelled", value: stats.cancelled, Icon: Ban, tone: "text-rose-600 bg-rose-50 ring-rose-100" },
+   253→        { label: "Today", value: stats.today, Icon: CalendarClock, tone: "text-brand-navy bg-ice ring-blue-100" },
+   254→      ]
+   255→    : [];
+   256→
+   257→  return (
+   258→    <div>
+   259→      <PanelToolbar lastUpdated={lastUpdated} loading={loading} onRefresh={load} />
+   260→
+   261→      {/* Stats */}
+   262→      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+   263→        {statCards.map((s, i) => (
+   264→          <motion.div
+   265→            key={s.label}
+   266→            initial={{ opacity: 0, y: 16 }}
+   267→            animate={{ opacity: 1, y: 0 }}
+   268→            transition={{ delay: i * 0.05, duration: 0.4 }}
+   269→            className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]"
+   270→          >
+   271→            <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1", s.tone)}>
+   272→              <s.Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   273→            </span>
+   274→            <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+   275→              {s.value}
+   276→            </p>
+   277→            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   278→              {s.label}
+   279→            </p>
+   280→          </motion.div>
+   281→        ))}
+   282→      </div>
+   283→
+   284→      {/* Stat cards reflect the active date range */}
+   285→      <AnimatePresence mode="wait">
+   286→        <motion.p
+   287→          key={range ? range.label : "all-time"}
+   288→          initial={{ opacity: 0 }}
+   289→          animate={{ opacity: 1 }}
+   290→          exit={{ opacity: 0 }}
+   291→          transition={{ duration: 0.25 }}
+   292→          className="mt-3 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+   293→        >
+   294→          {range ? `Stat cards · ${range.label}` : "Stat cards · all time"}
+   295→        </motion.p>
+   296→      </AnimatePresence>
+   297→
+   298→      {/* Toolbar */}
+   299→      <div className="mt-6 rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+   300→        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   301→          <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Filter by status">
+   302→            {(["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as StatusFilter[]).map((f) => {
+   303→              const active = filter === f;
+   304→              const count =
+   305→                f === "ALL" ? rows.length : rows.filter((r) => r.status === f).length;
+   306→              return (
+   307→                <button
+   308→                  key={f}
+   309→                  role="tab"
+   310→                  aria-selected={active}
+   311→                  onClick={() => setFilter(f)}
+   312→                  className={cn(
+   313→                    "relative rounded-full px-4 py-2 text-xs font-bold transition-all duration-300",
+   314→                    active
+   315→                      ? "bg-brand-navy text-white shadow-md shadow-navy-900/25"
+   316→                      : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+   317→                  )}
+   318→                >
+   319→                  {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+   320→                  <span
+   321→                    className={cn(
+   322→                      "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+   323→                      active ? "bg-white/20 text-white" : "bg-white text-slate-500"
+   324→                    )}
+   325→                  >
+   326→                    {count}
+   327→                  </span>
+   328→                </button>
+   329→              );
+   330→            })}
+   331→          </div>
+   332→          <div className="relative sm:w-72">
+   333→            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+   334→            <input
+   335→              type="search"
+   336→              value={search}
+   337→              onChange={(e) => setSearch(e.target.value)}
+   338→              placeholder="Search name, phone or ref…"
+   339→              aria-label="Search appointments"
+   340→              className="h-11 w-full rounded-full border border-blue-100 bg-ice pl-10 pr-4 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   341→            />
+   342→          </div>
+   343→        </div>
+   344→
+   345→        {/* Date-range filter row */}
+   346→        <div className="my-4 border-t border-blue-100/70" aria-hidden="true" />
+   347→        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+   348→          <div className="flex flex-wrap items-center gap-1.5">
+   349→            <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+   350→              <CalendarRange className="h-3.5 w-3.5" aria-hidden="true" />
+   351→              Dates
+   352→            </span>
+   353→            {DATE_PRESETS.map((p) => {
+   354→              const active = preset === p.id;
+   355→              return (
+   356→                <button
+   357→                  key={p.id}
+   358→                  type="button"
+   359→                  aria-pressed={active}
+   360→                  onClick={() => applyPreset(p.id)}
+   361→                  className={cn(
+   362→                    "rounded-full px-3.5 py-2 text-xs font-bold transition-all duration-300",
+   363→                    active
+   364→                      ? "bg-brand-blue text-white shadow-md shadow-blue-500/30 ring-2 ring-brand-blue/40"
+   365→                      : "bg-blue-50/70 text-slate-600 hover:bg-blue-100/80 hover:text-brand-navy"
+   366→                  )}
+   367→                >
+   368→                  {p.label}
+   369→                </button>
+   370→              );
+   371→            })}
+   372→          </div>
+   373→
+   374→          <div className="flex flex-wrap items-center gap-2.5">
+   375→            <div className="flex items-center gap-2">
+   376→              <label htmlFor="admin-from-date" className="sr-only">
+   377→                From date
+   378→              </label>
+   379→              <input
+   380→                id="admin-from-date"
+   381→                type="date"
+   382→                value={fromDate}
+   383→                onChange={(e) => onFromDateChange(e.target.value)}
+   384→                aria-label="Show appointments from this date"
+   385→                className="h-11 w-[8.75rem] rounded-xl border border-blue-100 bg-ice px-3 text-[13px] font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   386→              />
+   387→              <span className="text-xs font-bold text-slate-300" aria-hidden="true">
+   388→                →
+   389→              </span>
+   390→              <label htmlFor="admin-to-date" className="sr-only">
+   391→                To date
+   392→              </label>
+   393→              <input
+   394→                id="admin-to-date"
+   395→                type="date"
+   396→                value={toDate}
+   397→                onChange={(e) => onToDateChange(e.target.value)}
+   398→                aria-label="Show appointments up to this date"
+   399→                className="h-11 w-[8.75rem] rounded-xl border border-blue-100 bg-ice px-3 text-[13px] font-medium tabular-nums text-brand-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   400→              />
+   401→            </div>
+   402→            <Button
+   403→              type="button"
+   404→              onClick={exportCsv}
+   405→              disabled={exporting}
+   406→              title="Download the currently filtered appointments as a CSV file"
+   407→              className="h-11 rounded-full bg-brand-gold px-5 text-sm font-bold text-brand-navy shadow-md shadow-amber-500/30 hover:bg-amber-400 disabled:opacity-60"
+   408→            >
+   409→              {exporting ? (
+   410→                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   411→              ) : (
+   412→                <Download className="h-4 w-4" aria-hidden="true" />
+   413→              )}
+   414→              Export CSV
+   415→            </Button>
+   416→          </div>
+   417→        </div>
+   418→
+   419→        {invalidRange && (
+   420→          <p className="mt-3 text-xs font-medium text-rose-600">
+   421→            The “From” date is after the “To” date — no appointments can match this range.
+   422→          </p>
+   423→        )}
+   424→      </div>
+   425→
+   426→      {/* Active range indicator */}
+   427→      <AnimatePresence>
+   428→        {range && (
+   429→          <motion.div
+   430→            initial={{ opacity: 0, y: -8 }}
+   431→            animate={{ opacity: 1, y: 0 }}
+   432→            exit={{ opacity: 0, y: -8 }}
+   433→            transition={{ duration: 0.3, ease: "easeOut" }}
+   434→            role="status"
+   435→            className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-2xl border border-amber-200/80 bg-brand-gold-soft/50 px-4 py-3 shadow-sm"
+   436→          >
+   437→            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-amber-200">
+   438→              <CalendarRange className="h-4.5 w-4.5" aria-hidden="true" />
+   439→            </span>
+   440→            <p className="text-sm text-slate-600">
+   441→              Showing{" "}
+   442→              <span className="font-heading text-base font-bold tabular-nums text-brand-navy">
+   443→                {range.total}
+   444→              </span>{" "}
+   445→              appointment{range.total === 1 ? "" : "s"} in range{" "}
+   446→              <span className="font-semibold text-brand-navy">{range.label}</span>
+   447→            </p>
+   448→            <button
+   449→              type="button"
+   450→              onClick={() => applyPreset("all")}
+   451→              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-xs font-bold text-slate-600 ring-1 ring-amber-200 transition-all duration-300 hover:text-rose-600 hover:ring-rose-200"
+   452→            >
+   453→              <X className="h-3.5 w-3.5" aria-hidden="true" />
+   454→              Clear filter
+   455→            </button>
+   456→          </motion.div>
+   457→        )}
+   458→      </AnimatePresence>
+   459→
+   460→      {loadError && (
+   461→        <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+   462→          {loadError}
+   463→        </p>
+   464→      )}
+   465→
+   466→      {/* List */}
+   467→      {loading && rows.length === 0 ? (
+   468→        <div className="mt-8 flex items-center justify-center py-20">
+   469→          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden="true" />
+   470→        </div>
+   471→      ) : filtered.length === 0 ? (
+   472→        <motion.div
+   473→          initial={{ opacity: 0, y: 10 }}
+   474→          animate={{ opacity: 1, y: 0 }}
+   475→          transition={{ duration: 0.35 }}
+   476→          className="mt-8 rounded-3xl border border-dashed border-blue-200 bg-white/60 py-20 text-center"
+   477→        >
+   478→          <CalendarDays className="mx-auto h-10 w-10 text-blue-300" aria-hidden="true" />
+   479→          <p className="font-heading mt-4 text-lg font-bold text-brand-navy">
+   480→            {rows.length === 0 && range
+   481→              ? "No appointments in this date range"
+   482→              : "No appointments found"}
+   483→          </p>
+   484→          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+   485→            {rows.length === 0 && range
+   486→              ? "No bookings fall inside the selected date range. Try widening it or clear the filter."
+   487→              : rows.length === 0
+   488→                ? "New online bookings will appear here in real time."
+   489→                : "Try a different filter or search term."}
+   490→          </p>
+   491→          {rows.length === 0 && range && (
+   492→            <Button
+   493→              onClick={() => applyPreset("all")}
+   494→              variant="outline"
+   495→              className="mt-5 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   496→            >
+   497→              <X className="h-4 w-4" aria-hidden="true" />
+   498→              Clear date filter
+   499→            </Button>
+   500→          )}
+   501→        </motion.div>
+   502→      ) : (
+   503→        <>
+   504→          {/* Desktop table */}
+   505→          <div className="mt-6 hidden overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_14px_40px_-24px_rgba(0,32,96,0.25)] lg:block">
+   506→            <div className="max-h-[38rem] overflow-y-auto scroll-area">
+   507→              <table className="w-full text-left text-sm table-zebra">
+   508→                <thead className="sticky top-0 z-10 bg-ice/95 backdrop-blur">
+   509→                  <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+   510→                    <th scope="col" className="px-5 py-3.5 font-semibold">Patient</th>
+   511→                    <th scope="col" className="px-5 py-3.5 font-semibold">Service / Doctor</th>
+   512→                    <th scope="col" className="px-5 py-3.5 font-semibold">Schedule</th>
+   513→                    <th scope="col" className="px-5 py-3.5 font-semibold">Status</th>
+   514→                    <th scope="col" className="px-5 py-3.5 text-right font-semibold">Actions</th>
+   515→                  </tr>
+   516→                </thead>
+   517→                <tbody className="divide-y divide-blue-50">
+   518→                  {filtered.map((r) => (
+   519→                    <tr key={r.id} className="transition-colors hover:bg-blue-50/40">
+   520→                      <td className="px-5 py-4">
+   521→                        <p className="font-semibold text-brand-navy">{r.name}</p>
+   522→                        <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+   523→                        <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+   524→                      </td>
+   525→                      <td className="px-5 py-4">
+   526→                        <p className="text-xs font-semibold text-slate-700">
+   527→                          {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "—"}
+   528→                        </p>
+   529→                        <p className="mt-0.5 text-xs text-slate-500">
+   530→                          {r.doctorSlug ? doctorMap[r.doctorSlug] ?? r.doctorSlug : "Any available doctor"}
+   531→                        </p>
+   532→                        {r.notes && (
+   533→                          <p className="mt-1 line-clamp-1 max-w-56 text-[11px] italic text-slate-400" title={r.notes}>
+   534→                            “{r.notes}”
+   535→                          </p>
+   536→                        )}
+   537→                      </td>
+   538→                      <td className="px-5 py-4">
+   539→                        <p className="font-semibold tabular-nums text-slate-700">{r.date}</p>
+   540→                        <p className="mt-0.5 text-xs text-slate-500">{r.time}</p>
+   541→                      </td>
+   542→                      <td className="px-5 py-4">
+   543→                        <span className={cn(
+   544→                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1",
+   545→                          statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+   546→                        )}>
+   547→                          {r.status === "PENDING" && (
+   548→                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+   549→                          )}
+   550→                          {r.status}
+   551→                        </span>
+   552→                      </td>
+   553→                      <td className="px-5 py-4">
+   554→                        <div className="flex items-center justify-end gap-1.5">
+   555→                          {busyRef === r.refCode ? (
+   556→                            <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+   557→                          ) : (
+   558→                            <>
+   559→                              {r.status === "PENDING" && (
+   560→                                <>
+   561→                                  <SmallAction
+   562→                                    label="Confirm"
+   563→                                    tone="confirm"
+   564→                                    onClick={() => updateStatus(r.refCode, "CONFIRMED")}
+   565→                                  />
+   566→                                  <SmallAction
+   567→                                    label="Cancel"
+   568→                                    tone="cancel"
+   569→                                    onClick={() => updateStatus(r.refCode, "CANCELLED")}
+   570→                                  />
+   571→                                </>
+   572→                              )}
+   573→                              {r.status === "CONFIRMED" && (
+   574→                                <>
+   575→                                  <SmallAction
+   576→                                    label="Complete"
+   577→                                    tone="complete"
+   578→                                    onClick={() => updateStatus(r.refCode, "COMPLETED")}
+   579→                                  />
+   580→                                  <SmallAction
+   581→                                    label="Cancel"
+   582→                                    tone="cancel"
+   583→                                    onClick={() => updateStatus(r.refCode, "CANCELLED")}
+   584→                                  />
+   585→                                </>
+   586→                              )}
+   587→                              {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+   588→                                <SmallAction
+   589→                                  label="Reopen"
+   590→                                  tone="neutral"
+   591→                                  onClick={() => updateStatus(r.refCode, "PENDING")}
+   592→                                />
+   593→                              )}
+   594→                            </>
+   595→                          )}
+   596→                        </div>
+   597→                      </td>
+   598→                    </tr>
+   599→                  ))}
+   600→                </tbody>
+   601→              </table>
+   602→            </div>
+   603→          </div>
+   604→
+   605→          {/* Mobile cards */}
+   606→          <div className="mt-6 space-y-3 lg:hidden">
+   607→            {filtered.map((r) => (
+   608→              <motion.article
+   609→                key={r.id}
+   610→                initial={{ opacity: 0, y: 14 }}
+   611→                animate={{ opacity: 1, y: 0 }}
+   612→                className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm"
+   613→              >
+   614→                <div className="flex items-start justify-between gap-3">
+   615→                  <div>
+   616→                    <p className="font-semibold text-brand-navy">{r.name}</p>
+   617→                    <p className="mt-0.5 text-xs text-slate-500">{r.phone}</p>
+   618→                    <p className="mt-0.5 font-mono text-[10px] text-slate-400">{r.refCode}</p>
+   619→                  </div>
+   620→                  <span className={cn(
+   621→                    "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ring-1",
+   622→                    statusStyles[r.status] ?? "bg-slate-50 text-slate-600 ring-slate-200"
+   623→                  )}>
+   624→                    {r.status === "PENDING" && (
+   625→                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+   626→                    )}
+   627→                    {r.status}
+   628→                  </span>
+   629→                </div>
+   630→                <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-ice px-3.5 py-3 text-xs text-slate-600">
+   631→                  <p className="col-span-2">
+   632→                    <Sparkles className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   633→                    {r.serviceSlug ? serviceMap[r.serviceSlug] ?? r.serviceSlug : "Service: —"}
+   634→                    {r.doctorSlug ? ` • ${doctorMap[r.doctorSlug] ?? r.doctorSlug}` : ""}
+   635→                  </p>
+   636→                  <p className="col-span-2 font-semibold tabular-nums">
+   637→                    <CalendarDays className="mr-1.5 inline h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   638→                    {r.date} • {r.time}
+   639→                  </p>
+   640→                  {r.notes && (
+   641→                    <p className="col-span-2 line-clamp-2 italic text-slate-400">“{r.notes}”</p>
+   642→                  )}
+   643→                </div>
+   644→                {busyRef === r.refCode ? (
+   645→                  <div className="mt-3 flex justify-center py-1.5">
+   646→                    <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
+   647→                  </div>
+   648→                ) : (
+   649→                  <div className="mt-3 flex flex-wrap gap-2">
+   650→                    {r.status === "PENDING" && (
+   651→                      <>
+   652→                        <SmallAction label="Confirm" tone="confirm" onClick={() => updateStatus(r.refCode, "CONFIRMED")} />
+   653→                        <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+   654→                      </>
+   655→                    )}
+   656→                    {r.status === "CONFIRMED" && (
+   657→                      <>
+   658→                        <SmallAction label="Complete" tone="complete" onClick={() => updateStatus(r.refCode, "COMPLETED")} />
+   659→                        <SmallAction label="Cancel" tone="cancel" onClick={() => updateStatus(r.refCode, "CANCELLED")} />
+   660→                      </>
+   661→                    )}
+   662→                    {(r.status === "COMPLETED" || r.status === "CANCELLED") && (
+   663→                      <SmallAction label="Reopen as Pending" tone="neutral" onClick={() => updateStatus(r.refCode, "PENDING")} />
+   664→                    )}
+   665→                  </div>
+   666→                )}
+   667→              </motion.article>
+   668→            ))}
+   669→          </div>
+   670→        </>
+   671→      )}
+   672→    </div>
+   673→  );
+   674→}
+   675→

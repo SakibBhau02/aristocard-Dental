@@ -1,0 +1,642 @@
+   601→        prev
+   602→          ? {
+   603→              ...prev,
+   604→              appointments: prev.appointments.map((a) =>
+   605→                a.refCode === ref ? { ...a, status: "CANCELLED" as const } : a
+   606→              ),
+   607→              stats: {
+   608→                ...prev.stats,
+   609→                upcoming: Math.max(0, prev.stats.upcoming - 1),
+   610→                cancelled: prev.stats.cancelled + 1,
+   611→              },
+   612→            }
+   613→          : prev
+   614→      );
+   615→      setCancelTarget(null);
+   616→    } catch {
+   617→      toast({
+   618→        title: t.toastCancelFail,
+   619→        description: t.toastGenericFailDesc.replace("{phone}", settings.phone),
+   620→        variant: "destructive",
+   621→      });
+   622→    } finally {
+   623→      setCancelling(false);
+   624→    }
+   625→  };
+   626→
+   627→  /* --- reschedule (session-verified — no phone re-entry) ------------- */
+   628→  const [rescheduleTarget, setRescheduleTarget] = useState<PatientAppointment | null>(null);
+   629→  const [rescheduleForm, setRescheduleForm] = useState({ date: "", time: "", notes: "" });
+   630→  const [rescheduleError, setRescheduleError] = useState("");
+   631→  const [rescheduling, setRescheduling] = useState(false);
+   632→
+   633→  const openReschedule = (appt: PatientAppointment) => {
+   634→    setRescheduleTarget(appt);
+   635→    setRescheduleForm({ date: appt.date, time: appt.time, notes: "" });
+   636→    setRescheduleError("");
+   637→  };
+   638→
+   639→  const closeReschedule = () => {
+   640→    if (rescheduling) return; /* don't abandon a request in flight */
+   641→    setRescheduleTarget(null);
+   642→    setRescheduleError("");
+   643→  };
+   644→
+   645→  const performReschedule = async (e?: FormEvent) => {
+   646→    e?.preventDefault();
+   647→    if (!rescheduleTarget || rescheduling) return;
+   648→    setRescheduleError("");
+   649→
+   650→    /* Inline client-side validation (the server re-checks everything). */
+   651→    if (!rescheduleForm.date) {
+   652→      setRescheduleError(t.rescheduleDateRequired);
+   653→      return;
+   654→    }
+   655→    if (rescheduleForm.date < localTodayISO()) {
+   656→      setRescheduleError(t.reschedulePastDate);
+   657→      return;
+   658→    }
+   659→    if (!rescheduleForm.time) {
+   660→      setRescheduleError(t.rescheduleTimeRequired);
+   661→      return;
+   662→    }
+   663→    if (
+   664→      rescheduleForm.date === rescheduleTarget.date &&
+   665→      rescheduleForm.time === rescheduleTarget.time
+   666→    ) {
+   667→      setRescheduleError(t.rescheduleSameSlot);
+   668→      return;
+   669→    }
+   670→
+   671→    setRescheduling(true);
+   672→    try {
+   673→      const res = await fetch("/api/patient/reschedule", {
+   674→        method: "POST",
+   675→        headers: { "Content-Type": "application/json" },
+   676→        body: JSON.stringify({
+   677→          refCode: rescheduleTarget.refCode,
+   678→          date: rescheduleForm.date,
+   679→          time: rescheduleForm.time,
+   680→          notes: rescheduleForm.notes.trim() || undefined,
+   681→        }),
+   682→        credentials: "same-origin",
+   683→      });
+   684→      const data = await res.json();
+   685→      if (!res.ok) {
+   686→        setRescheduleError(data.error ?? t.toastRescheduleFail);
+   687→        return;
+   688→      }
+   689→      toast({ title: t.toastRescheduleOk, description: t.toastRescheduleOkDesc });
+   690→      setRescheduleTarget(null);
+   691→      await refreshDashboard({ silent: true });
+   692→    } catch {
+   693→      setRescheduleError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
+   694→    } finally {
+   695→      setRescheduling(false);
+   696→    }
+   697→  };
+   698→
+   699→  /* --- profile settings ---------------------------------------------- */
+   700→  const [editingProfile, setEditingProfile] = useState(false);
+   701→  const [profileForm, setProfileForm] = useState({ name: "", email: "" });
+   702→  const [profileError, setProfileError] = useState("");
+   703→  const [savingProfile, setSavingProfile] = useState(false);
+   704→
+   705→  const startEditProfile = () => {
+   706→    if (!dash) return;
+   707→    setProfileForm({ name: dash.patient.name, email: dash.patient.email ?? "" });
+   708→    setProfileError("");
+   709→    setEditingProfile(true);
+   710→  };
+   711→
+   712→  const submitProfile = async (e?: FormEvent) => {
+   713→    e?.preventDefault();
+   714→    if (savingProfile || !dash) return;
+   715→    setProfileError("");
+   716→    const name = profileForm.name.trim();
+   717→    if (name.length < 2) {
+   718→      setProfileError("Name must be at least 2 characters.");
+   719→      return;
+   720→    }
+   721→    if (profileForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email.trim())) {
+   722→      setProfileError("Please provide a valid email address.");
+   723→      return;
+   724→    }
+   725→    setSavingProfile(true);
+   726→    try {
+   727→      const res = await fetch("/api/patient/profile", {
+   728→        method: "PUT",
+   729→        headers: { "Content-Type": "application/json" },
+   730→        body: JSON.stringify({ name, email: profileForm.email.trim() || undefined }),
+   731→        credentials: "same-origin",
+   732→      });
+   733→      const data = await res.json();
+   734→      if (!res.ok) {
+   735→        setProfileError(data.error ?? t.toastGenericFail);
+   736→        toast({ title: t.toastGenericFail, description: data.error, variant: "destructive" });
+   737→        return;
+   738→      }
+   739→      toast({ title: t.toastProfileOk, description: data.message });
+   740→      setEditingProfile(false);
+   741→      await refreshDashboard({ silent: true });
+   742→    } catch {
+   743→      setProfileError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
+   744→    } finally {
+   745→      setSavingProfile(false);
+   746→    }
+   747→  };
+   748→
+   749→  /* --- change password ----------------------------------------------- */
+   750→  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+   751→  const [pwError, setPwError] = useState("");
+   752→  const [savingPw, setSavingPw] = useState(false);
+   753→
+   754→  const submitPassword = async (e?: FormEvent) => {
+   755→    e?.preventDefault();
+   756→    if (savingPw) return;
+   757→    setPwError("");
+   758→    if (!pwForm.current) return;
+   759→    if (!PASSWORD_RE.test(pwForm.next)) {
+   760→      setPwError(t.registerPasswordHint);
+   761→      return;
+   762→    }
+   763→    if (pwForm.next !== pwForm.confirm) {
+   764→      setPwError(t.registerMismatch);
+   765→      return;
+   766→    }
+   767→    setSavingPw(true);
+   768→    try {
+   769→      const res = await fetch("/api/patient/password", {
+   770→        method: "PUT",
+   771→        headers: { "Content-Type": "application/json" },
+   772→        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.next }),
+   773→        credentials: "same-origin",
+   774→      });
+   775→      const data = await res.json();
+   776→      if (!res.ok) {
+   777→        setPwError(data.error ?? t.toastGenericFail);
+   778→        return;
+   779→      }
+   780→      toast({ title: t.toastPasswordOk, description: data.message });
+   781→      setPwForm({ current: "", next: "", confirm: "" });
+   782→    } catch {
+   783→      setPwError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
+   784→    } finally {
+   785→      setSavingPw(false);
+   786→    }
+   787→  };
+   788→
+   789→  /* --- derived dashboard lists ---------------------------------------- */
+   790→  const todayISO = localTodayISO();
+   791→  const isUpcoming = (a: PatientAppointment) =>
+   792→    (a.status === "PENDING" || a.status === "CONFIRMED") && a.date >= todayISO;
+   793→
+   794→  const upcoming =
+   795→    dash?.appointments.filter(isUpcoming).sort((a, b) =>
+   796→      a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)
+   797→    ) ?? [];
+   798→  /* Everything that is no longer an active future booking — completed
+   799→     visits, cancellations and dated-out appointments (the past record). */
+   800→  const past = dash?.appointments.filter((a) => !isUpcoming(a)) ?? [];
+   801→
+   802→  /* ================================================================== */
+   803→  /*  RENDER                                                             */
+   804→  /* ================================================================== */
+   805→
+   806→  const modeTabs: { id: Mode; label: string; hint: string; icon: LucideIcon }[] = [
+   807→    { id: "quick", label: t.tabQuick, hint: t.tabQuickHint, icon: Search },
+   808→    { id: "login", label: t.tabLogin, hint: t.tabLoginHint, icon: UserRound },
+   809→    { id: "register", label: t.tabRegister, hint: t.tabRegisterHint, icon: UserRoundPlus },
+   810→  ];
+   811→
+   812→  return (
+   813→    <>
+   814→      <PageHeader
+   815→        eyebrow={t.eyebrow}
+   816→        title={t.title}
+   817→        description={t.description}
+   818→        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: t.breadcrumb }]}
+   819→      />
+   820→
+   821→      <section
+   822→        className={cn(
+   823→          "relative overflow-hidden",
+   824→          session === "authed" ? "section-wash bg-slate-50/80" : "hero-mesh"
+   825→        )}
+   826→      >
+   827→        <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-18">
+   828→          {/* ---------- session probe ---------- */}
+   829→          {session === "checking" && (
+   830→            <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center" aria-live="polite">
+   831→              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-lg shadow-blue-100 ring-1 ring-blue-100">
+   832→                <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
+   833→              </span>
+   834→              <p className="text-sm font-semibold text-brand-navy/70">{t.loadingDashboard}</p>
+   835→            </div>
+   836→          )}
+   837→
+   838→          {/* ---------- guest: auth card ---------- */}
+   839→          {session === "guest" && (
+   840→            <Reveal>
+   841→              <div className="rounded-[2rem] border border-blue-100/80 bg-white p-5 shadow-[0_24px_60px_-24px_rgba(0,32,96,0.25)] sm:p-8">
+   842→                {/* 3-way segmented control */}
+   843→                <div
+   844→                  className="relative mx-auto flex w-full max-w-xl rounded-2xl bg-ice p-1.5"
+   845→                  role="tablist"
+   846→                  aria-label={t.title}
+   847→                >
+   848→                  {modeTabs.map((tab) => {
+   849→                    const active = mode === tab.id;
+   850→                    const TabIcon = tab.icon;
+   851→                    return (
+   852→                      <button
+   853→                        key={tab.id}
+   854→                        type="button"
+   855→                        role="tab"
+   856→                        aria-selected={active}
+   857→                        onClick={() => switchMode(tab.id)}
+   858→                        className={cn(
+   859→                          "relative flex-1 rounded-xl px-2 py-2 transition-colors duration-300 sm:px-3",
+   860→                          active ? "text-white" : "text-brand-navy/70 hover:text-brand-navy"
+   861→                        )}
+   862→                      >
+   863→                        {active && (
+   864→                          <motion.span
+   865→                            layoutId="portal-mode-pill"
+   866→                            className="absolute inset-0 rounded-xl bg-brand-navy shadow-lg shadow-navy-900/25"
+   867→                            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+   868→                          />
+   869→                        )}
+   870→                        <span className="relative flex flex-col items-center gap-0.5">
+   871→                          <span className="flex items-center gap-1.5 text-[13px] font-bold sm:text-sm">
+   872→                            <TabIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+   873→                            {tab.label}
+   874→                          </span>
+   875→                          <span
+   876→                            className={cn(
+   877→                              "text-center text-[10px] font-medium leading-tight sm:text-[11px]",
+   878→                              active ? "text-blue-200" : "text-slate-400"
+   879→                            )}
+   880→                          >
+   881→                            {tab.hint}
+   882→                          </span>
+   883→                        </span>
+   884→                      </button>
+   885→                    );
+   886→                  })}
+   887→                </div>
+   888→
+   889→                <AnimatePresence mode="wait">
+   890→                  {/* ================= QUICK CHECK ================= */}
+   891→                  {mode === "quick" && (
+   892→                    <motion.div
+   893→                      key="quick"
+   894→                      initial={{ opacity: 0, y: 8 }}
+   895→                      animate={{ opacity: 1, y: 0 }}
+   896→                      exit={{ opacity: 0, y: -8 }}
+   897→                      transition={{ duration: 0.25 }}
+   898→                      className="mt-7"
+   899→                    >
+   900→                      <div className="text-center">
+   901→                        <h2 className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+   902→                          {t.quickTitle}
+   903→                        </h2>
+   904→                        <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
+   905→                          {t.quickDesc}
+   906→                        </p>
+   907→                      </div>
+   908→
+   909→                      <form onSubmit={submitQuickCheck} className="mx-auto mt-6 max-w-md">
+   910→                        <PhoneField
+   911→                          id="quick-phone"
+   912→                          value={quickPhone}
+   913→                          onChange={setQuickPhone}
+   914→                          label={t.quickPhoneLabel}
+   915→                          hint={t.quickPhoneHint}
+   916→                        />
+   917→                        <Button
+   918→                          type="submit"
+   919→                          disabled={quickLoading || quickPhone.length !== 11}
+   920→                          className="mt-6 h-13 w-full rounded-2xl bg-brand-blue text-base font-bold shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+   921→                        >
+   922→                          {quickLoading ? (
+   923→                            <>
+   924→                              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+   925→                              {t.quickSearching}
+   926→                            </>
+   927→                          ) : (
+   928→                            <>
+   929→                              <Search className="h-5 w-5" aria-hidden="true" />
+   930→                              {t.quickFind}
+   931→                            </>
+   932→                          )}
+   933→                        </Button>
+   934→                      </form>
+   935→
+   936→                      <AnimatePresence>
+   937→                        {quickError && (
+   938→                          <div className="mx-auto mt-5 max-w-md">
+   939→                            <ErrorBanner message={quickError} />
+   940→                          </div>
+   941→                        )}
+   942→                      </AnimatePresence>
+   943→
+   944→                      {/* results */}
+   945→                      <AnimatePresence>
+   946→                        {quickResults && quickResults.length > 0 && (
+   947→                          <motion.div
+   948→                            initial={{ opacity: 0, y: 18 }}
+   949→                            animate={{ opacity: 1, y: 0 }}
+   950→                            exit={{ opacity: 0 }}
+   951→                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   952→                            className="mt-8"
+   953→                            aria-live="polite"
+   954→                          >
+   955→                            <h3 className="font-heading text-lg font-bold text-brand-navy">
+   956→                              {t.quickResultsTitle.replace(
+   957→                                "{count}",
+   958→                                bn ? toBnDigits(quickResults.length) : String(quickResults.length)
+   959→                              )}
+   960→                            </h3>
+   961→                            <div className="mt-4 space-y-5">
+   962→                              {quickResults.map((appt, i) => (
+   963→                                <Reveal key={appt.refCode} delay={Math.min(i * 0.06, 0.3)}>
+   964→                                  <PortalAppointmentCard appt={appt} />
+   965→                                </Reveal>
+   966→                              ))}
+   967→                            </div>
+   968→
+   969→                            {/* upsell → login with phone pre-filled */}
+   970→                            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/90 to-ice/70 p-5 sm:flex-row sm:items-center">
+   971→                              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-500 shadow-sm ring-1 ring-amber-100">
+   972→                                <Sparkles className="h-6 w-6" aria-hidden="true" />
+   973→                              </span>
+   974→                              <div className="flex-1">
+   975→                                <p className="font-heading text-sm font-bold text-brand-navy">
+   976→                                  {t.quickUpsellTitle}
+   977→                                </p>
+   978→                                <p className="mt-1 text-xs leading-relaxed text-slate-600">
+   979→                                  {t.quickUpsellText}
+   980→                                </p>
+   981→                              </div>
+   982→                              <Button
+   983→                                type="button"
+   984→                                onClick={() => goToLoginWithPhone(quickPhone.trim())}
+   985→                                className="h-12 shrink-0 rounded-2xl bg-brand-navy px-5 text-sm font-bold text-white shadow-lg shadow-navy-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-xl"
+   986→                              >
+   987→                                <UserRound className="h-4 w-4" aria-hidden="true" />
+   988→                                {t.tabLogin}
+   989→                                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+   990→                              </Button>
+   991→                            </div>
+   992→                          </motion.div>
+   993→                        )}
+   994→                      </AnimatePresence>
+   995→                    </motion.div>
+   996→                  )}
+   997→
+   998→                  {/* ================= LOGIN ================= */}
+   999→                  {mode === "login" && (
+  1000→                    <motion.div
+  1001→                      key="login"
+  1002→                      initial={{ opacity: 0, y: 8 }}
+  1003→                      animate={{ opacity: 1, y: 0 }}
+  1004→                      exit={{ opacity: 0, y: -8 }}
+  1005→                      transition={{ duration: 0.25 }}
+  1006→                      className="mt-7"
+  1007→                    >
+  1008→                      <div className="text-center">
+  1009→                        <h2 className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+  1010→                          {t.loginTitle}
+  1011→                        </h2>
+  1012→                        <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
+  1013→                          {t.loginDesc}
+  1014→                        </p>
+  1015→                      </div>
+  1016→
+  1017→                      <form onSubmit={submitLogin} className="mx-auto mt-6 max-w-md" noValidate>
+  1018→                        <PhoneField
+  1019→                          id="login-phone"
+  1020→                          value={loginForm.phone}
+  1021→                          onChange={(v) => setLoginForm((f) => ({ ...f, phone: v }))}
+  1022→                          label={t.loginPhoneLabel}
+  1023→                        />
+  1024→                        <div className="mt-4 space-y-2">
+  1025→                          <Label htmlFor="login-password" className="text-sm font-semibold text-brand-navy">
+  1026→                            {t.loginPasswordLabel} <span className="text-rose-500">*</span>
+  1027→                          </Label>
+  1028→                          <PasswordInput
+  1029→                            id="login-password"
+  1030→                            value={loginForm.password}
+  1031→                            onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
+  1032→                            autoComplete="current-password"
+  1033→                            showLabel={t.loginShow}
+  1034→                            hideLabel={t.loginHide}
+  1035→                          />
+  1036→                        </div>
+  1037→
+  1038→                        <Button
+  1039→                          type="submit"
+  1040→                          disabled={
+  1041→                            loggingIn ||
+  1042→                            loginForm.phone.length !== 11 ||
+  1043→                            loginForm.password.length === 0
+  1044→                          }
+  1045→                          className="mt-6 h-13 w-full rounded-2xl bg-brand-blue text-base font-bold shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+  1046→                        >
+  1047→                          {loggingIn ? (
+  1048→                            <>
+  1049→                              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+  1050→                              {t.loginSubmitting}
+  1051→                            </>
+  1052→                          ) : (
+  1053→                            <>
+  1054→                              <UserRound className="h-5 w-5" aria-hidden="true" />
+  1055→                              {t.loginSubmit}
+  1056→                            </>
+  1057→                          )}
+  1058→                        </Button>
+  1059→
+  1060→                        <p className="mt-4 text-center text-xs text-slate-500">
+  1061→                          {t.loginNoAccount}{" "}
+  1062→                          <button
+  1063→                            type="button"
+  1064→                            onClick={() => switchMode("register")}
+  1065→                            className="font-semibold text-brand-blue underline-offset-4 transition-colors hover:text-brand-navy hover:underline"
+  1066→                          >
+  1067→                            {t.loginNoAccountCta}
+  1068→                          </button>
+  1069→                        </p>
+  1070→                        <p className="mt-3 flex items-start justify-center gap-1.5 rounded-2xl bg-ice/60 px-4 py-3 text-center text-[11px] leading-relaxed text-slate-500 ring-1 ring-blue-100/50">
+  1071→                          <Phone className="mt-0.5 h-3 w-3 shrink-0 text-brand-blue" aria-hidden="true" />
+  1072→                          {t.loginForgot.replace("{phone}", bn ? toBnDigits(settings.phone) : settings.phone)}
+  1073→                        </p>
+  1074→                      </form>
+  1075→
+  1076→                      <AnimatePresence>
+  1077→                        {loginError && (
+  1078→                          <div className="mx-auto mt-5 max-w-md">
+  1079→                            <ErrorBanner message={loginError} />
+  1080→                          </div>
+  1081→                        )}
+  1082→                      </AnimatePresence>
+  1083→                    </motion.div>
+  1084→                  )}
+  1085→
+  1086→                  {/* ================= REGISTER ================= */}
+  1087→                  {mode === "register" && (
+  1088→                    <motion.div
+  1089→                      key="register"
+  1090→                      initial={{ opacity: 0, y: 8 }}
+  1091→                      animate={{ opacity: 1, y: 0 }}
+  1092→                      exit={{ opacity: 0, y: -8 }}
+  1093→                      transition={{ duration: 0.25 }}
+  1094→                      className="mt-7"
+  1095→                    >
+  1096→                      <div className="text-center">
+  1097→                        <h2 className="font-heading text-xl font-bold text-brand-navy sm:text-2xl">
+  1098→                          {t.registerTitle}
+  1099→                        </h2>
+  1100→                        <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
+  1101→                          {t.registerDesc}
+  1102→                        </p>
+  1103→                      </div>
+  1104→
+  1105→                      <form
+  1106→                        onSubmit={submitRegister}
+  1107→                        className="mx-auto mt-6 max-w-md"
+  1108→                        noValidate
+  1109→                      >
+  1110→                        <div className="space-y-2">
+  1111→                          <Label htmlFor="register-name" className="text-sm font-semibold text-brand-navy">
+  1112→                            {t.registerNameLabel} <span className="text-rose-500">*</span>
+  1113→                          </Label>
+  1114→                          <div className="relative">
+  1115→                            <UserRound
+  1116→                              className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+  1117→                              aria-hidden="true"
+  1118→                            />
+  1119→                            <Input
+  1120→                              id="register-name"
+  1121→                              value={registerForm.name}
+  1122→                              onChange={(e) =>
+  1123→                                setRegisterForm((f) => ({ ...f, name: e.target.value.slice(0, 80) }))
+  1124→                              }
+  1125→                              placeholder={bn ? "আপনার নাম" : "Your full name"}
+  1126→                              autoComplete="name"
+  1127→                              className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base font-semibold text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+  1128→                            />
+  1129→                          </div>
+  1130→                        </div>
+  1131→
+  1132→                        <div className="mt-4">
+  1133→                          <PhoneField
+  1134→                            id="register-phone"
+  1135→                            value={registerForm.phone}
+  1136→                            onChange={(v) => setRegisterForm((f) => ({ ...f, phone: v }))}
+  1137→                            label={t.registerPhoneLabel}
+  1138→                            hint={t.registerPhoneHint}
+  1139→                          />
+  1140→                        </div>
+  1141→
+  1142→                        <div className="mt-4 space-y-2">
+  1143→                          <Label htmlFor="register-email" className="text-sm font-semibold text-brand-navy">
+  1144→                            {t.registerEmailLabel}
+  1145→                          </Label>
+  1146→                          <div className="relative">
+  1147→                            <Mail
+  1148→                              className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+  1149→                              aria-hidden="true"
+  1150→                            />
+  1151→                            <Input
+  1152→                              id="register-email"
+  1153→                              type="email"
+  1154→                              value={registerForm.email}
+  1155→                              onChange={(e) =>
+  1156→                                setRegisterForm((f) => ({ ...f, email: e.target.value.slice(0, 120) }))
+  1157→                              }
+  1158→                              placeholder="you@example.com"
+  1159→                              autoComplete="email"
+  1160→                              className="h-13 rounded-2xl border-blue-100 bg-ice/60 pl-11 text-base text-brand-navy placeholder:font-normal placeholder:text-slate-400 focus:border-brand-blue focus:bg-white"
+  1161→                            />
+  1162→                          </div>
+  1163→                        </div>
+  1164→
+  1165→                        <div className="mt-4 space-y-2">
+  1166→                          <Label htmlFor="register-password" className="text-sm font-semibold text-brand-navy">
+  1167→                            {t.registerPasswordLabel} <span className="text-rose-500">*</span>
+  1168→                          </Label>
+  1169→                          <PasswordInput
+  1170→                            id="register-password"
+  1171→                            value={registerForm.password}
+  1172→                            onChange={(v) => setRegisterForm((f) => ({ ...f, password: v }))}
+  1173→                            autoComplete="new-password"
+  1174→                            showLabel={t.loginShow}
+  1175→                            hideLabel={t.loginHide}
+  1176→                          />
+  1177→                          <p className="text-xs text-slate-500">{t.registerPasswordHint}</p>
+  1178→                        </div>
+  1179→
+  1180→                        <div className="mt-4 space-y-2">
+  1181→                          <Label htmlFor="register-confirm" className="text-sm font-semibold text-brand-navy">
+  1182→                            {t.registerConfirmLabel} <span className="text-rose-500">*</span>
+  1183→                          </Label>
+  1184→                          <PasswordInput
+  1185→                            id="register-confirm"
+  1186→                            value={registerForm.confirm}
+  1187→                            onChange={(v) => setRegisterForm((f) => ({ ...f, confirm: v }))}
+  1188→                            autoComplete="new-password"
+  1189→                            showLabel={t.loginShow}
+  1190→                            hideLabel={t.loginHide}
+  1191→                          />
+  1192→                          <FieldError
+  1193→                            id="register-confirm-error"
+  1194→                            message={
+  1195→                              registerForm.confirm && registerForm.confirm !== registerForm.password
+  1196→                                ? t.registerMismatch
+  1197→                                : undefined
+  1198→                            }
+  1199→                          />
+  1200→                        </div>
+  1201→
+  1202→                        <Button
+  1203→                          type="submit"
+  1204→                          disabled={registering || !registerValid}
+  1205→                          className="mt-6 h-13 w-full rounded-2xl bg-brand-navy text-base font-bold text-white shadow-lg shadow-navy-900/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue hover:shadow-xl disabled:translate-y-0 disabled:opacity-50"
+  1206→                        >
+  1207→                          {registering ? (
+  1208→                            <>
+  1209→                              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+  1210→                              {t.registerSubmitting}
+  1211→                            </>
+  1212→                          ) : (
+  1213→                            <>
+  1214→                              <UserRoundPlus className="h-5 w-5" aria-hidden="true" />
+  1215→                              {t.registerSubmit}
+  1216→                            </>
+  1217→                          )}
+  1218→                        </Button>
+  1219→
+  1220→                        <div className="mt-4 flex items-start gap-2 rounded-2xl bg-ice/60 px-4 py-3 text-[11px] leading-relaxed text-slate-500 ring-1 ring-blue-100/50">
+  1221→                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+  1222→                          {t.registerLinkNote}
+  1223→                        </div>
+  1224→
+  1225→                        <p className="mt-4 text-center text-xs text-slate-500">
+  1226→                          {t.registerHaveAccount}{" "}
+  1227→                          <button
+  1228→                            type="button"
+  1229→                            onClick={() => switchMode("login")}
+  1230→                            className="font-semibold text-brand-blue underline-offset-4 transition-colors hover:text-brand-navy hover:underline"
+  1231→                          >
+  1232→                            {t.registerHaveAccountCta}
+  1233→                          </button>
+  1234→                        </p>
+  1235→                      </form>
+  1236→
+  1237→                      <AnimatePresence>
+  1238→                        {registerError && (
+  1239→                          <div className="mx-auto mt-5 max-w-md">
+  1240→                            <ErrorBanner message={registerError} />
+
+[showing lines 601-1240 of 2362; use offset=1241 with limit to continue reading]

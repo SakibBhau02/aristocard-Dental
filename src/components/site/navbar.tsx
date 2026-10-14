@@ -6,10 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Clock, Menu, Phone, Search, UserRound, X } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
+import { track } from "@/lib/tracker";
 import { navItems } from "@/lib/site";
 import { useBundle } from "@/components/site/content-provider";
 import { pickBn } from "@/lib/content/shared";
-import { cn } from "@/lib/utils";
+import { cn, useSearchShortcutLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/site/language-toggle";
 import { ClinicStatusBadge } from "@/components/site/clinic-status";
@@ -19,6 +20,7 @@ import { ClinicStatusBadge } from "@/components/site/clinic-status";
 /* ------------------------------------------------------------------ */
 
 export function Navbar() {
+  const shortcutLabel = useSearchShortcutLabel();
   const { path, navigate } = useRouter();
   const { lang, d } = useLang();
   const { settings } = useBundle();
@@ -47,12 +49,14 @@ export function Navbar() {
 
   const navigateAndClose = (to: string) => {
     setOpen(false);
+    /* Booking CTA attribution — every navbar route into /appointment. */
+    if (to === "/appointment") track("booking_click", "navbar");
     navigate(to);
   };
 
-  /* localized nav labels — order matches navItems in site.ts */
+  /* localized nav labels — order matches navItems in site.ts
+     ("Home" removed per user request — logo links home) */
   const navLabels = [
-    d.chrome.nav.home,
     d.chrome.nav.about,
     d.chrome.nav.services,
     d.chrome.nav.gallery,
@@ -105,7 +109,7 @@ export function Navbar() {
         >
           {/* Logo */}
           <a
-            href="#/"
+            href="/"
             onClick={(e) => {
               e.preventDefault();
               navigateAndClose("/");
@@ -189,7 +193,7 @@ export function Navbar() {
               <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="hidden items-center gap-1.5 xl:inline-flex">
                 <kbd className="kbd-key">
-                  ⌘K
+                  {shortcutLabel}
                 </kbd>
                 <span className="text-xs font-medium text-slate-400">
                   {d.search.shortcutHint}
@@ -199,7 +203,7 @@ export function Navbar() {
 
             {/* Patient Portal — ghost pill near the booking CTA */}
             <a
-              href="#/portal"
+              href="/portal"
               onClick={(e) => {
                 e.preventDefault();
                 navigateAndClose("/portal");
@@ -221,7 +225,7 @@ export function Navbar() {
               className="btn-press btn-shine relative hidden overflow-hidden rounded-full bg-brand-blue px-6 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl hover:shadow-blue-700/25 lg:inline-flex"
             >
               <a
-                href="#/appointment"
+                href="/appointment"
                 onClick={(e) => {
                   e.preventDefault();
                   navigateAndClose("/appointment");
@@ -239,7 +243,7 @@ export function Navbar() {
 
             {/* Book Appointment — icon-only CTA below lg (44px touch target) */}
             <a
-              href="#/appointment"
+              href="/appointment"
               onClick={(e) => {
                 e.preventDefault();
                 navigateAndClose("/appointment");
@@ -332,7 +336,7 @@ export function Navbar() {
                       {d.search.openSearch}
                     </span>
                     <kbd className="kbd-key">
-                      ⌘K
+                      {shortcutLabel}
                     </kbd>
                   </button>
                 </motion.li>
@@ -369,7 +373,7 @@ export function Navbar() {
                   transition={{ delay: 0.05 * navItems.length, duration: 0.4 }}
                 >
                   <a
-                    href="#/portal"
+                    href="/portal"
                     onClick={(e) => {
                       e.preventDefault();
                       navigateAndClose("/portal");
@@ -405,7 +409,7 @@ export function Navbar() {
                   className="w-full rounded-2xl bg-brand-blue py-6 text-base font-semibold text-white shadow-lg shadow-blue-500/25 hover:bg-brand-navy"
                 >
                   <a
-                    href="#/appointment"
+                    href="/appointment"
                     onClick={(e) => {
                       e.preventDefault();
                       navigateAndClose("/appointment");
@@ -418,6 +422,7 @@ export function Navbar() {
                 </Button>
                 <a
                   href={`tel:${settings.phoneRaw}`}
+                  onClick={() => track("cta_call", "drawer")}
                   className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-brand-navy ring-1 ring-blue-100"
                 >
                   <Phone className="h-4 w-4" aria-hidden="true" />

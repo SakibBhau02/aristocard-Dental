@@ -43,7 +43,7 @@ export function ContactPage() {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Contact Aristocrat Dental Care & Orthodontic Center",
-  url: "https://aristocratdentalcarebd.com/#/contact",
+  url: "https://aristocratdentalcarebd.com/contact",
   mainEntity: {
     "@type": "Organization",
     name: settings.name,

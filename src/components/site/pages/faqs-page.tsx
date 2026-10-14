@@ -124,7 +124,7 @@ export function FaqsPage() {
       {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        url: "https://aristocratdentalcarebd.com/#/faqs",
+        url: "https://aristocratdentalcarebd.com/faqs",
         mainEntity: allFaqs.map((f) => ({
           "@type": "Question",
           name: f.question,
@@ -149,7 +149,7 @@ export function FaqsPage() {
             "@type": "ListItem",
             position: 2,
             name: "FAQs",
-            item: "https://aristocratdentalcarebd.com/#/faqs",
+            item: "https://aristocratdentalcarebd.com/faqs",
           },
         ],
       },
@@ -301,7 +301,7 @@ export function FaqsPage() {
                               </span>
                               {f.sourceSlug && (
                                 <a
-                                  href={`#/services/${f.sourceSlug}`}
+                                  href={`/services/${f.sourceSlug}`}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     navigate(`/services/${f.sourceSlug}`);

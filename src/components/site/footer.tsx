@@ -140,7 +140,7 @@ export function Footer() {
               {quickLinks.map((link) => (
                 <li key={link.to}>
                   <a
-                    href={`#${link.to}`}
+                    href={link.to}
                     onClick={(e) => {
                       e.preventDefault();
                       navigate(link.to);
@@ -167,7 +167,7 @@ export function Footer() {
               {services.slice(0, 8).map((s) => (
                 <li key={s.slug}>
                   <a
-                    href={`#/services/${s.slug}`}
+                    href={`/services/${s.slug}`}
                     onClick={(e) => {
                       e.preventDefault();
                       navigate(`/services/${s.slug}`);
@@ -184,7 +184,7 @@ export function Footer() {
               ))}
               <li>
                 <a
-                  href="#/services"
+                  href="/services"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/services");

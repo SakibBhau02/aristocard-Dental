@@ -1,0 +1,878 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+     5→import {
+     6→  ArrowRight,
+     7→  Award,
+     8→  BadgeCheck,
+     9→  CalendarCheck,
+    10→  CalendarDays,
+    11→  ChevronDown,
+    12→  ChevronLeft,
+    13→  ChevronRight,
+    14→  Globe,
+    15→  GraduationCap,
+    16→  Languages,
+    17→  Quote,
+    18→  Sparkles,
+    19→  Star,
+    20→  Stethoscope,
+    21→  UserRound,
+    22→  Users,
+    23→} from "lucide-react";
+    24→import { useRouter, usePageMeta } from "@/lib/router";
+    25→import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
+    26→import { useBundle } from "@/components/site/content-provider";
+    27→import { testimonials } from "@/lib/content/shared";
+    28→import type { Doctor } from "@/lib/types";
+    29→import { PageHeader, CtaBanner } from "@/components/site/shared";
+    30→import { Reveal } from "@/components/site/motion";
+    31→import { DynamicIcon } from "@/components/site/icon-map";
+    32→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    33→import { Badge } from "@/components/ui/badge";
+    34→import { NotFoundPage } from "@/components/site/pages/not-found-page";
+    35→import { HeroBackdrop } from "@/components/site/hero-backdrop";
+    36→import { slidesForRoute } from "@/lib/data/hero-media";
+    37→
+    38→/* ------------------------------------------------------------------ */
+    39→/*  DOCTORS LIST PAGE (EN / বাংলা)                                     */
+    40→/* ------------------------------------------------------------------ */
+    41→
+    42→const assuranceIcons = ["BadgeCheck", "GraduationCap", "UserRound"];
+    43→
+    44→const WEEK_DAYS = [
+    45→  "Saturday",
+    46→  "Sunday",
+    47→  "Monday",
+    48→  "Tuesday",
+    49→  "Wednesday",
+    50→  "Thursday",
+    51→  "Friday",
+    52→] as const;
+    53→
+    54→type WeekDay = (typeof WEEK_DAYS)[number];
+    55→
+    56→/* ------------------------------------------------------------------ */
+    57→/*  Doctor card with expandable full profile (/doctors list page)     */
+    58→/* ------------------------------------------------------------------ */
+    59→
+    60→function DoctorProfileCard({
+    61→  doctor,
+    62→  index,
+    63→}: {
+    64→  doctor: Doctor;
+    65→  index: number;
+    66→}) {
+    67→  const { navigate } = useRouter();
+    68→  const { lang, d } = useLang();
+    69→  const bn = lang === "bn";
+    70→  const t = d.doctorsPage;
+    71→  const reduceMotion = useReducedMotion();
+    72→  const [expanded, setExpanded] = useState(false);
+    73→
+    74→  const initials = doctor.name
+    75→    .replace("Dr. ", "")
+    76→    .split(" ")
+    77→    .map((n) => n[0])
+    78→    .slice(0, 2)
+    79→    .join("");
+    80→  const role = bn && doctor.roleBn ? doctor.roleBn : doctor.role;
+    81→
+    82→  const panelId = `doctor-profile-${doctor.slug}`;
+    83→  const aboutHeading = t.aboutTitle.replace("{name}", doctor.name);
+    84→  const bookLabel = t.bookWith.replace("{name}", doctor.name);
+    85→
+    86→  /* "{count}+ years experience" → bold value ("8+") + micro label */
+    87→  const yearsDigits = bn
+    88→    ? toBnDigits(doctor.experienceYears)
+    89→    : String(doctor.experienceYears);
+    90→  const yearsParts = t.yearsExp.replace("{count}", yearsDigits).split("+");
+    91→  const yearsValue = `${yearsParts[0] ?? ""}+`;
+    92→  const yearsLabel = yearsParts.slice(1).join("+").trim();
+    93→
+    94→  const ratingValue = bn
+    95→    ? `${toBnDigits(doctor.rating)}/৫`
+    96→    : `${doctor.rating}/5`;
+    97→
+    98→  /* Consultation days — human-friendly localized list (dictionary
+    99→     weekday map, same source the detail-page day-strip uses) */
+   100→  const dayNames = doctor.consultationDays.map((day) =>
+   101→    bn ? d.days[day as WeekDay] : day
+   102→  );
+   103→  const lastDay = dayNames[dayNames.length - 1] ?? "";
+   104→  const daysText =
+   105→    dayNames.length > 1
+   106→      ? `${dayNames.slice(0, -1).join(", ")}${bn ? " ও " : " & "}${lastDay}`
+   107→      : dayNames[0] ?? "";
+   108→
+   109→  return (
+   110→    <motion.article
+   111→      initial={{ opacity: 0, y: 26 }}
+   112→      whileInView={{ opacity: 1, y: 0 }}
+   113→      viewport={{ once: true, margin: "-40px" }}
+   114→      transition={{ duration: 0.55, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+   115→      className="group relative flex h-full flex-col items-center overflow-hidden rounded-3xl border border-blue-100/80 bg-white p-7 text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)]"
+   116→    >
+   117→      {/* top accent */}
+   118→      <span
+   119→        className="absolute inset-x-0 top-0 h-1.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+   120→        style={{ background: `linear-gradient(90deg, ${doctor.accent}, #002060)` }}
+   121→        aria-hidden="true"
+   122→      />
+   123→      <div className="relative">
+   124→        <Avatar className="h-24 w-24 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
+   125→          <AvatarFallback
+   126→            className="font-heading text-2xl font-bold"
+   127→            style={{ background: `${doctor.accent}18`, color: doctor.accent }}
+   128→          >
+   129→            {initials}
+   130→          </AvatarFallback>
+   131→        </Avatar>
+   132→        <span
+   133→          className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white"
+   134→          title="BMDC Verified"
+   135→          aria-label="BMDC verified doctor"
+   136→        >
+   137→          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+   138→            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+   139→          </svg>
+   140→        </span>
+   141→      </div>
+   142→
+   143→      <h3 className="font-heading mt-5 text-lg font-bold text-brand-navy">
+   144→        {doctor.name}
+   145→      </h3>
+   146→      <p className="mt-1 text-sm font-medium text-brand-blue">{role}</p>
+   147→      <p className="mt-2 flex flex-wrap justify-center gap-1.5">
+   148→        {doctor.credentials.slice(0, 3).map((c) => (
+   149→          <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
+   150→            {c}
+   151→          </Badge>
+   152→        ))}
+   153→      </p>
+   154→
+   155→      <div className="mt-4 flex items-center gap-1" aria-label={`Rating ${doctor.rating} out of 5`}>
+   156→        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+   157→        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+   158→        <span className="text-xs text-slate-400">
+   159→          • {bn ? toBnDigits(doctor.experienceYears) : doctor.experienceYears}+ {d.shared.yrs} • {localizedNumber(doctor.patientsTreated, lang)}+ {d.shared.patients}
+   160→        </span>
+   161→      </div>
+   162→
+   163→      <div className="mt-auto w-full pt-5">
+   164→        {/* expand/collapse toggle */}
+   165→        <button
+   166→          type="button"
+   167→          onClick={() => setExpanded((v) => !v)}
+   168→          aria-expanded={expanded}
+   169→          aria-controls={panelId}
+   170→          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   171→        >
+   172→          {expanded ? t.hideProfile : t.viewProfile}
+   173→          <ChevronDown
+   174→            className={`h-4 w-4 transition-transform duration-300 motion-reduce:transition-none ${
+   175→              expanded ? "rotate-180" : ""
+   176→            }`}
+   177→            aria-hidden="true"
+   178→          />
+   179→        </button>
+   180→
+   181→        {/* hover-reveal quick book (replaced by the panel CTA while open) */}
+   182→        {!expanded && (
+   183→          <button
+   184→            type="button"
+   185→            onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
+   186→            className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+   187→            style={{ backgroundColor: "#002060" }}
+   188→          >
+   189→            <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+   190→            {d.shared.ctaBook}
+   191→            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+   192→          </button>
+   193→        )}
+   194→
+   195→        {/* expandable full-profile panel */}
+   196→        <AnimatePresence initial={false}>
+   197→          {expanded && (
+   198→            <motion.div
+   199→              key="doctor-profile"
+   200→              id={panelId}
+   201→              role="region"
+   202→              aria-label={aboutHeading}
+   203→              initial={{ height: 0, opacity: 0 }}
+   204→              animate={{ height: "auto", opacity: 1 }}
+   205→              exit={{ height: 0, opacity: 0 }}
+   206→              transition={
+   207→                reduceMotion
+   208→                  ? { duration: 0 }
+   209→                  : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+   210→              }
+   211→              className="overflow-hidden"
+   212→            >
+   213→              <div className="profile-seam mt-4 rounded-2xl border border-blue-100 bg-ice p-5 text-left sm:p-6">
+   214→                {/* About */}
+   215→                <h4 className="font-heading flex items-center gap-2.5 text-sm font-bold text-brand-navy">
+   216→                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand-blue ring-1 ring-blue-100">
+   217→                    <Stethoscope className="h-4.5 w-4.5" aria-hidden="true" />
+   218→                  </span>
+   219→                  {aboutHeading}
+   220→                </h4>
+   221→                <p className="mt-3 text-[13px] leading-relaxed text-slate-600 sm:text-sm">
+   222→                  {doctor.bio}
+   223→                </p>
+   224→                {bn && (
+   225→                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+   226→                    <Globe className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+   227→                    {d.doctorDetail.contentNote}
+   228→                  </p>
+   229→                )}
+   230→
+   231→                {/* detail rows */}
+   232→                <dl className="mt-5 grid gap-x-6 gap-y-5 border-t border-blue-100 pt-5 sm:grid-cols-2">
+   233→                  {/* credentials */}
+   234→                  <div>
+   235→                    <dt className="flex items-center gap-2.5">
+   236→                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
+   237→                        <GraduationCap className="h-4 w-4" aria-hidden="true" />
+   238→                      </span>
+   239→                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   240→                        {t.credentialsTitle}
+   241→                      </span>
+   242→                    </dt>
+   243→                    <dd className="mt-2.5 flex flex-wrap gap-1.5">
+   244→                      {doctor.credentials.map((c) => (
+   245→                        <span
+   246→                          key={c}
+   247→                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
+   248→                        >
+   249→                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+   250→                          {bn
+   251→                            ? c.replace("BDS", "বিডিএস").replace("MDS", "এমডিএস").replace("PGT", "পিজিটি")
+   252→                            : c}
+   253→                        </span>
+   254→                      ))}
+   255→                    </dd>
+   256→                  </div>
+   257→
+   258→                  {/* languages */}
+   259→                  <div>
+   260→                    <dt className="flex items-center gap-2.5">
+   261→                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
+   262→                        <Languages className="h-4 w-4" aria-hidden="true" />
+   263→                      </span>
+   264→                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   265→                        {t.languagesTitle}
+   266→                      </span>
+   267→                    </dt>
+   268→                    <dd className="mt-2.5 flex flex-wrap gap-1.5">
+   269→                      {doctor.languages.map((l) => (
+   270→                        <span
+   271→                          key={l}
+   272→                          className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-blue-100"
+   273→                        >
+   274→                          {bn ? (l === "Bangla" ? "বাংলা" : l === "English" ? "ইংরেজি" : l) : l}
+   275→                        </span>
+   276→                      ))}
+   277→                    </dd>
+   278→                  </div>
+   279→
+   280→                  {/* specializations */}
+   281→                  <div>
+   282→                    <dt className="flex items-center gap-2.5">
+   283→                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
+   284→                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+   285→                      </span>
+   286→                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   287→                        {t.specializationsTitle}
+   288→                      </span>
+   289→                    </dt>
+   290→                    <dd className="mt-2.5">
+   291→                      <ul className="space-y-1.5">
+   292→                        {doctor.specializations.map((s) => (
+   293→                          <li key={s} className="flex items-start gap-2 text-[13px] leading-snug text-slate-700">
+   294→                            <span
+   295→                              className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
+   296→                              style={{ background: doctor.accent }}
+   297→                              aria-hidden="true"
+   298→                            />
+   299→                            {s}
+   300→                          </li>
+   301→                        ))}
+   302→                      </ul>
+   303→                    </dd>
+   304→                  </div>
+   305→
+   306→                  {/* consultation days */}
+   307→                  <div>
+   308→                    <dt className="flex items-center gap-2.5">
+   309→                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
+   310→                        <CalendarDays className="h-4 w-4" aria-hidden="true" />
+   311→                      </span>
+   312→                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+   313→                        {t.consultationTitle}
+   314→                      </span>
+   315→                    </dt>
+   316→                    <dd className="mt-2.5 text-[13px] font-medium leading-relaxed text-slate-700">
+   317→                      {daysText}
+   318→                    </dd>
+   319→                  </div>
+   320→                </dl>
+   321→
+   322→                {/* quick stats */}
+   323→                <div className="mt-5 grid grid-cols-3 gap-2 rounded-xl bg-white px-3 py-3.5 ring-1 ring-blue-100 sm:gap-3 sm:px-4">
+   324→                  <div>
+   325→                    <span className="flex items-center gap-1.5">
+   326→                      <Award className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   327→                      <span className="font-heading text-base font-bold text-brand-navy">
+   328→                        {yearsValue}
+   329→                      </span>
+   330→                    </span>
+   331→                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   332→                      {yearsLabel}
+   333→                    </span>
+   334→                  </div>
+   335→                  <div>
+   336→                    <span className="flex items-center gap-1.5">
+   337→                      <Users className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+   338→                      <span className="font-heading text-base font-bold text-brand-navy">
+   339→                        {localizedNumber(doctor.patientsTreated, lang)}+
+   340→                      </span>
+   341→                    </span>
+   342→                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   343→                      {t.patientsTreatedLabel}
+   344→                    </span>
+   345→                  </div>
+   346→                  <div>
+   347→                    <span className="flex items-center gap-1.5">
+   348→                      <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-hidden="true" />
+   349→                      <span className="font-heading text-base font-bold text-brand-navy">
+   350→                        {ratingValue}
+   351→                      </span>
+   352→                    </span>
+   353→                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   354→                      {t.ratingLabel}
+   355→                    </span>
+   356→                  </div>
+   357→                </div>
+   358→
+   359→                {/* booking CTA */}
+   360→                <div className="mt-5 border-t border-blue-100 pt-5">
+   361→                  <button
+   362→                    type="button"
+   363→                    onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
+   364→                    className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-blue px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   365→                  >
+   366→                    <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   367→                    {bookLabel}
+   368→                  </button>
+   369→                </div>
+   370→              </div>
+   371→            </motion.div>
+   372→          )}
+   373→        </AnimatePresence>
+   374→      </div>
+   375→    </motion.article>
+   376→  );
+   377→}
+   378→
+   379→export function DoctorsPage() {
+   380→  const { lang, d } = useLang();
+   381→  const t = d.doctorsPage;
+   382→  const { doctors, settings } = useBundle();
+   383→
+   384→  usePageMeta({
+   385→    title: "Our Doctors — Specialist Dentists in Uttara, Dhaka",
+   386→    description:
+   387→      "Meet the verified medical board of Aristocrat Dental Care: Dr. Shazia Khanam, Dr. Abdur Rahim, Dr. Jumla Binte Jafor & Dr. Israt Jahan Rimi — BDS/MDS qualified dental specialists.",
+   388→  });
+   389→
+   390→  const doctorsJsonLd = {
+   391→    "@context": "https://schema.org",
+   392→    "@type": "ItemList",
+   393→    name: "Doctors at Aristocrat Dental Care & Orthodontic Center",
+   394→    itemListElement: doctors.map((doc, i) => ({
+   395→      "@type": "ListItem",
+   396→      position: i + 1,
+   397→      item: {
+   398→        "@type": "Physician",
+   399→        name: doc.name,
+   400→        jobTitle: doc.role,
+   401→        medicalSpecialty: doc.department,
+   402→        url: `https://aristocratdentalcarebd.com/doctors/${doc.slug}`,
+   403→        worksFor: { "@type": "Dentist", name: settings.name },
+   404→      },
+   405→    })),
+   406→  };
+   407→
+   408→  return (
+   409→    <>
+   410→      <PageHeader
+   411→        eyebrow={t.eyebrow}
+   412→        title={t.title}
+   413→        description={t.description}
+   414→        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.doctors }]}
+   415→      />
+   416→      <section className="py-16 sm:py-20" aria-label="Doctor profiles">
+   417→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   418→          <div className="grid gap-6 sm:grid-cols-2">
+   419→            {doctors.map((doctor, i) => (
+   420→              <DoctorProfileCard key={doctor.slug} doctor={doctor} index={i} />
+   421→            ))}
+   422→          </div>
+   423→
+   424→          {/* assurance strip */}
+   425→          <Reveal className="mt-12">
+   426→            <div className="grid gap-4 rounded-[2rem] border border-blue-100 bg-ice p-7 sm:grid-cols-3 sm:p-8">
+   427→              {t.assurance.map((item, i) => (
+   428→                <div key={i} className="flex items-start gap-4">
+   429→                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
+   430→                    <DynamicIcon name={assuranceIcons[i]} className="h-5.5 w-5.5" />
+   431→                  </span>
+   432→                  <span>
+   433→                    <span className="font-heading block text-sm font-bold text-brand-navy">
+   434→                      {item.title}
+   435→                    </span>
+   436→                    <span className="mt-1 block text-sm leading-relaxed text-slate-600">
+   437→                      {item.text}
+   438→                    </span>
+   439→                  </span>
+   440→                </div>
+   441→              ))}
+   442→            </div>
+   443→          </Reveal>
+   444→        </div>
+   445→      </section>
+   446→      <CtaBanner
+   447→        title={t.ctaTitle}
+   448→        description={t.ctaDescription}
+   449→      />
+   450→      {doctorsJsonLd ? null : null}
+   451→    </>
+   452→  );
+   453→}
+   454→
+   455→/* ------------------------------------------------------------------ */
+   456→/*  DOCTOR DETAIL PAGE (EN / বাংলা)                                     */
+   457→/* ------------------------------------------------------------------ */
+   458→
+   459→export function DoctorDetailPage({ slug }: { slug: string }) {
+   460→  const { navigate } = useRouter();
+   461→  const { lang, d } = useLang();
+   462→  const bn = lang === "bn";
+   463→  const t = d.doctorDetail;
+   464→  const { doctors, settings } = useBundle();
+   465→  const doctor = doctors.find((doc) => doc.slug === slug);
+   466→
+   467→  usePageMeta({
+   468→    title: doctor
+   469→      ? `${doctor.name} — ${doctor.role} | Uttara, Dhaka`
+   470→      : "Doctor Not Found",
+   471→    description: doctor
+   472→      ? `${doctor.name}, ${doctor.credentials.join(", ")} — ${doctor.role} at Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka. Book a consultation: ${settings.phone}.`
+   473→      : undefined,
+   474→    jsonLd: doctor
+   475→      ? {
+   476→          "@context": "https://schema.org",
+   477→          "@type": "Physician",
+   478→          name: doctor.name,
+   479→          jobTitle: doctor.role,
+   480→          medicalSpecialty: doctor.department,
+   481→          url: `https://aristocratdentalcarebd.com/doctors/${doctor.slug}`,
+   482→          worksFor: {
+   483→            "@type": "Dentist",
+   484→            name: settings.name,
+   485→            telephone: settings.phoneRaw,
+   486→          },
+   487→          aggregateRating: {
+   488→            "@type": "AggregateRating",
+   489→            ratingValue: doctor.rating,
+   490→            bestRating: 5,
+   491→            ratingCount: Math.max(20, doctor.patientsTreated / 20),
+   492→          },
+   493→        }
+   494→      : undefined,
+   495→  });
+   496→
+   497→  if (!doctor) return <NotFoundPage />;
+   498→
+   499→  const initials = doctor.name
+   500→    .replace("Dr. ", "")
+   501→    .split(" ")
+   502→    .map((n) => n[0])
+   503→    .slice(0, 2)
+   504→    .join("");
+   505→  const others = doctors.filter((doc) => doc.slug !== doctor.slug);
+   506→  const docTestimonials = testimonials.filter((tm) =>
+   507→    doctor.name.toLowerCase().includes("shazia")
+   508→      ? tm.name !== "সাদিয়া আক্তার"
+   509→      : true
+   510→  ).slice(0, 3);
+   511→
+   512→  const role = bn && doctor.roleBn ? doctor.roleBn : doctor.role;
+   513→  const department = bn && doctor.departmentBn ? doctor.departmentBn : doctor.department;
+   514→  const languages = bn
+   515→    ? doctor.languages.map((l) => (l === "Bangla" ? "বাংলা" : l === "English" ? "ইংরেজি" : l)).join(", ")
+   516→    : doctor.languages.join(", ");
+   517→
+   518→  return (
+   519→    <>
+   520→      {/* HERO — centered over a sliding team backdrop */}
+   521→      <section className="relative isolate overflow-hidden bg-brand-navy">
+   522→        <HeroBackdrop slides={slidesForRoute("doctors")} overlay="deep" interval={8000} />
+   523→        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+   524→          <nav aria-label="Breadcrumb" className="mb-8">
+   525→            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+   526→              <li>
+   527→                <a
+   528→                  href="/"
+   529→                  onClick={(e) => {
+   530→                    e.preventDefault();
+   531→                    navigate("/");
+   532→                  }}
+   533→                  className="transition-colors hover:text-white"
+   534→                >
+   535→                  {d.chrome.nav.home}
+   536→                </a>
+   537→              </li>
+   538→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   539→              <li>
+   540→                <a
+   541→                  href="/doctors"
+   542→                  onClick={(e) => {
+   543→                    e.preventDefault();
+   544→                    navigate("/doctors");
+   545→                  }}
+   546→                  className="transition-colors hover:text-white"
+   547→                >
+   548→                  {d.chrome.nav.doctors}
+   549→                </a>
+   550→              </li>
+   551→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+   552→              <li className="font-medium text-white">{doctor.name}</li>
+   553→            </ol>
+   554→          </nav>
+   555→
+   556→          <div className="mx-auto flex max-w-2xl flex-col items-center">
+   557→            <motion.div
+   558→              initial={{ opacity: 0, scale: 0.94 }}
+   559→              animate={{ opacity: 1, scale: 1 }}
+   560→              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   561→              className="relative mx-auto w-full max-w-[200px]"
+   562→            >
+   563→              <div
+   564→                className="flex aspect-square items-center justify-center rounded-[2rem] ring-8 ring-white/10 backdrop-blur-sm"
+   565→                style={{
+   566→                  background: `linear-gradient(140deg, ${doctor.accent}55, rgba(255,255,255,0.08))`,
+   567→                }}
+   568→              >
+   569→                <span
+   570→                  className="font-heading text-6xl font-bold"
+   571→                  style={{ color: "rgba(255,255,255,0.92)" }}
+   572→                >
+   573→                  {initials}
+   574→                </span>
+   575→              </div>
+   576→              <span className="absolute -bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+   577→                <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+   578→                {t.bmdcVerified}
+   579→              </span>
+   580→            </motion.div>
+   581→
+   582→            <motion.div
+   583→              initial={{ opacity: 0, y: 24 }}
+   584→              animate={{ opacity: 1, y: 0 }}
+   585→              transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   586→              className="mt-8"
+   587→            >
+   588→              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
+   589→                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+   590→                {t.available}
+   591→              </span>
+   592→              <h1 className="font-heading mx-auto mt-4 max-w-2xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-[2.9rem]">
+   593→                {doctor.name}
+   594→              </h1>
+   595→              <p className="mt-2 text-lg font-medium text-amber-300">{role}</p>
+   596→              <p className="mt-1 text-sm text-blue-200/85">{department}</p>
+   597→
+   598→              <div className="mt-6 flex flex-wrap justify-center gap-2">
+   599→                {doctor.credentials.map((c) => (
+   600→                  <span
+   601→                    key={c}
+   602→                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur-sm"
+   603→                  >
+   604→                    <GraduationCap className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+   605→                    {bn ? c.replace("BDS", "বিডিএস").replace("MDS", "এমডিএস").replace("PGT", "পিজিটি") : c}
+   606→                  </span>
+   607→                ))}
+   608→              </div>
+   609→
+   610→              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+   611→                <button
+   612→                  type="button"
+   613→                  onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
+   614→                  className="btn-press btn-shine inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-7 py-3.5 text-sm font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-amber-500/40"
+   615→                >
+   616→                  <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   617→                  {t.book}
+   618→                </button>
+   619→                <a
+   620→                  href={`tel:${settings.phoneRaw}`}
+   621→                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white"
+   622→                >
+   623→                  {t.callWith.replace("{phone}", settings.phone)}
+   624→                </a>
+   625→              </div>
+   626→            </motion.div>
+   627→          </div>
+   628→        </div>
+   629→      </section>
+   630→
+   631→      {/* BODY */}
+   632→      <section className="py-16 sm:py-20">
+   633→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   634→          <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+   635→            <div>
+   636→              {/* clinical impact */}
+   637→              <Reveal>
+   638→                <div className="grid grid-cols-3 gap-4">
+   639→                  {[
+   640→                    { value: `${bn ? toBnDigits(doctor.experienceYears) : doctor.experienceYears}+`, label: t.years },
+   641→                    { value: `${localizedNumber(doctor.patientsTreated, lang)}+`, label: t.patients },
+   642→                    { value: `${bn ? toBnDigits(doctor.rating) : doctor.rating}/5`, label: t.rating },
+   643→                  ].map((stat) => (
+   644→                    <div
+   645→                      key={stat.label}
+   646→                      className="rounded-2xl border border-blue-100/80 bg-white p-5 text-center shadow-[0_8px_25px_-14px_rgba(0,32,96,0.2)]"
+   647→                    >
+   648→                      <span className="font-heading block text-2xl font-bold text-brand-navy sm:text-3xl">
+   649→                        {stat.value}
+   650→                      </span>
+   651→                      <span className="mt-1 block text-[11px] font-medium uppercase tracking-wider text-slate-500">
+   652→                        {stat.label}
+   653→                      </span>
+   654→                    </div>
+   655→                  ))}
+   656→                </div>
+   657→              </Reveal>
+   658→
+   659→              {/* biography */}
+   660→              <Reveal className="mt-10">
+   661→                <h2 className="font-heading flex items-center gap-3 text-xl font-bold text-brand-navy">
+   662→                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+   663→                    <Stethoscope className="h-5 w-5" aria-hidden="true" />
+   664→                  </span>
+   665→                  {t.bioHeading}
+   666→                </h2>
+   667→                {bn && (
+   668→                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-blue-100">
+   669→                    <Globe className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   670→                    {t.contentNote}
+   671→                  </p>
+   672→                )}
+   673→                <p className="mt-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
+   674→                  {doctor.bio}
+   675→                </p>
+   676→              </Reveal>
+   677→
+   678→              {/* specializations */}
+   679→              <Reveal className="mt-10">
+   680→                <h3 className="font-heading text-lg font-bold text-brand-navy">
+   681→                  {t.specializations}
+   682→                </h3>
+   683→                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+   684→                  {doctor.specializations.map((s) => (
+   685→                    <li
+   686→                      key={s}
+   687→                      className="flex items-center gap-3 rounded-2xl border border-blue-100/80 bg-ice px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:border-brand-blue/30"
+   688→                    >
+   689→                      <span
+   690→                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+   691→                        style={{ background: doctor.accent }}
+   692→                      >
+   693→                        <Star className="h-4 w-4" aria-hidden="true" />
+   694→                      </span>
+   695→                      {s}
+   696→                    </li>
+   697→                  ))}
+   698→                </ul>
+   699→              </Reveal>
+   700→
+   701→              {/* testimonials */}
+   702→              {docTestimonials.length > 0 && (
+   703→                <Reveal className="mt-10">
+   704→                  <h3 className="font-heading text-lg font-bold text-brand-navy">
+   705→                    {t.testimonials}
+   706→                  </h3>
+   707→                  <div className="mt-4 space-y-4">
+   708→                    {docTestimonials.map((tm) => (
+   709→                      <figure
+   710→                        key={tm.name}
+   711→                        className="rounded-2xl border border-blue-100/80 bg-white p-5"
+   712→                      >
+   713→                        <Quote className="h-5 w-5 rotate-180 text-brand-blue/60" aria-hidden="true" />
+   714→                        <blockquote
+   715→                          className={`mt-2 text-sm leading-relaxed text-slate-600 ${
+   716→                            tm.language === "bn" ? "font-heading" : ""
+   717→                          }`}
+   718→                        >
+   719→                          {tm.text.length > 220 ? `${tm.text.slice(0, 220)}…` : tm.text}
+   720→                        </blockquote>
+   721→                        <figcaption className="mt-3 flex items-center gap-3">
+   722→                          <Avatar className="h-9 w-9 border border-amber-200">
+   723→                            <AvatarFallback className="text-xs font-bold text-brand-navy">
+   724→                              {tm.name
+   725→                                .split(" ")
+   726→                                .map((n) => n[0])
+   727→                                .slice(0, 2)
+   728→                                .join("")}
+   729→                            </AvatarFallback>
+   730→                          </Avatar>
+   731→                          <span>
+   732→                            <span className="block text-xs font-bold text-brand-navy">
+   733→                              {tm.name}
+   734→                            </span>
+   735→                            <span className="flex items-center gap-0.5" aria-label="5 star review">
+   736→                              {Array.from({ length: tm.rating }).map((_, i) => (
+   737→                                <Star
+   738→                                  key={i}
+   739→                                  className="h-3 w-3 fill-amber-400 text-amber-400"
+   740→                                  aria-hidden="true"
+   741→                                />
+   742→                              ))}
+   743→                            </span>
+   744→                          </span>
+   745→                        </figcaption>
+   746→                      </figure>
+   747→                    ))}
+   748→                  </div>
+   749→                </Reveal>
+   750→              )}
+   751→            </div>
+   752→
+   753→            {/* Sidebar */}
+   754→            <div>
+   755→              <Reveal delay={0.1}>
+   756→                <div className="sticky top-28 space-y-4">
+   757→                  <div className="card-lift rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)]">
+   758→                    <h3 className="font-heading text-base font-bold text-brand-navy">
+   759→                      {t.consultation}
+   760→                    </h3>
+   761→                    <dl className="mt-4 space-y-4 text-sm">
+   762→                      <div className="flex items-start justify-between gap-4 border-t border-blue-50 pt-3.5">
+   763→                        <dt className="text-slate-500">{t.department}</dt>
+   764→                        <dd className="text-right font-semibold text-brand-navy">
+   765→                          {department}
+   766→                        </dd>
+   767→                      </div>
+   768→                      <div className="flex items-start justify-between gap-4 border-t border-blue-50 pt-3.5">
+   769→                        <dt className="flex items-center gap-1.5 text-slate-500">
+   770→                          <Languages className="h-4 w-4" aria-hidden="true" />
+   771→                          {t.languages}
+   772→                        </dt>
+   773→                        <dd className="text-right font-semibold text-brand-navy">
+   774→                          {languages}
+   775→                        </dd>
+   776→                      </div>
+   777→                      <div className="border-t border-blue-50 pt-3.5">
+   778→                        <dt className="text-slate-500">{t.days}</dt>
+   779→                        <dd className="mt-2 flex flex-wrap gap-1.5">
+   780→                          {WEEK_DAYS.map((day) => {
+   781→                            const active = doctor.consultationDays.includes(day);
+   782→                            return (
+   783→                              <span
+   784→                                key={day}
+   785→                                className={
+   786→                                  active
+   787→                                    ? "rounded-lg bg-brand-blue px-2.5 py-1 text-[11px] font-bold text-white"
+   788→                                    : "rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-400"
+   789→                                }
+   790→                              >
+   791→                                {bn ? d.daysShort[day] : day.slice(0, 3)}
+   792→                              </span>
+   793→                            );
+   794→                          })}
+   795→                        </dd>
+   796→                      </div>
+   797→                    </dl>
+   798→                    <button
+   799→                      type="button"
+   800→                      onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
+   801→                      className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/40 transition-all duration-300 hover:bg-brand-blue-light"
+   802→                    >
+   803→                      <CalendarCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   804→                      {t.bookSlot}
+   805→                    </button>
+   806→                  </div>
+   807→
+   808→                  {/* other doctors */}
+   809→                  <div className="card-lift rounded-3xl border border-blue-100/80 bg-ice p-6">
+   810→                    <div className="flex items-center justify-between">
+   811→                      <h3 className="font-heading text-base font-bold text-brand-navy">
+   812→                        {t.otherSpecialists}
+   813→                      </h3>
+   814→                      <a
+   815→                        href="/doctors"
+   816→                        onClick={(e) => {
+   817→                          e.preventDefault();
+   818→                          navigate("/doctors");
+   819→                        }}
+   820→                        className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue hover:text-brand-navy"
+   821→                      >
+   822→                        {t.viewAll}
+   823→                        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+   824→                      </a>
+   825→                    </div>
+   826→                    <ul className="mt-4 space-y-3">
+   827→                      {others.map((doc) => (
+   828→                        <li key={doc.slug}>
+   829→                          <a
+   830→                            href={`/doctors/${doc.slug}`}
+   831→                            onClick={(e) => {
+   832→                              e.preventDefault();
+   833→                              navigate(`/doctors/${doc.slug}`);
+   834→                            }}
+   835→                            className="group flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-blue-100/60 transition-all duration-300 hover:ring-brand-blue/40"
+   836→                          >
+   837→                            <span
+   838→                              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-heading text-sm font-bold text-white"
+   839→                              style={{ background: doc.accent }}
+   840→                            >
+   841→                              {doc.name
+   842→                                .replace("Dr. ", "")
+   843→                                .split(" ")
+   844→                                .map((n) => n[0])
+   845→                                .slice(0, 2)
+   846→                                .join("")}
+   847→                            </span>
+   848→                            <span className="min-w-0">
+   849→                              <span className="block truncate text-sm font-bold text-brand-navy group-hover:text-brand-blue">
+   850→                                {doc.name}
+   851→                              </span>
+   852→                              <span className="block truncate text-xs text-slate-500">
+   853→                                {bn && doc.roleBn ? doc.roleBn : doc.role}
+   854→                              </span>
+   855→                            </span>
+   856→                            <ChevronLeft className="ml-auto hidden h-4 w-4 rotate-180 text-brand-blue/50 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+   857→                          </a>
+   858→                        </li>
+   859→                      ))}
+   860→                    </ul>
+   861→                  </div>
+   862→                </div>
+   863→              </Reveal>
+   864→            </div>
+   865→          </div>
+   866→        </div>
+   867→      </section>
+   868→
+   869→      <CtaBanner
+   870→        title={t.ctaTitle.replace("{doctor}", doctor.name)}
+   871→        description={t.ctaDescription
+   872→          .replace("{doctor}", doctor.name)
+   873→          .replace("{hours}", bn ? "শনি–বৃহঃ, সকাল ১০টা – রাত ৯টা" : settings.hours)}
+   874→      />
+   875→    </>
+   876→  );
+   877→}
+   878→

@@ -1,0 +1,1295 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Admin shared layer — UI atoms, row types and small helpers used     */
+     5→/*  by every admin panel (shell + extracted views + CMS editors).      */
+     6→/*  Keep this file client-safe and free of panel imports.              */
+     7→/* ------------------------------------------------------------------ */
+     8→
+     9→import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+    10→import Image from "next/image";
+    11→import type { LucideIcon } from "lucide-react";
+    12→import {
+    13→  BadgeCheck,
+    14→  Loader2,
+    15→  Minus,
+    16→  RefreshCw,
+    17→  RotateCcw,
+    18→  Save,
+    19→  Star,
+    20→  TrendingDown,
+    21→  TrendingUp,
+    22→  Upload,
+    23→  X,
+    24→} from "lucide-react";
+    25→import { cn } from "@/lib/utils";
+    26→import { Button } from "@/components/ui/button";
+    27→import { Input } from "@/components/ui/input";
+    28→import { Textarea } from "@/components/ui/textarea";
+    29→import { Skeleton } from "@/components/ui/skeleton";
+    30→import {
+    31→  AlertDialog,
+    32→  AlertDialogAction,
+    33→  AlertDialogCancel,
+    34→  AlertDialogContent,
+    35→  AlertDialogDescription,
+    36→  AlertDialogFooter,
+    37→  AlertDialogHeader,
+    38→  AlertDialogTitle,
+    39→} from "@/components/ui/alert-dialog";
+    40→import { useToast } from "@/hooks/use-toast";
+    41→
+    42→/* ------------------------------------------------------------------ */
+    43→/*  View keys + common panel props                                      */
+    44→/* ------------------------------------------------------------------ */
+    45→
+    46→/** Every admin sidebar module (panels switch on this union). */
+    47→export type AdminView =
+    48→  | "overview"
+    49→  | "activity"
+    50→  | "appointments"
+    51→  | "reviews"
+    52→  | "messages"
+    53→  | "subscribers"
+    54→  | "patients"
+    55→  | "doctors"
+    56→  | "blog"
+    57→  | "faqs"
+    58→  | "cases"
+    59→  | "services"
+    60→  | "homepage"
+    61→  | "about"
+    62→  | "hero"
+    63→  | "settings"
+    64→  | "integrations"
+    65→  | "analytics"
+    66→  | "users";
+    67→
+    68→/** Props every panel understands (the shell owns login/logout). */
+    69→export type PanelProps = {
+    70→  onSessionExpired: () => void;
+    71→};
+    72→
+    73→/* ------------------------------------------------------------------ */
+    74→/*  Staff roles + session identity (mirrors src/lib/admin-auth.ts)      */
+    75→/* ------------------------------------------------------------------ */
+    76→
+    77→export type AdminRole = "OWNER" | "EDITOR" | "VIEWER";
+    78→
+    79→/** Signed-in staff identity carried by the session cookie. */
+    80→export type AdminSessionUser = {
+    81→  sub: string;
+    82→  username: string;
+    83→  displayName: string;
+    84→  role: AdminRole;
+    85→};
+    86→
+    87→/** One staff account row from GET /api/admin/users (no password hash). */
+    88→export type AdminAccountRow = {
+    89→  id: string;
+    90→  username: string;
+    91→  displayName: string;
+    92→  role: AdminRole;
+    93→  active: boolean;
+    94→  lastLoginAt: string | null;
+    95→  createdAt: string;
+    96→  updatedAt: string;
+    97→};
+    98→
+    99→/** One audit row from GET /api/admin/activity. */
+   100→export type AdminActivityRow = {
+   101→  id: string;
+   102→  actor: string;
+   103→  actorLabel: string | null;
+   104→  role: AdminRole | null;
+   105→  action: string;
+   106→  entity: string;
+   107→  label: string;
+   108→  createdAt: string;
+   109→};
+   110→
+   111→/** One-line human explanation per role (users panel + login gate). */
+   112→export const ADMIN_ROLE_INFO: Record<AdminRole, { label: string; blurb: string }> = {
+   113→  OWNER: {
+   114→    label: "Owner",
+   115→    blurb: "Everything — all content, site settings and staff accounts.",
+   116→  },
+   117→  EDITOR: {
+   118→    label: "Editor",
+   119→    blurb: "All content and patient engagement — no settings or staff.",
+   120→  },
+   121→  VIEWER: {
+   122→    label: "Viewer",
+   123→    blurb: "Read-only — can look around, but every change is refused.",
+   124→  },
+   125→};
+   126→
+   127→/* ------------------------------------------------------------------ */
+   128→/*  Row types (moved verbatim from the former monolithic admin page)    */
+   129→/* ------------------------------------------------------------------ */
+   130→
+   131→export type AppointmentRow = {
+   132→  id: number;
+   133→  refCode: string;
+   134→  name: string;
+   135→  phone: string;
+   136→  email: string | null;
+   137→  date: string;
+   138→  time: string;
+   139→  doctorSlug: string | null;
+   140→  serviceSlug: string | null;
+   141→  notes: string | null;
+   142→  status: string;
+   143→  source: string | null;
+   144→  createdAt: string;
+   145→};
+   146→
+   147→export type Stats = {
+   148→  total: number;
+   149→  pending: number;
+   150→  confirmed: number;
+   151→  completed: number;
+   152→  cancelled: number;
+   153→  today: number;
+   154→  upcoming: number;
+   155→};
+   156→
+   157→export type ReviewRow = {
+   158→  id: string;
+   159→  name: string;
+   160→  phone: string | null;
+   161→  rating: number;
+   162→  serviceSlug: string | null;
+   163→  title: string | null;
+   164→  message: string;
+   165→  approved: boolean;
+   166→  createdAt: string;
+   167→};
+   168→
+   169→export type ReviewStats = {
+   170→  total: number;
+   171→  pending: number;
+   172→  approved: number;
+   173→  average: number;
+   174→};
+   175→
+   176→export type OverviewData = {
+   177→  appointmentStats: Stats;
+   178→  reviewStats: {
+   179→    total: number;
+   180→    pendingApproval: number;
+   181→    approved: number;
+   182→    avgRating: number;
+   183→  };
+   184→  messageStats: { total: number; unhandled: number };
+   185→  subscriberStats: { total: number };
+   186→  patientStats: { total: number };
+   187→  trend: { date: string; count: number }[];
+   188→  topServices: { slug: string; name: string; count: number }[];
+   189→  generatedAt: string;
+   190→};
+   191→
+   192→export type ContactMessageRow = {
+   193→  id: string;
+   194→  name: string;
+   195→  email: string;
+   196→  phone: string | null;
+   197→  subject: string | null;
+   198→  message: string;
+   199→  handled: boolean;
+   200→  createdAt: string;
+   201→};
+   202→
+   203→export type MessageStats = {
+   204→  total: number;
+   205→  unhandled: number;
+   206→  handled: number;
+   207→  today: number;
+   208→};
+   209→
+   210→export type SubscriberRow = {
+   211→  id: string;
+   212→  email: string;
+   213→  createdAt: string;
+   214→};
+   215→
+   216→export type SubscriberStats = {
+   217→  total: number;
+   218→  last7Days: number;
+   219→  last30Days: number;
+   220→};
+   221→
+   222→export type PatientRow = {
+   223→  id: string;
+   224→  name: string;
+   225→  phone: string;
+   226→  email: string | null;
+   227→  createdAt: string;
+   228→  updatedAt: string;
+   229→  appointmentCount: number;
+   230→};
+   231→
+   232→export type PatientStats = {
+   233→  total: number;
+   234→  newThisWeek: number;
+   235→  withAppointments: number;
+   236→};
+   237→
+   238→export type PatientDetail = {
+   239→  patient: PatientRow;
+   240→  appointments: AppointmentRow[];
+   241→};
+   242→
+   243→export type ReviewFilter = "ALL" | "PENDING" | "APPROVED";
+   244→export type MessageFilter = "ALL" | "NEW" | "HANDLED";
+   245→export type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+   246→
+   247→/* ------------------------------------------------------------------ */
+   248→/*  Small shared constants                                             */
+   249→/* ------------------------------------------------------------------ */
+   250→
+   251→export const statusStyles: Record<string, string> = {
+   252→  PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
+   253→  CONFIRMED: "bg-blue-50 text-brand-blue ring-blue-200",
+   254→  COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+   255→  CANCELLED: "bg-rose-50 text-rose-600 ring-rose-200",
+   256→};
+   257→
+   258→/* ------------------------------------------------------------------ */
+   259→/*  Date helpers (client timezone) — moved verbatim                     */
+   260→/* ------------------------------------------------------------------ */
+   261→
+   262→function toIsoDate(d: Date): string {
+   263→  const p = (n: number) => String(n).padStart(2, "0");
+   264→  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+   265→}
+   266→
+   267→export function localToday(): string {
+   268→  return toIsoDate(new Date());
+   269→}
+   270→
+   271→function addDaysIso(iso: string, days: number): string {
+   272→  const [y, m, d] = iso.split("-").map(Number);
+   273→  return toIsoDate(new Date(y, m - 1, d + days));
+   274→}
+   275→
+   276→/** Date-range presets (computed client-side, staff's local timezone). */
+   277→export type DatePreset = "all" | "today" | "next7" | "next30" | "past30" | "custom";
+   278→
+   279→export const DATE_PRESETS: {
+   280→  id: Exclude<DatePreset, "custom">;
+   281→  label: string;
+   282→  range: () => [string, string];
+   283→}[] = [
+   284→  { id: "all", label: "All time", range: () => ["", ""] },
+   285→  { id: "today", label: "Today", range: () => [localToday(), localToday()] },
+   286→  { id: "next7", label: "Next 7 days", range: () => [localToday(), addDaysIso(localToday(), 6)] },
+   287→  { id: "next30", label: "Next 30 days", range: () => [localToday(), addDaysIso(localToday(), 29)] },
+   288→  { id: "past30", label: "Past 30 days", range: () => [addDaysIso(localToday(), -29), localToday()] },
+   289→];
+   290→
+   291→/* ------------------------------------------------------------------ */
+   292→/*  Formatting helpers — moved verbatim                                 */
+   293→/* ------------------------------------------------------------------ */
+   294→
+   295→/** "Oct 12, 2026" from an ISO date or full timestamp. */
+   296→export function prettyDay(iso: string): string {
+   297→  const d = new Date(iso);
+   298→  if (Number.isNaN(d.getTime())) return iso;
+   299→  return d.toLocaleDateString("en-US", {
+   300→    month: "short",
+   301→    day: "numeric",
+   302→    year: "numeric",
+   303→  });
+   304→}
+   305→
+   306→/** "Oct 12, 2026 · 4:26 PM" from an ISO timestamp. */
+   307→export function prettyStamp(iso: string): string {
+   308→  const d = new Date(iso);
+   309→  if (Number.isNaN(d.getTime())) return iso;
+   310→  return `${prettyDay(iso)} · ${d.toLocaleTimeString("en-US", {
+   311→    hour: "numeric",
+   312→    minute: "2-digit",
+   313→  })}`;
+   314→}
+   315→
+   316→/** "3 days ago" style relative label (best-effort, local clock). */
+   317→export function relativeTime(iso: string): string {
+   318→  const then = new Date(iso).getTime();
+   319→  if (Number.isNaN(then)) return "";
+   320→  const mins = Math.round((Date.now() - then) / 60_000);
+   321→  if (mins < 1) return "just now";
+   322→  if (mins < 60) return `${mins} min ago`;
+   323→  const hours = Math.round(mins / 60);
+   324→  if (hours < 24) return `${hours} hr ago`;
+   325→  const days = Math.round(hours / 24);
+   326→  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+   327→  const weeks = Math.round(days / 7);
+   328→  if (weeks < 5) return `${weeks} wk ago`;
+   329→  const months = Math.round(days / 30);
+   330→  if (months < 12) return `${months} mo ago`;
+   331→  return `${Math.round(months / 12)} yr ago`;
+   332→}
+   333→
+   334→/** "Mon 29" chart label from a YYYY-MM-DD date. */
+   335→export function chartDayLabel(iso: string): string {
+   336→  const [y, m, d] = iso.split("-").map(Number);
+   337→  if (!y || !m || !d) return iso;
+   338→  const dt = new Date(Date.UTC(y, m - 1, d));
+   339→  const weekday = dt.toLocaleDateString("en-US", {
+   340→    timeZone: "UTC",
+   341→    weekday: "short",
+   342→  });
+   343→  return `${weekday} ${d}`;
+   344→}
+   345→
+   346→/** Avatar initials, e.g. "Demo Patient" → "DP". */
+   347→export function initialsOf(name: string): string {
+   348→  const parts = name.trim().split(/\s+/).filter(Boolean);
+   349→  if (parts.length === 0) return "?";
+   350→  return parts
+   351→    .slice(0, 2)
+   352→    .map((p) => p.charAt(0).toUpperCase())
+   353→    .join("");
+   354→}
+   355→
+   356→/** SVG rect path with rounded TOP corners only (for the trend bars). */
+   357→export function topRoundedBarPath(
+   358→  x: number,
+   359→  y: number,
+   360→  w: number,
+   361→  h: number,
+   362→  r: number
+   363→): string {
+   364→  const rr = Math.min(r, h / 2, w / 2);
+   365→  return [
+   366→    `M ${x} ${y + h}`,
+   367→    `L ${x} ${y + rr}`,
+   368→    `Q ${x} ${y} ${x + rr} ${y}`,
+   369→    `L ${x + w - rr} ${y}`,
+   370→    `Q ${x + w} ${y} ${x + w} ${y + rr}`,
+   371→    `L ${x + w} ${y + h}`,
+   372→    "Z",
+   373→  ].join(" ");
+   374→}
+   375→
+   376→/** Shared CSV download — the filename comes from Content-Disposition. */
+   377→export async function downloadCsvFile(
+   378→  path: string,
+   379→  fallbackName: string
+   380→): Promise<"ok" | "unauthorized" | "error"> {
+   381→  try {
+   382→    const res = await fetch(path);
+   383→    if (res.status === 401) return "unauthorized";
+   384→    if (!res.ok) return "error";
+   385→    const blob = await res.blob();
+   386→    const disposition = res.headers.get("Content-Disposition") ?? "";
+   387→    const filename =
+   388→      /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName;
+   389→    const url = URL.createObjectURL(blob);
+   390→    const a = document.createElement("a");
+   391→    a.href = url;
+   392→    a.download = filename;
+   393→    document.body.appendChild(a);
+   394→    a.click();
+   395→    a.remove();
+   396→    URL.revokeObjectURL(url);
+   397→    return "ok";
+   398→  } catch {
+   399→    return "error";
+   400→  }
+   401→}
+   402→
+   403→/* ------------------------------------------------------------------ */
+   404→/*  Tiny presentational helpers — moved verbatim                        */
+   405→/* ------------------------------------------------------------------ */
+   406→
+   407→export function SmallAction({
+   408→  label,
+   409→  tone,
+   410→  onClick,
+   411→}: {
+   412→  label: string;
+   413→  tone: "confirm" | "complete" | "cancel" | "neutral" | "warn";
+   414→  onClick: () => void;
+   415→}) {
+   416→  const tones = {
+   417→    confirm: "bg-blue-50 text-brand-blue ring-blue-200 hover:bg-brand-blue hover:text-white",
+   418→    complete: "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-600 hover:text-white",
+   419→    cancel: "bg-rose-50 text-rose-600 ring-rose-200 hover:bg-rose-500 hover:text-white",
+   420→    neutral: "bg-slate-50 text-slate-600 ring-slate-200 hover:bg-slate-600 hover:text-white",
+   421→    warn: "bg-amber-50 text-amber-700 ring-amber-200 hover:bg-brand-gold hover:text-brand-navy",
+   422→  };
+   423→  return (
+   424→    <button
+   425→      type="button"
+   426→      onClick={onClick}
+   427→      className={cn(
+   428→        "rounded-full px-3.5 py-1.5 text-[11px] font-bold ring-1 transition-all duration-300",
+   429→        tones[tone]
+   430→      )}
+   431→    >
+   432→      {label}
+   433→    </button>
+   434→  );
+   435→}
+   436→
+   437→export function StarsRow({ value }: { value: number }) {
+   438→  return (
+   439→    <span role="img" aria-label={`${value} out of 5 stars`} className="flex items-center gap-0.5">
+   440→      {Array.from({ length: 5 }).map((_, i) => (
+   441→        <Star
+   442→          key={i}
+   443→          aria-hidden="true"
+   444→          className={cn(
+   445→            "h-3.5 w-3.5",
+   446→            i < value ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"
+   447→          )}
+   448→        />
+   449→      ))}
+   450→    </span>
+   451→  );
+   452→}
+   453→
+   454→/* ------------------------------------------------------------------ */
+   455→/*  RoleBadge — OWNER gold · EDITOR blue · VIEWER slate                 */
+   456→/*  onDark flips the palette for the navy sidebar / mobile drawer.      */
+   457→/* ------------------------------------------------------------------ */
+   458→
+   459→const ROLE_BADGE_LIGHT: Record<AdminRole, string> = {
+   460→  OWNER: "bg-amber-50 text-amber-700 ring-amber-200",
+   461→  EDITOR: "bg-blue-50 text-brand-blue ring-blue-200",
+   462→  VIEWER: "bg-slate-100 text-slate-500 ring-slate-200",
+   463→};
+   464→
+   465→const ROLE_BADGE_DARK: Record<AdminRole, string> = {
+   466→  OWNER: "bg-amber-400/15 text-amber-300 ring-amber-300/30",
+   467→  EDITOR: "bg-blue-400/15 text-blue-200 ring-blue-300/30",
+   468→  VIEWER: "bg-white/10 text-blue-100/70 ring-white/15",
+   469→};
+   470→
+   471→export function RoleBadge({
+   472→  role,
+   473→  onDark = false,
+   474→}: {
+   475→  role: AdminRole | string | null | undefined;
+   476→  onDark?: boolean;
+   477→}) {
+   478→  if (role !== "OWNER" && role !== "EDITOR" && role !== "VIEWER") return null;
+   479→  return (
+   480→    <span
+   481→      className={cn(
+   482→        "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1",
+   483→        onDark ? ROLE_BADGE_DARK[role] : ROLE_BADGE_LIGHT[role]
+   484→      )}
+   485→    >
+   486→      {role}
+   487→    </span>
+   488→  );
+   489→}
+   490→
+   491→/* ------------------------------------------------------------------ */
+   492→/*  useAdminFetch — cookie-auth wrappers for the admin CRUD APIs        */
+   493→/*  (same-origin fetch; 401 routes to onUnauthorized so the shell can   */
+   494→/*   return to the login gate). 403 toasts the server's reason once     */
+   495→/*   and is never auto-retried — the server enforces roles centrally.    */
+   496→/* ------------------------------------------------------------------ */
+   497→
+   498→/* Panels fire several parallel requests; collapse 403 notices so a
+   499→   mid-session role change doesn't spam the toaster. */
+   500→let lastForbiddenNoticeAt = 0;
+   501→
+   502→function notifyForbidden(
+   503→  fail: (title: string, description?: string) => void,
+   504→  message: string
+   505→) {
+   506→  const now = Date.now();
+   507→  if (now - lastForbiddenNoticeAt < 15_000) return;
+   508→  lastForbiddenNoticeAt = now;
+   509→  fail("Not allowed", message);
+   510→}
+   511→
+   512→export function useAdminFetch(onUnauthorized: () => void) {
+   513→  const [loading, setLoading] = useState(false);
+   514→  const [error, setError] = useState<string | null>(null);
+   515→  const onAuthRef = useRef(onUnauthorized);
+   516→  onAuthRef.current = onUnauthorized;
+   517→  const { fail: toastFail } = useAdminToast();
+   518→  const failRef = useRef(toastFail);
+   519→  failRef.current = toastFail;
+   520→
+   521→  const handle401 = useCallback((res: Response): boolean => {
+   522→    if (res.status === 401) {
+   523→      onAuthRef.current();
+   524→      return true;
+   525→    }
+   526→    return false;
+   527→  }, []);
+   528→
+   529→  const handle403 = useCallback((res: Response, message: string) => {
+   530→    if (res.status === 403) {
+   531→      notifyForbidden(failRef.current, message);
+   532→      return true;
+   533→    }
+   534→    return false;
+   535→  }, []);
+   536→
+   537→  const get = useCallback(
+   538→    async <T,>(path: string): Promise<T | null> => {
+   539→      setLoading(true);
+   540→      setError(null);
+   541→      try {
+   542→        const res = await fetch(path);
+   543→        if (handle401(res)) return null;
+   544→        const data = await res.json().catch(() => null);
+   545→        if (!res.ok) {
+   546→          const message =
+   547→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+   548→          handle403(res, message);
+   549→          throw new Error(message);
+   550→        }
+   551→        return data as T;
+   552→      } catch (err) {
+   553→        setError(err instanceof Error ? err.message : "Request failed.");
+   554→        return null;
+   555→      } finally {
+   556→        setLoading(false);
+   557→      }
+   558→    },
+   559→    [handle401, handle403]
+   560→  );
+   561→
+   562→  const post = useCallback(
+   563→    async <T,>(
+   564→      path: string,
+   565→      payload: unknown
+   566→    ): Promise<{ ok: boolean; data: T | null; status: number }> => {
+   567→      setLoading(true);
+   568→      setError(null);
+   569→      try {
+   570→        const res = await fetch(path, {
+   571→          method: "POST",
+   572→          headers: { "Content-Type": "application/json" },
+   573→          body: JSON.stringify(payload ?? {}),
+   574→        });
+   575→        if (handle401(res)) return { ok: false, data: null, status: 401 };
+   576→        const data = await res.json().catch(() => null);
+   577→        if (!res.ok) {
+   578→          const message =
+   579→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+   580→          handle403(res, message);
+   581→          setError(message);
+   582→          return { ok: false, data: data as T | null, status: res.status };
+   583→        }
+   584→        return { ok: true, data: data as T, status: res.status };
+   585→      } catch (err) {
+   586→        setError(err instanceof Error ? err.message : "Request failed.");
+   587→        return { ok: false, data: null, status: 0 };
+   588→      } finally {
+   589→        setLoading(false);
+   590→      }
+   591→    },
+   592→    [handle401, handle403]
+   593→  );
+   594→
+   595→  const del = useCallback(
+   596→    async <T,>(path: string): Promise<{ ok: boolean; data: T | null; status: number }> => {
+   597→      setLoading(true);
+   598→      setError(null);
+   599→      try {
+   600→        const res = await fetch(path, { method: "DELETE" });
+   601→        if (handle401(res)) return { ok: false, data: null, status: 401 };
+   602→        const data = await res.json().catch(() => null);
+   603→        if (!res.ok) {
+   604→          const message =
+   605→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`;
+   606→          handle403(res, message);
+   607→          setError(message);
+   608→          return { ok: false, data: data as T | null, status: res.status };
+   609→        }
+   610→        return { ok: true, data: data as T, status: res.status };
+   611→      } catch (err) {
+   612→        setError(err instanceof Error ? err.message : "Request failed.");
+   613→        return { ok: false, data: null, status: 0 };
+   614→      } finally {
+   615→        setLoading(false);
+   616→      }
+   617→    },
+   618→    [handle401, handle403]
+   619→  );
+   620→
+   621→  const clearError = useCallback(() => setError(null), []);
+   622→
+   623→  return { get, post, del, loading, error, handle401, clearError };
+   624→}
+   625→
+   626→/* ------------------------------------------------------------------ */
+   627→/*  adminToast — thin helpers over the site-wide shadcn toaster         */
+   628→/*  (same useToast system the public pages use)                         */
+   629→/* ------------------------------------------------------------------ */
+   630→
+   631→export function useAdminToast() {
+   632→  const { toast } = useToast();
+   633→  return useMemo(
+   634→    () => ({
+   635→      toast,
+   636→      ok: (title: string, description?: string) => toast({ title, description }),
+   637→      fail: (title: string, description?: string) =>
+   638→        toast({ title, description, variant: "destructive" }),
+   639→    }),
+   640→    [toast]
+   641→  );
+   642→}
+   643→
+   644→/* ------------------------------------------------------------------ */
+   645→/*  PanelHeader — module-local heading inside a panel body              */
+   646→/* ------------------------------------------------------------------ */
+   647→
+   648→export function PanelHeader({
+   649→  title,
+   650→  description,
+   651→  actions,
+   652→}: {
+   653→  title: string;
+   654→  description?: string;
+   655→  actions?: React.ReactNode;
+   656→}) {
+   657→  return (
+   658→    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+   659→      <div className="min-w-0">
+   660→        <h2 className="font-heading text-base font-bold text-brand-navy">{title}</h2>
+   661→        {description ? (
+   662→          <p className="mt-0.5 text-sm leading-relaxed text-slate-500">{description}</p>
+   663→        ) : null}
+   664→      </div>
+   665→      {actions ? (
+   666→        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+   667→      ) : null}
+   668→    </div>
+   669→  );
+   670→}
+   671→
+   672→/* ------------------------------------------------------------------ */
+   673→/*  PanelToolbar — refresh + "last updated" row shared by live panels   */
+   674→/* ------------------------------------------------------------------ */
+   675→
+   676→export function PanelToolbar({
+   677→  lastUpdated,
+   678→  loading,
+   679→  onRefresh,
+   680→}: {
+   681→  lastUpdated: Date | null;
+   682→  loading: boolean;
+   683→  onRefresh: () => void;
+   684→}) {
+   685→  return (
+   686→    <div className="flex flex-wrap items-center justify-between gap-2">
+   687→      <p className="text-xs font-medium text-slate-400">
+   688→        {lastUpdated
+   689→          ? `Last updated ${lastUpdated.toLocaleTimeString("en-US", {
+   690→              hour: "2-digit",
+   691→              minute: "2-digit",
+   692→              second: "2-digit",
+   693→            })} · auto-refreshes every 60s`
+   694→          : "Loading…"}
+   695→      </p>
+   696→      <Button
+   697→        onClick={onRefresh}
+   698→        disabled={loading}
+   699→        variant="outline"
+   700→        size="sm"
+   701→        className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   702→      >
+   703→        <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden="true" />
+   704→        Refresh
+   705→      </Button>
+   706→    </div>
+   707→  );
+   708→}
+   709→
+   710→/* ------------------------------------------------------------------ */
+   711→/*  StatCard — KPI card matching the Overview styling                   */
+   712→/* ------------------------------------------------------------------ */
+   713→
+   714→export function StatCard({
+   715→  icon: Icon,
+   716→  label,
+   717→  value,
+   718→  tone,
+   719→  trend,
+   720→}: {
+   721→  icon: LucideIcon;
+   722→  label: string;
+   723→  value: string | number;
+   724→  tone?: string;
+   725→  trend?: { value: string; direction: "up" | "down" | "flat" };
+   726→}) {
+   727→  return (
+   728→    <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(0,32,96,0.25)]">
+   729→      <div className="flex items-start justify-between gap-2">
+   730→        <span
+   731→          className={cn(
+   732→            "inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1",
+   733→            tone ?? "text-brand-navy bg-ice ring-blue-100"
+   734→          )}
+   735→        >
+   736→          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   737→        </span>
+   738→        {trend ? (
+   739→          <span
+   740→            className={cn(
+   741→              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+   742→              trend.direction === "up"
+   743→                ? "bg-emerald-50 text-emerald-700"
+   744→                : trend.direction === "down"
+   745→                  ? "bg-rose-50 text-rose-600"
+   746→                  : "bg-slate-100 text-slate-500"
+   747→            )}
+   748→          >
+   749→            {trend.direction === "up" ? (
+   750→              <TrendingUp className="h-3 w-3" aria-hidden="true" />
+   751→            ) : trend.direction === "down" ? (
+   752→              <TrendingDown className="h-3 w-3" aria-hidden="true" />
+   753→            ) : (
+   754→              <Minus className="h-3 w-3" aria-hidden="true" />
+   755→            )}
+   756→            {trend.value}
+   757→          </span>
+   758→        ) : null}
+   759→      </div>
+   760→      <p className="font-heading mt-2.5 text-2xl font-bold tabular-nums text-brand-navy">
+   761→        {value}
+   762→      </p>
+   763→      <p className="text-[11px] font-semibold uppercase leading-snug tracking-wider text-slate-400">
+   764→        {label}
+   765→      </p>
+   766→    </div>
+   767→  );
+   768→}
+   769→
+   770→/* ------------------------------------------------------------------ */
+   771→/*  ConfirmDeleteDialog — destructive AlertDialog with loading state    */
+   772→/* ------------------------------------------------------------------ */
+   773→
+   774→export function ConfirmDeleteDialog({
+   775→  open,
+   776→  onOpenChange,
+   777→  onConfirm,
+   778→  title = "Delete this item?",
+   779→  description,
+   780→  confirmLabel = "Delete",
+   781→  loading = false,
+   782→}: {
+   783→  open: boolean;
+   784→  onOpenChange: (open: boolean) => void;
+   785→  onConfirm: () => void;
+   786→  title?: string;
+   787→  description: React.ReactNode;
+   788→  confirmLabel?: string;
+   789→  loading?: boolean;
+   790→}) {
+   791→  return (
+   792→    <AlertDialog open={open} onOpenChange={onOpenChange}>
+   793→      <AlertDialogContent className="rounded-2xl border-blue-100 sm:max-w-md">
+   794→        <AlertDialogHeader>
+   795→          <AlertDialogTitle className="font-heading text-lg text-brand-navy">
+   796→            {title}
+   797→          </AlertDialogTitle>
+   798→          <AlertDialogDescription className="text-sm leading-relaxed text-slate-500">
+   799→            {description}
+   800→          </AlertDialogDescription>
+   801→        </AlertDialogHeader>
+   802→        <AlertDialogFooter>
+   803→          <AlertDialogCancel
+   804→            disabled={loading}
+   805→            className="rounded-full hover:bg-blue-50 hover:text-brand-navy"
+   806→          >
+   807→            Cancel
+   808→          </AlertDialogCancel>
+   809→          <AlertDialogAction
+   810→            onClick={(e) => {
+   811→              /* keep the dialog open while the delete request runs */
+   812→              e.preventDefault();
+   813→              onConfirm();
+   814→            }}
+   815→            disabled={loading}
+   816→            className="rounded-full bg-rose-600 text-white shadow-md shadow-rose-900/25 hover:bg-rose-700 focus-visible:ring-rose-300 disabled:opacity-60"
+   817→          >
+   818→            {loading ? (
+   819→              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   820→            ) : null}
+   821→            {confirmLabel}
+   822→          </AlertDialogAction>
+   823→        </AlertDialogFooter>
+   824→      </AlertDialogContent>
+   825→    </AlertDialog>
+   826→  );
+   827→}
+   828→
+   829→/* ------------------------------------------------------------------ */
+   830→/*  ImageUploadField — upload via /api/admin/upload + manual path       */
+   831→/* ------------------------------------------------------------------ */
+   832→
+   833→export function ImageUploadField({
+   834→  value,
+   835→  onChange,
+   836→  label,
+   837→  hint,
+   838→  onUnauthorized,
+   839→}: {
+   840→  value: string | undefined;
+   841→  onChange: (url: string | undefined) => void;
+   842→  label?: string;
+   843→  hint?: string;
+   844→  onUnauthorized?: () => void;
+   845→}) {
+   846→  const inputRef = useRef<HTMLInputElement | null>(null);
+   847→  const [uploading, setUploading] = useState(false);
+   848→  const { fail } = useAdminToast();
+   849→
+   850→  async function uploadFile(file: File) {
+   851→    if (uploading) return;
+   852→    setUploading(true);
+   853→    try {
+   854→      const body = new FormData();
+   855→      body.append("file", file);
+   856→      const res = await fetch("/api/admin/upload", { method: "POST", body });
+   857→      const data = (await res.json().catch(() => null)) as
+   858→        | { url?: string; error?: string }
+   859→        | null;
+   860→      if (res.status === 401) {
+   861→        onUnauthorized?.();
+   862→        fail("Session expired", "Please sign in again and retry the upload.");
+   863→        return;
+   864→      }
+   865→      if (!res.ok || !data?.url) {
+   866→        throw new Error(data?.error ?? "The upload was rejected by the server.");
+   867→      }
+   868→      onChange(data.url);
+   869→    } catch (err) {
+   870→      fail("Upload failed", err instanceof Error ? err.message : "Please try again.");
+   871→    } finally {
+   872→      setUploading(false);
+   873→      if (inputRef.current) inputRef.current.value = "";
+   874→    }
+   875→  }
+   876→
+   877→  return (
+   878→    <div className="min-w-0">
+   879→      {label ? (
+   880→        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+   881→      ) : null}
+   882→      {hint ? <p className="mt-0.5 text-xs text-slate-400">{hint}</p> : null}
+   883→      <div className="mt-2 flex flex-wrap items-start gap-4">
+   884→        {/* Preview thumbnail */}
+   885→        <div className="relative h-24 w-24 shrink-0">
+   886→          <div
+   887→            className={cn(
+   888→              "h-24 w-24 overflow-hidden rounded-xl bg-ice ring-1",
+   889→              value ? "ring-blue-200" : "ring-inset ring-blue-200/70"
+   890→            )}
+   891→          >
+   892→            {value ? (
+   893→              <Image
+   894→                src={value}
+   895→                alt="Selected image preview"
+   896→                fill
+   897→                sizes="96px"
+   898→                className="object-cover"
+   899→              />
+   900→            ) : (
+   901→              <div className="flex h-full w-full items-center justify-center border-2 border-dashed border-blue-200 text-slate-300">
+   902→                <Upload className="h-6 w-6" aria-hidden="true" />
+   903→              </div>
+   904→            )}
+   905→          </div>
+   906→          {value ? (
+   907→            <button
+   908→              type="button"
+   909→              onClick={() => onChange(undefined)}
+   910→              title="Remove image"
+   911→              aria-label="Remove image"
+   912→              className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-rose-600 shadow ring-1 ring-rose-200 transition hover:bg-rose-50"
+   913→            >
+   914→              <X className="h-3.5 w-3.5" aria-hidden="true" />
+   915→            </button>
+   916→          ) : null}
+   917→          {uploading ? (
+   918→            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
+   919→              <Loader2 className="h-6 w-6 animate-spin text-brand-blue" aria-label="Uploading" />
+   920→            </div>
+   921→          ) : null}
+   922→        </div>
+   923→
+   924→        {/* Controls */}
+   925→        <div className="min-w-0 flex-1 space-y-2">
+   926→          <input
+   927→            ref={inputRef}
+   928→            type="file"
+   929→            accept="image/png,image/jpeg,image/webp,image/gif"
+   930→            className="hidden"
+   931→            onChange={(e) => {
+   932→              const file = e.target.files?.[0];
+   933→              if (file) void uploadFile(file);
+   934→            }}
+   935→          />
+   936→          <div>
+   937→            <Button
+   938→              type="button"
+   939→              variant="outline"
+   940→              size="sm"
+   941→              disabled={uploading}
+   942→              onClick={() => inputRef.current?.click()}
+   943→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   944→            >
+   945→              {uploading ? (
+   946→                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   947→              ) : (
+   948→                <Upload className="h-4 w-4" aria-hidden="true" />
+   949→              )}
+   950→              {uploading ? "Uploading…" : "Upload image"}
+   951→            </Button>
+   952→          </div>
+   953→          <Input
+   954→            value={value ?? ""}
+   955→            onChange={(e) => onChange(e.target.value || undefined)}
+   956→            placeholder="/images/example.png — or an /uploads/… path"
+   957→            aria-label="Image path"
+   958→            className="h-9 rounded-xl border-blue-100 bg-ice text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:ring-brand-blue/25"
+   959→          />
+   960→          <p className="text-[11px] leading-relaxed text-slate-400">
+   961→            PNG, JPG, WEBP or GIF — uploads land in <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/uploads</code>; you can also paste an existing path from <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/public</code>.
+   962→          </p>
+   963→        </div>
+   964→      </div>
+   965→    </div>
+   966→  );
+   967→}
+   968→
+   969→/* ------------------------------------------------------------------ */
+   970→/*  BilingualField — EN + optional বাংলা inputs side by side            */
+   971→/* ------------------------------------------------------------------ */
+   972→
+   973→export function BilingualField({
+   974→  label,
+   975→  enValue,
+   976→  bnValue,
+   977→  onEnChange,
+   978→  onBnChange,
+   979→  textarea,
+   980→  placeholder,
+   981→  rows = 4,
+   982→  maxLength,
+   983→}: {
+   984→  label: string;
+   985→  enValue: string;
+   986→  bnValue?: string;
+   987→  onEnChange: (value: string) => void;
+   988→  onBnChange?: (value: string) => void;
+   989→  textarea?: boolean;
+   990→  placeholder?: string;
+   991→  rows?: number;
+   992→  maxLength?: number;
+   993→}) {
+   994→  const withBn = typeof onBnChange === "function";
+   995→  return (
+   996→    <div className="min-w-0">
+   997→      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+   998→      <div className={cn("mt-1.5 grid gap-2", withBn && "sm:grid-cols-2")}>
+   999→        <label className="min-w-0 block">
+  1000→          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+  1001→            English
+  1002→          </span>
+  1003→          {textarea ? (
+  1004→            <Textarea
+  1005→              value={enValue}
+  1006→              onChange={(e) => onEnChange(e.target.value)}
+  1007→              placeholder={placeholder}
+  1008→              rows={rows}
+  1009→              maxLength={maxLength}
+  1010→              className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+  1011→            />
+  1012→          ) : (
+  1013→            <Input
+  1014→              value={enValue}
+  1015→              onChange={(e) => onEnChange(e.target.value)}
+  1016→              placeholder={placeholder}
+  1017→              maxLength={maxLength}
+  1018→              className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+  1019→            />
+  1020→          )}
+  1021→        </label>
+  1022→        {withBn ? (
+  1023→          <label className="min-w-0 block">
+  1024→            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+  1025→              বাংলা
+  1026→            </span>
+  1027→            {textarea ? (
+  1028→              <Textarea
+  1029→                value={bnValue ?? ""}
+  1030→                onChange={(e) => onBnChange?.(e.target.value)}
+  1031→                placeholder={placeholder}
+  1032→                rows={rows}
+  1033→                maxLength={maxLength}
+  1034→                lang="bn"
+  1035→                className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+  1036→              />
+  1037→            ) : (
+  1038→              <Input
+  1039→                value={bnValue ?? ""}
+  1040→                onChange={(e) => onBnChange?.(e.target.value)}
+  1041→                placeholder={placeholder}
+  1042→                maxLength={maxLength}
+  1043→                lang="bn"
+  1044→                className="mt-1 border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+  1045→              />
+  1046→            )}
+  1047→          </label>
+  1048→        ) : null}
+  1049→      </div>
+  1050→    </div>
+  1051→  );
+  1052→}
+  1053→
+  1054→/* ------------------------------------------------------------------ */
+  1055→/*  SaveBar — sticky bottom bar with dirty state + Reset / Save         */
+  1056→/* ------------------------------------------------------------------ */
+  1057→
+  1058→export function SaveBar({
+  1059→  dirty,
+  1060→  saving,
+  1061→  onSave,
+  1062→  onReset,
+  1063→  saveLabel = "Save changes",
+  1064→  resetLabel = "Reset",
+  1065→  dirtyHint = "Unsaved changes",
+  1066→  savedHint = "All changes saved",
+  1067→}: {
+  1068→  dirty: boolean;
+  1069→  saving: boolean;
+  1070→  onSave: () => void;
+  1071→  onReset: () => void;
+  1072→  saveLabel?: string;
+  1073→  resetLabel?: string;
+  1074→  dirtyHint?: string;
+  1075→  savedHint?: string;
+  1076→}) {
+  1077→  return (
+  1078→    <div className="sticky bottom-4 z-20 mt-6">
+  1079→      <div
+  1080→        className={cn(
+  1081→          "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border bg-white/95 px-4 py-3 shadow-[0_18px_44px_-20px_rgba(0,32,96,0.4)] backdrop-blur transition-colors duration-300",
+  1082→          dirty ? "border-amber-200" : "border-blue-100/70"
+  1083→        )}
+  1084→      >
+  1085→        <span
+  1086→          aria-hidden="true"
+  1087→          className={cn(
+  1088→            "inline-flex h-2.5 w-2.5 shrink-0 rounded-full transition-colors duration-300",
+  1089→            dirty ? "bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.25)]" : "bg-slate-200"
+  1090→          )}
+  1091→        />
+  1092→        <p className="text-xs font-semibold text-slate-500">
+  1093→          {dirty ? dirtyHint : savedHint}
+  1094→        </p>
+  1095→        <div className="ml-auto flex items-center gap-2">
+  1096→          <Button
+  1097→            type="button"
+  1098→            variant="outline"
+  1099→            size="sm"
+  1100→            disabled={!dirty || saving}
+  1101→            onClick={onReset}
+  1102→            className="rounded-full border-blue-200 text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+  1103→          >
+  1104→            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+  1105→            {resetLabel}
+  1106→          </Button>
+  1107→          <Button
+  1108→            type="button"
+  1109→            size="sm"
+  1110→            disabled={!dirty || saving}
+  1111→            onClick={onSave}
+  1112→            className="rounded-full bg-brand-navy font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+  1113→          >
+  1114→            {saving ? (
+  1115→              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  1116→            ) : (
+  1117→              <Save className="h-4 w-4" aria-hidden="true" />
+  1118→            )}
+  1119→            {saving ? "Saving…" : saveLabel}
+  1120→          </Button>
+  1121→        </div>
+  1122→      </div>
+  1123→    </div>
+  1124→  );
+  1125→}
+  1126→
+  1127→/* ------------------------------------------------------------------ */
+  1128→/*  EmptyState — icon + title + description + optional action           */
+  1129→/* ------------------------------------------------------------------ */
+  1130→
+  1131→export function EmptyState({
+  1132→  icon: Icon,
+  1133→  title,
+  1134→  description,
+  1135→  action,
+  1136→  tone = "blue",
+  1137→}: {
+  1138→  icon: LucideIcon;
+  1139→  title: string;
+  1140→  description?: React.ReactNode;
+  1141→  action?: React.ReactNode;
+  1142→  tone?: "blue" | "amber";
+  1143→}) {
+  1144→  return (
+  1145→    <div className="rounded-3xl border border-dashed border-blue-200 bg-white/60 py-14 text-center">
+  1146→      <span
+  1147→        className={cn(
+  1148→          "mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-1",
+  1149→          tone === "amber"
+  1150→            ? "bg-amber-50 text-amber-500 ring-amber-100"
+  1151→            : "bg-blue-50 text-brand-blue ring-blue-100"
+  1152→        )}
+  1153→      >
+  1154→        <Icon className="h-6 w-6" aria-hidden="true" />
+  1155→      </span>
+  1156→      <p className="font-heading mt-4 text-lg font-bold text-brand-navy">{title}</p>
+  1157→      {description ? (
+  1158→        <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-slate-500">
+  1159→          {description}
+  1160→        </p>
+  1161→      ) : null}
+  1162→      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
+  1163→    </div>
+  1164→  );
+  1165→}
+  1166→
+  1167→/* ------------------------------------------------------------------ */
+  1168→/*  PanelSkeleton — loading placeholder for panel bodies                */
+  1169→/* ------------------------------------------------------------------ */
+  1170→
+  1171→export function PanelSkeleton({ rows = 4 }: { rows?: number }) {
+  1172→  return (
+  1173→    <div className="space-y-4" role="status" aria-label="Loading module">
+  1174→      <div className="flex items-center justify-between gap-4">
+  1175→        <Skeleton className="h-5 w-44 rounded-lg" />
+  1176→        <Skeleton className="h-8 w-24 rounded-full" />
+  1177→      </div>
+  1178→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  1179→        {Array.from({ length: 4 }).map((_, i) => (
+  1180→          <Skeleton key={i} className="h-28 rounded-2xl" />
+  1181→        ))}
+  1182→      </div>
+  1183→      <div className="rounded-2xl border border-blue-100/70 bg-white p-4">
+  1184→        {Array.from({ length: rows }).map((_, i) => (
+  1185→          <Skeleton
+  1186→            key={i}
+  1187→            className={cn("h-12 w-full rounded-xl", i < rows - 1 && "mb-2.5")}
+  1188→          />
+  1189→        ))}
+  1190→      </div>
+  1191→    </div>
+  1192→  );
+  1193→}
+  1194→
+  1195→/* ------------------------------------------------------------------ */
+  1196→/*  WiredStub — proves a CMS module endpoint is reachable + counted     */
+  1197→/*  (placeholder panels; subagents 3-b / 3-c replace these files)       */
+  1198→/* ------------------------------------------------------------------ */
+  1199→
+  1200→export function WiredStub({
+  1201→  endpoint,
+  1202→  icon: Icon,
+  1203→  title,
+  1204→  hint,
+  1205→  summarize,
+  1206→  onSessionExpired,
+  1207→}: {
+  1208→  endpoint: string;
+  1209→  icon: LucideIcon;
+  1210→  title: string;
+  1211→  hint?: string;
+  1212→  summarize: (data: Record<string, unknown>) => string;
+  1213→  onSessionExpired: () => void;
+  1214→}) {
+  1215→  const [phase, setPhase] = useState<"loading" | "error" | "ready">("loading");
+  1216→  const [summary, setSummary] = useState("");
+  1217→  const [error, setError] = useState("");
+  1218→  const [tick, setTick] = useState(0);
+  1219→  const summarizeRef = useRef(summarize);
+  1220→  summarizeRef.current = summarize;
+  1221→  const expiredRef = useRef(onSessionExpired);
+  1222→  expiredRef.current = onSessionExpired;
+  1223→
+  1224→  useEffect(() => {
+  1225→    let cancelled = false;
+  1226→    setPhase("loading");
+  1227→    (async () => {
+  1228→      try {
+  1229→        const res = await fetch(endpoint);
+  1230→        if (res.status === 401) {
+  1231→          if (!cancelled) expiredRef.current();
+  1232→          return;
+  1233→        }
+  1234→        const data = await res.json().catch(() => null);
+  1235→        if (!res.ok) {
+  1236→          throw new Error(
+  1237→            (data as { error?: string } | null)?.error ?? `Request failed (${res.status}).`
+  1238→          );
+  1239→        }
+  1240→        if (cancelled) return;
+  1241→        setSummary(summarizeRef.current((data ?? {}) as Record<string, unknown>));
+  1242→        setPhase("ready");
+  1243→      } catch (err) {
+  1244→        if (cancelled) return;
+  1245→        setError(err instanceof Error ? err.message : "Could not load this module.");
+  1246→        setPhase("error");
+  1247→      }
+  1248→    })();
+  1249→    return () => {
+  1250→      cancelled = true;
+  1251→    };
+  1252→  }, [endpoint, tick]);
+  1253→
+  1254→  if (phase === "loading") return <PanelSkeleton />;
+  1255→
+  1256→  if (phase === "error") {
+  1257→    return (
+  1258→      <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center">
+  1259→        <p className="font-heading text-lg font-bold text-rose-700">
+  1260→          Could not reach {title}
+  1261→        </p>
+  1262→        <p className="mx-auto mt-1 max-w-sm text-sm text-rose-600">{error}</p>
+  1263→        <Button
+  1264→          onClick={() => setTick((t) => t + 1)}
+  1265→          variant="outline"
+  1266→          size="sm"
+  1267→          className="mt-5 rounded-full border-rose-200 text-rose-600 hover:bg-rose-100"
+  1268→        >
+  1269→          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+  1270→          Try again
+  1271→        </Button>
+  1272→      </div>
+  1273→    );
+  1274→  }
+  1275→
+  1276→  return (
+  1277→    <div className="rounded-2xl border border-blue-100/70 bg-white p-5 shadow-sm sm:p-6">
+  1278→      <EmptyState
+  1279→        icon={Icon}
+  1280→        title="Editor landing here"
+  1281→        description={
+  1282→          hint ??
+  1283→          "Module wired and authenticated — the full editor for this section arrives with this update."
+  1284→        }
+  1285→      />
+  1286→      <div className="mt-4 flex justify-center">
+  1287→        <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-bold text-brand-navy ring-1 ring-blue-100">
+  1288→          <BadgeCheck className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1289→          {summary}
+  1290→        </span>
+  1291→      </div>
+  1292→    </div>
+  1293→  );
+  1294→}
+  1295→

@@ -5,21 +5,40 @@ import { guard, readJson, bad, notFound, serverError, ok, s, os, b, n, clamp, cl
 import { parseYouTubeId } from "@/lib/data/hero-media";
 
 /* ------------------------------------------------------------------ */
-/*  Admin API — Home hero slides (images + YouTube videos)            */
-/*  GET  /api/admin/hero  → { slides }                                */
-/*  POST /api/admin/hero  → create/update slide ({id?, kind, src…})   */
-/*         { action:"reorder", ids:[…] } reorders                     */
-/*  DELETE ?id=… removes a slide                                      */
+/*  Admin API — Hero slides (images + YouTube videos)                 */
+/*  GET  /api/admin/hero                → all scopes + slides          */
+/*  GET  /api/admin/hero?scope=<s>      → one scope                    */
+/*  POST /api/admin/hero  → create/update slide ({id?, scope?, kind…}) */
+/*         { action:"reorder", ids:[…] } reorders within its scope     */
+/*  DELETE ?id=… removes a slide                                       */
+/*                                                                    */
+/*  Scopes: "home" (homepage hero) + page backdrops: about, services, */
+/*  doctors, blog, contact, gallery, faqs, appointment.               */
 /* ------------------------------------------------------------------ */
+
+const PAGE_SCOPES = ["about", "services", "doctors", "blog", "contact", "gallery", "faqs", "appointment"] as const;
+const ALL_SCOPES = ["home", ...PAGE_SCOPES] as const;
+
+function validScope(value: string): boolean {
+  return (ALL_SCOPES as readonly string[]).includes(value);
+}
 
 export async function GET(req: NextRequest) {
   const denied = await guard(req);
   if (denied) return denied;
   try {
-    const rows = await db.heroSlide.findMany({ where: { scope: "home" }, orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] });
-    return NextResponse.json({
-      slides: rows.map((r) => mapHeroSlide(r as unknown as Record<string, unknown>)),
+    const scope = req.nextUrl.searchParams.get("scope");
+    if (scope && !validScope(scope)) return bad(`Unknown scope "${scope}".`);
+    const rows = await db.heroSlide.findMany({
+      where: scope ? { scope } : undefined,
+      orderBy: [{ scope: "asc" }, { sort: "asc" }, { updatedAt: "asc" }],
     });
+    const slides = rows.map((r) => mapHeroSlide(r as unknown as Record<string, unknown>));
+    return NextResponse.json(
+      scope
+        ? { slides }
+        : { slides, scopes: ALL_SCOPES, counts: ALL_SCOPES.map((sc) => ({ scope: sc, count: slides.filter((x) => x.scope === sc).length })) }
+    );
   } catch (err) {
     return serverError("hero", err);
   }
@@ -42,6 +61,8 @@ export async function POST(req: NextRequest) {
 
     /* ---- slide create / update ---- */
     const id = os(body.id);
+    const scope = clampLen(s(body.scope).trim(), 40) || "home";
+    if (!validScope(scope)) return bad(`Unknown scope "${scope}".`);
     const kind = s(body.kind) === "youtube" ? "youtube" : "image";
     const src = clampLen(s(body.src).trim(), 500);
     if (!src) return bad("An image path or YouTube URL is required.");
@@ -49,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (kind === "youtube" && !parseYouTubeId(src)) return bad("That does not look like a valid YouTube link.");
 
     const data = {
-      scope: "home",
+      scope,
       sort: Math.round(clamp(n(body.sort, 0), 0, 999)),
       kind,
       src,
@@ -63,7 +84,7 @@ export async function POST(req: NextRequest) {
       const row = await db.heroSlide.update({ where: { id }, data });
       return ok(req, { slide: mapHeroSlide(row as unknown as Record<string, unknown>) }, "Slide updated.");
     }
-    const max = await db.heroSlide.aggregate({ where: { scope: "home" }, _max: { sort: true } });
+    const max = await db.heroSlide.aggregate({ where: { scope }, _max: { sort: true } });
     const row = await db.heroSlide.create({ data: { ...data, sort: (max._max.sort ?? -1) + 1 } });
     return ok(req, { slide: mapHeroSlide(row as unknown as Record<string, unknown>), id: row.id }, "Slide added.");
   } catch (err) {

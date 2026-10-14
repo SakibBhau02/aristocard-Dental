@@ -51,7 +51,7 @@ export function GalleryPage() {
       "@context": "https://schema.org",
       "@type": "ImageGallery",
       name: "Smile Transformation Gallery — Aristocrat Dental Care",
-      url: "https://aristocratdentalcarebd.com/#/gallery",
+      url: "https://aristocratdentalcarebd.com/gallery",
       about: cases.map((c) => ({
         "@type": "CreativeWork",
         name: `${c.treatment} — ${c.title}`,
@@ -223,7 +223,7 @@ export function GalleryPage() {
                         className="rounded-full bg-brand-blue px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy"
                       >
                         <a
-                          href={`#/appointment?service=${c.serviceSlug}`}
+                          href={`/appointment?service=${c.serviceSlug}`}
                           onClick={(e) => {
                             e.preventDefault();
                             navigate(`/appointment?service=${c.serviceSlug}`);
@@ -240,7 +240,7 @@ export function GalleryPage() {
                         className="rounded-full border-brand-blue/25 bg-white px-6 py-3.5 text-sm font-bold text-brand-blue hover:bg-blue-50"
                       >
                         <a
-                          href={`#/services/${c.serviceSlug}`}
+                          href={`/services/${c.serviceSlug}`}
                           onClick={(e) => {
                             e.preventDefault();
                             navigate(`/services/${c.serviceSlug}`);

@@ -58,6 +58,21 @@ import {
 
 const MAX_VIDEOS = 6;
 
+/* Where hero slides can attach. "home" = the big homepage slideshow;
+   the rest drive that page's header backdrop (falls back to curated
+   defaults when a scope has no active slides). */
+const SCOPES: { id: string; label: string }[] = [
+  { id: "home", label: "Home hero" },
+  { id: "about", label: "About" },
+  { id: "services", label: "Services" },
+  { id: "doctors", label: "Doctors" },
+  { id: "blog", label: "Blog" },
+  { id: "gallery", label: "Gallery" },
+  { id: "faqs", label: "FAQs" },
+  { id: "contact", label: "Contact" },
+  { id: "appointment", label: "Appointment" },
+];
+
 const inputClass =
   "h-9 rounded-xl border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25";
 
@@ -201,7 +216,8 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
   const { ok, fail } = useAdminToast();
   const { refresh } = useContent();
 
-  const [slides, setSlides] = useState<HeroSlideRow[] | null>(null);
+  const [allSlides, setAllSlides] = useState<HeroSlideRow[] | null>(null);
+  const [scope, setScope] = useState("home");
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadTick, setLoadTick] = useState(0);
@@ -238,7 +254,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
         return;
       }
       setLoadFailed(false);
-      setSlides(heroRes.slides ?? []);
+      setAllSlides(heroRes.slides ?? []);
       setSettings(settingsRes.settings);
       const urls = (settingsRes.settings.heroVideoUrls ?? []).slice(0, MAX_VIDEOS);
       setVideoSnapshot([...urls]);
@@ -248,6 +264,14 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
       cancelled = true;
     };
   }, [get, loadTick]);
+
+  const slides = useMemo(
+    () => (allSlides ? allSlides.filter((s) => s.scope === scope) : null),
+    [allSlides, scope]
+  );
+
+  const scopeCount = (id: string) =>
+    allSlides ? allSlides.filter((s) => s.scope === id).length : 0;
 
   const videosDirty = useMemo(
     () =>
@@ -261,7 +285,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
 
   async function reloadSlides() {
     const data = await get<{ slides: HeroSlideRow[] }>("/api/admin/hero");
-    if (data) setSlides(data.slides ?? []);
+    if (data) setAllSlides(data.slides ?? []);
     await refresh();
   }
 
@@ -272,6 +296,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     setBusyId(row.id);
     const res = await post<{ error?: string }>("/api/admin/hero", {
       id: row.id,
+      scope: row.scope,
       kind: row.kind,
       src: row.src,
       sort: row.sort,
@@ -280,7 +305,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     });
     setBusyId(null);
     if (res.ok) {
-      setSlides((prev) =>
+      setAllSlides((prev) =>
         prev ? prev.map((s) => (s.id === row.id ? { ...s, ...patch } : s)) : prev
       );
       await refresh();
@@ -293,13 +318,18 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     if (!slides || reordering) return;
     const j = index + dir;
     if (j < 0 || j >= slides.length) return;
-    const next = [...slides];
-    [next[index], next[j]] = [next[j], next[index]];
-    setSlides(next);
+    /* reorder within the current scope, then merge back into the full list */
+    const scoped = [...slides];
+    [scoped[index], scoped[j]] = [scoped[j], scoped[index]];
+    const orderById = new Map(scoped.map((s, i) => [s.id, i]));
+    const next = (allSlides ?? []).map((s) =>
+      orderById.has(s.id) ? { ...s, sort: orderById.get(s.id)! } : s
+    );
+    setAllSlides(next);
     setReordering(true);
     const res = await post<{ error?: string }>("/api/admin/hero", {
       action: "reorder",
-      ids: next.map((s) => s.id),
+      ids: scoped.map((s) => s.id),
     });
     setReordering(false);
     if (res.ok) {
@@ -337,6 +367,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     }
     setAdding(true);
     const res = await post<{ error?: string }>("/api/admin/hero", {
+      scope,
       kind: addKind,
       src,
       alt: addAlt.trim() || undefined,
@@ -344,7 +375,12 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     });
     setAdding(false);
     if (res.ok) {
-      ok("Slide added", "It is now part of the home hero rotation.");
+      ok(
+        "Slide added",
+        scope === "home"
+          ? "It is now part of the home hero rotation."
+          : `The ${SCOPES.find((x) => x.id === scope)?.label ?? scope} page backdrop now uses it.`
+      );
       setAddSrc("");
       setAddAlt("");
       setAddOpen(false);
@@ -393,7 +429,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
 
   /* ---- render ---- */
 
-  if (!slides || !videoUrls) {
+  if (slides === null || !videoUrls) {
     if (loadFailed) {
       return (
         <div className="space-y-4">
@@ -424,9 +460,58 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
     <div className="space-y-4">
       <PanelHeader
         title="Hero Slides & Videos"
-        description="The home hero crossfades between these slides — images and muted YouTube videos, in order."
+        description="Manage the home hero slideshow and every page's header backdrop — upload photos or paste muted YouTube videos."
       />
       {error ? <ErrorNote message={error} /> : null}
+
+      {/* ============ SCOPE PICKER ============ */}
+      <div className="rounded-2xl border border-blue-100/70 bg-white p-3 shadow-sm">
+        <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          Where should these slides appear?
+        </p>
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Hero slide scope">
+          {SCOPES.map((sc) => {
+            const active = scope === sc.id;
+            const count = scopeCount(sc.id);
+            return (
+              <button
+                key={sc.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setScope(sc.id);
+                  setAddOpen(false);
+                }}
+                className={cn(
+                  "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all duration-300",
+                  active
+                    ? "bg-brand-navy text-white shadow-md shadow-navy-900/20"
+                    : "bg-ice text-brand-navy ring-1 ring-blue-100 hover:bg-blue-100/70"
+                )}
+              >
+                {sc.label}
+                {count > 0 ? (
+                  <span
+                    className={cn(
+                      "inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                      active ? "bg-white/20 text-white" : "bg-brand-blue/15 text-brand-blue"
+                    )}
+                  >
+                    {count}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+        {scope !== "home" ? (
+          <p className="px-1 pt-2 text-xs leading-relaxed text-slate-400">
+            Slides here become the <span className="font-semibold text-slate-500">{SCOPES.find((x) => x.id === scope)?.label}</span>{" "}
+            page's header backdrop. With no active slides the page keeps its curated default photos.
+          </p>
+        ) : null}
+      </div>
 
       {/* ============ SLIDES ============ */}
       <Collapsible defaultOpen className="overflow-hidden rounded-2xl border border-blue-100/70 bg-white shadow-sm">
@@ -436,7 +521,7 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="font-heading block text-sm font-bold text-brand-navy">
-              Hero slides
+              {scope === "home" ? "Hero slides" : `${SCOPES.find((x) => x.id === scope)?.label ?? "Page"} backdrop slides`}
             </span>
             <span className="mt-0.5 block text-xs text-slate-400">
               {slides.length} slide{slides.length === 1 ? "" : "s"} in rotation ·{" "}
@@ -452,8 +537,9 @@ export function HeroPanel({ onSessionExpired }: PanelProps) {
           <div className="space-y-3 px-4 py-5 sm:px-5">
             {slides.length === 0 ? (
               <Hint>
-                No database slides yet — the hero is falling back to the static image set. Add a
-                slide below to take control of the rotation.
+                {scope === "home"
+                  ? "No database slides yet — the hero is falling back to the static image set. Add a slide below to take control of the rotation."
+                  : `No custom slides for this page yet — it currently shows its curated default photos. Add a slide below to override them.`}
               </Hint>
             ) : null}
             {slides.map((row, i) => (

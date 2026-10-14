@@ -33,13 +33,14 @@ export type NavItem = {
 };
 
 export const navItems: NavItem[] = [
-  { label: "Home", href: "#/" },
-  { label: "About Us", href: "#/about" },
-  { label: "Services", href: "#/services" },
-  { label: "Gallery", href: "#/gallery" },
-  { label: "Doctors", href: "#/doctors" },
-  { label: "Blog", href: "#/blog" },
-  { label: "Contact", href: "#/contact" },
+  /* "Home" intentionally omitted from the header — the logo links to "/"
+     (user request); breadcrumbs still use d.chrome.nav.home independently. */
+  { label: "About Us", href: "/about" },
+  { label: "Services", href: "/services" },
+  { label: "Gallery", href: "/gallery" },
+  { label: "Doctors", href: "/doctors" },
+  { label: "Blog", href: "/blog" },
+  { label: "Contact", href: "/contact" },
 ];
 
 /* Stats used across hero / about / footer */

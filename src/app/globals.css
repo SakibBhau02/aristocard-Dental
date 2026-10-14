@@ -132,6 +132,8 @@
   }
   html {
     scroll-behavior: smooth;
+    /* anchored sections (e.g. #stats) land below the sticky navbar */
+    scroll-padding-top: 5.5rem;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -594,9 +596,10 @@ html[lang="bn"] {
 }
 
 /* ---------- Navbar gradient hairline ---------- */
-.nav-hairline {
-  position: relative;
-}
+/* NOTE: no `position` here! The navbar element carries Tailwind's `sticky`
+   (a positioned value) which anchors the ::after hairline. Setting
+   `position: relative` in this unlayered rule used to override the
+   Tailwind `sticky` utility and silently un-stick the whole navbar. */
 .nav-hairline::after {
   content: "";
   position: absolute;
@@ -1061,3 +1064,38 @@ html[lang="bn"] {
 }
 
 /* cache-bust r11 */
+
+
+/* ================= ROUND 12 — Cost Estimator support ================= */
+
+/* EMI tenure chips inside the dark estimate summary */
+.chip-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 600;
+  color: #dbeafe;
+  white-space: nowrap;
+  cursor: default;
+  transition: background 0.3s ease;
+}
+.chip-month:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* When the mobile estimate bar is visible, lift the floating action
+   stack + scroll-top button so nothing overlaps (estimator-only body
+   class toggled by estimator-page.tsx). */
+body.has-mobile-bar .fab-stack {
+  bottom: calc(5.25rem + env(safe-area-inset-bottom));
+}
+body.has-mobile-bar .scroll-top-btn {
+  bottom: calc(5.25rem + env(safe-area-inset-bottom));
+}
+
+/* cache-bust r12 */

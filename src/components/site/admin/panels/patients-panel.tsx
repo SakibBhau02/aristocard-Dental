@@ -17,6 +17,8 @@ import {
   ChevronDown,
   Download,
   Loader2,
+  MessageCircle,
+  Phone,
   Search,
   Sparkles,
   Users,
@@ -32,9 +34,16 @@ import {
   PanelToolbar,
   downloadCsvFile,
   initialsOf,
+  localToday,
   prettyDay,
   statusStyles,
 } from "../admin-shared";
+
+/** BD mobile → wa.me deep link (01712345678 → 8801712345678). */
+function whatsappHref(phone: string, name: string): string {
+  const text = `Hello ${name}, this is Aristocrat Dental Care — a quick note about your upcoming visit.`;
+  return `https://wa.me/880${phone.slice(1)}?text=${encodeURIComponent(text)}`;
+}
 
 export function PatientsPanel({
   onSessionExpired,
@@ -313,6 +322,26 @@ export function PatientsPanel({
                   ) : (
                     <span className="text-slate-400">No email on file</span>
                   )}
+                  <span className="ml-auto flex items-center gap-2">
+                    <a
+                      href={`tel:${p.phone}`}
+                      title={`Call ${p.name}`}
+                      aria-label={`Call ${p.name}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-brand-blue ring-1 ring-blue-200 transition-all duration-300 hover:bg-brand-blue hover:text-white"
+                    >
+                      <Phone className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                    <a
+                      href={whatsappHref(p.phone, p.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`WhatsApp ${p.name}`}
+                      aria-label={`WhatsApp ${p.name}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200 transition-all duration-300 hover:bg-emerald-500 hover:text-white"
+                    >
+                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </span>
                 </div>
                 <AnimatePresence initial={false}>
                   {expanded && (
@@ -341,7 +370,63 @@ export function PatientsPanel({
                           </p>
                         ) : detail ? (
                           <>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                            {/* visit summary strip */}
+                            {(() => {
+                              const today = localToday();
+                              const appts = detail.appointments;
+                              const totalVisits = appts.filter(
+                                (a) => a.status === "COMPLETED"
+                              ).length;
+                              const pastOnes = appts.filter((a) => a.date <= today);
+                              const lastVisit = pastOnes[0]?.date ?? null;
+                              const next = appts
+                                .filter(
+                                  (a) =>
+                                    a.date >= today &&
+                                    (a.status === "PENDING" || a.status === "CONFIRMED")
+                                )
+                                .sort((a, b) => a.date.localeCompare(b.date))[0];
+                              const summary = [
+                                {
+                                  label: "Total visits",
+                                  value: String(totalVisits),
+                                  tone: "text-emerald-700 bg-emerald-50 ring-emerald-100",
+                                },
+                                {
+                                  label: "Last visit",
+                                  value: lastVisit ? prettyDay(lastVisit) : "—",
+                                  tone: "text-brand-navy bg-ice ring-blue-100",
+                                },
+                                {
+                                  label: "Next appointment",
+                                  value: next ? `${prettyDay(next.date)} · ${next.time}` : "—",
+                                  tone: "text-brand-blue bg-blue-50 ring-blue-100",
+                                },
+                              ];
+                              return (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {summary.map((s) => (
+                                    <div
+                                      key={s.label}
+                                      className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-blue-100/70"
+                                    >
+                                      <span
+                                        className={cn(
+                                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1",
+                                          s.tone
+                                        )}
+                                      >
+                                        {s.label}
+                                      </span>
+                                      <p className="mt-1.5 text-sm font-bold tabular-nums text-brand-navy">
+                                        {s.value}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                               {detail.appointments.length} booking{detail.appointments.length === 1 ? "" : "s"} · newest first
                             </p>
                             <ul className="mt-2.5 space-y-2.5">

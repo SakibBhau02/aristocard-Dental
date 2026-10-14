@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "@/lib/router";
 import {
   type AdminView,
   type OverviewData,
@@ -54,6 +55,7 @@ export function OverviewPanel({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const loadIdRef = useRef(0);
+  const { navigate } = useRouter();
 
   const load = useCallback(async () => {
     const requestId = ++loadIdRef.current;
@@ -211,6 +213,60 @@ export function OverviewPanel({
         <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
           {loadError}
         </p>
+      )}
+
+      {/* Today at a glance — the owner's daily morning strip */}
+      {data && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-blue-100/70 bg-white px-5 py-4 shadow-sm"
+        >
+          <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            <Sparkles className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+            Today at a glance
+          </p>
+          <span className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <CalendarClock className="h-4 w-4 text-brand-navy" aria-hidden="true" />
+            <strong className="font-heading text-base font-bold tabular-nums text-brand-navy">
+              {data.todaysAppointments ?? data.appointmentStats.today}
+            </strong>
+            appointments today
+          </span>
+          <span className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <Clock className="h-4 w-4 text-amber-500" aria-hidden="true" />
+            <strong className="font-heading text-base font-bold tabular-nums text-amber-600">
+              {data.appointmentStats.pending}
+            </strong>
+            pending confirmations
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-2 text-sm",
+              (data.overdueFollowUps ?? 0) > 0 ? "text-rose-600" : "text-slate-600"
+            )}
+          >
+            <Inbox className="h-4 w-4 text-rose-500" aria-hidden="true" />
+            <strong
+              className={cn(
+                "font-heading text-base font-bold tabular-nums",
+                (data.overdueFollowUps ?? 0) > 0 ? "text-rose-600" : "text-brand-navy"
+              )}
+            >
+              {data.overdueFollowUps ?? 0}
+            </strong>
+            overdue follow-up{(data.overdueFollowUps ?? 0) === 1 ? "" : "s"}
+          </span>
+          <Button
+            type="button"
+            onClick={() => navigate("/admin?view=appointments&followups=1")}
+            className="ml-auto h-10 rounded-full bg-brand-navy px-4 text-xs font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+          >
+            Open follow-ups queue
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
+        </motion.div>
       )}
 
       {loading && !data ? (

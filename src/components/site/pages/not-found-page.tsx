@@ -102,7 +102,7 @@ export function NotFoundPage() {
             className="btn-shine rounded-full bg-brand-blue px-8 py-6 font-bold text-white shadow-xl shadow-blue-500/30 hover:bg-brand-navy"
           >
             <a
-              href="#/"
+              href="/"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/");
@@ -119,7 +119,7 @@ export function NotFoundPage() {
             className="rounded-full border-brand-blue/30 px-8 py-6 font-bold text-brand-navy hover:bg-blue-50"
           >
             <a
-              href="#/appointment"
+              href="/appointment"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/appointment");

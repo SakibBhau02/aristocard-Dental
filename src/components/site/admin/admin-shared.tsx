@@ -61,6 +61,8 @@ export type AdminView =
   | "about"
   | "hero"
   | "settings"
+  | "integrations"
+  | "analytics"
   | "users";
 
 /** Props every panel understands (the shell owns login/logout). */
@@ -127,7 +129,7 @@ export const ADMIN_ROLE_INFO: Record<AdminRole, { label: string; blurb: string }
 /* ------------------------------------------------------------------ */
 
 export type AppointmentRow = {
-  id: number;
+  id: string;
   refCode: string;
   name: string;
   phone: string;
@@ -139,6 +141,9 @@ export type AppointmentRow = {
   notes: string | null;
   status: string;
   source: string | null;
+  /* Daily lead pipeline (admin-only, never shown on the public site) */
+  followUpDate: string | null;
+  adminNotes: string | null;
   createdAt: string;
 };
 
@@ -184,6 +189,10 @@ export type OverviewData = {
   patientStats: { total: number };
   trend: { date: string; count: number }[];
   topServices: { slug: string; name: string; count: number }[];
+  /* Daily-workflow extras (added with the lead-management update;
+     optional so older cached payloads still type-check). */
+  todaysAppointments?: number;
+  overdueFollowUps?: number;
   generatedAt: string;
 };
 

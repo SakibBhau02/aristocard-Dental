@@ -178,7 +178,11 @@ export function isAdminAuthorized(req: NextRequest): boolean {
 const OWNER_ONLY_PATHS = ["/api/admin/users"];
 
 /** Routes where mutating verbs require OWNER. */
-const OWNER_ONLY_MUTATIONS = ["/api/admin/settings"];
+const OWNER_ONLY_MUTATIONS = [
+  "/api/admin/settings",
+  "/api/admin/integrations", // incl. /test — tokens are secrets
+  "/api/admin/analytics", // purge/delete analytics data
+];
 
 function json(status: number, body: Record<string, unknown>): NextResponse {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });

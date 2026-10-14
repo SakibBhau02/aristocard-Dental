@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -13,10 +13,13 @@ import {
   HelpCircle,
   Phone,
   PlayCircle,
+  Search,
+  ShieldCheck,
   Sparkles,
   Star,
   Stethoscope,
   Users,
+  X,
 } from "lucide-react";
 import {
   Accordion,
@@ -25,7 +28,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useRouter, usePageMeta } from "@/lib/router";
-import { useLang } from "@/lib/i18n";
+import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
 import { featuredServices, pickBn, testimonials } from "@/lib/content/shared";
 import { DynamicIcon } from "@/components/site/icon-map";
@@ -42,6 +45,8 @@ import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  HOME PAGE (EN / বাংলা) — content served live from the CMS bundle   */
@@ -152,7 +157,7 @@ export function HomePage() {
               className="btn-press btn-shine group relative overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-9 py-6 text-base font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/40"
             >
               <a
-                href="#/appointment"
+                href="/appointment"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate("/appointment");
@@ -170,7 +175,7 @@ export function HomePage() {
               className="rounded-full border-white/30 bg-white/10 px-9 py-6 text-base font-bold text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/60 hover:bg-white/20"
             >
               <a
-                href="#/services"
+                href="/services"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate("/services");
@@ -286,61 +291,11 @@ export function HomePage() {
           {/* minmax(0,1fr) on mobile so the track can shrink below content
               min-width — prevents 3px horizontal overflow at 320-360px */}
           <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            {/* Left visual */}
+            {/* Left visual — interactive Doctor Search panel with round
+                photos of every doctor (user round 12-e: "Doctor Search-এর
+                ছবি হবে এবং নিচে গোল গোল করে প্রতিটা ডাক্তারের ছবি") */}
             <Reveal className="relative order-2 lg:order-1">
-              <div className="relative mx-auto max-w-md">
-                <div className="overflow-hidden rounded-[2rem] shadow-2xl shadow-navy-900/20 ring-1 ring-blue-100">
-                  <div className="hero-mesh-dark noise flex aspect-[4/5] flex-col justify-between p-8">
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
-                      <Award className="h-3.5 w-3.5" aria-hidden="true" />
-                      {d.home.why.premiumBadge}
-                    </span>
-                    <div>
-                      <p className="font-heading text-2xl font-bold leading-snug text-white">
-                        {pickBn(home.why.quote, home.why.quoteBn, bn)}
-                      </p>
-                      <p className="mt-3 text-sm text-blue-200/85">
-                        {pickBn(home.why.quoteBy, home.why.quoteByBn, bn)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {doctors.slice(0, 4).map((doc) => (
-                        <span
-                          key={doc.slug}
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/12 text-xs font-bold text-white ring-2 ring-white/25"
-                          title={doc.name}
-                        >
-                          {doc.name
-                            .replace("Dr. ", "")
-                            .split(" ")
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")}
-                        </span>
-                      ))}
-                      <span className="text-xs text-blue-200/80">
-                        {d.home.why.plusSpecialists}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* floating rating card — right-4 on mobile (no viewport
-                    overflow at 320-360px), pokes out from sm up */}
-                <div className="animate-float-soft absolute right-4 -top-4 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-8">
-                  <span className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="h-4 w-4 fill-amber-400 text-amber-400"
-                        aria-hidden="true"
-                      />
-                    ))}
-                  </span>
-                  <span className="mt-1 block text-xs font-semibold text-brand-navy">
-                    {pickBn(home.why.ratingNote, home.why.ratingNoteBn, bn)}
-                  </span>
-                </div>
-              </div>
+              <DoctorSearchPanel />
             </Reveal>
 
             {/* Right content */}
@@ -408,7 +363,7 @@ export function HomePage() {
               variant="outline"
             >
               <a
-                href="#/services"
+                href="/services"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate("/services");
@@ -517,7 +472,7 @@ export function HomePage() {
                     className="rounded-full bg-brand-blue px-7 py-4 text-sm font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy"
                   >
                     <a
-                      href="#/gallery"
+                      href="/gallery"
                       onClick={(e) => {
                         e.preventDefault();
                         navigate("/gallery");
@@ -594,7 +549,7 @@ export function HomePage() {
           </div>
           <Reveal className="mt-10 text-center">
             <a
-              href="#/doctors"
+              href="/doctors"
               onClick={(e) => {
                 e.preventDefault();
                 navigate("/doctors");
@@ -638,7 +593,7 @@ export function HomePage() {
                       </a>{" "}
                       {d.home.faq.or}{" "}
                       <a
-                        href="#/contact"
+                        href="/contact"
                         onClick={(e) => {
                           e.preventDefault();
                           navigate("/contact");
@@ -673,7 +628,7 @@ export function HomePage() {
               </Accordion>
               <Reveal className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
                 <a
-                  href="#/faqs"
+                  href="/faqs"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/faqs");
@@ -684,7 +639,7 @@ export function HomePage() {
                   {pickBn(home.faq.cta, home.faq.ctaBn, bn)}
                 </a>
                 <a
-                  href="#/blog"
+                  href="/blog"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/blog");
@@ -703,5 +658,270 @@ export function HomePage() {
       {/* ============ CTA ============ */}
       <CtaBanner />
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Doctor Search panel — "Why Choose Us" left visual (round 12-e)     */
+/*                                                                     */
+/*  Replaces the old static quote card: an interactive Doctor Search   */
+/*  card (live name/specialty filter + category chips) with the round  */
+/*  photos of every doctor below it — tapping a photo opens the        */
+/*  doctor's full profile (/doctors/[slug]).                           */
+/* ------------------------------------------------------------------ */
+
+function DoctorSearchPanel() {
+  const { doctors, home, services } = useBundle();
+  const { lang, d } = useLang();
+  const { navigate } = useRouter();
+  const bn = lang === "bn";
+  const t = d.home.why;
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState<string>("all");
+
+  /* Category chips → keyword buckets matched against each doctor's
+     role/department/specializations haystack. */
+  const categories = [
+    { id: "all", label: t.searchAll, keys: [] as string[] },
+    {
+      id: "ortho",
+      label: t.searchCatOrtho,
+      keys: ["orthodontic", "brace", "aligner", "invisalign", "retainer"],
+    },
+    {
+      id: "surgery",
+      label: t.searchCatSurgery,
+      keys: ["surgery", "surgical", "implant", "extraction", "wisdom", "oral"],
+    },
+    {
+      id: "cosmetic",
+      label: t.searchCatCosmetic,
+      keys: ["cosmetic", "smile", "veneer", "whitening", "aesthetic", "bonding"],
+    },
+    {
+      id: "kids",
+      label: t.searchCatKids,
+      keys: ["kid", "pediatric", "children", "child"],
+    },
+  ];
+
+  const raw = query.trim();
+  const q = raw.toLowerCase();
+  /* Resolve focus-service slugs into real service names (EN + BN) so
+     people find doctors by the treatment words they know — "braces",
+     "implant", "whitening", or Bangla "ব্রেস", "ইমপ্ল্যান্ট"… The CMS
+     specializations alone are too terse for a useful search. */
+  const serviceNames = (slug: string) => {
+    const svc = services.find((s) => s.slug === slug);
+    return svc ? `${svc.name} ${svc.nameBn ?? ""}` : slug;
+  };
+
+  const filtered = doctors.filter((doc) => {
+    const haystack = [
+      doc.name,
+      doc.role,
+      doc.roleBn ?? "",
+      doc.department,
+      doc.departmentBn ?? "",
+      ...doc.specializations,
+      ...(doc.focusServices ?? []).flatMap(serviceNames),
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery =
+      !q || haystack.includes(q) || (bn && raw.length > 1 && haystack.includes(raw));
+    const def = categories.find((c) => c.id === cat);
+    const matchesCat =
+      !def || def.id === "all" || def.keys.some((k) => haystack.includes(k));
+    return matchesQuery && matchesCat;
+  });
+
+  const shownCount = bn ? toBnDigits(filtered.length) : String(filtered.length);
+  const totalCount = bn ? toBnDigits(doctors.length) : String(doctors.length);
+
+  return (
+    <div className="relative mx-auto max-w-md">
+      <div className="overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-navy-900/20 ring-1 ring-blue-100">
+        {/* Header band — dark mesh keeps the premium design language */}
+        <div className="hero-mesh-dark noise relative px-6 pb-6 pt-7">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300 ring-1 ring-white/15">
+            <Award className="h-3.5 w-3.5" aria-hidden="true" />
+            {t.premiumBadge}
+          </span>
+
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="font-heading text-xl font-bold text-white">
+                {t.searchTitle}
+              </p>
+              <p className="mt-1 text-[13px] leading-snug text-blue-200/85">
+                {t.searchSubtitle}
+              </p>
+            </div>
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-300 ring-1 ring-white/15">
+              <Stethoscope className="h-5 w-5" aria-hidden="true" />
+            </span>
+          </div>
+
+          {/* Search input */}
+          <div className="relative mt-4">
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-blue/60"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t.searchPlaceholder}
+              aria-label={t.searchTitle}
+              className="h-12 w-full rounded-full border-0 bg-white pl-11 pr-11 text-sm font-medium text-brand-navy shadow-inner outline-none ring-2 ring-white/20 transition-shadow placeholder:text-slate-400 focus:ring-amber-300/80 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy"
+                aria-label={t.searchClear}
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : undefined}
+          </div>
+        </div>
+
+        {/* Category chips */}
+        <div
+          className="flex flex-wrap gap-1.5 border-b border-blue-50 bg-white px-5 py-3.5"
+          role="group"
+          aria-label={t.searchTitle}
+        >
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCat(c.id)}
+              aria-pressed={cat === c.id}
+              className={cn(
+                "rounded-full px-3.5 py-1.5 text-[11.5px] font-semibold transition-all duration-300",
+                cat === c.id
+                  ? "bg-brand-blue text-white shadow-md shadow-blue-500/25"
+                  : "bg-blue-50/70 text-brand-navy/70 ring-1 ring-blue-100 hover:bg-blue-50 hover:text-brand-blue"
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Round doctor photos — গোল গোল করে প্রতিটা ডাক্তারের ছবি
+            (2×2 grid keeps every name + role fully readable) */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-6 px-5 py-6 sm:gap-x-5">
+          {filtered.map((doc) => {
+            const role = bn && doc.roleBn ? doc.roleBn : doc.role;
+            return (
+              <button
+                key={doc.slug}
+                type="button"
+                onClick={() => navigate(`/doctors/${doc.slug}`)}
+                className="group flex flex-col items-center gap-2.5 rounded-2xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+                aria-label={`${doc.name} — ${role}`}
+              >
+                <span className="relative">
+                  {/* soft accent halo on hover */}
+                  <span
+                    className="absolute -inset-1 rounded-full opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-25"
+                    style={{ background: doc.accent }}
+                    aria-hidden="true"
+                  />
+                  <Avatar className="relative h-20 w-20 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
+                    {doc.photo ? (
+                      <AvatarImage
+                        src={doc.photo}
+                        alt={`${doc.name} — ${role}`}
+                        className="aspect-square size-full object-cover"
+                      />
+                    ) : undefined}
+                    <AvatarFallback
+                      className="font-heading text-xl font-bold"
+                      style={{ background: `${doc.accent}18`, color: doc.accent }}
+                    >
+                      {doc.name
+                        .replace("Dr. ", "")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* BMDC verified dot */}
+                  <span
+                    className="absolute -bottom-0.5 -right-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white"
+                    title="BMDC Verified"
+                    aria-label="BMDC verified doctor"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-3 w-3 fill-current"
+                      aria-hidden="true"
+                    >
+                      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                  </span>
+                </span>
+                <span className="block text-center">
+                  <span className="block text-xs font-bold leading-tight text-brand-navy transition-colors group-hover:text-brand-blue">
+                    {doc.name}
+                  </span>
+                  <span className="mt-0.5 block text-[10.5px] font-medium leading-snug text-slate-500 line-clamp-2">
+                    {role}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Empty state */}
+        {filtered.length === 0 ? (
+          <p className="px-6 pb-8 pt-2 text-center text-sm leading-relaxed text-slate-500">
+            {t.searchNoResults}
+          </p>
+        ) : undefined}
+
+        {/* Footer strip — verified + live result count */}
+        <div className="flex items-center justify-between gap-3 border-t border-blue-50 bg-ice/60 px-5 py-3">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+            <ShieldCheck
+              className="h-3.5 w-3.5 text-emerald-600"
+              aria-hidden="true"
+            />
+            {t.searchVerified}
+          </span>
+          <span className="text-[11px] font-bold text-brand-blue">
+            {t.searchResultCount
+              .replace("{shown}", shownCount)
+              .replace("{total}", totalCount)}
+          </span>
+        </div>
+      </div>
+
+      {/* Floating rating card — kept from the previous design
+          (right-4 on mobile so it never overflows at 320-360px) */}
+      <div className="animate-float-soft absolute right-4 -top-4 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-8">
+        <span className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className="h-4 w-4 fill-amber-400 text-amber-400"
+              aria-hidden="true"
+            />
+          ))}
+        </span>
+        <span className="mt-1 block text-xs font-semibold text-brand-navy">
+          {pickBn(home.why.ratingNote, home.why.ratingNoteBn, bn)}
+        </span>
+      </div>
+    </div>
   );
 }

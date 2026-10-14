@@ -21,6 +21,7 @@ import {
   Mail,
   Pencil,
   Phone,
+  RefreshCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -39,6 +40,7 @@ import { Reveal } from "@/components/site/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +51,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { Lang } from "@/lib/data/dictionary";
@@ -141,6 +151,16 @@ const PHONE_RE = /^01[3-9]\d{8}$/;
 const PHONE_ERROR = "Please provide a valid Bangladeshi mobile number (e.g. 01712345678).";
 const NAME_ERROR = "Please enter your full name (min 2 characters).";
 const PASSWORD_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+/* The clinic's 20 bookable half-hour slots — same list as the booking
+   page and the same shape the server's TIME_SLOT regex accepts.     */
+const TIME_SLOTS = [
+  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM",
+  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
+  "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM",
+  "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM",
+];
 
 function formatDateLabel(iso: string, lang: Lang): string {
   if (!iso) return "";
@@ -604,6 +624,78 @@ export function PortalPage() {
     }
   };
 
+  /* --- reschedule (session-verified — no phone re-entry) ------------- */
+  const [rescheduleTarget, setRescheduleTarget] = useState<PatientAppointment | null>(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: "", time: "", notes: "" });
+  const [rescheduleError, setRescheduleError] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
+
+  const openReschedule = (appt: PatientAppointment) => {
+    setRescheduleTarget(appt);
+    setRescheduleForm({ date: appt.date, time: appt.time, notes: "" });
+    setRescheduleError("");
+  };
+
+  const closeReschedule = () => {
+    if (rescheduling) return; /* don't abandon a request in flight */
+    setRescheduleTarget(null);
+    setRescheduleError("");
+  };
+
+  const performReschedule = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!rescheduleTarget || rescheduling) return;
+    setRescheduleError("");
+
+    /* Inline client-side validation (the server re-checks everything). */
+    if (!rescheduleForm.date) {
+      setRescheduleError(t.rescheduleDateRequired);
+      return;
+    }
+    if (rescheduleForm.date < localTodayISO()) {
+      setRescheduleError(t.reschedulePastDate);
+      return;
+    }
+    if (!rescheduleForm.time) {
+      setRescheduleError(t.rescheduleTimeRequired);
+      return;
+    }
+    if (
+      rescheduleForm.date === rescheduleTarget.date &&
+      rescheduleForm.time === rescheduleTarget.time
+    ) {
+      setRescheduleError(t.rescheduleSameSlot);
+      return;
+    }
+
+    setRescheduling(true);
+    try {
+      const res = await fetch("/api/patient/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refCode: rescheduleTarget.refCode,
+          date: rescheduleForm.date,
+          time: rescheduleForm.time,
+          notes: rescheduleForm.notes.trim() || undefined,
+        }),
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRescheduleError(data.error ?? t.toastRescheduleFail);
+        return;
+      }
+      toast({ title: t.toastRescheduleOk, description: t.toastRescheduleOkDesc });
+      setRescheduleTarget(null);
+      await refreshDashboard({ silent: true });
+    } catch {
+      setRescheduleError(t.toastGenericFailDesc.replace("{phone}", settings.phone));
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
   /* --- profile settings ---------------------------------------------- */
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: "", email: "" });
@@ -703,8 +795,9 @@ export function PortalPage() {
     dash?.appointments.filter(isUpcoming).sort((a, b) =>
       a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)
     ) ?? [];
-  /* Full reverse-chronological record of every booking (API order: date desc) */
-  const history = dash?.appointments ?? [];
+  /* Everything that is no longer an active future booking — completed
+     visits, cancellations and dated-out appointments (the past record). */
+  const past = dash?.appointments.filter((a) => !isUpcoming(a)) ?? [];
 
   /* ================================================================== */
   /*  RENDER                                                             */
@@ -725,7 +818,12 @@ export function PortalPage() {
         breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: t.breadcrumb }]}
       />
 
-      <section className="hero-mesh relative overflow-hidden">
+      <section
+        className={cn(
+          "relative overflow-hidden",
+          session === "authed" ? "section-wash bg-slate-50/80" : "hero-mesh"
+        )}
+      >
         <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-18">
           {/* ---------- session probe ---------- */}
           {session === "checking" && (
@@ -1162,41 +1260,42 @@ export function PortalPage() {
 
           {session === "authed" && dash && (
             <div className="space-y-8">
-              {/* ===== welcome banner ===== */}
+              {/* ===== welcome header ===== */}
               <Reveal>
-                <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2rem] p-6 shadow-2xl shadow-navy-900/30 sm:p-8">
+                <div className="relative overflow-hidden rounded-[2rem] border border-blue-100/80 bg-white p-6 shadow-[0_24px_60px_-28px_rgba(0,32,96,0.28)] sm:p-7">
                   <span
-                    className="animate-glow-drift pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-blue/25 blur-3xl"
-                    aria-hidden="true"
-                  />
-                  <span
-                    className="animate-glow-drift pointer-events-none absolute -bottom-20 -left-14 h-48 w-48 rounded-full bg-teal-400/15 blur-3xl"
-                    style={{ animationDelay: "-7s" }}
+                    className="pointer-events-none absolute -right-14 -top-16 h-48 w-48 rounded-full bg-brand-blue/10 blur-3xl"
                     aria-hidden="true"
                   />
                   <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4 sm:gap-5">
-                      {/* avatar initials */}
+                      {/* avatar initials — brand navy medical portal style */}
                       <span
-                        className="font-heading inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/25 backdrop-blur-sm"
+                        className="font-heading inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-navy text-2xl font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-ice"
                         aria-hidden="true"
                       >
                         {initialsOf(dash.patient.name)}
                       </span>
-                      <div>
-                        <h2 className="font-heading text-xl font-bold leading-snug text-white sm:text-2xl">
-                          {t.welcome.replace("{name}", dash.patient.name)}
-                        </h2>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-blue-100/80">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <h2 className="font-heading text-xl font-bold leading-snug text-brand-navy sm:text-2xl">
+                            {t.welcome.replace("{name}", dash.patient.name)}
+                          </h2>
+                          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ice px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-navy ring-1 ring-brand-navy/15">
+                            <ShieldCheck className="h-3 w-3 text-brand-blue" aria-hidden="true" />
+                            {t.portalBadge}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                           <span className="inline-flex items-center gap-1.5">
-                            <Phone className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                            <Phone className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
                             <span className="font-semibold tracking-wide">
                               {bn ? toBnDigits(dash.patient.phone) : dash.patient.phone}
                             </span>
                           </span>
-                          <span className="hidden h-3 w-px bg-white/20 sm:block" aria-hidden="true" />
+                          <span className="hidden h-3 w-px bg-slate-200 sm:block" aria-hidden="true" />
                           <span className="inline-flex items-center gap-1.5">
-                            <CalendarCheck className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                            <CalendarCheck className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
                             {t.memberSince.replace(
                               "{date}",
                               formatShortDate(dash.patient.createdAt, lang)
@@ -1209,7 +1308,7 @@ export function PortalPage() {
                       type="button"
                       onClick={doLogout}
                       disabled={loggingOut}
-                      className="h-12 shrink-0 rounded-2xl bg-white/10 px-5 text-sm font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 hover:ring-white/40 disabled:opacity-60 sm:ml-auto"
+                      className="h-12 shrink-0 rounded-2xl border border-blue-100 bg-white px-5 text-sm font-bold text-brand-navy shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-ice hover:shadow-md disabled:opacity-60 sm:ml-auto"
                     >
                       {loggingOut ? (
                         <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
@@ -1238,16 +1337,16 @@ export function PortalPage() {
                     tile: "bg-emerald-50 text-emerald-600 ring-emerald-100",
                   },
                   {
-                    label: t.statTotal,
-                    value: dash.stats.totalAppointments,
-                    icon: CalendarCheck,
-                    tile: "bg-amber-50 text-amber-600 ring-amber-100",
+                    label: t.statCancelled,
+                    value: dash.stats.cancelled,
+                    icon: CalendarX2,
+                    tile: "bg-rose-50 text-rose-500 ring-rose-100",
                   },
                   {
                     label: t.statReviews,
                     value: dash.stats.reviews,
                     icon: Star,
-                    tile: "bg-teal-50 text-teal-600 ring-teal-100",
+                    tile: "bg-amber-50 text-amber-600 ring-amber-100",
                   },
                 ].map((card, i) => (
                   <Reveal key={card.label} delay={i * 0.06}>
@@ -1305,10 +1404,11 @@ export function PortalPage() {
                     <div className="mt-5 space-y-5">
                       {upcoming.map((appt, i) => (
                         <Reveal key={appt.refCode} delay={Math.min(i * 0.06, 0.3)}>
-                          <PortalAppointmentCard
+                          <UpcomingAppointmentCard
                             appt={appt}
-                            highlighted
+                            rescheduleLabel={t.rescheduleBooking}
                             cancelLabel={t.cancelBooking}
+                            onReschedule={() => openReschedule(appt)}
                             onCancel={() => setCancelTarget(appt)}
                           />
                         </Reveal>
@@ -1318,7 +1418,7 @@ export function PortalPage() {
                 </section>
               </Reveal>
 
-              {/* ===== visit history timeline ===== */}
+              {/* ===== past appointments timeline ===== */}
               <Reveal>
                 <section aria-labelledby="portal-history">
                   <div className="flex items-center gap-3">
@@ -1329,18 +1429,18 @@ export function PortalPage() {
                       {t.historyTitle}
                     </h2>
                     <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-brand-blue ring-1 ring-blue-100">
-                      {bn ? toBnDigits(history.length) : String(history.length)}
+                      {bn ? toBnDigits(past.length) : String(past.length)}
                     </span>
                   </div>
 
-                  {history.length === 0 ? (
+                  {past.length === 0 ? (
                     <div className="mt-5 flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200/80 bg-ice/40 px-6 py-8 text-center">
                       <Clock className="h-5 w-5 shrink-0 text-brand-blue" aria-hidden="true" />
                       <p className="text-sm leading-relaxed text-slate-500">{t.historyEmpty}</p>
                     </div>
                   ) : (
                     <ol className="relative mt-6 space-y-6 border-l-2 border-dashed border-blue-200 pl-7 sm:pl-9">
-                      {history.map((appt, i) => {
+                      {past.map((appt, i) => {
                         const style = statusStyles[appt.status] ?? statusStyles.PENDING;
                         const svc = services.find((s) => s.slug === appt.serviceSlug);
                         const doc = doctors.find((d2) => d2.slug === appt.doctorSlug);
@@ -1819,6 +1919,156 @@ export function PortalPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ---------- reschedule dialog (shadcn Dialog) ---------- */}
+      <Dialog open={!!rescheduleTarget} onOpenChange={(open) => !open && closeReschedule()}>
+        <DialogContent className="rounded-3xl border-blue-100 bg-white sm:max-w-lg">
+          <DialogHeader className="items-start text-left">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue ring-1 ring-brand-blue/15">
+              <RefreshCw className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <DialogTitle className="font-heading mt-2 text-lg font-bold text-brand-navy">
+              {t.rescheduleTitle}
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-slate-600">
+              {t.rescheduleDesc}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={performReschedule} noValidate>
+            {/* current slot reminder */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl bg-ice/60 px-4 py-3 text-xs ring-1 ring-blue-100/60">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-brand-navy">
+                <Hash className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+                {rescheduleTarget?.refCode}
+              </span>
+              <span className="hidden h-3 w-px bg-blue-200 sm:block" aria-hidden="true" />
+              <span className="text-slate-500">
+                {t.rescheduleCurrent}:{" "}
+                <span className="font-semibold text-brand-navy">
+                  {rescheduleTarget
+                    ? `${formatDateLabel(rescheduleTarget.date, lang)} · ${
+                        bn ? toBnDigits(rescheduleTarget.time) : rescheduleTarget.time
+                      }`
+                    : ""}
+                </span>
+              </span>
+            </div>
+
+            {/* new date */}
+            <div className="mt-5 space-y-2">
+              <Label htmlFor="reschedule-date" className="text-sm font-semibold text-brand-navy">
+                {t.rescheduleNewDate} <span className="text-rose-500">*</span>
+              </Label>
+              <Input
+                id="reschedule-date"
+                type="date"
+                min={localTodayISO()}
+                value={rescheduleForm.date}
+                onChange={(e) =>
+                  setRescheduleForm((f) => ({ ...f, date: e.target.value }))
+                }
+                required
+                className="h-13 rounded-2xl border-blue-100 bg-ice/60 text-base font-semibold text-brand-navy focus:border-brand-blue focus:bg-white"
+              />
+              {rescheduleForm.date && (
+                <p className="text-xs font-medium text-brand-blue">
+                  {formatDateLabel(rescheduleForm.date, lang)}
+                </p>
+              )}
+            </div>
+
+            {/* new time slot (same 20 clinic slots as the booking page) */}
+            <div className="mt-4 space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
+                <Clock className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+                {t.rescheduleNewTime} <span className="text-rose-500">*</span>
+              </Label>
+              <div
+                className="grid max-h-44 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-blue-100/70 bg-ice/40 p-3 scroll-area sm:grid-cols-4"
+                role="radiogroup"
+                aria-label={t.rescheduleNewTime}
+              >
+                {TIME_SLOTS.map((slot) => {
+                  const active = rescheduleForm.time === slot;
+                  const isCurrent =
+                    !!rescheduleTarget &&
+                    slot === rescheduleTarget.time &&
+                    rescheduleForm.date === rescheduleTarget.date;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setRescheduleForm((f) => ({ ...f, time: slot }))}
+                      className={cn(
+                        "min-h-11 rounded-xl px-1.5 py-2 text-xs font-semibold tabular-nums transition-all duration-200 sm:text-[13px]",
+                        active
+                          ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+                          : "bg-white text-slate-700 ring-1 ring-blue-100/70 hover:ring-brand-blue/40",
+                        isCurrent && !active && "text-slate-400"
+                      )}
+                    >
+                      {slot}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* optional note */}
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="reschedule-note" className="text-sm font-semibold text-brand-navy">
+                {t.rescheduleNoteLabel}
+              </Label>
+              <Textarea
+                id="reschedule-note"
+                rows={2}
+                maxLength={1000}
+                value={rescheduleForm.notes}
+                onChange={(e) =>
+                  setRescheduleForm((f) => ({ ...f, notes: e.target.value }))
+                }
+                placeholder={t.rescheduleNotePlaceholder}
+                className="resize-none rounded-2xl border-blue-100 bg-ice/60 text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+              />
+              <p className="text-xs text-slate-500">{t.rescheduleNoteHint}</p>
+            </div>
+
+            <FieldError id="reschedule-error" message={rescheduleError} />
+
+            <DialogFooter className="mt-6 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeReschedule}
+                disabled={rescheduling}
+                className="h-12 flex-1 rounded-2xl border-blue-100 bg-white text-sm font-semibold text-brand-navy hover:bg-ice sm:flex-none sm:px-6"
+              >
+                {t.profileCancel}
+              </Button>
+              <Button
+                type="submit"
+                disabled={rescheduling || !rescheduleForm.date || !rescheduleForm.time}
+                className="h-12 flex-1 rounded-2xl bg-brand-blue text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl disabled:translate-y-0 disabled:opacity-50 sm:flex-none sm:px-6"
+              >
+                {rescheduling ? (
+                  <>
+                    <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+                    {t.rescheduleSubmitting}
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4.5 w-4.5" aria-hidden="true" />
+                    {t.rescheduleSubmit}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -1962,6 +2212,150 @@ function PortalAppointmentCard({
           </Button>
         </div>
       )}
+    </article>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Upcoming appointment card — rich medical-portal layout              */
+/*  Calendar-style date block, doctor/treatment resolution, refCode     */
+/*  chip, status badge and Reschedule + Cancel actions.                 */
+/* ------------------------------------------------------------------ */
+
+function UpcomingAppointmentCard({
+  appt,
+  rescheduleLabel,
+  cancelLabel,
+  onReschedule,
+  onCancel,
+}: {
+  appt: PatientAppointment;
+  rescheduleLabel?: string;
+  cancelLabel?: string;
+  onReschedule?: () => void;
+  onCancel?: () => void;
+}) {
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const t = d.portalPage;
+  const st = d.statusPage;
+  const { services, doctors } = useBundle();
+
+  const style = statusStyles[appt.status] ?? statusStyles.PENDING;
+  const label = st.status[appt.status]?.label ?? appt.status;
+  const blurb = st.status[appt.status]?.blurb ?? "";
+  const StatusIcon = style.icon;
+  const svc = services.find((s) => s.slug === appt.serviceSlug);
+  const doc = doctors.find((d2) => d2.slug === appt.doctorSlug);
+
+  /* Calendar-style date block pieces (locale-aware, Bangla digits in bn). */
+  const dt = new Date(`${appt.date}T00:00:00`);
+  const locale = bn ? "bn-BD" : "en-US";
+  const dayNum = bn ? toBnDigits(String(dt.getDate())) : String(dt.getDate());
+  const monthName = dt.toLocaleDateString(locale, { month: "short" });
+  const weekdayName = dt.toLocaleDateString(locale, { weekday: "long" });
+
+  const actionable =
+    (appt.status === "PENDING" || appt.status === "CONFIRMED") && onReschedule && onCancel;
+
+  return (
+    <article className="card-lift group relative overflow-hidden rounded-[1.75rem] border border-blue-100/80 bg-white shadow-[0_14px_44px_-20px_rgba(0,32,96,0.25)] transition-shadow duration-300 hover:shadow-[0_18px_54px_-20px_rgba(0,32,96,0.35)]">
+      <div className="grid sm:grid-cols-[auto_1fr]">
+        {/* ---- calendar-style date block ---- */}
+        <div
+          className="relative flex items-center justify-between gap-4 overflow-hidden bg-gradient-to-br from-brand-navy to-brand-blue px-5 py-4 text-white sm:w-32 sm:flex-col sm:justify-center sm:gap-1 sm:border-r sm:border-blue-100/60 sm:py-6"
+          aria-hidden="true"
+        >
+          <span className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
+          <div className="flex items-baseline gap-2 sm:flex-col sm:items-center sm:gap-0">
+            <p className="font-heading text-3xl font-bold leading-none tabular-nums sm:text-4xl">
+              {dayNum}
+            </p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">
+              {monthName}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 sm:items-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-200/90">
+              {weekdayName}
+            </p>
+            <p className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold tabular-nums ring-1 ring-white/20">
+              {bn ? toBnDigits(appt.time) : appt.time}
+            </p>
+          </div>
+        </div>
+
+        {/* ---- details + actions ---- */}
+        <div className="min-w-0 p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <StatusBadge status={appt.status} lang={lang} />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ice px-3 py-1 font-mono text-[11px] font-bold tracking-wider text-brand-navy ring-1 ring-blue-100">
+              <Hash className="h-3 w-3 text-brand-blue" aria-hidden="true" />
+              {appt.refCode}
+            </span>
+          </div>
+
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">{blurb}</p>
+
+          <div className="mt-4 grid gap-2.5 text-xs sm:grid-cols-2">
+            <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2.5 ring-1 ring-blue-100/50">
+              <Stethoscope className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+              <span className="text-slate-500">{t.service}</span>
+              <span className="ml-auto text-right font-semibold text-brand-navy">
+                {svc ? (bn && svc.nameBn ? svc.nameBn : svc.name) : t.general}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl bg-ice/50 px-3 py-2.5 ring-1 ring-blue-100/50">
+              <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+              <span className="text-slate-500">{t.specialist}</span>
+              <span className="ml-auto text-right font-semibold text-brand-navy">
+                {doc?.name ?? t.assignedLater}
+              </span>
+            </div>
+          </div>
+
+          {appt.notes && (
+            <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-ice/70 px-3.5 py-2.5 text-xs leading-relaxed text-brand-navy/80 ring-1 ring-blue-100/60">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
+              <span>
+                <span className="font-semibold">{t.yourNote}</span> {appt.notes}
+              </span>
+            </div>
+          )}
+
+          {actionable && (
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-blue-50/80 pt-4">
+              <Button
+                type="button"
+                onClick={onReschedule}
+                className="h-12 rounded-2xl bg-brand-blue px-5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-navy hover:shadow-xl"
+              >
+                <RefreshCw className="h-4.5 w-4.5" aria-hidden="true" />
+                {rescheduleLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="h-12 rounded-2xl border-rose-200 bg-white px-5 text-sm font-semibold text-rose-600 transition-all duration-300 hover:bg-rose-50 hover:text-rose-700"
+              >
+                <CalendarX2 className="h-4.5 w-4.5" aria-hidden="true" />
+                {cancelLabel}
+              </Button>
+              <span className="ml-auto hidden items-center gap-1.5 text-[11px] text-slate-400 sm:inline-flex">
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                {t.requested} {formatShortDate(appt.createdAt, lang)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* keep the status icon semantics available for screen readers */}
+      <span className="sr-only">
+        <StatusIcon className="h-4 w-4" aria-hidden="true" />
+        {label}
+      </span>
     </article>
   );
 }

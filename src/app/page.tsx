@@ -8,3 +8,5 @@ export default async function Home() {
   const content = await getContentBundle();
   return <SiteShell initialContent={content} />;
 }
+
+/* cache-bust r12 — force SSR module recompile */

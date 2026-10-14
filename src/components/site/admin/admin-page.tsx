@@ -1,7 +1,7 @@
 "use client";
 
 /* ------------------------------------------------------------------ */
-/*  ADMIN — modular staff shell (#/admin)                               */
+/*  ADMIN — modular staff shell (/admin)                               */
 /*  • Login gate: username + password → POST /api/admin/login           */
 /*    (httpOnly session cookie, 8h); session identity restored via      */
 /*    GET /api/admin/session ({ user, expiresAt }).                     */
@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BarChart3,
   Building2,
   CalendarDays,
   CircleHelp,
@@ -34,6 +35,7 @@ import {
   Menu,
   MonitorPlay,
   Newspaper,
+  PlugZap,
   Settings,
   ShieldCheck,
   Smile,
@@ -44,7 +46,7 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
-import { usePageMeta } from "@/lib/router";
+import { usePageMeta, useRouter } from "@/lib/router";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,6 +78,8 @@ import { HomepagePanel } from "./panels/homepage-panel";
 import { AboutPanel } from "./panels/about-panel";
 import { HeroPanel } from "./panels/hero-panel";
 import { SettingsPanel } from "./panels/settings-panel";
+import { IntegrationsPanel } from "./panels/integrations-panel";
+import { AnalyticsPanel } from "./panels/analytics-panel";
 import { ActivityPanel } from "./panels/activity-panel";
 import { UsersPanel } from "./panels/users-panel";
 
@@ -117,6 +121,13 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
         title: "Activity Log",
         description: "A full audit trail of staff sign-ins, edits, deletions and uploads.",
         icon: History,
+      },
+      {
+        id: "analytics",
+        label: "Analytics",
+        title: "Website Analytics",
+        description: "First-party traffic, searches and conversion events across the website.",
+        icon: BarChart3,
       },
     ],
   },
@@ -239,6 +250,13 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
         description: "Clinic contact details, socials and global configuration.",
         icon: Settings,
       },
+      {
+        id: "integrations",
+        label: "Integrations & Tracking",
+        title: "Integrations & Tracking",
+        description: "Facebook Pixel, Google Analytics, Tag Manager, TikTok Pixel, Telegram alerts and privacy-safe analytics.",
+        icon: PlugZap,
+      },
     ],
   },
   {
@@ -256,11 +274,16 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
 ];
 
 /** The nav is role-aware client-side (polish); the server enforces the
-    same rules on every request regardless of what the UI shows. */
+    same rules on every request regardless of what the UI shows.
+    Analytics stays visible for every role (read-only); integrations is
+    hidden for non-Owners like Site Settings — the server 403s mutations. */
 function visibleNavGroups(role: AdminRole) {
   if (role === "OWNER") return NAV_GROUPS;
   return NAV_GROUPS.filter((group) => group.label !== "Staff")
-    .map((group) => ({ ...group, items: group.items.filter((i) => i.id !== "settings") }))
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((i) => i.id !== "settings" && i.id !== "integrations"),
+    }))
     .filter((group) => group.items.length > 0);
 }
 
@@ -676,7 +699,14 @@ function AdminShell({
   onLogout: () => void;
   onSessionExpired: () => void;
 }) {
-  const [view, setView] = useState<AdminView>("overview");
+  /* Admin views ride the URL (?view=blog …) so every tab switch is a
+     real history entry — Back steps through panels instead of exiting
+     the admin panel, and deep links like /admin?view=analytics work
+     straight from a bookmark or Telegram alert. The active view is
+     DERIVED from the live route query (no mirrored state → no sync
+     effect; Back/Forward and role changes flow through the router).  */
+  const { query: routeQuery, navigate: routeNavigate } = useRouter();
+  const queryView = routeQuery.get("view");
   const [navOpen, setNavOpen] = useState(false);
   const [badges, setBadges] = useState<BadgeState>({
     appointments: null,
@@ -687,31 +717,39 @@ function AdminShell({
   const handleExpired = useCallback(() => onSessionExpired(), [onSessionExpired]);
   const setAppointmentsBadge = useCallback(
     (n: number) => setBadges((b) => ({ ...b, appointments: n })),
-    []
+    [setBadges]
   );
   const setReviewsBadge = useCallback(
     (n: number) => setBadges((b) => ({ ...b, reviews: n })),
-    []
+    [setBadges]
   );
   const setMessagesBadge = useCallback(
     (n: number) => setBadges((b) => ({ ...b, messages: n })),
-    []
+    [setBadges]
   );
   const syncBadges = useCallback(
     (appointments: number, reviews: number, messages: number) =>
       setBadges({ appointments, reviews, messages }),
-    []
+    [setBadges]
   );
 
   /* Role-aware navigation (client-side polish; the server is the gate).
      A stale view (e.g. the role changed mid-session) falls back to the
      overview during render — no effect needed. */
   const nav = useMemo(() => visibleNavGroups(user.role), [user.role]);
-  const viewVisible = useMemo(
-    () => nav.some((group) => group.items.some((item) => item.id === view)),
-    [nav, view]
+  const queryableViews = useMemo(
+    () => visibleNavGroups("OWNER").flatMap((g) => g.items.map((i) => i.id)),
+    []
   );
-  const activeView: AdminView = viewVisible ? view : "overview";
+  const candidate: AdminView =
+    queryView && (queryableViews as string[]).includes(queryView)
+      ? (queryView as AdminView)
+      : "overview";
+  const viewVisible = useMemo(
+    () => nav.some((group) => group.items.some((item) => item.id === candidate)),
+    [nav, candidate]
+  );
+  const activeView: AdminView = viewVisible ? candidate : "overview";
 
   /* Live session countdown (ticks once a minute). */
   const now = useMinuteNow();
@@ -746,11 +784,16 @@ function AdminShell({
     };
   }, [onSessionExpired]);
 
-  const navigate = useCallback((next: AdminView) => {
-    setView(next);
-    setNavOpen(false);
-    window.scrollTo({ top: 0 });
-  }, []);
+  const navigate = useCallback(
+    (next: AdminView) => {
+      setNavOpen(false);
+      /* push a history entry per tab switch — Back returns to the
+         previous panel, never straight out of the admin panel        */
+      routeNavigate(next === "overview" ? "/admin" : `/admin?view=${next}`);
+      window.scrollTo({ top: 0 });
+    },
+    [routeNavigate, setNavOpen]
+  );
 
   const meta = navMeta(activeView);
 
@@ -767,6 +810,9 @@ function AdminShell({
       break;
     case "activity":
       panel = <ActivityPanel onSessionExpired={handleExpired} />;
+      break;
+    case "analytics":
+      panel = <AnalyticsPanel onSessionExpired={handleExpired} />;
       break;
     case "appointments":
       panel = (
@@ -824,6 +870,9 @@ function AdminShell({
       break;
     case "settings":
       panel = <SettingsPanel onSessionExpired={handleExpired} />;
+      break;
+    case "integrations":
+      panel = <IntegrationsPanel onSessionExpired={handleExpired} />;
       break;
     case "users":
       panel = (
@@ -908,11 +957,17 @@ function AdminShell({
             </p>
           </div>
 
-          {/* Active panel */}
+          {/* Active panel — keyed by view; the appointments panel also
+              remounts when the ?followups=1 deep-link flag flips so the
+              queue opens/closes deterministically from any panel.     */}
           <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8 lg:pt-5">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeView}
+                key={
+                  activeView === "appointments" && routeQuery.get("followups") === "1"
+                    ? "appointments-followups"
+                    : activeView
+                }
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -1043,7 +1098,7 @@ function SidebarChrome({
 
         <div className="space-y-1 border-t border-white/10 p-3">
           <a
-            href="#/"
+            href="/"
             className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-blue-200/70 transition-colors duration-200 hover:bg-white/5 hover:text-white"
           >
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5">

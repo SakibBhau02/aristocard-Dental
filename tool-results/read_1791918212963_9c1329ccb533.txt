@@ -1,0 +1,1094 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Doctors panel — full CRUD editor for the dental team.              */
+     5→/*                                                                     */
+     6→/*  • List mode: KPI stats + search + roster cards (photo / initials   */
+     7→/*    avatar with accent ring, role, department, experience numbers,   */
+     8→/*    consultation-day pills, active state) with Edit / Delete.        */
+     9→/*  • Edit mode: full-screen form inside the content area — bilingual  */
+    10→/*    role + department, credentials / specializations / languages     */
+    11→/*    chip editors, weekday toggle pills, accent colour, photo upload  */
+    12→/*    and an active switch. Dirty tracking + sticky SaveBar.           */
+    13→/*    Saves call ContentProvider.refresh() so the public /doctors      */
+    14→/*    page re-renders live.                                            */
+    15→/* ------------------------------------------------------------------ */
+    16→
+    17→import { useCallback, useEffect, useMemo, useState } from "react";
+    18→import Image from "next/image";
+    19→import { AnimatePresence, motion } from "framer-motion";
+    20→import {
+    21→  ArrowLeft,
+    22→  Award,
+    23→  BadgeCheck,
+    24→  EyeOff,
+    25→  Pencil,
+    26→  Plus,
+    27→  RefreshCw,
+    28→  Search,
+    29→  Star,
+    30→  Stethoscope,
+    31→  Trash2,
+    32→  Users,
+    33→  X,
+    34→} from "lucide-react";
+    35→import { cn } from "@/lib/utils";
+    36→import { Button } from "@/components/ui/button";
+    37→import { Input } from "@/components/ui/input";
+    38→import { Textarea } from "@/components/ui/textarea";
+    39→import { Switch } from "@/components/ui/switch";
+    40→import type { DoctorRow } from "@/lib/content/shared";
+    41→import { useContent } from "@/components/site/content-provider";
+    42→import {
+    43→  BilingualField,
+    44→  ConfirmDeleteDialog,
+    45→  EmptyState,
+    46→  ImageUploadField,
+    47→  PanelHeader,
+    48→  PanelSkeleton,
+    49→  SaveBar,
+    50→  StatCard,
+    51→  initialsOf,
+    52→  useAdminFetch,
+    53→  useAdminToast,
+    54→  type PanelProps,
+    55→} from "../admin-shared";
+    56→
+    57→/* ------------------------------------------------------------------ */
+    58→/*  Local helpers                                                      */
+    59→/* ------------------------------------------------------------------ */
+    60→
+    61→const WEEKDAYS = [
+    62→  "Saturday",
+    63→  "Sunday",
+    64→  "Monday",
+    65→  "Tuesday",
+    66→  "Wednesday",
+    67→  "Thursday",
+    68→  "Friday",
+    69→] as const;
+    70→
+    71→const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    72→
+    73→function slugify(input: string): string {
+    74→  return input
+    75→    .toLowerCase()
+    76→    .trim()
+    77→    .replace(/[^a-z0-9\s-]/g, "")
+    78→    .replace(/[\s_]+/g, "-")
+    79→    .replace(/-+/g, "-")
+    80→    .replace(/^-|-$/g, "")
+    81→    .slice(0, 80);
+    82→}
+    83→
+    84→const inputCls =
+    85→  "h-10 rounded-xl border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25";
+    86→
+    87→function Field({
+    88→  label,
+    89→  hint,
+    90→  children,
+    91→}: {
+    92→  label: string;
+    93→  hint?: React.ReactNode;
+    94→  children: React.ReactNode;
+    95→}) {
+    96→  return (
+    97→    <div className="min-w-0">
+    98→      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+    99→      {hint ? <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{hint}</p> : null}
+   100→      <div className="mt-1.5">{children}</div>
+   101→    </div>
+   102→  );
+   103→}
+   104→
+   105→function EditorCard({
+   106→  title,
+   107→  description,
+   108→  children,
+   109→}: {
+   110→  title: string;
+   111→  description?: string;
+   112→  children: React.ReactNode;
+   113→}) {
+   114→  return (
+   115→    <section className="rounded-2xl border border-blue-100/70 bg-white p-5 shadow-sm sm:p-6">
+   116→      <h3 className="font-heading text-sm font-bold text-brand-navy">{title}</h3>
+   117→      {description ? (
+   118→        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{description}</p>
+   119→      ) : null}
+   120→      <div className="mt-4 space-y-4">{children}</div>
+   121→    </section>
+   122→  );
+   123→}
+   124→
+   125→function SwitchRow({
+   126→  label,
+   127→  description,
+   128→  checked,
+   129→  onCheckedChange,
+   130→}: {
+   131→  label: string;
+   132→  description?: string;
+   133→  checked: boolean;
+   134→  onCheckedChange: (checked: boolean) => void;
+   135→}) {
+   136→  return (
+   137→    <label className="flex items-center justify-between gap-4 rounded-xl border border-blue-100 bg-ice/60 px-4 py-3">
+   138→      <span className="min-w-0">
+   139→        <span className="block text-sm font-semibold text-brand-navy">{label}</span>
+   140→        {description ? (
+   141→          <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{description}</span>
+   142→        ) : null}
+   143→      </span>
+   144→      <Switch
+   145→        checked={checked}
+   146→        onCheckedChange={onCheckedChange}
+   147→        aria-label={label}
+   148→        className="data-[state=checked]:bg-brand-navy"
+   149→      />
+   150→    </label>
+   151→  );
+   152→}
+   153→
+   154→function ChipsEditor({
+   155→  label,
+   156→  hint,
+   157→  value,
+   158→  onChange,
+   159→  placeholder,
+   160→  addLabel = "Add",
+   161→}: {
+   162→  label: string;
+   163→  hint?: string;
+   164→  value: string[];
+   165→  onChange: (next: string[]) => void;
+   166→  placeholder?: string;
+   167→  addLabel?: string;
+   168→}) {
+   169→  const [pending, setPending] = useState("");
+   170→
+   171→  function add() {
+   172→    const v = pending.trim();
+   173→    if (!v) return;
+   174→    if (!value.includes(v)) onChange([...value, v]);
+   175→    setPending("");
+   176→  }
+   177→
+   178→  return (
+   179→    <div className="min-w-0">
+   180→      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+   181→      {hint ? <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{hint}</p> : null}
+   182→      {value.length ? (
+   183→        <div className="mt-2 flex flex-wrap gap-1.5">
+   184→          {value.map((chip, i) => (
+   185→            <span
+   186→              key={`${chip}-${i}`}
+   187→              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
+   188→            >
+   189→              {chip}
+   190→              <button
+   191→                type="button"
+   192→                onClick={() => onChange(value.filter((_, j) => j !== i))}
+   193→                aria-label={`Remove ${chip}`}
+   194→                title={`Remove ${chip}`}
+   195→                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+   196→              >
+   197→                <X className="h-3 w-3" aria-hidden="true" />
+   198→              </button>
+   199→            </span>
+   200→          ))}
+   201→        </div>
+   202→      ) : null}
+   203→      <div className="mt-2 flex gap-2">
+   204→        <Input
+   205→          value={pending}
+   206→          onChange={(e) => setPending(e.target.value)}
+   207→          onKeyDown={(e) => {
+   208→            if (e.key === "Enter") {
+   209→              e.preventDefault();
+   210→              add();
+   211→            }
+   212→          }}
+   213→          placeholder={placeholder ?? "Type and press Enter"}
+   214→          aria-label={`${label} — add item`}
+   215→          className="h-9 rounded-xl border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   216→        />
+   217→        <Button
+   218→          type="button"
+   219→          variant="outline"
+   220→          size="sm"
+   221→          onClick={add}
+   222→          className="shrink-0 rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   223→        >
+   224→          <Plus className="h-4 w-4" aria-hidden="true" />
+   225→          {addLabel}
+   226→        </Button>
+   227→      </div>
+   228→    </div>
+   229→  );
+   230→}
+   231→
+   232→function StatusPill({
+   233→  tone,
+   234→  children,
+   235→}: {
+   236→  tone: "green" | "slate" | "amber" | "blue";
+   237→  children: React.ReactNode;
+   238→}) {
+   239→  const tones = {
+   240→    green: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+   241→    slate: "bg-slate-100 text-slate-500 ring-slate-200",
+   242→    amber: "bg-amber-50 text-amber-700 ring-amber-200",
+   243→    blue: "bg-blue-50 text-brand-blue ring-blue-200",
+   244→  };
+   245→  return (
+   246→    <span
+   247→      className={cn(
+   248→        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1",
+   249→        tones[tone]
+   250→      )}
+   251→    >
+   252→      {children}
+   253→    </span>
+   254→  );
+   255→}
+   256→
+   257→/* ------------------------------------------------------------------ */
+   258→/*  Draft shape                                                        */
+   259→/* ------------------------------------------------------------------ */
+   260→
+   261→type DoctorDraft = {
+   262→  name: string;
+   263→  slug: string;
+   264→  role: string;
+   265→  roleBn: string;
+   266→  department: string;
+   267→  departmentBn: string;
+   268→  credentials: string[];
+   269→  bio: string;
+   270→  experienceYears: string;
+   271→  patientsTreated: string;
+   272→  rating: string;
+   273→  specializations: string[];
+   274→  languages: string[];
+   275→  consultationDays: string[];
+   276→  accent: string;
+   277→  photo: string;
+   278→  active: boolean;
+   279→};
+   280→
+   281→function rowToDraft(row: DoctorRow | null): DoctorDraft {
+   282→  return row
+   283→    ? {
+   284→        name: row.name,
+   285→        slug: row.slug,
+   286→        role: row.role,
+   287→        roleBn: row.roleBn ?? "",
+   288→        department: row.department,
+   289→        departmentBn: row.departmentBn ?? "",
+   290→        credentials: [...row.credentials],
+   291→        bio: row.bio,
+   292→        experienceYears: String(row.experienceYears),
+   293→        patientsTreated: String(row.patientsTreated),
+   294→        rating: String(row.rating),
+   295→        specializations: [...row.specializations],
+   296→        languages: row.languages.length ? [...row.languages] : ["Bangla", "English"],
+   297→        consultationDays: [...row.consultationDays],
+   298→        accent: row.accent,
+   299→        photo: row.photo ?? "",
+   300→        active: row.active,
+   301→      }
+   302→    : {
+   303→        name: "",
+   304→        slug: "",
+   305→        role: "",
+   306→        roleBn: "",
+   307→        department: "",
+   308→        departmentBn: "",
+   309→        credentials: [],
+   310→        bio: "",
+   311→        experienceYears: "5",
+   312→        patientsTreated: "0",
+   313→        rating: "4.8",
+   314→        specializations: [],
+   315→        languages: ["Bangla", "English"],
+   316→        consultationDays: [],
+   317→        accent: "#012c5f",
+   318→        photo: "",
+   319→        active: true,
+   320→      };
+   321→}
+   322→
+   323→/* ------------------------------------------------------------------ */
+   324→/*  Editor                                                             */
+   325→/* ------------------------------------------------------------------ */
+   326→
+   327→function DoctorsEditor({
+   328→  row,
+   329→  nextSort,
+   330→  onSessionExpired,
+   331→  onSaved,
+   332→  onClose,
+   333→}: {
+   334→  row: DoctorRow | null;
+   335→  nextSort: number;
+   336→  onSessionExpired: () => void;
+   337→  onSaved: (row: DoctorRow) => void;
+   338→  onClose: () => void;
+   339→}) {
+   340→  const { post } = useAdminFetch(onSessionExpired);
+   341→  const { ok: toastOk, fail: toastFail } = useAdminToast();
+   342→  const { refresh } = useContent();
+   343→  const [draft, setDraft] = useState<DoctorDraft>(() => rowToDraft(row));
+   344→  const [slugEdited, setSlugEdited] = useState(row !== null);
+   345→  const [formError, setFormError] = useState<string | null>(null);
+   346→  const [saving, setSaving] = useState(false);
+   347→  const [snapshot] = useState(() => JSON.stringify(rowToDraft(row)));
+   348→
+   349→  const dirty = JSON.stringify(draft) !== snapshot;
+   350→
+   351→  function update(patch: Partial<DoctorDraft>) {
+   352→    setFormError(null);
+   353→    setDraft((d) => ({ ...d, ...patch }));
+   354→  }
+   355→
+   356→  function setName(value: string) {
+   357→    setFormError(null);
+   358→    setDraft((d) => ({
+   359→      ...d,
+   360→      name: value,
+   361→      slug: slugEdited ? d.slug : slugify(value),
+   362→    }));
+   363→  }
+   364→
+   365→  function toggleDay(day: string) {
+   366→    setFormError(null);
+   367→    setDraft((d) => ({
+   368→      ...d,
+   369→      consultationDays: d.consultationDays.includes(day)
+   370→        ? d.consultationDays.filter((x) => x !== day)
+   371→        : [...d.consultationDays, day],
+   372→    }));
+   373→  }
+   374→
+   375→  function back() {
+   376→    if (dirty && !window.confirm("Discard unsaved changes to this doctor?")) return;
+   377→    onClose();
+   378→  }
+   379→
+   380→  function reset() {
+   381→    setDraft(JSON.parse(snapshot) as DoctorDraft);
+   382→    setSlugEdited(row !== null);
+   383→    setFormError(null);
+   384→  }
+   385→
+   386→  async function save() {
+   387→    if (saving) return;
+   388→    const d = draft;
+   389→    const problems: string[] = [];
+   390→
+   391→    const name = d.name.trim();
+   392→    if (name.length < 3) problems.push("Doctor name must be at least 3 characters.");
+   393→    const slug = d.slug.trim().toLowerCase();
+   394→    if (!SLUG_RE.test(slug) || slug.length < 2 || slug.length > 80)
+   395→      problems.push("Slug must be lowercase letters, numbers and hyphens (2–80 characters).");
+   396→    if (d.role.trim().length < 2) problems.push("Role is required.");
+   397→    if (d.department.trim().length < 2) problems.push("Department is required.");
+   398→    if (d.bio.trim().length < 10) problems.push("Bio must be at least 10 characters.");
+   399→    const years = Number(d.experienceYears);
+   400→    const patients = Number(d.patientsTreated);
+   401→    const rating = Number(d.rating);
+   402→    if (!Number.isFinite(years) || years < 0 || years > 80)
+   403→      problems.push("Experience years must be a number between 0 and 80.");
+   404→    if (!Number.isFinite(patients) || patients < 0)
+   405→      problems.push("Patients treated must be a positive number.");
+   406→    if (!Number.isFinite(rating) || rating < 0 || rating > 5)
+   407→      problems.push("Rating must be a number between 0 and 5.");
+   408→
+   409→    if (problems.length) {
+   410→      setFormError(problems[0]);
+   411→      toastFail("Check the form", problems[0]);
+   412→      return;
+   413→    }
+   414→
+   415→    setSaving(true);
+   416→    const res = await post<{ doctor?: DoctorRow; message?: string; error?: string }>(
+   417→      "/api/admin/doctors",
+   418→      {
+   419→        ...(row ? { id: row.id, sort: row.sort } : { sort: nextSort }),
+   420→        name,
+   421→        slug,
+   422→        role: d.role.trim(),
+   423→        roleBn: d.roleBn.trim() || undefined,
+   424→        department: d.department.trim(),
+   425→        departmentBn: d.departmentBn.trim() || undefined,
+   426→        credentials: d.credentials,
+   427→        bio: d.bio.trim(),
+   428→        experienceYears: years,
+   429→        patientsTreated: patients,
+   430→        rating,
+   431→        specializations: d.specializations,
+   432→        languages: d.languages,
+   433→        consultationDays: d.consultationDays,
+   434→        accent: d.accent,
+   435→        photo: d.photo.trim() || undefined,
+   436→        active: d.active,
+   437→      }
+   438→    );
+   439→    setSaving(false);
+   440→
+   441→    if (res.ok && res.data?.doctor) {
+   442→      toastOk(row ? "Doctor updated" : "Doctor created", res.data.message);
+   443→      void refresh();
+   444→      onSaved(res.data.doctor);
+   445→      return;
+   446→    }
+   447→    const message =
+   448→      (res.data as { error?: string } | null)?.error ??
+   449→      "Could not save this doctor. Please try again.";
+   450→    setFormError(message);
+   451→    toastFail("Save failed", message);
+   452→  }
+   453→
+   454→  const accentSafe = /^#[0-9a-fA-F]{6}$/.test(draft.accent) ? draft.accent : "#012c5f";
+   455→
+   456→  return (
+   457→    <div className="space-y-5">
+   458→      {/* Editor top bar */}
+   459→      <div className="flex flex-wrap items-center gap-3">
+   460→        <Button
+   461→          type="button"
+   462→          variant="outline"
+   463→          size="sm"
+   464→          onClick={back}
+   465→          className="rounded-full border-blue-200 text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+   466→        >
+   467→          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+   468→          Back to list
+   469→        </Button>
+   470→        <div className="min-w-0">
+   471→          <h2 className="font-heading text-base font-bold text-brand-navy">
+   472→            {row ? "Edit doctor" : "Add a new doctor"}
+   473→          </h2>
+   474→          <p className="truncate text-xs text-slate-500">
+   475→            {row
+   476→              ? `${row.name} · public profile /doctors/${row.slug}`
+   477→              : "New doctors appear on the public roster as soon as you save."}
+   478→          </p>
+   479→        </div>
+   480→        {row ? (
+   481→          <span className="ml-auto">
+   482→            {row.active ? (
+   483→              <StatusPill tone="green">
+   484→                <BadgeCheck className="h-3 w-3" aria-hidden="true" />
+   485→                Active
+   486→              </StatusPill>
+   487→            ) : (
+   488→              <StatusPill tone="slate">
+   489→                <EyeOff className="h-3 w-3" aria-hidden="true" />
+   490→                Hidden
+   491→              </StatusPill>
+   492→            )}
+   493→          </span>
+   494→        ) : null}
+   495→      </div>
+   496→
+   497→      {/* Identity */}
+   498→      <EditorCard title="Identity" description="Name, public slug, accent colour and profile photo.">
+   499→        <div className="grid gap-4 sm:grid-cols-2">
+   500→          <Field label="Full name">
+   501→            <Input
+   502→              value={draft.name}
+   503→              onChange={(e) => setName(e.target.value)}
+   504→              placeholder="Dr. Full Name"
+   505→              className={inputCls}
+   506→            />
+   507→          </Field>
+   508→          <Field
+   509→            label="Slug"
+   510→            hint={
+   511→              row
+   512→                ? "⚠ Editing the slug changes the doctor's public profile link."
+   513→                : "Auto-generated from the name — you can override it."
+   514→            }
+   515→          >
+   516→            <Input
+   517→              value={draft.slug}
+   518→              onChange={(e) => {
+   519→                setSlugEdited(true);
+   520→                update({ slug: e.target.value });
+   521→              }}
+   522→              placeholder="dr-full-name"
+   523→              className={cn(inputCls, "font-mono")}
+   524→            />
+   525→          </Field>
+   526→        </div>
+   527→        <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
+   528→          <Field label="Accent colour" hint="Used for card rings and detail accents.">
+   529→            <div className="flex items-center gap-2">
+   530→              <input
+   531→                type="color"
+   532→                value={accentSafe}
+   533→                onChange={(e) => update({ accent: e.target.value })}
+   534→                aria-label="Pick accent colour"
+   535→                title="Pick accent colour"
+   536→                className="h-10 w-14 cursor-pointer rounded-xl border border-blue-100 bg-white p-1"
+   537→              />
+   538→              <Input
+   539→                value={draft.accent}
+   540→                onChange={(e) => update({ accent: e.target.value })}
+   541→                aria-label="Accent colour hex value"
+   542→                className={cn(inputCls, "w-32 font-mono")}
+   543→              />
+   544→            </div>
+   545→          </Field>
+   546→          <ImageUploadField
+   547→            label="Photo"
+   548→            hint="Square portraits work best (min 400×400)."
+   549→            value={draft.photo || undefined}
+   550→            onChange={(url) => update({ photo: url ?? "" })}
+   551→            onUnauthorized={onSessionExpired}
+   552→          />
+   553→        </div>
+   554→        <SwitchRow
+   555→          label="Visible on the website"
+   556→          description="Hidden doctors stay in the database but disappear from the public roster."
+   557→          checked={draft.active}
+   558→          onCheckedChange={(checked) => update({ active: checked })}
+   559→        />
+   560→      </EditorCard>
+   561→
+   562→      {/* Role & bio */}
+   563→      <EditorCard title="Role & bio" description="Shown on the doctors page and profile cards.">
+   564→        <BilingualField
+   565→          label="Role / title"
+   566→          enValue={draft.role}
+   567→          bnValue={draft.roleBn}
+   568→          onEnChange={(v) => update({ role: v })}
+   569→          onBnChange={(v) => update({ roleBn: v })}
+   570→          placeholder="Chief Dental Surgeon & Founder"
+   571→        />
+   572→        <BilingualField
+   573→          label="Department"
+   574→          enValue={draft.department}
+   575→          bnValue={draft.departmentBn}
+   576→          onEnChange={(v) => update({ department: v })}
+   577→          onBnChange={(v) => update({ departmentBn: v })}
+   578→          placeholder="Advanced Dentistry & Orthodontics"
+   579→        />
+   580→        <Field label="Bio (English)" hint="2–3 sentences for the profile page.">
+   581→          <Textarea
+   582→            value={draft.bio}
+   583→            onChange={(e) => update({ bio: e.target.value })}
+   584→            rows={6}
+   585→            placeholder="A short professional biography…"
+   586→            className="border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   587→          />
+   588→        </Field>
+   589→      </EditorCard>
+   590→
+   591→      {/* Numbers */}
+   592→      <EditorCard title="Experience numbers" description="Displayed as highlights on the doctor card.">
+   593→        <div className="grid gap-4 sm:grid-cols-3">
+   594→          <Field label="Years of experience">
+   595→            <Input
+   596→              type="number"
+   597→              min={0}
+   598→              max={80}
+   599→              value={draft.experienceYears}
+   600→              onChange={(e) => update({ experienceYears: e.target.value })}
+   601→              className={inputCls}
+   602→            />
+   603→          </Field>
+   604→          <Field label="Patients treated">
+   605→            <Input
+   606→              type="number"
+   607→              min={0}
+   608→              value={draft.patientsTreated}
+   609→              onChange={(e) => update({ patientsTreated: e.target.value })}
+   610→              className={inputCls}
+   611→            />
+   612→          </Field>
+   613→          <Field label="Rating (0–5)">
+   614→            <Input
+   615→              type="number"
+   616→              min={0}
+   617→              max={5}
+   618→              step={0.1}
+   619→              value={draft.rating}
+   620→              onChange={(e) => update({ rating: e.target.value })}
+   621→              className={inputCls}
+   622→            />
+   623→          </Field>
+   624→        </div>
+   625→      </EditorCard>
+   626→
+   627→      {/* Expertise */}
+   628→      <EditorCard title="Expertise" description="Degrees, specializations and spoken languages.">
+   629→        <ChipsEditor
+   630→          label="Credentials"
+   631→          hint="Degrees like BDS, MDS — press Enter to add."
+   632→          value={draft.credentials}
+   633→          onChange={(credentials) => update({ credentials })}
+   634→          placeholder="BDS"
+   635→          addLabel="Add degree"
+   636→        />
+   637→        <ChipsEditor
+   638→          label="Specializations"
+   639→          hint="Focus areas shown on the profile."
+   640→          value={draft.specializations}
+   641→          onChange={(specializations) => update({ specializations })}
+   642→          placeholder="Orthodontics & Braces"
+   643→        />
+   644→        <ChipsEditor
+   645→          label="Languages"
+   646→          hint="Consultation languages."
+   647→          value={draft.languages}
+   648→          onChange={(languages) => update({ languages })}
+   649→          placeholder="Bangla"
+   650→        />
+   651→      </EditorCard>
+   652→
+   653→      {/* Consultation days */}
+   654→      <EditorCard title="Consultation days" description="Days this doctor is available at the clinic.">
+   655→        <div className="flex flex-wrap gap-2">
+   656→          {WEEKDAYS.map((day) => {
+   657→            const on = draft.consultationDays.includes(day);
+   658→            return (
+   659→              <button
+   660→                key={day}
+   661→                type="button"
+   662→                title={day}
+   663→                aria-pressed={on}
+   664→                onClick={() => toggleDay(day)}
+   665→                className={cn(
+   666→                  "rounded-full px-3.5 py-1.5 text-xs font-bold ring-1 transition-all duration-200",
+   667→                  on
+   668→                    ? "bg-brand-navy text-white ring-brand-navy shadow-md shadow-navy-900/20"
+   669→                    : "bg-white text-slate-500 ring-blue-100 hover:bg-blue-50 hover:text-brand-navy"
+   670→                )}
+   671→              >
+   672→                {day.slice(0, 3)}
+   673→              </button>
+   674→            );
+   675→          })}
+   676→        </div>
+   677→      </EditorCard>
+   678→
+   679→      {formError ? (
+   680→        <p
+   681→          role="alert"
+   682→          className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100"
+   683→        >
+   684→          {formError}
+   685→        </p>
+   686→      ) : null}
+   687→
+   688→      <SaveBar
+   689→        dirty={dirty}
+   690→        saving={saving}
+   691→        onSave={save}
+   692→        onReset={reset}
+   693→        saveLabel={row ? "Save changes" : "Create doctor"}
+   694→      />
+   695→    </div>
+   696→  );
+   697→}
+   698→
+   699→/* ------------------------------------------------------------------ */
+   700→/*  Panel (list mode)                                                  */
+   701→/* ------------------------------------------------------------------ */
+   702→
+   703→export function DoctorsPanel({ onSessionExpired }: PanelProps) {
+   704→  const { del } = useAdminFetch(onSessionExpired);
+   705→  const { ok: toastOk, fail: toastFail } = useAdminToast();
+   706→  const { refresh } = useContent();
+   707→
+   708→  const [rows, setRows] = useState<DoctorRow[]>([]);
+   709→  const [loaded, setLoaded] = useState(false);
+   710→  const [loadBusy, setLoadBusy] = useState(false);
+   711→  const [loadError, setLoadError] = useState<string | null>(null);
+   712→  const [search, setSearch] = useState("");
+   713→  const [editing, setEditing] = useState<{ row: DoctorRow | null } | null>(null);
+   714→  const [deleteTarget, setDeleteTarget] = useState<DoctorRow | null>(null);
+   715→  const [deleting, setDeleting] = useState(false);
+   716→
+   717→  const load = useCallback(async () => {
+   718→    setLoadBusy(true);
+   719→    try {
+   720→      const res = await fetch("/api/admin/doctors");
+   721→      if (res.status === 401) {
+   722→        onSessionExpired();
+   723→        return;
+   724→      }
+   725→      const data = (await res.json().catch(() => null)) as
+   726→        | { doctors?: DoctorRow[]; error?: string }
+   727→        | null;
+   728→      if (!res.ok) throw new Error(data?.error ?? `Request failed (${res.status}).`);
+   729→      setRows(data?.doctors ?? []);
+   730→      setLoaded(true);
+   731→      setLoadError(null);
+   732→    } catch (err) {
+   733→      setLoadError(err instanceof Error ? err.message : "Could not load doctors.");
+   734→    } finally {
+   735→      setLoadBusy(false);
+   736→    }
+   737→  }, [onSessionExpired]);
+   738→
+   739→  useEffect(() => {
+   740→    void load();
+   741→  }, [load]);
+   742→
+   743→  const filtered = useMemo(() => {
+   744→    const q = search.trim().toLowerCase();
+   745→    if (!q) return rows;
+   746→    return rows.filter((r) =>
+   747→      [r.name, r.role, r.department, r.slug, ...r.specializations]
+   748→        .join(" ")
+   749→        .toLowerCase()
+   750→        .includes(q)
+   751→    );
+   752→  }, [rows, search]);
+   753→
+   754→  const stats = useMemo(() => {
+   755→    const active = rows.filter((r) => r.active).length;
+   756→    const avg = rows.length ? rows.reduce((acc, r) => acc + r.rating, 0) / rows.length : 0;
+   757→    return { total: rows.length, active, hidden: rows.length - active, avg };
+   758→  }, [rows]);
+   759→
+   760→  const nextSort = useMemo(
+   761→    () => (rows.length ? Math.max(...rows.map((r) => r.sort)) + 1 : 0),
+   762→    [rows]
+   763→  );
+   764→
+   765→  async function confirmDelete() {
+   766→    if (!deleteTarget || deleting) return;
+   767→    setDeleting(true);
+   768→    const res = await del<{ message?: string; error?: string }>(
+   769→      `/api/admin/doctors?id=${deleteTarget.id}`
+   770→    );
+   771→    setDeleting(false);
+   772→    if (res.ok) {
+   773→      toastOk("Doctor deleted", res.data?.message);
+   774→      setRows((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+   775→      setDeleteTarget(null);
+   776→      void refresh();
+   777→    } else {
+   778→      const message =
+   779→        (res.data as { error?: string } | null)?.error ?? "Please try again in a moment.";
+   780→      toastFail("Delete failed", message);
+   781→      setDeleteTarget(null);
+   782→    }
+   783→  }
+   784→
+   785→  if (!loaded) {
+   786→    if (loadError) {
+   787→      return (
+   788→        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center">
+   789→          <p className="font-heading text-lg font-bold text-rose-700">Could not load doctors</p>
+   790→          <p className="mx-auto mt-1 max-w-sm text-sm text-rose-600">{loadError}</p>
+   791→          <Button
+   792→            onClick={() => void load()}
+   793→            variant="outline"
+   794→            size="sm"
+   795→            className="mt-5 rounded-full border-rose-200 text-rose-600 hover:bg-rose-100"
+   796→          >
+   797→            <RefreshCw className={cn("h-4 w-4", loadBusy && "animate-spin")} aria-hidden="true" />
+   798→            Try again
+   799→          </Button>
+   800→        </div>
+   801→      );
+   802→    }
+   803→    return <PanelSkeleton />;
+   804→  }
+   805→
+   806→  return (
+   807→    <div>
+   808→      <AnimatePresence mode="wait" initial={false}>
+   809→        {editing ? (
+   810→          <motion.div
+   811→            key="editor"
+   812→            initial={{ opacity: 0, x: 36 }}
+   813→            animate={{ opacity: 1, x: 0 }}
+   814→            exit={{ opacity: 0, x: 36 }}
+   815→            transition={{ duration: 0.24, ease: "easeOut" }}
+   816→          >
+   817→            <DoctorsEditor
+   818→              row={editing.row}
+   819→              nextSort={nextSort}
+   820→              onSessionExpired={onSessionExpired}
+   821→              onSaved={() => {
+   822→                setEditing(null);
+   823→                void load();
+   824→              }}
+   825→              onClose={() => setEditing(null)}
+   826→            />
+   827→          </motion.div>
+   828→        ) : (
+   829→          <motion.div
+   830→            key="list"
+   831→            initial={{ opacity: 0, x: -24 }}
+   832→            animate={{ opacity: 1, x: 0 }}
+   833→            exit={{ opacity: 0, x: -24 }}
+   834→            transition={{ duration: 0.24, ease: "easeOut" }}
+   835→            className="space-y-5"
+   836→          >
+   837→            <PanelHeader
+   838→              title="Team directory"
+   839→              description="Every save syncs the public Doctors page instantly — no deploy needed."
+   840→              actions={
+   841→                <Button
+   842→                  type="button"
+   843→                  onClick={() => setEditing({ row: null })}
+   844→                  className="rounded-full bg-brand-navy font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+   845→                >
+   846→                  <Plus className="h-4 w-4" aria-hidden="true" />
+   847→                  Add doctor
+   848→                </Button>
+   849→              }
+   850→            />
+   851→
+   852→            {/* Stats */}
+   853→            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+   854→              <StatCard icon={Stethoscope} label="Doctors" value={stats.total} />
+   855→              <StatCard
+   856→                icon={BadgeCheck}
+   857→                label="Active"
+   858→                value={stats.active}
+   859→                tone="text-emerald-700 bg-emerald-50 ring-emerald-100"
+   860→              />
+   861→              <StatCard
+   862→                icon={EyeOff}
+   863→                label="Hidden"
+   864→                value={stats.hidden}
+   865→                tone="text-slate-500 bg-slate-100 ring-slate-200"
+   866→              />
+   867→              <StatCard
+   868→                icon={Star}
+   869→                label="Avg. rating"
+   870→                value={stats.avg.toFixed(1)}
+   871→                tone="text-amber-700 bg-amber-50 ring-amber-100"
+   872→              />
+   873→            </div>
+   874→
+   875→            {/* Toolbar */}
+   876→            <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+   877→              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   878→                <div className="relative w-full sm:w-80">
+   879→                  <Search
+   880→                    className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+   881→                    aria-hidden="true"
+   882→                  />
+   883→                  <input
+   884→                    type="search"
+   885→                    value={search}
+   886→                    onChange={(e) => setSearch(e.target.value)}
+   887→                    placeholder="Search name, role, department…"
+   888→                    aria-label="Search doctors"
+   889→                    className="h-11 w-full rounded-full border border-blue-100 bg-ice pl-10 pr-4 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   890→                  />
+   891→                </div>
+   892→                <div className="flex items-center gap-2">
+   893→                  <p className="text-xs font-medium text-slate-400">
+   894→                    {filtered.length} of {rows.length} shown
+   895→                  </p>
+   896→                  <Button
+   897→                    type="button"
+   898→                    variant="outline"
+   899→                    size="sm"
+   900→                    disabled={loadBusy}
+   901→                    onClick={() => void load()}
+   902→                    className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   903→                  >
+   904→                    <RefreshCw
+   905→                      className={cn("h-4 w-4", loadBusy && "animate-spin")}
+   906→                      aria-hidden="true"
+   907→                    />
+   908→                    Refresh
+   909→                  </Button>
+   910→                </div>
+   911→              </div>
+   912→            </div>
+   913→
+   914→            {loadError ? (
+   915→              <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+   916→                {loadError}
+   917→              </p>
+   918→            ) : null}
+   919→
+   920→            {/* Roster */}
+   921→            {filtered.length === 0 ? (
+   922→              <EmptyState
+   923→                icon={Stethoscope}
+   924→                title={rows.length === 0 ? "No doctors yet" : "No doctors match your search"}
+   925→                description={
+   926→                  rows.length === 0
+   927→                    ? "Add the first dentist to start building the public roster."
+   928→                    : "Try a different name, role or department."
+   929→                }
+   930→                action={
+   931→                  rows.length === 0 ? (
+   932→                    <Button
+   933→                      type="button"
+   934→                      onClick={() => setEditing({ row: null })}
+   935→                      className="rounded-full bg-brand-navy font-bold text-white hover:bg-brand-blue"
+   936→                    >
+   937→                      <Plus className="h-4 w-4" aria-hidden="true" />
+   938→                      Add doctor
+   939→                    </Button>
+   940→                  ) : undefined
+   941→                }
+   942→              />
+   943→            ) : (
+   944→              <div className="space-y-3">
+   945→                {filtered.map((r) => (
+   946→                  <motion.article
+   947→                    key={r.id}
+   948→                    layout
+   949→                    initial={{ opacity: 0, y: 10 }}
+   950→                    animate={{ opacity: 1, y: 0 }}
+   951→                    transition={{ duration: 0.3 }}
+   952→                    className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm sm:p-5"
+   953→                  >
+   954→                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+   955→                      <div className="flex min-w-0 flex-1 items-start gap-4">
+   956→                        {/* Thumb / initials */}
+   957→                        <div className="relative h-14 w-14 shrink-0">
+   958→                          {r.photo ? (
+   959→                            <span
+   960→                              className="block h-14 w-14 overflow-hidden rounded-2xl"
+   961→                              style={{ boxShadow: `0 0 0 2px ${r.accent}` }}
+   962→                            >
+   963→                              <Image
+   964→                                src={r.photo}
+   965→                                alt=""
+   966→                                fill
+   967→                                sizes="56px"
+   968→                                className="object-cover"
+   969→                              />
+   970→                            </span>
+   971→                          ) : (
+   972→                            <span
+   973→                              className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ice font-heading text-base font-bold text-brand-navy"
+   974→                              style={{ boxShadow: `0 0 0 2px ${r.accent}` }}
+   975→                            >
+   976→                              {initialsOf(r.name)}
+   977→                            </span>
+   978→                          )}
+   979→                        </div>
+   980→
+   981→                        {/* Info */}
+   982→                        <div className="min-w-0">
+   983→                          <p className="font-heading text-base font-bold leading-snug text-brand-navy">
+   984→                            {r.name}
+   985→                          </p>
+   986→                          <p className="mt-0.5 truncate text-sm text-slate-600">
+   987→                            {r.role}
+   988→                            {r.roleBn ? (
+   989→                              <span lang="bn" className="text-slate-400">
+   990→                                {" "}
+   991→                                · {r.roleBn}
+   992→                              </span>
+   993→                            ) : null}
+   994→                          </p>
+   995→                          <p className="mt-0.5 text-xs font-medium text-slate-400">
+   996→                            {r.department} · <span className="font-mono">{r.slug}</span>
+   997→                          </p>
+   998→                          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+   999→                            <span className="inline-flex items-center gap-1">
+  1000→                              <Award className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1001→                              {r.experienceYears}+ yrs
+  1002→                            </span>
+  1003→                            <span className="inline-flex items-center gap-1">
+  1004→                              <Users className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+  1005→                              {r.patientsTreated.toLocaleString()} patients
+  1006→                            </span>
+  1007→                            <span className="inline-flex items-center gap-1">
+  1008→                              <Star
+  1009→                                className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
+  1010→                                aria-hidden="true"
+  1011→                              />
+  1012→                              {r.rating.toFixed(1)}
+  1013→                            </span>
+  1014→                          </p>
+  1015→                          {r.consultationDays.length ? (
+  1016→                            <div className="mt-2 flex flex-wrap gap-1">
+  1017→                              {r.consultationDays.map((day) => (
+  1018→                                <span
+  1019→                                  key={day}
+  1020→                                  title={day}
+  1021→                                  className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-brand-blue ring-1 ring-blue-100"
+  1022→                                >
+  1023→                                  {day.slice(0, 3)}
+  1024→                                </span>
+  1025→                              ))}
+  1026→                            </div>
+  1027→                          ) : null}
+  1028→                        </div>
+  1029→                      </div>
+  1030→
+  1031→                      {/* Actions */}
+  1032→                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end">
+  1033→                        {r.active ? (
+  1034→                          <StatusPill tone="green">
+  1035→                            <BadgeCheck className="h-3 w-3" aria-hidden="true" />
+  1036→                            Active
+  1037→                          </StatusPill>
+  1038→                        ) : (
+  1039→                          <StatusPill tone="slate">
+  1040→                            <EyeOff className="h-3 w-3" aria-hidden="true" />
+  1041→                            Hidden
+  1042→                          </StatusPill>
+  1043→                        )}
+  1044→                        <div className="flex items-center gap-2">
+  1045→                          <Button
+  1046→                            type="button"
+  1047→                            variant="outline"
+  1048→                            size="sm"
+  1049→                            onClick={() => setEditing({ row: r })}
+  1050→                            className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+  1051→                          >
+  1052→                            <Pencil className="h-4 w-4" aria-hidden="true" />
+  1053→                            Edit
+  1054→                          </Button>
+  1055→                          <Button
+  1056→                            type="button"
+  1057→                            variant="outline"
+  1058→                            size="sm"
+  1059→                            onClick={() => setDeleteTarget(r)}
+  1060→                            className="rounded-full border-rose-200 text-rose-600 hover:bg-rose-50"
+  1061→                          >
+  1062→                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+  1063→                            Delete
+  1064→                          </Button>
+  1065→                        </div>
+  1066→                      </div>
+  1067→                    </div>
+  1068→                  </motion.article>
+  1069→                ))}
+  1070→              </div>
+  1071→            )}
+  1072→          </motion.div>
+  1073→        )}
+  1074→      </AnimatePresence>
+  1075→
+  1076→      <ConfirmDeleteDialog
+  1077→        open={deleteTarget !== null}
+  1078→        onOpenChange={(open) => {
+  1079→          if (!open) setDeleteTarget(null);
+  1080→        }}
+  1081→        onConfirm={() => void confirmDelete()}
+  1082→        loading={deleting}
+  1083→        title="Delete this doctor?"
+  1084→        description={
+  1085→          <>
+  1086→            <strong className="text-brand-navy">{deleteTarget?.name}</strong> will be removed from
+  1087→            the database and the public Doctors page. This cannot be undone.
+  1088→          </>
+  1089→        }
+  1090→      />
+  1091→    </div>
+  1092→  );
+  1093→}
+  1094→

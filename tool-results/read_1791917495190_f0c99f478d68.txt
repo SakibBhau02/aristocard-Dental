@@ -1,0 +1,678 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Hero slides & videos editor (Configuration → Hero)                   */
+     5→/*  GET  /api/admin/hero     → { slides } (ordered, home scope)         */
+     6→/*  POST /api/admin/hero     → slide create/update;                     */
+     7→/*                             { action:"reorder", ids } reorders       */
+     8→/*  DELETE /api/admin/hero?id=  → remove a slide                        */
+     9→/*  GET/POST /api/admin/settings → heroVideoUrls (background videos     */
+    10→/*  interleaved between the image slides on the home hero).             */
+    11→/* ------------------------------------------------------------------ */
+    12→
+    13→import { useEffect, useMemo, useState } from "react";
+    14→import {
+    15→  AlertTriangle,
+    16→  ArrowDown,
+    17→  ArrowUp,
+    18→  ChevronDown,
+    19→  Image as ImageIcon,
+    20→  Loader2,
+    21→  MonitorPlay,
+    22→  Plus,
+    23→  RefreshCw,
+    24→  Trash2,
+    25→  Youtube,
+    26→} from "lucide-react";
+    27→import Image from "next/image";
+    28→import { cn } from "@/lib/utils";
+    29→import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+    30→import { Button } from "@/components/ui/button";
+    31→import {
+    32→  Collapsible,
+    33→  CollapsibleContent,
+    34→  CollapsibleTrigger,
+    35→} from "@/components/ui/collapsible";
+    36→import { Input } from "@/components/ui/input";
+    37→import {
+    38→  Select,
+    39→  SelectContent,
+    40→  SelectItem,
+    41→  SelectTrigger,
+    42→  SelectValue,
+    43→} from "@/components/ui/select";
+    44→import { Switch } from "@/components/ui/switch";
+    45→import { useContent } from "@/components/site/content-provider";
+    46→import { parseYouTubeId } from "@/lib/data/hero-media";
+    47→import type { HeroSlideRow, SiteSettings } from "@/lib/content/shared";
+    48→import {
+    49→  ConfirmDeleteDialog,
+    50→  ImageUploadField,
+    51→  PanelHeader,
+    52→  PanelSkeleton,
+    53→  SaveBar,
+    54→  useAdminFetch,
+    55→  useAdminToast,
+    56→  type PanelProps,
+    57→} from "../admin-shared";
+    58→
+    59→const MAX_VIDEOS = 6;
+    60→
+    61→const inputClass =
+    62→  "h-9 rounded-xl border-blue-100 bg-ice text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25";
+    63→
+    64→/* ------------------------------------------------------------------ */
+    65→/*  Local helpers                                                       */
+    66→/* ------------------------------------------------------------------ */
+    67→
+    68→function ErrorNote({ message }: { message: string }) {
+    69→  return (
+    70→    <Alert variant="destructive" className="rounded-2xl border-rose-200">
+    71→      <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+    72→      <AlertTitle>Something went wrong</AlertTitle>
+    73→      <AlertDescription>{message}</AlertDescription>
+    74→    </Alert>
+    75→  );
+    76→}
+    77→
+    78→function Hint({ children }: { children: React.ReactNode }) {
+    79→  return <p className="text-xs leading-relaxed text-slate-400">{children}</p>;
+    80→}
+    81→
+    82→/** One ordered slide row: thumb/tile, alt, active switch, reorder, delete. */
+    83→function SlideCard({
+    84→  row,
+    85→  index,
+    86→  total,
+    87→  busy,
+    88→  onAltSave,
+    89→  onActiveChange,
+    90→  onMove,
+    91→  onDelete,
+    92→}: {
+    93→  row: HeroSlideRow;
+    94→  index: number;
+    95→  total: number;
+    96→  busy: boolean;
+    97→  onAltSave: (alt: string) => void;
+    98→  onActiveChange: (active: boolean) => void;
+    99→  onMove: (dir: -1 | 1) => void;
+   100→  onDelete: () => void;
+   101→}) {
+   102→  const [alt, setAlt] = useState(row.alt ?? "");
+   103→  return (
+   104→    <div
+   105→      className={cn(
+   106→        "flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm transition-opacity",
+   107→        row.active ? "border-blue-100/70" : "border-slate-200 opacity-70",
+   108→        busy && "opacity-60"
+   109→      )}
+   110→    >
+   111→      {row.kind === "image" ? (
+   112→        <span className="relative block h-24 w-40 shrink-0 overflow-hidden rounded-xl bg-ice ring-1 ring-blue-100">
+   113→          <Image src={row.src} alt={alt || "Hero slide"} fill sizes="160px" className="object-cover" />
+   114→        </span>
+   115→      ) : (
+   116→        <span className="flex h-24 w-40 shrink-0 items-center justify-center rounded-xl bg-rose-50 ring-1 ring-rose-100">
+   117→          <Youtube className="h-9 w-9 text-rose-500" aria-hidden="true" />
+   118→        </span>
+   119→      )}
+   120→      <div className="min-w-0 flex-1 space-y-1.5">
+   121→        {row.kind === "youtube" ? (
+   122→          <p className="truncate font-mono text-xs text-slate-500" title={row.src}>
+   123→            {row.src}
+   124→          </p>
+   125→        ) : (
+   126→          <p className="truncate font-mono text-xs text-slate-400" title={row.src}>
+   127→            {row.src}
+   128→          </p>
+   129→        )}
+   130→        {row.kind === "image" ? (
+   131→          <Input
+   132→            value={alt}
+   133→            onChange={(e) => setAlt(e.target.value)}
+   134→            onBlur={() => {
+   135→              if ((row.alt ?? "") !== alt) onAltSave(alt);
+   136→            }}
+   137→            placeholder="Alt text (accessibility)"
+   138→            aria-label={`Slide ${index + 1} alt text`}
+   139→            className={inputClass}
+   140→          />
+   141→        ) : null}
+   142→      </div>
+   143→      <div className="flex shrink-0 items-center gap-3">
+   144→        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+   145→          <Switch
+   146→            checked={row.active}
+   147→            onCheckedChange={(v) => onActiveChange(v)}
+   148→            aria-label={`Slide ${index + 1} active`}
+   149→          />
+   150→          Active
+   151→        </label>
+   152→        <span className="flex items-center gap-1">
+   153→          <Button
+   154→            type="button"
+   155→            variant="ghost"
+   156→            size="icon"
+   157→            disabled={busy || index === 0}
+   158→            onClick={() => onMove(-1)}
+   159→            aria-label={`Move slide ${index + 1} up`}
+   160→            title="Move up"
+   161→            className="h-8 w-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-brand-navy"
+   162→          >
+   163→            <ArrowUp className="h-4 w-4" aria-hidden="true" />
+   164→          </Button>
+   165→          <Button
+   166→            type="button"
+   167→            variant="ghost"
+   168→            size="icon"
+   169→            disabled={busy || index === total - 1}
+   170→            onClick={() => onMove(1)}
+   171→            aria-label={`Move slide ${index + 1} down`}
+   172→            title="Move down"
+   173→            className="h-8 w-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-brand-navy"
+   174→          >
+   175→            <ArrowDown className="h-4 w-4" aria-hidden="true" />
+   176→          </Button>
+   177→          <Button
+   178→            type="button"
+   179→            variant="ghost"
+   180→            size="icon"
+   181→            disabled={busy}
+   182→            onClick={onDelete}
+   183→            aria-label={`Delete slide ${index + 1}`}
+   184→            title="Delete slide"
+   185→            className="h-8 w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+   186→          >
+   187→            <Trash2 className="h-4 w-4" aria-hidden="true" />
+   188→          </Button>
+   189→        </span>
+   190→      </div>
+   191→    </div>
+   192→  );
+   193→}
+   194→
+   195→/* ------------------------------------------------------------------ */
+   196→/*  Panel                                                               */
+   197→/* ------------------------------------------------------------------ */
+   198→
+   199→export function HeroPanel({ onSessionExpired }: PanelProps) {
+   200→  const { get, post, del, error, clearError } = useAdminFetch(onSessionExpired);
+   201→  const { ok, fail } = useAdminToast();
+   202→  const { refresh } = useContent();
+   203→
+   204→  const [slides, setSlides] = useState<HeroSlideRow[] | null>(null);
+   205→  const [settings, setSettings] = useState<SiteSettings | null>(null);
+   206→  const [loadFailed, setLoadFailed] = useState(false);
+   207→  const [loadTick, setLoadTick] = useState(0);
+   208→
+   209→  const [busyId, setBusyId] = useState<string | null>(null);
+   210→  const [reordering, setReordering] = useState(false);
+   211→  const [deleting, setDeleting] = useState<HeroSlideRow | null>(null);
+   212→  const [deleteBusy, setDeleteBusy] = useState(false);
+   213→
+   214→  /* background videos form */
+   215→  const [videoSnapshot, setVideoSnapshot] = useState<string[] | null>(null);
+   216→  const [videoUrls, setVideoUrls] = useState<string[] | null>(null);
+   217→  const [savingVideos, setSavingVideos] = useState(false);
+   218→
+   219→  /* add-slide form */
+   220→  const [addOpen, setAddOpen] = useState(false);
+   221→  const [addKind, setAddKind] = useState<"image" | "youtube">("image");
+   222→  const [addSrc, setAddSrc] = useState("");
+   223→  const [addAlt, setAddAlt] = useState("");
+   224→  const [adding, setAdding] = useState(false);
+   225→
+   226→  /* Initial fetch (+ manual retry). The async IIFE keeps every setState
+   227→     behind an await so the effect stays purely a subscription. */
+   228→  useEffect(() => {
+   229→    let cancelled = false;
+   230→    (async () => {
+   231→      const [heroRes, settingsRes] = await Promise.all([
+   232→        get<{ slides: HeroSlideRow[] }>("/api/admin/hero"),
+   233→        get<{ settings: SiteSettings }>("/api/admin/settings"),
+   234→      ]);
+   235→      if (cancelled) return;
+   236→      if (!heroRes || !settingsRes) {
+   237→        setLoadFailed(true);
+   238→        return;
+   239→      }
+   240→      setLoadFailed(false);
+   241→      setSlides(heroRes.slides ?? []);
+   242→      setSettings(settingsRes.settings);
+   243→      const urls = (settingsRes.settings.heroVideoUrls ?? []).slice(0, MAX_VIDEOS);
+   244→      setVideoSnapshot([...urls]);
+   245→      setVideoUrls([...urls]);
+   246→    })();
+   247→    return () => {
+   248→      cancelled = true;
+   249→    };
+   250→  }, [get, loadTick]);
+   251→
+   252→  const videosDirty = useMemo(
+   253→    () =>
+   254→      videoSnapshot && videoUrls
+   255→        ? JSON.stringify(videoUrls) !== JSON.stringify(videoSnapshot)
+   256→        : false,
+   257→    [videoSnapshot, videoUrls]
+   258→  );
+   259→
+   260→  /* ---- slide helpers ---- */
+   261→
+   262→  async function reloadSlides() {
+   263→    const data = await get<{ slides: HeroSlideRow[] }>("/api/admin/hero");
+   264→    if (data) setSlides(data.slides ?? []);
+   265→    await refresh();
+   266→  }
+   267→
+   268→  async function updateSlide(
+   269→    row: HeroSlideRow,
+   270→    patch: Partial<Pick<HeroSlideRow, "alt" | "active">>
+   271→  ) {
+   272→    setBusyId(row.id);
+   273→    const res = await post<{ error?: string }>("/api/admin/hero", {
+   274→      id: row.id,
+   275→      kind: row.kind,
+   276→      src: row.src,
+   277→      sort: row.sort,
+   278→      alt: patch.alt !== undefined ? patch.alt : row.alt,
+   279→      active: patch.active !== undefined ? patch.active : row.active,
+   280→    });
+   281→    setBusyId(null);
+   282→    if (res.ok) {
+   283→      setSlides((prev) =>
+   284→        prev ? prev.map((s) => (s.id === row.id ? { ...s, ...patch } : s)) : prev
+   285→      );
+   286→      await refresh();
+   287→    } else {
+   288→      fail("Could not update the slide", res.data?.error ?? "Please try again.");
+   289→    }
+   290→  }
+   291→
+   292→  async function moveSlide(index: number, dir: -1 | 1) {
+   293→    if (!slides || reordering) return;
+   294→    const j = index + dir;
+   295→    if (j < 0 || j >= slides.length) return;
+   296→    const next = [...slides];
+   297→    [next[index], next[j]] = [next[j], next[index]];
+   298→    setSlides(next);
+   299→    setReordering(true);
+   300→    const res = await post<{ error?: string }>("/api/admin/hero", {
+   301→      action: "reorder",
+   302→      ids: next.map((s) => s.id),
+   303→    });
+   304→    setReordering(false);
+   305→    if (res.ok) {
+   306→      ok("Slide order saved");
+   307→      await refresh();
+   308→    } else {
+   309→      fail("Could not reorder the slides", res.data?.error ?? "Restoring the previous order.");
+   310→      void reloadSlides();
+   311→    }
+   312→  }
+   313→
+   314→  async function removeSlide(row: HeroSlideRow) {
+   315→    setDeleteBusy(true);
+   316→    const res = await del<{ error?: string }>(`/api/admin/hero?id=${encodeURIComponent(row.id)}`);
+   317→    setDeleteBusy(false);
+   318→    if (res.ok) {
+   319→      setDeleting(null);
+   320→      ok("Slide removed", "The hero rotation no longer includes it.");
+   321→      await reloadSlides();
+   322→    } else {
+   323→      fail("Could not remove the slide", res.data?.error ?? "Please try again.");
+   324→    }
+   325→  }
+   326→
+   327→  async function addSlide() {
+   328→    if (adding) return;
+   329→    const src = addSrc.trim();
+   330→    if (addKind === "image" && !src.startsWith("/")) {
+   331→      fail("Upload an image first", "Image slides need an /uploads or /images path.");
+   332→      return;
+   333→    }
+   334→    if (addKind === "youtube" && !parseYouTubeId(src)) {
+   335→      fail("That is not a YouTube link", "Paste a youtube.com, youtu.be or /shorts/ link.");
+   336→      return;
+   337→    }
+   338→    setAdding(true);
+   339→    const res = await post<{ error?: string }>("/api/admin/hero", {
+   340→      kind: addKind,
+   341→      src,
+   342→      alt: addAlt.trim() || undefined,
+   343→      active: true,
+   344→    });
+   345→    setAdding(false);
+   346→    if (res.ok) {
+   347→      ok("Slide added", "It is now part of the home hero rotation.");
+   348→      setAddSrc("");
+   349→      setAddAlt("");
+   350→      setAddOpen(false);
+   351→      await reloadSlides();
+   352→    } else {
+   353→      fail("Could not add the slide", res.data?.error ?? "Please try again.");
+   354→    }
+   355→  }
+   356→
+   357→  /* ---- background videos ---- */
+   358→
+   359→  const setVideoUrl = (index: number, value: string) =>
+   360→    setVideoUrls((urls) =>
+   361→      urls ? urls.map((u, i) => (i === index ? value : u)) : urls
+   362→    );
+   363→
+   364→  const addVideoUrl = () =>
+   365→    setVideoUrls((urls) => (urls && urls.length < MAX_VIDEOS ? [...urls, ""] : urls));
+   366→
+   367→  const removeVideoUrl = (index: number) =>
+   368→    setVideoUrls((urls) => (urls ? urls.filter((_, i) => i !== index) : urls));
+   369→
+   370→  async function saveVideos() {
+   371→    if (!settings || !videoUrls || savingVideos) return;
+   372→    setSavingVideos(true);
+   373→    const urls = videoUrls
+   374→      .map((u) => u.trim())
+   375→      .filter((u) => u.length > 5)
+   376→      .slice(0, MAX_VIDEOS);
+   377→    const res = await post<{ settings?: SiteSettings; error?: string }>("/api/admin/settings", {
+   378→      ...settings,
+   379→      heroVideoUrls: urls,
+   380→    });
+   381→    setSavingVideos(false);
+   382→    if (res.ok && res.data?.settings) {
+   383→      const saved = res.data.settings;
+   384→      setSettings(saved);
+   385→      setVideoSnapshot([...(saved.heroVideoUrls ?? [])]);
+   386→      setVideoUrls([...(saved.heroVideoUrls ?? [])]);
+   387→      ok("Background videos saved", "The home hero now uses these links.");
+   388→      await refresh();
+   389→    } else {
+   390→      fail("Could not save the video links", res.data?.error ?? "Please try again.");
+   391→    }
+   392→  }
+   393→
+   394→  /* ---- render ---- */
+   395→
+   396→  if (!slides || !videoUrls) {
+   397→    if (loadFailed) {
+   398→      return (
+   399→        <div className="space-y-4">
+   400→          <PanelHeader title="Hero Slides & Videos" />
+   401→          <ErrorNote message={error ?? "Could not load the hero configuration."} />
+   402→          <div>
+   403→            <Button
+   404→              onClick={() => {
+   405→                setLoadFailed(false);
+   406→                clearError();
+   407→                setLoadTick((t) => t + 1);
+   408→              }}
+   409→              variant="outline"
+   410→              size="sm"
+   411→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   412→            >
+   413→              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+   414→              Try again
+   415→            </Button>
+   416→          </div>
+   417→        </div>
+   418→      );
+   419→    }
+   420→    return <PanelSkeleton />;
+   421→  }
+   422→
+   423→  return (
+   424→    <div className="space-y-4">
+   425→      <PanelHeader
+   426→        title="Hero Slides & Videos"
+   427→        description="The home hero crossfades between these slides — images and muted YouTube videos, in order."
+   428→      />
+   429→      {error ? <ErrorNote message={error} /> : null}
+   430→
+   431→      {/* ============ SLIDES ============ */}
+   432→      <Collapsible defaultOpen className="overflow-hidden rounded-2xl border border-blue-100/70 bg-white shadow-sm">
+   433→        <CollapsibleTrigger className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-blue-50/40 sm:px-5">
+   434→          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ice text-brand-navy ring-1 ring-blue-100">
+   435→            <ImageIcon className="h-4.5 w-4.5" aria-hidden="true" />
+   436→          </span>
+   437→          <span className="min-w-0 flex-1">
+   438→            <span className="font-heading block text-sm font-bold text-brand-navy">
+   439→              Hero slides
+   440→            </span>
+   441→            <span className="mt-0.5 block text-xs text-slate-400">
+   442→              {slides.length} slide{slides.length === 1 ? "" : "s"} in rotation ·{" "}
+   443→              {slides.filter((s) => !s.active).length} hidden
+   444→            </span>
+   445→          </span>
+   446→          <ChevronDown
+   447→            aria-hidden="true"
+   448→            className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 group-data-[state=open]:rotate-180"
+   449→          />
+   450→        </CollapsibleTrigger>
+   451→        <CollapsibleContent className="border-t border-blue-100/70">
+   452→          <div className="space-y-3 px-4 py-5 sm:px-5">
+   453→            {slides.length === 0 ? (
+   454→              <Hint>
+   455→                No database slides yet — the hero is falling back to the static image set. Add a
+   456→                slide below to take control of the rotation.
+   457→              </Hint>
+   458→            ) : null}
+   459→            {slides.map((row, i) => (
+   460→              <SlideCard
+   461→                key={row.id}
+   462→                row={row}
+   463→                index={i}
+   464→                total={slides.length}
+   465→                busy={busyId === row.id || reordering}
+   466→                onAltSave={(alt) => void updateSlide(row, { alt })}
+   467→                onActiveChange={(active) => void updateSlide(row, { active })}
+   468→                onMove={(dir) => void moveSlide(i, dir)}
+   469→                onDelete={() => setDeleting(row)}
+   470→              />
+   471→            ))}
+   472→
+   473→            {/* ---- add slide ---- */}
+   474→            <div className="rounded-xl border border-dashed border-blue-200 bg-ice/40 p-3">
+   475→              <Button
+   476→                type="button"
+   477→                variant="outline"
+   478→                size="sm"
+   479→                onClick={() => setAddOpen((v) => !v)}
+   480→                aria-expanded={addOpen}
+   481→                className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   482→              >
+   483→                <Plus className="h-4 w-4" aria-hidden="true" />
+   484→                {addOpen ? "Close" : "Add slide"}
+   485→              </Button>
+   486→              {addOpen ? (
+   487→                <div className="mt-3 space-y-4">
+   488→                  <label className="block max-w-xs">
+   489→                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+   490→                      Kind
+   491→                    </span>
+   492→                    <Select
+   493→                      value={addKind}
+   494→                      onValueChange={(v) => setAddKind(v === "youtube" ? "youtube" : "image")}
+   495→                    >
+   496→                      <SelectTrigger
+   497→                        aria-label="Slide kind"
+   498→                        className="mt-1 h-9 w-full rounded-xl border-blue-100 bg-white text-sm text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   499→                      >
+   500→                        <SelectValue />
+   501→                      </SelectTrigger>
+   502→                      <SelectContent className="rounded-xl border-blue-100">
+   503→                        <SelectItem value="image">Image</SelectItem>
+   504→                        <SelectItem value="youtube">YouTube video</SelectItem>
+   505→                      </SelectContent>
+   506→                    </Select>
+   507→                  </label>
+   508→                  {addKind === "image" ? (
+   509→                    <ImageUploadField
+   510→                      label="Slide image"
+   511→                      hint="Landscape images work best (the hero crops to fill)."
+   512→                      value={addSrc || undefined}
+   513→                      onChange={(url) => setAddSrc(url ?? "")}
+   514→                      onUnauthorized={onSessionExpired}
+   515→                    />
+   516→                  ) : (
+   517→                    <label className="block">
+   518→                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+   519→                        YouTube URL
+   520→                      </span>
+   521→                      <Input
+   522→                        value={addSrc}
+   523→                        onChange={(e) => setAddSrc(e.target.value)}
+   524→                        placeholder="https://www.youtube.com/watch?v=…"
+   525→                        aria-label="YouTube URL"
+   526→                        className={cn(inputClass, "mt-1.5")}
+   527→                      />
+   528→                      <span className="mt-1 block">
+   529→                        <Hint>
+   530→                          Any youtube.com / youtu.be / shorts link works — it plays muted and
+   531→                          looping behind the hero text.
+   532→                        </Hint>
+   533→                      </span>
+   534→                    </label>
+   535→                  )}
+   536→                  <label className="block">
+   537→                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+   538→                      Alt text (optional)
+   539→                    </span>
+   540→                    <Input
+   541→                      value={addAlt}
+   542→                      onChange={(e) => setAddAlt(e.target.value)}
+   543→                      placeholder="Describe the image for screen readers"
+   544→                      aria-label="New slide alt text"
+   545→                      className={cn(inputClass, "mt-1.5")}
+   546→                    />
+   547→                  </label>
+   548→                  <Button
+   549→                    type="button"
+   550→                    size="sm"
+   551→                    disabled={adding || (addKind === "image" && !addSrc)}
+   552→                    onClick={() => void addSlide()}
+   553→                    className="rounded-full bg-brand-navy font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+   554→                  >
+   555→                    {adding ? (
+   556→                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   557→                    ) : (
+   558→                      <Plus className="h-4 w-4" aria-hidden="true" />
+   559→                    )}
+   560→                    {adding ? "Adding…" : "Add to rotation"}
+   561→                  </Button>
+   562→                </div>
+   563→              ) : null}
+   564→            </div>
+   565→          </div>
+   566→        </CollapsibleContent>
+   567→      </Collapsible>
+   568→
+   569→      {/* ============ BACKGROUND VIDEOS ============ */}
+   570→      <Collapsible defaultOpen className="overflow-hidden rounded-2xl border border-blue-100/70 bg-white shadow-sm">
+   571→        <CollapsibleTrigger className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-blue-50/40 sm:px-5">
+   572→          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+   573→            <Youtube className="h-4.5 w-4.5" aria-hidden="true" />
+   574→          </span>
+   575→          <span className="min-w-0 flex-1">
+   576→            <span className="font-heading block text-sm font-bold text-brand-navy">
+   577→              YouTube background videos
+   578→            </span>
+   579→            <span className="mt-0.5 block text-xs text-slate-400">
+   580→              {videoUrls.filter((u) => u.trim().length > 5).length} of {MAX_VIDEOS} links used
+   581→            </span>
+   582→          </span>
+   583→          {videosDirty ? (
+   584→            <span
+   585→              title="This section has unsaved edits"
+   586→              className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.25)]"
+   587→            />
+   588→          ) : null}
+   589→          <ChevronDown
+   590→            aria-hidden="true"
+   591→            className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 group-data-[state=open]:rotate-180"
+   592→          />
+   593→        </CollapsibleTrigger>
+   594→        <CollapsibleContent className="border-t border-blue-100/70">
+   595→          <div className="space-y-3 px-4 py-5 sm:px-5">
+   596→            <Hint>
+   597→              এই লিংকগুলো হোম হিরোর ছবির স্লাইডের মাঝে মাঝে ভিডিও হিসেবে চলবে। Pastes any
+   598→              youtube.com/youtu.be/shorts link.
+   599→            </Hint>
+   600→            {videoUrls.map((url, i) => (
+   601→              <div key={i} className="flex items-center gap-2">
+   602→                <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-300">
+   603→                  {i + 1}
+   604→                </span>
+   605→                <Input
+   606→                  value={url}
+   607→                  onChange={(e) => setVideoUrl(i, e.target.value)}
+   608→                  placeholder="https://www.youtube.com/watch?v=…"
+   609→                  aria-label={`Background video URL ${i + 1}`}
+   610→                  className={cn(inputClass, "min-w-0 flex-1")}
+   611→                />
+   612→                <Button
+   613→                  type="button"
+   614→                  variant="ghost"
+   615→                  size="icon"
+   616→                  onClick={() => removeVideoUrl(i)}
+   617→                  aria-label={`Remove background video ${i + 1}`}
+   618→                  title="Remove"
+   619→                  className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+   620→                >
+   621→                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+   622→                </Button>
+   623→              </div>
+   624→            ))}
+   625→            <Button
+   626→              type="button"
+   627→              variant="outline"
+   628→              size="sm"
+   629→              disabled={videoUrls.length >= MAX_VIDEOS}
+   630→              onClick={addVideoUrl}
+   631→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   632→            >
+   633→              <Plus className="h-4 w-4" aria-hidden="true" />
+   634→              Add video link
+   635→            </Button>
+   636→            <SaveBar
+   637→              dirty={videosDirty}
+   638→              saving={savingVideos}
+   639→              onSave={() => void saveVideos()}
+   640→              onReset={() => videoSnapshot && setVideoUrls([...videoSnapshot])}
+   641→              saveLabel="Save video links"
+   642→              dirtyHint="Unsaved video links"
+   643→              savedHint="Video links saved"
+   644→            />
+   645→          </div>
+   646→        </CollapsibleContent>
+   647→      </Collapsible>
+   648→
+   649→      <ConfirmDeleteDialog
+   650→        open={Boolean(deleting)}
+   651→        onOpenChange={(open) => {
+   652→          if (!open) setDeleting(null);
+   653→        }}
+   654→        onConfirm={() => deleting && void removeSlide(deleting)}
+   655→        loading={deleteBusy}
+   656→        title="Remove this slide?"
+   657→        description={
+   658→          deleting ? (
+   659→            <>
+   660→              The hero rotation will no longer include{" "}
+   661→              <span className="font-semibold">
+   662→                {deleting.kind === "youtube" ? "this YouTube video" : "this image"}
+   663→              </span>
+   664→              . You can re-add it afterwards.
+   665→            </>
+   666→          ) : null
+   667→        }
+   668→        confirmLabel="Remove slide"
+   669→      />
+   670→
+   671→      <p className="flex items-center gap-1.5 text-xs text-slate-400">
+   672→        <MonitorPlay className="h-3.5 w-3.5" aria-hidden="true" />
+   673→        Changes go live immediately — no separate save needed for slide edits.
+   674→      </p>
+   675→    </div>
+   676→  );
+   677→}
+   678→

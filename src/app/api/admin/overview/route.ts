@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       patients,
     ] = await Promise.all([
       db.appointment.findMany({
-        select: { date: true, status: true, serviceSlug: true, createdAt: true },
+        select: { date: true, status: true, serviceSlug: true, createdAt: true, followUpDate: true },
       }),
       db.review.findMany({
         select: { rating: true, approved: true, createdAt: true },
@@ -101,9 +101,23 @@ export async function GET(req: NextRequest) {
       unhandled: messages.filter((m) => !m.handled).length,
     };
 
+    /* Daily-workflow extras for the "Today at a glance" strip:
+       overdue follow-ups = scheduled call-back days already in the past
+       on leads that are still open (not completed/cancelled).            */
+    const todaysAppointments = appointmentStats.today;
+    const overdueFollowUps = appointments.filter(
+      (a) =>
+        a.followUpDate !== null &&
+        a.followUpDate < today &&
+        a.status !== "COMPLETED" &&
+        a.status !== "CANCELLED"
+    ).length;
+
     return NextResponse.json(
       {
         appointmentStats,
+        todaysAppointments,
+        overdueFollowUps,
         reviewStats,
         messageStats,
         subscriberStats: { total: subscribers },

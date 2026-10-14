@@ -50,6 +50,7 @@ const PAGE_ICONS: Record<string, string> = {
   "/blog": "Newspaper",
   "/faqs": "CircleHelp",
   "/assessment": "ClipboardList",
+  "/estimator": "Calculator",
   "/status": "CalendarClock",
   "/contact": "Phone",
   "/portal": "UserRound",
@@ -81,6 +82,13 @@ function pageEntries(lang: Lang): SearchEntry[] {
     ["/blog", d.blogPage.title, d.blogPage.description, other.blogPage.title],
     ["/faqs", d.faqsPage.title, d.faqsPage.description, other.faqsPage.title],
     ["/assessment", d.assessmentPage.title, d.assessmentPage.description, other.assessmentPage.title],
+    [
+      "/estimator",
+      d.estimatorPage.title,
+      d.estimatorPage.description,
+      other.estimatorPage.title,
+      `cost price pricing estimate calculator budget খরচ দাম হিসাব ইএমআই কিস্তি টাকা braces cost implant cost ${other.estimatorPage.eyebrow}`,
+    ],
     ["/status", d.statusPage.title, d.statusPage.description, other.statusPage.title],
     ["/contact", d.contactPage.title, d.contactPage.description, other.contactPage.title],
     [

@@ -24,6 +24,11 @@ model Appointment {
   notes       String?
   status      String   @default("PENDING") // PENDING | CONFIRMED | CANCELLED | COMPLETED
   source      String   @default("WEBSITE")
+  /* Daily lead pipeline (admin-only, never public):
+     followUpDate - the next day the front desk should call this lead;
+     adminNotes   - internal working notes (call outcomes, preferences). */
+  followUpDate String? // YYYY-MM-DD
+  adminNotes   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -98,6 +103,19 @@ model Doctor {
   consultationDaysJson String @default("[]")
   accent           String   @default("#012c5f")
   photo            String?  // /public/uploads/... or /images/...
+  /* Round 17-a — enriched profile dossier:
+     educationJson  - [{"degree":"BDS","institution":"University of Dhaka","year":"2016"}]
+     membershipsJson- ["Bangladesh Dental Association"]
+     awardsJson     - [{"title":"...","year":"..."}]
+     quote/quoteBn  - personal philosophy pull-quote shown on the profile
+     focusServicesJson - service slugs this doctor focuses on
+                        (links the profile to /services/<slug> pages)     */
+  educationJson    String?  // [{degree, institution?, year?}]
+  membershipsJson  String?  // string[]
+  awardsJson       String?  // [{title, year?}]
+  quote            String?
+  quoteBn          String?
+  focusServicesJson String? // service slugs, e.g. ["invisalign-clear-aligners"]
   active           Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -242,4 +260,27 @@ model AdminActivity {
   entity     String   // doctors | blog | faqs | cases | services | pages | hero | settings | users | auth | upload
   label      String?  // human summary (entity slug/name/title or message)
   createdAt  DateTime @default(now())
+}
+
+/* ------------------------------------------------------------------ */
+/*  First-party server-side analytics — one row per visitor event.     */
+/*  Privacy-safe: no raw IPs (salted hash), no PII; `label` holds      */
+/*  things like the search query or the CTA name, `session` is an      */
+/*  anonymous localStorage id. Powers the admin Analytics panel.       */
+/* ------------------------------------------------------------------ */
+model TrackingEvent {
+  id        String   @id @default(cuid())
+  type      String // page_view | search | cta_call | cta_whatsapp | booking_click | language | appointment_booked | message_sent | review_submitted | newsletter_signup
+  path      String? // hash-route path, e.g. "/services/dental-implants"
+  label     String? // search query / cta name / ref code
+  metaJson  String   @default("{}") // small extra context (service, device detail…)
+  session   String? // anonymous visitor session id
+  device    String? // mobile | tablet | desktop | bot
+  referrer  String? // document.referrer (trimmed)
+  ipHash    String? // salted sha256 prefix — never the raw IP
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@index([session])
 }

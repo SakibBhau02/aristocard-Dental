@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { services } from "@/lib/data/services";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { notifyReviewSubmitted } from "@/lib/integrations";
 
 /* ------------------------------------------------------------------ */
 /*  /api/reviews — public patient reviews                              */
@@ -94,6 +95,9 @@ export async function POST(req: NextRequest) {
         approved: false,
       },
     });
+
+    /* Server-side analytics + optional Telegram alert (fail-silent). */
+    await notifyReviewSubmitted(req, { name, rating, title, message });
 
     return NextResponse.json(
       {

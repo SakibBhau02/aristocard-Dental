@@ -726,7 +726,7 @@ function BlogEditor({
           )}
           {row && row.status === "PUBLISHED" ? (
             <a
-              href={`/#/blog/${row.slug}`}
+              href={`/blog/${row.slug}`}
               target="_blank"
               rel="noreferrer"
               title="View on the public site"

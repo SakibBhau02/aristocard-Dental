@@ -1,0 +1,831 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  Integrations & Tracking panel (Configuration group, OWNER).         */
+     5→/*                                                                     */
+     6→/*  GET  /api/admin/integrations      → { integrations, role }. The     */
+     7→/*    bot token comes back MASKED ("••••") for non-OWNER reads — the    */
+     8→/*    form treats a masked value as “unchanged” and posts it back       */
+     9→/*    verbatim (the server keeps the stored secret).                    */
+    10→/*  POST /api/admin/integrations      → full config; replies            */
+    11→/*    400 { error, issues } on validation failure (surfaced inline).    */
+    12→/*  POST /api/admin/integrations/test → Telegram test message built     */
+    13→/*    from the CURRENT UNSAVED token/chat values (masked = saved one).  */
+    14→/*                                                                     */
+    15→/*  Pixels are injected into the public site only after SAVING — an     */
+    16→/*  empty field keeps that integration completely off.                  */
+    17→/* ------------------------------------------------------------------ */
+    18→
+    19→import { useCallback, useEffect, useMemo, useState } from "react";
+    20→import type { LucideIcon } from "lucide-react";
+    21→import {
+    22→  AlertTriangle,
+    23→  BarChart3,
+    24→  CalendarCheck,
+    25→  CheckCircle2,
+    26→  ChevronDown,
+    27→  CircleHelp,
+    28→  Eye,
+    29→  EyeOff,
+    30→  Inbox,
+    31→  LineChart,
+    32→  Loader2,
+    33→  Music4,
+    34→  RefreshCw,
+    35→  Send,
+    36→  ShieldCheck,
+    37→  Star,
+    38→  Tags,
+    39→  Target,
+    40→  X,
+    41→} from "lucide-react";
+    42→import { cn } from "@/lib/utils";
+    43→import { Button } from "@/components/ui/button";
+    44→import {
+    45→  Collapsible,
+    46→  CollapsibleContent,
+    47→  CollapsibleTrigger,
+    48→} from "@/components/ui/collapsible";
+    49→import { Input } from "@/components/ui/input";
+    50→import { Switch } from "@/components/ui/switch";
+    51→import type { IntegrationsConfig } from "@/lib/integrations";
+    52→import {
+    53→  PanelHeader,
+    54→  PanelSkeleton,
+    55→  SaveBar,
+    56→  useAdminFetch,
+    57→  useAdminToast,
+    58→  type PanelProps,
+    59→} from "../admin-shared";
+    60→
+    61→/* ------------------------------------------------------------------ */
+    62→/*  Validation (mirrors src/lib/integrations.ts — client-side live)     */
+    63→/* ------------------------------------------------------------------ */
+    64→
+    65→const GA4_RE = /^G-[A-Z0-9]{6,12}$/;
+    66→const GTM_RE = /^GTM-[A-Z0-9]{5,10}$/;
+    67→const FB_PIXEL_RE = /^\d{14,17}$/;
+    68→const TIKTOK_RE = /^[A-Z0-9]{15,25}$/;
+    69→const TELEGRAM_TOKEN_RE = /^\d{6,12}:[A-Za-z0-9_-]{30,60}$/;
+    70→const TELEGRAM_CHAT_RE = /^(-?\d{4,15}|@[A-Za-z0-9_]{4,32})$/;
+    71→
+    72→/** Client-side issues mirroring the server's merged-config checks. */
+    73→function clientIssues(form: IntegrationsConfig, storedToken: string): string[] {
+    74→  const issues: string[] = [];
+    75→  if (form.ga4Id && !GA4_RE.test(form.ga4Id))
+    76→    issues.push("Google Analytics ID should look like G-ABC123DEF4.");
+    77→  if (form.gtmId && !GTM_RE.test(form.gtmId))
+    78→    issues.push("Tag Manager container ID should look like GTM-ABC1234.");
+    79→  if (form.fbPixelId && !FB_PIXEL_RE.test(form.fbPixelId))
+    80→    issues.push("Facebook Pixel ID must be 14–17 digits.");
+    81→  if (form.tiktokPixelId && !TIKTOK_RE.test(form.tiktokPixelId))
+    82→    issues.push("TikTok Pixel ID must be 15–25 letters/digits.");
+    83→  /* A masked token means "unchanged" — validate the stored secret. */
+    84→  const token = form.telegramBotToken.includes("•") ? storedToken : form.telegramBotToken;
+    85→  if (token && !TELEGRAM_TOKEN_RE.test(token))
+    86→    issues.push("Telegram bot token should look like 123456789:AAE… (copy it from @BotFather).");
+    87→  if (form.telegramChatId && !TELEGRAM_CHAT_RE.test(form.telegramChatId))
+    88→    issues.push("Telegram chat ID should be numeric (or @channelname).");
+    89→  if (form.telegramChatId && !token) issues.push("Add the bot token to use the chat ID.");
+    90→  if (token && !form.telegramChatId)
+    91→    issues.push("Add the chat ID to receive Telegram alerts.");
+    92→  return issues;
+    93→}
+    94→
+    95→/* ------------------------------------------------------------------ */
+    96→/*  Local presentational atoms                                          */
+    97→/* ------------------------------------------------------------------ */
+    98→
+    99→function clone(value: IntegrationsConfig): IntegrationsConfig {
+   100→  return JSON.parse(JSON.stringify(value)) as IntegrationsConfig;
+   101→}
+   102→
+   103→function ErrorNote({ message }: { message: string }) {
+   104→  return (
+   105→    <div
+   106→      role="alert"
+   107→      className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5"
+   108→    >
+   109→      <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-rose-500" aria-hidden="true" />
+   110→      <div>
+   111→        <p className="text-sm font-bold text-rose-700">Something went wrong</p>
+   112→        <p className="mt-0.5 text-sm leading-relaxed text-rose-600">{message}</p>
+   113→      </div>
+   114→    </div>
+   115→  );
+   116→}
+   117→
+   118→/** Server-side 400 {error, issues} surfaced inline after a failed save. */
+   119→function IssuesNote({ issues }: { issues: string[] }) {
+   120→  return (
+   121→    <div
+   122→      role="alert"
+   123→      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5"
+   124→    >
+   125→      <p className="flex items-center gap-2 text-sm font-bold text-rose-700">
+   126→        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+   127→        The server rejected these settings
+   128→      </p>
+   129→      <ul className="mt-2 list-disc space-y-1 pl-9 text-sm leading-relaxed text-rose-600">
+   130→        {issues.map((issue) => (
+   131→          <li key={issue}>{issue}</li>
+   132→        ))}
+   133→      </ul>
+   134→    </div>
+   135→  );
+   136→}
+   137→
+   138→/** Field-level status chip: green Connected / gray Not connected / rose Invalid. */
+   139→function StatusChip({ state }: { state: "connected" | "off" | "invalid" }) {
+   140→  const styles = {
+   141→    connected: { label: "Connected", chip: "bg-emerald-50 text-emerald-700 ring-emerald-200", dot: "bg-emerald-500" },
+   142→    off: { label: "Not connected", chip: "bg-slate-50 text-slate-400 ring-slate-200", dot: "bg-slate-300" },
+   143→    invalid: { label: "Check format", chip: "bg-rose-50 text-rose-600 ring-rose-200", dot: "bg-rose-400" },
+   144→  } as const;
+   145→  const s = styles[state];
+   146→  return (
+   147→    <span
+   148→      className={cn(
+   149→        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ring-1",
+   150→        s.chip
+   151→      )}
+   152→    >
+   153→      <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} aria-hidden="true" />
+   154→      {s.label}
+   155→    </span>
+   156→  );
+   157→}
+   158→
+   159→/** Live (saved) status badge for the strip at the top of the panel. */
+   160→function LiveBadge({ label, on }: { label: string; on: boolean }) {
+   161→  return (
+   162→    <span
+   163→      title={on ? `${label} is connected` : `${label} is not connected`}
+   164→      className={cn(
+   165→        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1",
+   166→        on
+   167→          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+   168→          : "bg-slate-50 text-slate-400 ring-slate-200"
+   169→      )}
+   170→    >
+   171→      <span
+   172→        className={cn("h-1.5 w-1.5 rounded-full", on ? "bg-emerald-500" : "bg-slate-300")}
+   173→        aria-hidden="true"
+   174→      />
+   175→      {label}
+   176→    </span>
+   177→  );
+   178→}
+   179→
+   180→/** Collapsible 1–2 line "how to find this ID" hint. */
+   181→function HowToHint({ children }: { children: React.ReactNode }) {
+   182→  return (
+   183→    <Collapsible className="mt-2">
+   184→      <CollapsibleTrigger
+   185→        className={cn(
+   186→          "inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 text-[11px] font-bold",
+   187→          "text-slate-400 transition-colors duration-200 hover:bg-blue-50/60 hover:text-brand-navy",
+   188→          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40"
+   189→        )}
+   190→      >
+   191→        <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" />
+   192→        How to get this ID
+   193→        <ChevronDown className="h-3.5 w-3.5 transition-transform duration-300" aria-hidden="true" />
+   194→      </CollapsibleTrigger>
+   195→      <CollapsibleContent>
+   196→        <p className="mt-1 border-l-2 border-blue-100 pl-3 text-xs leading-relaxed text-slate-400">
+   197→          {children}
+   198→        </p>
+   199→      </CollapsibleContent>
+   200→    </Collapsible>
+   201→  );
+   202→}
+   203→
+   204→/* ------------------------------------------------------------------ */
+   205→/*  Marketing pixel field model                                         */
+   206→/* ------------------------------------------------------------------ */
+   207→
+   208→type PixelKey = "ga4Id" | "gtmId" | "fbPixelId" | "tiktokPixelId";
+   209→
+   210→const PIXEL_FIELDS: {
+   211→  key: PixelKey;
+   212→  name: string;
+   213→  icon: LucideIcon;
+   214→  placeholder: string;
+   215→  re: RegExp;
+   216→  issue: string;
+   217→  maxLength: number;
+   218→  help: string;
+   219→}[] = [
+   220→  {
+   221→    key: "ga4Id",
+   222→    name: "Google Analytics 4",
+   223→    icon: LineChart,
+   224→    placeholder: "G-XXXXXXXXXX",
+   225→    re: GA4_RE,
+   226→    issue: "Google Analytics ID should look like G-ABC123DEF4.",
+   227→    maxLength: 14,
+   228→    help: "Google Analytics → Admin → Data streams → select your web stream → copy the Measurement ID.",
+   229→  },
+   230→  {
+   231→    key: "gtmId",
+   232→    name: "Google Tag Manager",
+   233→    icon: Tags,
+   234→    placeholder: "GTM-XXXXXXX",
+   235→    re: GTM_RE,
+   236→    issue: "Tag Manager container ID should look like GTM-ABC1234.",
+   237→    maxLength: 14,
+   238→    help: "Google Tag Manager → Admin → Container settings → copy the Container ID.",
+   239→  },
+   240→  {
+   241→    key: "fbPixelId",
+   242→    name: "Facebook (Meta) Pixel",
+   243→    icon: Target,
+   244→    placeholder: "123456789012345",
+   245→    re: FB_PIXEL_RE,
+   246→    issue: "Facebook Pixel ID must be 14–17 digits.",
+   247→    maxLength: 17,
+   248→    help: "Meta Events Manager → Data sources → your pixel → copy the 15–16 digit Pixel ID.",
+   249→  },
+   250→  {
+   251→    key: "tiktokPixelId",
+   252→    name: "TikTok Pixel",
+   253→    icon: Music4,
+   254→    placeholder: "CXXXXXXXXXXXXXXXXXXX",
+   255→    re: TIKTOK_RE,
+   256→    issue: "TikTok Pixel ID must be 15–25 letters/digits.",
+   257→    maxLength: 25,
+   258→    help: "TikTok Ads Manager → Events → Web events → Manage → copy the Pixel ID.",
+   259→  },
+   260→];
+   261→
+   262→function PixelCard({
+   263→  field,
+   264→  value,
+   265→  disabled,
+   266→  onChange,
+   267→}: {
+   268→  field: (typeof PIXEL_FIELDS)[number];
+   269→  value: string;
+   270→  disabled: boolean;
+   271→  onChange: (value: string) => void;
+   272→}) {
+   273→  const trimmed = value.trim();
+   274→  const invalid = trimmed.length > 0 && !field.re.test(trimmed);
+   275→  const state: "connected" | "off" | "invalid" = invalid
+   276→    ? "invalid"
+   277→    : trimmed
+   278→      ? "connected"
+   279→      : "off";
+   280→  const Icon = field.icon;
+   281→  return (
+   282→    <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm sm:p-5">
+   283→      <div className="flex items-center gap-3">
+   284→        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ice text-brand-navy ring-1 ring-blue-100">
+   285→          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+   286→        </span>
+   287→        <p className="font-heading min-w-0 flex-1 truncate text-sm font-bold text-brand-navy">
+   288→          {field.name}
+   289→        </p>
+   290→        <StatusChip state={state} />
+   291→      </div>
+   292→      <Input
+   293→        value={value}
+   294→        onChange={(e) => onChange(e.target.value)}
+   295→        placeholder={field.placeholder}
+   296→        aria-label={field.name}
+   297→        maxLength={field.maxLength}
+   298→        disabled={disabled}
+   299→        spellCheck={false}
+   300→        autoComplete="off"
+   301→        className={cn(
+   302→          "mt-3.5 h-9 font-mono text-sm tracking-wide uppercase placeholder:font-sans placeholder:normal-case placeholder:tracking-normal",
+   303→          invalid
+   304→            ? "border-rose-300 bg-rose-50/40 focus-visible:border-rose-400 focus-visible:ring-rose-200/40"
+   305→            : "border-blue-100 bg-ice text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   306→        )}
+   307→      />
+   308→      {invalid ? (
+   309→        <p
+   310→          role="alert"
+   311→          className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600"
+   312→        >
+   313→          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+   314→          {field.issue}
+   315→        </p>
+   316→      ) : (
+   317→        <p className="mt-1.5 text-xs text-slate-400">
+   318→          Leave empty to keep this pixel switched off.
+   319→        </p>
+   320→      )}
+   321→      <HowToHint>{field.help}</HowToHint>
+   322→    </div>
+   323→  );
+   324→}
+   325→
+   326→/* ------------------------------------------------------------------ */
+   327→/*  Telegram event toggle row                                           */
+   328→/* ------------------------------------------------------------------ */
+   329→
+   330→function EventToggle({
+   331→  icon: Icon,
+   332→  label,
+   333→  description,
+   334→  checked,
+   335→  disabled,
+   336→  onCheckedChange,
+   337→}: {
+   338→  icon: LucideIcon;
+   339→  label: string;
+   340→  description: string;
+   341→  checked: boolean;
+   342→  disabled: boolean;
+   343→  onCheckedChange: (checked: boolean) => void;
+   344→}) {
+   345→  return (
+   346→    <label className="flex items-center gap-3 rounded-xl border border-blue-100 bg-ice/60 px-3.5 py-2.5">
+   347→      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-navy ring-1 ring-blue-100">
+   348→        <Icon className="h-4 w-4" aria-hidden="true" />
+   349→      </span>
+   350→      <span className="min-w-0 flex-1">
+   351→        <span className="block text-xs font-bold text-brand-navy">{label}</span>
+   352→        <span className="mt-0.5 block text-[11px] leading-relaxed text-slate-500">
+   353→          {description}
+   354→        </span>
+   355→      </span>
+   356→      <Switch
+   357→        checked={checked}
+   358→        disabled={disabled}
+   359→        onCheckedChange={onCheckedChange}
+   360→        aria-label={label}
+   361→        className="data-[state=checked]:bg-brand-navy"
+   362→      />
+   363→    </label>
+   364→  );
+   365→}
+   366→
+   367→/* ------------------------------------------------------------------ */
+   368→/*  Panel                                                               */
+   369→/* ------------------------------------------------------------------ */
+   370→
+   371→export function IntegrationsPanel({ onSessionExpired }: PanelProps) {
+   372→  const { get, post, error, clearError } = useAdminFetch(onSessionExpired);
+   373→  const { ok, fail } = useAdminToast();
+   374→
+   375→  const [snapshot, setSnapshot] = useState<IntegrationsConfig | null>(null);
+   376→  const [form, setForm] = useState<IntegrationsConfig | null>(null);
+   377→  const [role, setRole] = useState<"OWNER" | "EDITOR" | "VIEWER">("OWNER");
+   378→  const [loadFailed, setLoadFailed] = useState(false);
+   379→  const [loadTick, setLoadTick] = useState(0);
+   380→  const [saving, setSaving] = useState(false);
+   381→  const [testing, setTesting] = useState(false);
+   382→  const [showToken, setShowToken] = useState(false);
+   383→  const [testNote, setTestNote] = useState("");
+   384→  const [serverIssues, setServerIssues] = useState<string[]>([]);
+   385→
+   386→  /* Initial fetch (+ manual retry) — same shape as the settings panel. */
+   387→  useEffect(() => {
+   388→    let cancelled = false;
+   389→    (async () => {
+   390→      const data = await get<{ integrations: IntegrationsConfig; role?: string }>(
+   391→        "/api/admin/integrations"
+   392→      );
+   393→      if (cancelled) return;
+   394→      if (!data) {
+   395→        setLoadFailed(true);
+   396→        return;
+   397→      }
+   398→      setLoadFailed(false);
+   399→      setSnapshot(clone(data.integrations));
+   400→      setForm(clone(data.integrations));
+   401→      setServerIssues([]);
+   402→      setRole(
+   403→        data.role === "EDITOR" || data.role === "VIEWER" ? data.role : "OWNER"
+   404→      );
+   405→    })();
+   406→    return () => {
+   407→      cancelled = true;
+   408→    };
+   409→  }, [get, loadTick]);
+   410→
+   411→  const dirty = useMemo(
+   412→    () => (snapshot && form ? JSON.stringify(form) !== JSON.stringify(snapshot) : false),
+   413→    [snapshot, form]
+   414→  );
+   415→
+   416→  /* Non-OWNER reads are read-only (the nav hides this module for them;
+   417→     this guards a mid-session role change). Server 403s mutations anyway. */
+   418→  const readOnly = role !== "OWNER";
+   419→  const telegramConnected = Boolean(snapshot?.telegramBotToken && snapshot?.telegramChatId);
+   420→
+   421→  const set = useCallback(<K extends keyof IntegrationsConfig>(
+   422→    key: K,
+   423→    value: IntegrationsConfig[K]
+   424→  ) => {
+   425→    setForm((f) => (f ? { ...f, [key]: value } : f));
+   426→  }, []);
+   427→
+   428→  async function save() {
+   429→    if (!form || !snapshot || saving) return;
+   430→    /* Live client-side gate (mirrors the server regexes). */
+   431→    const issues = clientIssues(form, snapshot.telegramBotToken);
+   432→    if (issues.length > 0) {
+   433→      setServerIssues([]);
+   434→      fail("Check the highlighted fields", issues[0]);
+   435→      return;
+   436→    }
+   437→    setSaving(true);
+   438→    const payload: IntegrationsConfig & { clearTelegramToken?: boolean } = { ...form };
+   439→    /* Clearing/emptying the token removes the bot on purpose. */
+   440→    if (!form.telegramBotToken && snapshot.telegramBotToken) {
+   441→      payload.clearTelegramToken = true;
+   442→    }
+   443→    const res = await post<{
+   444→      integrations?: IntegrationsConfig;
+   445→      message?: string;
+   446→      error?: string;
+   447→      issues?: string[];
+   448→    }>("/api/admin/integrations", payload);
+   449→    setSaving(false);
+   450→    if (res.ok && res.data?.integrations) {
+   451→      const saved = res.data.integrations;
+   452→      setSnapshot(clone(saved));
+   453→      setForm(clone(saved));
+   454→      setServerIssues([]);
+   455→      ok("Integrations saved", res.data.message ?? "Pixels and alerts are live on the public site.");
+   456→    } else {
+   457→      setServerIssues(
+   458→        res.data?.issues ??
+   459→          (res.data?.error ? [res.data.error] : ["Please check the fields and try again."])
+   460→      );
+   461→      fail("Could not save integrations", res.data?.error ?? "Please try again.");
+   462→    }
+   463→  }
+   464→
+   465→  function reset() {
+   466→    if (snapshot) setForm(clone(snapshot));
+   467→    setServerIssues([]);
+   468→    setTestNote("");
+   469→    clearError();
+   470→  }
+   471→
+   472→  /* Test button: sends with the CURRENT UNSAVED form values. A masked
+   473→     token is skipped so the server tests the stored secret instead. */
+   474→  async function sendTest() {
+   475→    if (!form || testing) return;
+   476→    setTesting(true);
+   477→    const payload: { message?: string; telegramBotToken?: string; telegramChatId?: string } = {};
+   478→    const note = testNote.trim();
+   479→    if (note) payload.message = note.slice(0, 300);
+   480→    const token = form.telegramBotToken.trim();
+   481→    if (!token.includes("•")) {
+   482→      if (token) payload.telegramBotToken = token;
+   483→      const chat = form.telegramChatId.trim();
+   484→      if (chat) payload.telegramChatId = chat;
+   485→    }
+   486→    const res = await post<{ success?: boolean; message?: string; error?: string }>(
+   487→      "/api/admin/integrations/test",
+   488→      payload
+   489→    );
+   490→    setTesting(false);
+   491→    if (res.ok) {
+   492→      ok("Test message sent", res.data?.message ?? "Check Telegram on your phone.");
+   493→    } else {
+   494→      fail("Test failed", res.data?.error ?? "The test message could not be sent.");
+   495→    }
+   496→  }
+   497→
+   498→  const tokenInvalid =
+   499→    form &&
+   500→    form.telegramBotToken.trim().length > 0 &&
+   501→    !form.telegramBotToken.includes("•") &&
+   502→    !TELEGRAM_TOKEN_RE.test(form.telegramBotToken.trim());
+   503→  const chatInvalid =
+   504→    form && form.telegramChatId.trim().length > 0 && !TELEGRAM_CHAT_RE.test(form.telegramChatId.trim());
+   505→
+   506→  /* ---- render ---- */
+   507→
+   508→  if (!snapshot || !form) {
+   509→    if (loadFailed) {
+   510→      return (
+   511→        <div className="space-y-4">
+   512→          <PanelHeader title="Integrations & Tracking" />
+   513→          <ErrorNote message={error ?? "Could not load the integration settings."} />
+   514→          <div>
+   515→            <Button
+   516→              onClick={() => {
+   517→                setLoadFailed(false);
+   518→                clearError();
+   519→                setLoadTick((t) => t + 1);
+   520→              }}
+   521→              variant="outline"
+   522→              size="sm"
+   523→              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+   524→            >
+   525→              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+   526→              Try again
+   527→            </Button>
+   528→          </div>
+   529→        </div>
+   530→      );
+   531→    }
+   532→    return <PanelSkeleton />;
+   533→  }
+   534→
+   535→  return (
+   536→    <div className="space-y-4">
+   537→      <PanelHeader
+   538→        title="Integrations & Tracking"
+   539→        description="Connect marketing pixels, get Telegram alerts on your phone, and switch on privacy-safe first-party analytics."
+   540→      />
+   541→      {error ? <ErrorNote message={error} /> : null}
+   542→      {serverIssues.length > 0 ? <IssuesNote issues={serverIssues} /> : null}
+   543→      {readOnly ? (
+   544→        <div
+   545→          role="status"
+   546→          className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5"
+   547→        >
+   548→          <ShieldCheck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500" aria-hidden="true" />
+   549→          <p className="text-sm leading-relaxed text-amber-800">
+   550→            <span className="font-bold">Owner access required to make changes.</span> You are
+   551→            viewing the current setup read-only.
+   552→          </p>
+   553→        </div>
+   554→      ) : null}
+   555→
+   556→      {/* ============ LIVE STATUS STRIP ============ */}
+   557→      <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm">
+   558→        <div className="flex flex-wrap items-center gap-2">
+   559→          <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+   560→            Live status
+   561→          </span>
+   562→          <LiveBadge label="GA4" on={Boolean(snapshot.ga4Id)} />
+   563→          <LiveBadge label="GTM" on={Boolean(snapshot.gtmId)} />
+   564→          <LiveBadge label="Meta Pixel" on={Boolean(snapshot.fbPixelId)} />
+   565→          <LiveBadge label="TikTok" on={Boolean(snapshot.tiktokPixelId)} />
+   566→          <LiveBadge label="Telegram" on={telegramConnected} />
+   567→          <LiveBadge label="Analytics" on={snapshot.trackingEnabled} />
+   568→        </div>
+   569→        <p className="mt-3 border-t border-blue-50 pt-2.5 text-xs font-medium leading-relaxed text-slate-400">
+   570→          Pixels are injected into the public website only after you save — an empty field keeps
+   571→          that integration completely off.
+   572→        </p>
+   573→      </div>
+   574→
+   575→      {/* ============ MARKETING PIXELS ============ */}
+   576→      <div className="grid gap-4 sm:grid-cols-2">
+   577→        {PIXEL_FIELDS.map((field) => (
+   578→          <PixelCard
+   579→            key={field.key}
+   580→            field={field}
+   581→            value={form[field.key]}
+   582→            disabled={readOnly}
+   583→            onChange={(v) => set(field.key, v)}
+   584→          />
+   585→        ))}
+   586→      </div>
+   587→
+   588→      {/* ============ TELEGRAM BOT ============ */}
+   589→      <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm sm:p-6">
+   590→        <div className="flex items-start gap-3">
+   591→          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ice text-brand-navy ring-1 ring-blue-100">
+   592→            <Send className="h-4.5 w-4.5" aria-hidden="true" />
+   593→          </span>
+   594→          <div className="min-w-0 flex-1">
+   595→            <p className="font-heading text-sm font-bold text-brand-navy">Telegram bot</p>
+   596→            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+   597→              Instant alerts on your phone when patients book appointments, leave reviews or send
+   598→              messages.
+   599→            </p>
+   600→          </div>
+   601→          <StatusChip state={telegramConnected ? "connected" : "off"} />
+   602→        </div>
+   603→
+   604→        <div className="mt-4 space-y-4">
+   605→          <div className="min-w-0">
+   606→            <label
+   607→              htmlFor="telegram-bot-token"
+   608→              className="block text-xs font-bold uppercase tracking-wider text-slate-500"
+   609→            >
+   610→              Bot token
+   611→            </label>
+   612→            <div className="relative mt-1.5">
+   613→              <Input
+   614→                id="telegram-bot-token"
+   615→                type={showToken ? "text" : "password"}
+   616→                value={form.telegramBotToken}
+   617→                onChange={(e) => set("telegramBotToken", e.target.value)}
+   618→                placeholder="123456789:AAE…  (from @BotFather)"
+   619→                aria-label="Telegram bot token"
+   620→                autoComplete="off"
+   621→                spellCheck={false}
+   622→                disabled={readOnly}
+   623→                className={cn(
+   624→                  "h-11 pr-24 font-mono text-sm",
+   625→                  tokenInvalid
+   626→                    ? "border-rose-300 bg-rose-50/40 focus-visible:border-rose-400 focus-visible:ring-rose-200/40"
+   627→                    : "border-blue-100 bg-ice text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   628→                )}
+   629→              />
+   630→              <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+   631→                {form.telegramBotToken ? (
+   632→                  <button
+   633→                    type="button"
+   634→                    onClick={() => set("telegramBotToken", "")}
+   635→                    disabled={readOnly}
+   636→                    aria-label="Remove the saved bot token"
+   637→                    title="Remove the saved bot token (saves with the token cleared)"
+   638→                    className="inline-flex h-9 items-center gap-1 rounded-full bg-rose-50 px-2.5 text-[10px] font-bold text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-100 disabled:opacity-50"
+   639→                  >
+   640→                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+   641→                    Remove
+   642→                  </button>
+   643→                ) : null}
+   644→                <button
+   645→                  type="button"
+   646→                  onClick={() => setShowToken((v) => !v)}
+   647→                  aria-label={showToken ? "Hide the bot token" : "Show the bot token"}
+   648→                  title={showToken ? "Hide the bot token" : "Show the bot token"}
+   649→                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-blue-50 hover:text-brand-navy"
+   650→                >
+   651→                  {showToken ? (
+   652→                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+   653→                  ) : (
+   654→                    <Eye className="h-4 w-4" aria-hidden="true" />
+   655→                  )}
+   656→                </button>
+   657→              </div>
+   658→            </div>
+   659→            {tokenInvalid ? (
+   660→              <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600">
+   661→                <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+   662→                Telegram bot token should look like 123456789:AAE… (copy it from @BotFather).
+   663→              </p>
+   664→            ) : (
+   665→              <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+   666→                {form.telegramBotToken.includes("•")
+   667→                  ? "A token is saved on the server — saving keeps it unchanged; “Remove” disconnects the bot."
+   668→                  : "From @BotFather — stored server-side only, never sent to visitors’ browsers."}
+   669→              </p>
+   670→            )}
+   671→          </div>
+   672→
+   673→          <div className="min-w-0">
+   674→            <label
+   675→              htmlFor="telegram-chat-id"
+   676→              className="block text-xs font-bold uppercase tracking-wider text-slate-500"
+   677→            >
+   678→              Chat ID
+   679→            </label>
+   680→            <Input
+   681→              id="telegram-chat-id"
+   682→              value={form.telegramChatId}
+   683→              onChange={(e) => set("telegramChatId", e.target.value)}
+   684→              placeholder="e.g. 123456789 or @channelname"
+   685→              aria-label="Telegram chat ID"
+   686→              autoComplete="off"
+   687→              spellCheck={false}
+   688→              disabled={readOnly}
+   689→              className={cn(
+   690→                "mt-1.5 h-11 font-mono text-sm",
+   691→                chatInvalid
+   692→                  ? "border-rose-300 bg-rose-50/40 focus-visible:border-rose-400 focus-visible:ring-rose-200/40"
+   693→                  : "border-blue-100 bg-ice text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+   694→              )}
+   695→            />
+   696→            {chatInvalid ? (
+   697→              <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600">
+   698→                <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+   699→                Telegram chat ID should be numeric (or @channelname).
+   700→              </p>
+   701→            ) : (
+   702→              <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+   703→                Where the alerts are delivered — your own id, a group, or a @channelname.
+   704→              </p>
+   705→            )}
+   706→          </div>
+   707→
+   708→          <div className="space-y-2">
+   709→            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+   710→              Send Telegram alerts for
+   711→            </p>
+   712→            <EventToggle
+   713→              icon={CalendarCheck}
+   714→              label="Appointments"
+   715→              description="The moment a patient requests an appointment."
+   716→              checked={form.telegramEvents.appointments}
+   717→              disabled={readOnly}
+   718→              onCheckedChange={(checked) =>
+   719→                set("telegramEvents", { ...form.telegramEvents, appointments: checked })
+   720→              }
+   721→            />
+   722→            <EventToggle
+   723→              icon={Star}
+   724→              label="New reviews"
+   725→              description="When a patient submits a review (awaiting approval)."
+   726→              checked={form.telegramEvents.reviews}
+   727→              disabled={readOnly}
+   728→              onCheckedChange={(checked) =>
+   729→                set("telegramEvents", { ...form.telegramEvents, reviews: checked })
+   730→              }
+   731→            />
+   732→            <EventToggle
+   733→              icon={Inbox}
+   734→              label="Contact messages"
+   735→              description="When a contact-form message arrives."
+   736→              checked={form.telegramEvents.messages}
+   737→              disabled={readOnly}
+   738→              onCheckedChange={(checked) =>
+   739→                set("telegramEvents", { ...form.telegramEvents, messages: checked })
+   740→              }
+   741→            />
+   742→          </div>
+   743→
+   744→          {/* ---- test message ---- */}
+   745→          <div className="rounded-xl border border-blue-100 bg-ice/50 p-3.5">
+   746→            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+   747→              Test the connection
+   748→            </p>
+   749→            <p className="mt-1 text-xs leading-relaxed text-slate-400">
+   750→              Sends with the values currently in the form — no need to save first.
+   751→            </p>
+   752→            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+   753→              <Input
+   754→                value={testNote}
+   755→                onChange={(e) => setTestNote(e.target.value)}
+   756→                placeholder="Custom note (optional)"
+   757→                aria-label="Optional custom note for the test message"
+   758→                maxLength={300}
+   759→                disabled={readOnly}
+   760→                className="h-11 min-w-0 flex-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25 sm:w-56"
+   761→              />
+   762→              <Button
+   763→                type="button"
+   764→                onClick={() => void sendTest()}
+   765→                disabled={testing || readOnly}
+   766→                className="h-11 rounded-full bg-brand-navy px-5 font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+   767→              >
+   768→                {testing ? (
+   769→                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+   770→                ) : (
+   771→                  <Send className="h-4 w-4" aria-hidden="true" />
+   772→                )}
+   773→                {testing ? "Sending…" : "Send test message"}
+   774→              </Button>
+   775→            </div>
+   776→          </div>
+   777→
+   778→          <HowToHint>
+   779→            Message @BotFather on Telegram → <strong>/newbot</strong> → copy the bot token. Then
+   780→            send any message to your new bot once, and get the chat ID from @userinfobot (or the
+   781→            getUpdates API).
+   782→          </HowToHint>
+   783→        </div>
+   784→      </div>
+   785→
+   786→      {/* ============ FIRST-PARTY ANALYTICS ============ */}
+   787→      <div className="rounded-2xl border border-blue-100/70 bg-white p-4 shadow-sm sm:p-6">
+   788→        <div className="flex items-start gap-3">
+   789→          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ice text-brand-navy ring-1 ring-blue-100">
+   790→            <BarChart3 className="h-4.5 w-4.5" aria-hidden="true" />
+   791→          </span>
+   792→          <div className="min-w-0 flex-1">
+   793→            <p className="font-heading text-sm font-bold text-brand-navy">
+   794→              First-party analytics
+   795→            </p>
+   796→            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+   797→              Privacy-safe — no raw IP addresses are stored — and it powers the Analytics panel.
+   798→            </p>
+   799→          </div>
+   800→          <Switch
+   801→            checked={form.trackingEnabled}
+   802→            disabled={readOnly}
+   803→            onCheckedChange={(checked) => set("trackingEnabled", checked)}
+   804→            aria-label="First-party tracking enabled"
+   805→            className="data-[state=checked]:bg-brand-navy"
+   806→          />
+   807→        </div>
+   808→        <p className="mt-3 rounded-xl bg-ice/60 px-3.5 py-2.5 text-xs leading-relaxed text-slate-500">
+   809→          {form.trackingEnabled
+   810→            ? "Recording page views, searches, call/WhatsApp taps, booking clicks and form submissions server-side — visible to every staff member in the Analytics panel."
+   811→            : "Switched off — nothing is being recorded right now. Turn it on to power the Analytics panel."}
+   812→        </p>
+   813→      </div>
+   814→
+   815→      <SaveBar
+   816→        dirty={dirty}
+   817→        saving={saving}
+   818→        onSave={save}
+   819→        onReset={reset}
+   820→        saveLabel="Save integrations"
+   821→      />
+   822→
+   823→      <p className="flex items-center gap-1.5 text-xs text-slate-400">
+   824→        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
+   825→        Pixel IDs are public by design — the Telegram bot token stays server-side and never ships
+   826→        to the browser.
+   827→      </p>
+   828→    </div>
+   829→  );
+   830→}
+   831→

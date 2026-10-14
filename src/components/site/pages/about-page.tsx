@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Award,
@@ -60,8 +61,8 @@ export function AboutPage() {
       {
         "@context": "https://schema.org",
         "@type": "AboutPage",
-        "@id": "https://aristocratdentalcarebd.com/#/about#webpage",
-        url: "https://aristocratdentalcarebd.com/#/about",
+        "@id": "https://aristocratdentalcarebd.com/about#webpage",
+        url: "https://aristocratdentalcarebd.com/about",
         name: `About ${settings.name}`,
         description: about.description.replace("{site}", settings.name),
         inLanguage: "en",
@@ -76,7 +77,7 @@ export function AboutPage() {
         jobTitle: about.founderRole,
         worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
         ...(founderDoctorSlug
-          ? { url: `https://aristocratdentalcarebd.com/#/doctors/${founderDoctorSlug}` }
+          ? { url: `https://aristocratdentalcarebd.com/doctors/${founderDoctorSlug}` }
           : {}),
       },
       {
@@ -93,7 +94,7 @@ export function AboutPage() {
             "@type": "ListItem",
             position: 2,
             name: "About Us",
-            item: "https://aristocratdentalcarebd.com/#/about",
+            item: "https://aristocratdentalcarebd.com/about",
           },
         ],
       },
@@ -318,6 +319,50 @@ export function AboutPage() {
             <Reveal>
               <div className="relative mx-auto max-w-sm">
                 <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-blue/30 to-transparent p-1.5">
+                  {about.founderImage ? (
+                    /* Founder portrait — uploaded from the admin panel
+                       (Content → About → Founder photo). Falls back to the
+                       elegant initials medallion when no photo is set.     */
+                    <figure className="relative aspect-[4/4.6] overflow-hidden rounded-[1.8rem]">
+                      <Image
+                        src={about.founderImage}
+                        alt={
+                          about.founderImageAlt ||
+                          pickBn(about.founderName, about.founderNameBn, bn)
+                        }
+                        fill
+                        sizes="(min-width: 1024px) 384px, (min-width: 640px) 60vw, 90vw"
+                        className="object-cover object-top"
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-navy/95 via-brand-navy/35 to-transparent"
+                        aria-hidden="true"
+                      />
+                      <figcaption className="absolute inset-x-0 bottom-0 p-6 pt-14 text-center">
+                        <h3 className="font-heading text-2xl font-bold text-white drop-shadow-sm">
+                          {pickBn(about.founderName, about.founderNameBn, bn)}
+                        </h3>
+                        <p className="mt-1 text-sm font-medium text-blue-200">
+                          {pickBn(about.founderRole, about.founderRoleBn, bn)}
+                        </p>
+                        <div
+                          className="mt-4 flex items-center justify-center gap-2"
+                          aria-label="Rating 4.9"
+                        >
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className="h-4 w-4 fill-amber-400 text-amber-400"
+                              aria-hidden="true"
+                            />
+                          ))}
+                          <span className="text-sm font-semibold text-white">
+                            {bn ? "৪.৯" : "4.9"}
+                          </span>
+                        </div>
+                      </figcaption>
+                    </figure>
+                  ) : (
                   <div className="flex aspect-[4/4.6] flex-col items-center justify-center rounded-[1.8rem] bg-white/5 p-8 text-center ring-1 ring-white/10">
                     <span className="inline-flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 font-heading text-4xl font-bold text-brand-navy shadow-2xl shadow-amber-500/30">
                       {founderInitials(about.founderName)}
@@ -339,6 +384,7 @@ export function AboutPage() {
                       <span className="text-sm font-semibold text-white">{bn ? "৪.৯" : "4.9"}</span>
                     </div>
                   </div>
+                  )}
                 </div>
                 <div className="animate-float-soft absolute -bottom-5 -right-3 rounded-2xl bg-white p-4 shadow-xl sm:-right-8">
                   <span className="flex items-center gap-3">
@@ -400,7 +446,7 @@ export function AboutPage() {
                   className="rounded-full bg-white px-7 py-4 text-sm font-bold text-brand-navy shadow-xl hover:-translate-y-0.5 hover:shadow-2xl"
                 >
                   <a
-                    href="#/doctors/dr-shazia-khanam"
+                    href="/doctors/dr-shazia-khanam"
                     onClick={(e) => {
                       e.preventDefault();
                       navigate("/doctors/dr-shazia-khanam");

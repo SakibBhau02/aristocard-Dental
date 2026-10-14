@@ -18,6 +18,8 @@ export type CsvAppointmentRow = {
   serviceSlug: string | null;
   status: string;
   source: string | null;
+  followUpDate: string | null;
+  adminNotes: string | null;
   createdAt: Date;
 };
 
@@ -32,6 +34,8 @@ export const CSV_COLUMNS = [
   "Service",
   "Status",
   "Source",
+  "FollowUpDate",
+  "AdminNotes",
   "CreatedAt",
 ] as const;
 
@@ -148,6 +152,8 @@ export function appointmentsToCsv(rows: CsvAppointmentRow[]): string {
         csvCell(r.serviceSlug ? serviceNames.get(r.serviceSlug) ?? r.serviceSlug : ""),
         csvCell(r.status),
         csvCell(r.source),
+        csvCell(r.followUpDate),
+        csvCell(r.adminNotes),
         csvCell(dhakaIso(r.createdAt)),
       ].join(",")
     );

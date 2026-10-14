@@ -48,6 +48,7 @@ import { useContent } from "@/components/site/content-provider";
 import { normalizeAboutContent, type AboutContent } from "@/lib/content/shared";
 import {
   BilingualField,
+  ImageUploadField,
   PanelHeader,
   PanelSkeleton,
   SaveBar,
@@ -816,15 +817,39 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
       <FormSection
         icon={UserRound}
         title="Founder"
-        description="Name, role line, chip and the three credential items"
+        description="Photo, name, role line, chip and the three credential items"
         edited={groupDirty((a) => [
           a.founderName,
           a.founderRole,
+          a.founderImage,
+          a.founderImageAlt,
           a.founderChipTitle,
           a.founderChipNote,
           a.founderItems,
         ])}
       >
+        <ImageUploadField
+          label="Founder photo"
+          hint="Portrait shot works best (the founder card is roughly 4:4.6). Leave empty to show the initials medallion instead."
+          value={form.founderImage || undefined}
+          onChange={(url) => set("founderImage", url ?? "")}
+          onUnauthorized={onSessionExpired}
+        />
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Photo alt text
+          </p>
+          <Input
+            value={form.founderImageAlt ?? ""}
+            onChange={(e) => set("founderImageAlt", e.target.value)}
+            placeholder="Dr. Shazia Khanam — Founder and Chief Dental Surgeon"
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Accessibility description — also used by screen readers and search
+            engines.
+          </p>
+        </div>
         <BilingualField
           label="Founder name"
           enValue={form.founderName}
@@ -833,8 +858,9 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
           onBnChange={(v) => set("founderNameBn", v)}
         />
         <Hint>
-          The monogram on the founder card is derived from the English name
-          (honorifics like “Dr.” are skipped — “Dr. Shazia Khanam” → SK).
+          With a photo set, the name, role and rating overlay the portrait;
+          without one, the monogram fallback is derived from the English
+          name (honorifics like “Dr.” are skipped — “Dr. Shazia Khanam” → SK).
         </Hint>
         <BilingualField
           label="Role"

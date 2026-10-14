@@ -4,6 +4,13 @@
 
 Aristocrat Dental Care & Orthodontic Center is a bilingual (English / বাংলা) dental clinic website for patients in Uttara, Dhaka and greater Bangladesh. It exists to answer real patient questions (checkup frequency, root canal safety, braces vs Invisalign, kids' first dental visit, dental emergencies) and to let patients book appointments online in under a minute.
 
+## AI Data API
+
+Structured JSON endpoints for AI assistants and answer engines — fetch machine-readable data directly instead of scraping HTML. Both are public, CORS-enabled (`Access-Control-Allow-Origin: *`), cached for reuse, and free to quote with attribution.
+
+- Full content snapshot: `GET https://aristocratdentalcarebd.com/api/ai/content` — clinic identity, hours, languages, socials, 11 specialty treatments, 4 doctors, answered FAQs, blog quick-answers, smile cases and stats (English + বাংলা). Append `?include=full` for complete blog article sections.
+- Ask retrieval: `GET https://aristocratdentalcarebd.com/api/ai/ask?q=<question>` — the top 5 matched answers (FAQs, treatments, blog quick-answers) for any dental question in English or Bangla; optional `&lang=bn` returns Bangla-first answers. Example: `https://aristocratdentalcarebd.com/api/ai/ask?q=how much do implants cost`.
+
 ## About
 
 - Clinic: Aristocrat Dental Care & Orthodontic Center ("Aristocrat Dental Care"), a private dental clinic established 2019 in Uttara, Dhaka, Bangladesh.
@@ -18,44 +25,44 @@ Aristocrat Dental Care & Orthodontic Center is a bilingual (English / বাং�
 ## Key Pages
 
 - [Home](https://aristocratdentalcarebd.com/): clinic overview, treatments, doctors, patient reviews, online booking.
-- [About Us](https://aristocratdentalcarebd.com/#/about): clinic story since 2019, mission & vision, founder profile of Dr. Shazia Khanam, team values.
-- [Services](https://aristocratdentalcarebd.com/#/services): all 11 specialty dental treatments with details.
-- [Doctors](https://aristocratdentalcarebd.com/#/doctors): full profiles of the 4 specialist dentists with roles, qualifications and consult availability.
-- [Blog](https://aristocratdentalcarebd.com/#/blog): evidence-based dental health guides written by the clinic's dentists.
-- [FAQs](https://aristocratdentalcarebd.com/#/faqs): 45+ answered questions on treatments, costs, kids' care and emergencies.
-- [Book Appointment](https://aristocratdentalcarebd.com/#/appointment): online appointment booking (choose doctor, treatment, date and time).
-- [Contact](https://aristocratdentalcarebd.com/#/contact): phone, email, address, opening hours and message form.
-- [Gallery](https://aristocratdentalcarebd.com/#/gallery): before/after smile makeover cases and clinic facility photos.
-- [Smile Assessment](https://aristocratdentalcarebd.com/#/assessment): quick self-check quiz that suggests the right treatment.
+- [About Us](https://aristocratdentalcarebd.com/about): clinic story since 2019, mission & vision, founder profile of Dr. Shazia Khanam, team values.
+- [Services](https://aristocratdentalcarebd.com/services): all 11 specialty dental treatments with details.
+- [Doctors](https://aristocratdentalcarebd.com/doctors): full profiles of the 4 specialist dentists with roles, qualifications and consult availability.
+- [Blog](https://aristocratdentalcarebd.com/blog): evidence-based dental health guides written by the clinic's dentists.
+- [FAQs](https://aristocratdentalcarebd.com/faqs): 45+ answered questions on treatments, costs, kids' care and emergencies.
+- [Book Appointment](https://aristocratdentalcarebd.com/appointment): online appointment booking (choose doctor, treatment, date and time).
+- [Contact](https://aristocratdentalcarebd.com/contact): phone, email, address, opening hours and message form.
+- [Gallery](https://aristocratdentalcarebd.com/gallery): before/after smile makeover cases and clinic facility photos.
+- [Smile Assessment](https://aristocratdentalcarebd.com/assessment): quick self-check quiz that suggests the right treatment.
 
 ## Treatments
 
-- [Dental Implants](https://aristocratdentalcarebd.com/#/services/dental-implants): the gold standard in tooth replacement — biocompatible titanium posts that preserve bone and function like natural teeth.
-- [Invisalign® Clear Aligners](https://aristocratdentalcarebd.com/#/services/invisalign-clear-aligners): straighten your smile almost invisibly; milder cases finish in 6–12 months.
-- [Traditional Braces & Orthodontics](https://aristocratdentalcarebd.com/#/services/traditional-braces-orthodontics): time-tested results for complex cases, typically 12–24 months.
-- [Root Canal Treatment (Endodontics)](https://aristocratdentalcarebd.com/#/services/root-canal-treatment): save your natural tooth — comfortable with modern rotary endodontic techniques and local anesthesia.
-- [Porcelain Veneers](https://aristocratdentalcarebd.com/#/services/porcelain-veneers): the Hollywood smile, crafted for you — thin ceramic shells for shape, shade and symmetry.
-- [Digital Smile Design (DSD)](https://aristocratdentalcarebd.com/#/services/digital-smile-design): see your new smile before treatment begins via digital preview.
-- [Crowns & Bridges](https://aristocratdentalcarebd.com/#/services/crowns-bridges): restore strength and bridge the gaps — custom porcelain restorations for damaged or missing teeth.
-- [Laser-Assisted Fillings](https://aristocratdentalcarebd.com/#/services/laser-assisted-fillings): restorative care meets modern precision — less drilling, minimal bleeding, often no needles, faster healing.
-- [Oral & Maxillofacial Surgery](https://aristocratdentalcarebd.com/#/services/oral-maxillofacial-surgery): expert surgical care (extractions, wisdom teeth) with gentle recovery.
-- [Pediatric Dentistry](https://aristocratdentalcarebd.com/#/services/pediatric-dentistry): gentle care for little smiles — first visit recommended within 6 months of the first tooth or by the first birthday.
-- [Periodontal (Gum) Treatment](https://aristocratdentalcarebd.com/#/services/periodontal-gum-treatment): healthy gums, healthy smile — early-stage gum disease is fully reversible with professional treatment.
+- [Dental Implants](https://aristocratdentalcarebd.com/services/dental-implants): the gold standard in tooth replacement — biocompatible titanium posts that preserve bone and function like natural teeth.
+- [Invisalign® Clear Aligners](https://aristocratdentalcarebd.com/services/invisalign-clear-aligners): straighten your smile almost invisibly; milder cases finish in 6–12 months.
+- [Traditional Braces & Orthodontics](https://aristocratdentalcarebd.com/services/traditional-braces-orthodontics): time-tested results for complex cases, typically 12–24 months.
+- [Root Canal Treatment (Endodontics)](https://aristocratdentalcarebd.com/services/root-canal-treatment): save your natural tooth — comfortable with modern rotary endodontic techniques and local anesthesia.
+- [Porcelain Veneers](https://aristocratdentalcarebd.com/services/porcelain-veneers): the Hollywood smile, crafted for you — thin ceramic shells for shape, shade and symmetry.
+- [Digital Smile Design (DSD)](https://aristocratdentalcarebd.com/services/digital-smile-design): see your new smile before treatment begins via digital preview.
+- [Crowns & Bridges](https://aristocratdentalcarebd.com/services/crowns-bridges): restore strength and bridge the gaps — custom porcelain restorations for damaged or missing teeth.
+- [Laser-Assisted Fillings](https://aristocratdentalcarebd.com/services/laser-assisted-fillings): restorative care meets modern precision — less drilling, minimal bleeding, often no needles, faster healing.
+- [Oral & Maxillofacial Surgery](https://aristocratdentalcarebd.com/services/oral-maxillofacial-surgery): expert surgical care (extractions, wisdom teeth) with gentle recovery.
+- [Pediatric Dentistry](https://aristocratdentalcarebd.com/services/pediatric-dentistry): gentle care for little smiles — first visit recommended within 6 months of the first tooth or by the first birthday.
+- [Periodontal (Gum) Treatment](https://aristocratdentalcarebd.com/services/periodontal-gum-treatment): healthy gums, healthy smile — early-stage gum disease is fully reversible with professional treatment.
 
 ## Answers
 
-- [How often should I visit the dentist?](https://aristocratdentalcarebd.com/#/faqs): Every six months for a routine checkup and professional cleaning; patients with gum disease, braces or ongoing treatment may need visits every 3–4 months.
-- [What causes tooth decay?](https://aristocratdentalcarebd.com/#/faqs): Plaque bacteria produce acids from sugars and starches that erode enamel over time; daily brushing, flossing and six-monthly professional cleanings prevent it.
-- [How can I prevent gum disease?](https://aristocratdentalcarebd.com/#/faqs): Brush twice a day, floss daily and attend regular dental cleanings; early-stage gum disease is fully reversible with professional treatment.
-- [Are teeth whitening treatments safe?](https://aristocratdentalcarebd.com/#/faqs): Yes — professional in-clinic whitening uses controlled gel concentrations with gum protection and does not damage enamel.
-- [What are dental implants?](https://aristocratdentalcarebd.com/#/faqs): Biocompatible titanium posts that interface with the jawbone to support a crown, bridge or denture — the gold standard for tooth replacement because they preserve bone and function like natural teeth.
-- [Is root canal treatment painful?](https://aristocratdentalcarebd.com/#/faqs): No — with effective local anesthesia it feels similar to getting a filling; most patients return to normal routine the same day.
-- [How long does braces treatment take?](https://aristocratdentalcarebd.com/#/faqs): Typically 12–24 months depending on case complexity; milder issues can finish in 6–12 months with clear aligners.
-- [When should my child first see a dentist?](https://aristocratdentalcarebd.com/#/faqs): Within 6 months of the first tooth appearing, or at least by the first birthday.
-- [What should I do in a dental emergency?](https://aristocratdentalcarebd.com/#/faqs): Call the hotline 01715-027522 right away; rinse with warm salt water, apply a cold compress to swelling, and clove oil can ease pain. Never place aspirin directly on the gum.
-- [Do you offer treatment for anxious patients and children?](https://aristocratdentalcarebd.com/#/faqs): Yes — gentle techniques, laser treatments that often need no needles, a dedicated kids' room and specialists known for compassionate care.
-- [Do you use laser dentistry in treatments?](https://aristocratdentalcarebd.com/#/faqs): Yes — for fillings, gum treatment and smile procedures: less drilling, minimal bleeding, often no needles and faster healing.
-- [Where is Aristocrat Dental Care located?](https://aristocratdentalcarebd.com/#/faqs): Uttara, Dhaka, Bangladesh — open Saturday through Thursday, 10:00 AM to 9:00 PM.
+- [How often should I visit the dentist?](https://aristocratdentalcarebd.com/faqs): Every six months for a routine checkup and professional cleaning; patients with gum disease, braces or ongoing treatment may need visits every 3–4 months.
+- [What causes tooth decay?](https://aristocratdentalcarebd.com/faqs): Plaque bacteria produce acids from sugars and starches that erode enamel over time; daily brushing, flossing and six-monthly professional cleanings prevent it.
+- [How can I prevent gum disease?](https://aristocratdentalcarebd.com/faqs): Brush twice a day, floss daily and attend regular dental cleanings; early-stage gum disease is fully reversible with professional treatment.
+- [Are teeth whitening treatments safe?](https://aristocratdentalcarebd.com/faqs): Yes — professional in-clinic whitening uses controlled gel concentrations with gum protection and does not damage enamel.
+- [What are dental implants?](https://aristocratdentalcarebd.com/faqs): Biocompatible titanium posts that interface with the jawbone to support a crown, bridge or denture — the gold standard for tooth replacement because they preserve bone and function like natural teeth.
+- [Is root canal treatment painful?](https://aristocratdentalcarebd.com/faqs): No — with effective local anesthesia it feels similar to getting a filling; most patients return to normal routine the same day.
+- [How long does braces treatment take?](https://aristocratdentalcarebd.com/faqs): Typically 12–24 months depending on case complexity; milder issues can finish in 6–12 months with clear aligners.
+- [When should my child first see a dentist?](https://aristocratdentalcarebd.com/faqs): Within 6 months of the first tooth appearing, or at least by the first birthday.
+- [What should I do in a dental emergency?](https://aristocratdentalcarebd.com/faqs): Call the hotline 01715-027522 right away; rinse with warm salt water, apply a cold compress to swelling, and clove oil can ease pain. Never place aspirin directly on the gum.
+- [Do you offer treatment for anxious patients and children?](https://aristocratdentalcarebd.com/faqs): Yes — gentle techniques, laser treatments that often need no needles, a dedicated kids' room and specialists known for compassionate care.
+- [Do you use laser dentistry in treatments?](https://aristocratdentalcarebd.com/faqs): Yes — for fillings, gum treatment and smile procedures: less drilling, minimal bleeding, often no needles and faster healing.
+- [Where is Aristocrat Dental Care located?](https://aristocratdentalcarebd.com/faqs): Uttara, Dhaka, Bangladesh — open Saturday through Thursday, 10:00 AM to 9:00 PM.
 
 ## Contact
 
@@ -63,7 +70,7 @@ Aristocrat Dental Care & Orthodontic Center is a bilingual (English / বাং�
 - Email: aristocratdentalcare01@gmail.com
 - Address: Aristocrat Dental Care & Orthodontic Center, Uttara, Dhaka, Bangladesh.
 - Hours: Saturday–Thursday 10:00 AM – 9:00 PM; Friday closed (emergency on call).
-- Online booking: https://aristocratdentalcarebd.com/#/appointment
+- Online booking: https://aristocratdentalcarebd.com/appointment
 - Facebook: https://www.facebook.com/aristocratdental
 - Instagram: https://www.instagram.com/aristocratdentalcare01
 - LinkedIn: https://www.linkedin.com/company/aristocrat-dental-care-orthodontic-center

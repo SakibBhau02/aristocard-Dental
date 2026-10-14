@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -11,29 +11,32 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Crosshair,
   Globe,
   GraduationCap,
   Languages,
+  Medal,
   Quote,
   Sparkles,
   Star,
   Stethoscope,
   UserRound,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
-import { useBundle } from "@/components/site/content-provider";
+import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
 import { testimonials } from "@/lib/content/shared";
-import type { Doctor } from "@/lib/types";
+import type { Doctor, Service } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
 import { Reveal } from "@/components/site/motion";
 import { DynamicIcon } from "@/components/site/icon-map";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
-import { slidesForRoute } from "@/lib/data/hero-media";
 
 /* ------------------------------------------------------------------ */
 /*  DOCTORS LIST PAGE (EN / বাংলা)                                     */
@@ -53,9 +56,32 @@ const WEEK_DAYS = [
 
 type WeekDay = (typeof WEEK_DAYS)[number];
 
+/* Degree transliteration for Bangla mode (same chain the detail hero uses). */
+function credentialBn(text: string): string {
+  return text.replace("BDS", "বিডিএস").replace("MDS", "এমডিএস").replace("PGT", "পিজিটি");
+}
+
 /* ------------------------------------------------------------------ */
-/*  Doctor card with expandable full profile (#/doctors list page)     */
+/*  Doctor card with expandable full profile (/doctors list page)     */
 /* ------------------------------------------------------------------ */
+
+/* Micro section heading shared across the dossier blocks. */
+function SectionLabel({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <h5 className="flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      {children}
+    </h5>
+  );
+}
 
 function DoctorProfileCard({
   doctor,
@@ -66,6 +92,7 @@ function DoctorProfileCard({
 }) {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
+  const { services } = useBundle();
   const bn = lang === "bn";
   const t = d.doctorsPage;
   const reduceMotion = useReducedMotion();
@@ -106,13 +133,20 @@ function DoctorProfileCard({
       ? `${dayNames.slice(0, -1).join(", ")}${bn ? " ও " : " & "}${lastDay}`
       : dayNames[0] ?? "";
 
+  /* Round 17-a dossier data (all optional — sections render only when set) */
+  const quoteText = bn && doctor.quoteBn ? doctor.quoteBn : doctor.quote;
+  const education = doctor.education ?? [];
+  const focusEntries: Service[] = (doctor.focusServices ?? [])
+    .map((slug) => services.find((s) => s.slug === slug))
+    .filter((s): s is Service => Boolean(s));
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 26 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative flex h-full flex-col items-center overflow-hidden rounded-3xl border border-blue-100/80 bg-white p-7 text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)]"
+      className="group relative flex h-full flex-col items-center overflow-hidden rounded-3xl border border-blue-100/80 bg-white p-6 text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)] sm:p-7 lg:items-stretch lg:text-left"
     >
       {/* top accent */}
       <span
@@ -120,44 +154,65 @@ function DoctorProfileCard({
         style={{ background: `linear-gradient(90deg, ${doctor.accent}, #002060)` }}
         aria-hidden="true"
       />
-      <div className="relative">
-        <Avatar className="h-24 w-24 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
-          <AvatarFallback
-            className="font-heading text-2xl font-bold"
-            style={{ background: `${doctor.accent}18`, color: doctor.accent }}
+
+      {/* identity header — centered stack (mobile) → horizontal sheet (lg) */}
+      <div className="flex w-full flex-col items-center gap-5 lg:flex-row lg:items-start lg:gap-6">
+        <div className="relative shrink-0">
+          {/* soft accent halo on hover */}
+          <span
+            className="absolute -inset-1.5 rounded-full opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-20"
+            style={{ background: doctor.accent }}
+            aria-hidden="true"
+          />
+          <Avatar className="relative h-24 w-24 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
+            {doctor.photo ? (
+              <AvatarImage
+                src={doctor.photo}
+                alt={`${doctor.name} — ${role}`}
+                className="aspect-square size-full object-cover"
+              />
+            ) : undefined}
+            <AvatarFallback
+              className="font-heading text-2xl font-bold"
+              style={{ background: `${doctor.accent}18`, color: doctor.accent }}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span
+            className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white"
+            title="BMDC Verified"
+            aria-label="BMDC verified doctor"
           >
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <span
-          className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white"
-          title="BMDC Verified"
-          aria-label="BMDC verified doctor"
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-          </svg>
-        </span>
-      </div>
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+              <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          </span>
+        </div>
 
-      <h3 className="font-heading mt-5 text-lg font-bold text-brand-navy">
-        {doctor.name}
-      </h3>
-      <p className="mt-1 text-sm font-medium text-brand-blue">{role}</p>
-      <p className="mt-2 flex flex-wrap justify-center gap-1.5">
-        {doctor.credentials.slice(0, 3).map((c) => (
-          <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
-            {c}
-          </Badge>
-        ))}
-      </p>
-
-      <div className="mt-4 flex items-center gap-1" aria-label={`Rating ${doctor.rating} out of 5`}>
-        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
-        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
-        <span className="text-xs text-slate-400">
-          • {bn ? toBnDigits(doctor.experienceYears) : doctor.experienceYears}+ {d.shared.yrs} • {localizedNumber(doctor.patientsTreated, lang)}+ {d.shared.patients}
-        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-heading text-lg font-bold text-brand-navy lg:text-xl">
+            {doctor.name}
+          </h3>
+          <p className="mt-1 text-sm font-medium text-brand-blue">{role}</p>
+          <p className="mt-2 flex flex-wrap justify-center gap-1.5 lg:justify-start">
+            {doctor.credentials.slice(0, 3).map((c) => (
+              <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
+                {c}
+              </Badge>
+            ))}
+          </p>
+          <div
+            className="mt-4 flex flex-wrap items-center justify-center gap-1 lg:justify-start"
+            aria-label={`Rating ${doctor.rating} out of 5`}
+          >
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+            <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+            <span className="text-xs text-slate-400">
+              • {bn ? toBnDigits(doctor.experienceYears) : doctor.experienceYears}+ {d.shared.yrs} • {localizedNumber(doctor.patientsTreated, lang)}+ {d.shared.patients}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="mt-auto w-full pt-5">
@@ -192,7 +247,7 @@ function DoctorProfileCard({
           </button>
         )}
 
-        {/* expandable full-profile panel */}
+        {/* expandable full-profile dossier */}
         <AnimatePresence initial={false}>
           {expanded && (
             <motion.div
@@ -211,7 +266,7 @@ function DoctorProfileCard({
               className="overflow-hidden"
             >
               <div className="profile-seam mt-4 rounded-2xl border border-blue-100 bg-ice p-5 text-left sm:p-6">
-                {/* About */}
+                {/* ── About ── */}
                 <h4 className="font-heading flex items-center gap-2.5 text-sm font-bold text-brand-navy">
                   <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand-blue ring-1 ring-blue-100">
                     <Stethoscope className="h-4.5 w-4.5" aria-hidden="true" />
@@ -228,9 +283,223 @@ function DoctorProfileCard({
                   </p>
                 )}
 
-                {/* detail rows */}
+                {/* ── Philosophy pull-quote ── */}
+                {quoteText ? (
+                  <figure className="relative mt-5 overflow-hidden rounded-xl bg-white p-4 pl-5 ring-1 ring-blue-100 sm:p-5 sm:pl-6">
+                    <span
+                      className="absolute inset-y-0 left-0 w-1.5"
+                      style={{
+                        background: `linear-gradient(180deg, ${doctor.accent}, #002060)`,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <Quote
+                      className="h-5 w-5 rotate-180"
+                      style={{ color: doctor.accent }}
+                      aria-hidden="true"
+                    />
+                    <blockquote
+                      className={cn(
+                        "mt-2 font-heading text-sm font-medium leading-relaxed text-brand-navy sm:text-[15px]",
+                        !bn && "italic"
+                      )}
+                    >
+                      {bn ? `“${quoteText}”` : `“${quoteText}”`}
+                    </blockquote>
+                    <figcaption className="mt-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {t.philosophyTitle} — {doctor.name}
+                    </figcaption>
+                  </figure>
+                ) : null}
+
+                {/* ── Clinical stats ribbon ── */}
+                <dl className="mt-5 grid grid-cols-3 overflow-hidden rounded-xl text-white shadow-md shadow-navy-900/20"
+                  style={{ background: "linear-gradient(135deg, #00123a 0%, #012c5f 55%, #1e7dff 140%)" }}
+                >
+                  <div className="flex flex-col items-center gap-1 px-2 py-4 text-center">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+                      <Award className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+                    </span>
+                    <dd className="font-heading text-lg font-bold leading-none">
+                      {yearsValue}
+                    </dd>
+                    <dt className="text-[9px] font-semibold uppercase tracking-wider text-blue-100/90">
+                      {yearsLabel}
+                    </dt>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 border-x border-white/15 px-2 py-4 text-center">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+                      <Users className="h-3.5 w-3.5 text-blue-200" aria-hidden="true" />
+                    </span>
+                    <dd className="font-heading text-lg font-bold leading-none">
+                      {localizedNumber(doctor.patientsTreated, lang)}+
+                    </dd>
+                    <dt className="text-[9px] font-semibold uppercase tracking-wider text-blue-100/90">
+                      {t.patientsTreatedLabel}
+                    </dt>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 px-2 py-4 text-center">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+                      <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" />
+                    </span>
+                    <dd className="font-heading text-lg font-bold leading-none">
+                      {ratingValue}
+                    </dd>
+                    <dt className="text-[9px] font-semibold uppercase tracking-wider text-blue-100/90">
+                      {t.ratingLabel}
+                    </dt>
+                  </div>
+                </dl>
+
+                {/* ── Education & training timeline ── */}
+                {education.length ? (
+                  <section className="mt-5 border-t border-blue-100 pt-5">
+                    <SectionLabel icon={GraduationCap}>
+                      {t.educationTitle}
+                    </SectionLabel>
+                    <ol className="mt-3.5">
+                      {education.map((ed, i) => (
+                        <li
+                          key={`${ed.degree}-${i}`}
+                          className="relative flex gap-3.5 pb-4 last:pb-0 sm:gap-4"
+                        >
+                          {/* timeline rail */}
+                          <span className="relative flex flex-col items-center" aria-hidden="true">
+                            <span
+                              className={cn(
+                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white",
+                                i === 0 && "ring-4 ring-ice"
+                              )}
+                              style={{ background: doctor.accent }}
+                            >
+                              <GraduationCap className="h-3.5 w-3.5" />
+                            </span>
+                            {i < education.length - 1 ? (
+                              <span className="mt-1 w-0.5 flex-1 rounded-full bg-blue-100" />
+                            ) : null}
+                          </span>
+                          {/* entry */}
+                          <div className="min-w-0 flex-1 pt-0.5">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="font-heading text-sm font-bold text-brand-navy">
+                                {bn ? credentialBn(ed.degree) : ed.degree}
+                              </span>
+                              {ed.year ? (
+                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-brand-blue ring-1 ring-blue-100">
+                                  {bn ? toBnDigits(ed.year) : ed.year}
+                                </span>
+                              ) : null}
+                            </div>
+                            {ed.institution ? (
+                              <p className="mt-0.5 text-xs leading-snug text-slate-500">
+                                {ed.institution}
+                              </p>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+                ) : null}
+
+                {/* ── Focus treatments → /services/<slug> ── */}
+                {focusEntries.length ? (
+                  <section className="mt-5 border-t border-blue-100 pt-5">
+                    <SectionLabel icon={Crosshair}>
+                      {t.focusTreatmentsTitle}
+                    </SectionLabel>
+                    <div className="mt-3.5 flex flex-wrap gap-2">
+                      {focusEntries.map((svc) => (
+                        <a
+                          key={svc.slug}
+                          href={`/services/${svc.slug}`}
+                          className="group/chip inline-flex min-h-11 items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-4 text-xs font-bold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-navy-900/15 hover:ring-brand-blue/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+                        >
+                          <span
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white"
+                            style={{ background: doctor.accent }}
+                            aria-hidden="true"
+                          >
+                            <DynamicIcon name={svc.icon} className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0">
+                            {bn && svc.nameBn ? svc.nameBn : svc.name}
+                          </span>
+                          <ArrowRight
+                            className="h-3.5 w-3.5 shrink-0 text-slate-300 transition-all duration-300 group-hover/chip:translate-x-0.5 group-hover/chip:text-brand-blue"
+                            aria-hidden="true"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {/* ── Weekly consultation schedule (Sat–Fri week) ── */}
+                <section className="mt-5 border-t border-blue-100 pt-5">
+                  <SectionLabel icon={CalendarDays}>
+                    {t.scheduleTitle}
+                  </SectionLabel>
+                  <div
+                    className="mt-3.5 grid grid-cols-7 gap-1"
+                    role="list"
+                    aria-label={t.scheduleTitle}
+                  >
+                    {WEEK_DAYS.map((day) => {
+                      const active = doctor.consultationDays.includes(day);
+                      return (
+                        <div
+                          key={day}
+                          role="listitem"
+                          title={`${bn ? d.days[day] : day} — ${active ? t.availableDay : t.offDay}`}
+                          className={cn(
+                            "rounded-lg px-0.5 py-2 text-center text-[10px] font-bold leading-tight sm:px-1 sm:text-[11px]",
+                            active
+                              ? "text-white shadow-md shadow-navy-900/20"
+                              : "bg-white/70 font-medium text-slate-400 ring-1 ring-blue-100/60"
+                          )}
+                          style={
+                            active
+                              ? {
+                                  background: `linear-gradient(160deg, ${doctor.accent}, #002060)`,
+                                }
+                              : undefined
+                          }
+                        >
+                          <span aria-hidden="true">{bn ? d.daysShort[day] : day.slice(0, 3)}</span>
+                          <span className="sr-only">
+                            {bn ? d.days[day] : day} — {active ? t.availableDay : t.offDay}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
+                    {daysText}
+                  </p>
+                </section>
+
+                {/* ── Specializations ── */}
+                <section className="mt-5 border-t border-blue-100 pt-5">
+                  <SectionLabel icon={Sparkles}>
+                    {t.specializationsTitle}
+                  </SectionLabel>
+                  <ul className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                    {doctor.specializations.map((s) => (
+                      <li key={s} className="flex items-start gap-2 text-[13px] leading-snug text-slate-700">
+                        <span
+                          className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: doctor.accent }}
+                          aria-hidden="true"
+                        />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                {/* ── Credentials + languages ── */}
                 <dl className="mt-5 grid gap-x-6 gap-y-5 border-t border-blue-100 pt-5 sm:grid-cols-2">
-                  {/* credentials */}
                   <div>
                     <dt className="flex items-center gap-2.5">
                       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
@@ -247,15 +516,12 @@ function DoctorProfileCard({
                           className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
                         >
                           <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
-                          {bn
-                            ? c.replace("BDS", "বিডিএস").replace("MDS", "এমডিএস").replace("PGT", "পিজিটি")
-                            : c}
+                          {bn ? credentialBn(c) : c}
                         </span>
                       ))}
                     </dd>
                   </div>
 
-                  {/* languages */}
                   <div>
                     <dt className="flex items-center gap-2.5">
                       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
@@ -269,94 +535,66 @@ function DoctorProfileCard({
                       {doctor.languages.map((l) => (
                         <span
                           key={l}
-                          className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-blue-100"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-blue-100"
                         >
+                          <Globe className="h-3.5 w-3.5 shrink-0 text-brand-blue" aria-hidden="true" />
                           {bn ? (l === "Bangla" ? "বাংলা" : l === "English" ? "ইংরেজি" : l) : l}
                         </span>
                       ))}
                     </dd>
                   </div>
-
-                  {/* specializations */}
-                  <div>
-                    <dt className="flex items-center gap-2.5">
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
-                        <Sparkles className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        {t.specializationsTitle}
-                      </span>
-                    </dt>
-                    <dd className="mt-2.5">
-                      <ul className="space-y-1.5">
-                        {doctor.specializations.map((s) => (
-                          <li key={s} className="flex items-start gap-2 text-[13px] leading-snug text-slate-700">
-                            <span
-                              className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
-                              style={{ background: doctor.accent }}
-                              aria-hidden="true"
-                            />
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    </dd>
-                  </div>
-
-                  {/* consultation days */}
-                  <div>
-                    <dt className="flex items-center gap-2.5">
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-blue ring-1 ring-blue-100">
-                        <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        {t.consultationTitle}
-                      </span>
-                    </dt>
-                    <dd className="mt-2.5 text-[13px] font-medium leading-relaxed text-slate-700">
-                      {daysText}
-                    </dd>
-                  </div>
                 </dl>
 
-                {/* quick stats */}
-                <div className="mt-5 grid grid-cols-3 gap-2 rounded-xl bg-white px-3 py-3.5 ring-1 ring-blue-100 sm:gap-3 sm:px-4">
-                  <div>
-                    <span className="flex items-center gap-1.5">
-                      <Award className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
-                      <span className="font-heading text-base font-bold text-brand-navy">
-                        {yearsValue}
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      {yearsLabel}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
-                      <span className="font-heading text-base font-bold text-brand-navy">
-                        {localizedNumber(doctor.patientsTreated, lang)}+
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      {t.patientsTreatedLabel}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="flex items-center gap-1.5">
-                      <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-hidden="true" />
-                      <span className="font-heading text-base font-bold text-brand-navy">
-                        {ratingValue}
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      {t.ratingLabel}
-                    </span>
-                  </div>
-                </div>
+                {/* ── Memberships (only when data exists) ── */}
+                {doctor.memberships?.length ? (
+                  <section className="mt-5 border-t border-blue-100 pt-5">
+                    <SectionLabel icon={BadgeCheck}>
+                      {t.membershipsTitle}
+                    </SectionLabel>
+                    <ul className="mt-3 flex flex-wrap gap-1.5">
+                      {doctor.memberships.map((m) => (
+                        <li
+                          key={m}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy ring-1 ring-blue-100"
+                        >
+                          <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                          {m}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
 
-                {/* booking CTA */}
+                {/* ── Awards & recognition (only when data exists) ── */}
+                {doctor.awards?.length ? (
+                  <section className="mt-5 border-t border-blue-100 pt-5">
+                    <SectionLabel icon={Medal}>
+                      {t.awardsTitle}
+                    </SectionLabel>
+                    <ul className="mt-3 space-y-2">
+                      {doctor.awards.map((a, i) => (
+                        <li
+                          key={`${a.title}-${i}`}
+                          className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5 ring-1 ring-blue-100"
+                        >
+                          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                            <Medal className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0 flex-1 text-[13px] font-semibold text-brand-navy">
+                            {a.title}
+                          </span>
+                          {a.year ? (
+                            <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-100">
+                              {bn ? toBnDigits(a.year) : a.year}
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                {/* ── Booking CTA ── */}
                 <div className="mt-5 border-t border-blue-100 pt-5">
                   <button
                     type="button"
@@ -379,31 +617,60 @@ function DoctorProfileCard({
 export function DoctorsPage() {
   const { lang, d } = useLang();
   const t = d.doctorsPage;
-  const { doctors, settings } = useBundle();
+  const { doctors, services, settings } = useBundle();
+
+  /* Physician JSON-LD — enriched with the dossier fields (education
+     alumniOf, spoken languages, focus treatments as availableService).
+     Memoized so usePageMeta's effect doesn't re-run every render.     */
+  const doctorsJsonLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Doctors at Aristocrat Dental Care & Orthodontic Center",
+    itemListElement: doctors.map((doc, i) => {
+      const institutions = Array.from(
+        new Set((doc.education ?? []).map((e) => e.institution).filter(Boolean))
+      );
+      const focusNames = (doc.focusServices ?? [])
+        .map((slug) => services.find((s) => s.slug === slug)?.name)
+        .filter(Boolean);
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Physician",
+          name: doc.name,
+          jobTitle: doc.role,
+          medicalSpecialty: doc.department,
+          url: `https://aristocratdentalcarebd.com/doctors/${doc.slug}`,
+          worksFor: { "@type": "Dentist", name: settings.name },
+          knowsLanguage: doc.languages,
+          ...(institutions.length
+            ? {
+                alumniOf: institutions.map((name) => ({
+                  "@type": "CollegeOrUniversity",
+                  name,
+                })),
+              }
+            : {}),
+          ...(focusNames.length
+            ? {
+                availableService: focusNames.map((name) => ({
+                  "@type": "MedicalProcedure",
+                  name,
+                })),
+              }
+            : {}),
+        },
+      };
+    }),
+  }), [doctors, services, settings.name]);
 
   usePageMeta({
     title: "Our Doctors — Specialist Dentists in Uttara, Dhaka",
     description:
       "Meet the verified medical board of Aristocrat Dental Care: Dr. Shazia Khanam, Dr. Abdur Rahim, Dr. Jumla Binte Jafor & Dr. Israt Jahan Rimi — BDS/MDS qualified dental specialists.",
+    jsonLd: doctorsJsonLd,
   });
-
-  const doctorsJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Doctors at Aristocrat Dental Care & Orthodontic Center",
-    itemListElement: doctors.map((doc, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      item: {
-        "@type": "Physician",
-        name: doc.name,
-        jobTitle: doc.role,
-        medicalSpecialty: doc.department,
-        url: `https://aristocratdentalcarebd.com/#/doctors/${doc.slug}`,
-        worksFor: { "@type": "Dentist", name: settings.name },
-      },
-    })),
-  };
 
   return (
     <>
@@ -447,7 +714,6 @@ export function DoctorsPage() {
         title={t.ctaTitle}
         description={t.ctaDescription}
       />
-      {doctorsJsonLd ? null : null}
     </>
   );
 }
@@ -461,7 +727,9 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
   const { lang, d } = useLang();
   const bn = lang === "bn";
   const t = d.doctorDetail;
-  const { doctors, settings } = useBundle();
+  const tp = d.doctorsPage;
+  const { doctors, services, settings } = useBundle();
+  const heroSlides = useRouteHeroSlides("doctors");
   const doctor = doctors.find((doc) => doc.slug === slug);
 
   usePageMeta({
@@ -478,12 +746,35 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
           name: doctor.name,
           jobTitle: doctor.role,
           medicalSpecialty: doctor.department,
-          url: `https://aristocratdentalcarebd.com/#/doctors/${doctor.slug}`,
+          url: `https://aristocratdentalcarebd.com/doctors/${doctor.slug}`,
           worksFor: {
             "@type": "Dentist",
             name: settings.name,
             telephone: settings.phoneRaw,
           },
+          knowsLanguage: doctor.languages,
+          ...((doctor.education ?? []).some((e) => e.institution)
+            ? {
+                alumniOf: Array.from(
+                  new Set(
+                    (doctor.education ?? [])
+                      .map((e) => e.institution)
+                      .filter(Boolean)
+                  )
+                ).map((name) => ({
+                  "@type": "CollegeOrUniversity",
+                  name,
+                })),
+              }
+            : {}),
+          ...((doctor.focusServices ?? []).length
+            ? {
+                availableService: (doctor.focusServices ?? [])
+                  .map((slug) => services.find((s) => s.slug === slug)?.name)
+                  .filter(Boolean)
+                  .map((name) => ({ "@type": "MedicalProcedure", name })),
+              }
+            : {}),
           aggregateRating: {
             "@type": "AggregateRating",
             ratingValue: doctor.rating,
@@ -515,17 +806,24 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
     ? doctor.languages.map((l) => (l === "Bangla" ? "বাংলা" : l === "English" ? "ইংরেজি" : l)).join(", ")
     : doctor.languages.join(", ");
 
+  /* Round 17-a dossier data */
+  const quoteText = bn && doctor.quoteBn ? doctor.quoteBn : doctor.quote;
+  const education = doctor.education ?? [];
+  const focusEntries: Service[] = (doctor.focusServices ?? [])
+    .map((svcSlug) => services.find((s) => s.slug === svcSlug))
+    .filter((s): s is Service => Boolean(s));
+
   return (
     <>
       {/* HERO — centered over a sliding team backdrop */}
       <section className="relative isolate overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={slidesForRoute("doctors")} overlay="deep" interval={8000} />
+        <HeroBackdrop slides={heroSlides} overlay="deep" interval={8000} />
         <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>
                 <a
-                  href="#/"
+                  href="/"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/");
@@ -538,7 +836,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
               <li className="text-blue-300/50" aria-hidden="true">/</li>
               <li>
                 <a
-                  href="#/doctors"
+                  href="/doctors"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/doctors");
@@ -561,17 +859,26 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
               className="relative mx-auto w-full max-w-[200px]"
             >
               <div
-                className="flex aspect-square items-center justify-center rounded-[2rem] ring-8 ring-white/10 backdrop-blur-sm"
+                className="flex aspect-square items-center justify-center overflow-hidden rounded-[2rem] ring-8 ring-white/10 backdrop-blur-sm"
                 style={{
                   background: `linear-gradient(140deg, ${doctor.accent}55, rgba(255,255,255,0.08))`,
                 }}
               >
-                <span
-                  className="font-heading text-6xl font-bold"
-                  style={{ color: "rgba(255,255,255,0.92)" }}
-                >
-                  {initials}
-                </span>
+                {doctor.photo ? (
+                  /* CMS photo: local /images or /uploads path, or any remote URL */
+                  <img
+                    src={doctor.photo}
+                    alt={`${doctor.name} — ${role}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="font-heading text-6xl font-bold"
+                    style={{ color: "rgba(255,255,255,0.92)" }}
+                  >
+                    {initials}
+                  </span>
+                )}
               </div>
               <span className="absolute -bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg">
                 <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -673,7 +980,124 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                 <p className="mt-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
                   {doctor.bio}
                 </p>
+
+                {/* philosophy pull-quote (only when set) */}
+                {quoteText ? (
+                  <figure className="relative mt-6 overflow-hidden rounded-2xl bg-ice p-5 pl-6 ring-1 ring-blue-100 sm:p-6 sm:pl-7">
+                    <span
+                      className="absolute inset-y-0 left-0 w-1.5"
+                      style={{
+                        background: `linear-gradient(180deg, ${doctor.accent}, #002060)`,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <Quote
+                      className="h-5 w-5 rotate-180"
+                      style={{ color: doctor.accent }}
+                      aria-hidden="true"
+                    />
+                    <blockquote
+                      className={cn(
+                        "mt-2 font-heading text-[15px] font-medium leading-relaxed text-brand-navy sm:text-base",
+                        !bn && "italic"
+                      )}
+                    >
+                      {`“${quoteText}”`}
+                    </blockquote>
+                    <figcaption className="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {tp.philosophyTitle} — {doctor.name}
+                    </figcaption>
+                  </figure>
+                ) : null}
               </Reveal>
+
+              {/* education & training timeline (only when set) */}
+              {education.length ? (
+                <Reveal className="mt-10">
+                  <h3 className="font-heading flex items-center gap-3 text-lg font-bold text-brand-navy">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+                      <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    {tp.educationTitle}
+                  </h3>
+                  <ol className="mt-5">
+                    {education.map((ed, i) => (
+                      <li
+                        key={`${ed.degree}-${i}`}
+                        className="relative flex gap-4 pb-5 last:pb-0"
+                      >
+                        <span className="relative flex flex-col items-center" aria-hidden="true">
+                          <span
+                            className={cn(
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white",
+                              i === 0 && "ring-4 ring-ice"
+                            )}
+                            style={{ background: doctor.accent }}
+                          >
+                            <GraduationCap className="h-4 w-4" />
+                          </span>
+                          {i < education.length - 1 ? (
+                            <span className="mt-1 w-0.5 flex-1 rounded-full bg-blue-100" />
+                          ) : null}
+                        </span>
+                        <div className="min-w-0 flex-1 pt-1">
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                            <span className="font-heading text-[15px] font-bold text-brand-navy">
+                              {bn ? credentialBn(ed.degree) : ed.degree}
+                            </span>
+                            {ed.year ? (
+                              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-brand-blue ring-1 ring-blue-100">
+                                {bn ? toBnDigits(ed.year) : ed.year}
+                              </span>
+                            ) : null}
+                          </div>
+                          {ed.institution ? (
+                            <p className="mt-0.5 text-[13px] leading-snug text-slate-500">
+                              {ed.institution}
+                            </p>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </Reveal>
+              ) : null}
+
+              {/* focus treatments → /services/<slug> (only when set) */}
+              {focusEntries.length ? (
+                <Reveal className="mt-10">
+                  <h3 className="font-heading flex items-center gap-3 text-lg font-bold text-brand-navy">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+                      <Crosshair className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    {tp.focusTreatmentsTitle}
+                  </h3>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {focusEntries.map((svc) => (
+                      <a
+                        key={svc.slug}
+                        href={`/services/${svc.slug}`}
+                        className="group/chip inline-flex min-h-11 items-center gap-2 rounded-full border border-blue-100/80 bg-white py-1.5 pl-1.5 pr-4 text-xs font-bold text-brand-navy transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-navy-900/15 hover:ring-brand-blue/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+                      >
+                        <span
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white"
+                          style={{ background: doctor.accent }}
+                          aria-hidden="true"
+                        >
+                          <DynamicIcon name={svc.icon} className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          {bn && svc.nameBn ? svc.nameBn : svc.name}
+                        </span>
+                        <ArrowRight
+                          className="h-3.5 w-3.5 shrink-0 text-slate-300 transition-all duration-300 group-hover/chip:translate-x-0.5 group-hover/chip:text-brand-blue"
+                          aria-hidden="true"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </Reveal>
+              ) : null}
 
               {/* specializations */}
               <Reveal className="mt-10">
@@ -812,7 +1236,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                         {t.otherSpecialists}
                       </h3>
                       <a
-                        href="#/doctors"
+                        href="/doctors"
                         onClick={(e) => {
                           e.preventDefault();
                           navigate("/doctors");
@@ -827,7 +1251,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
                       {others.map((doc) => (
                         <li key={doc.slug}>
                           <a
-                            href={`#/doctors/${doc.slug}`}
+                            href={`/doctors/${doc.slug}`}
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/doctors/${doc.slug}`);

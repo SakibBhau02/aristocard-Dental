@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { notifyNewsletterSignup } from "@/lib/integrations";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/newsletter — subscribe an email                          */
@@ -55,6 +56,9 @@ export async function POST(req: NextRequest) {
     await db.newsletterSubscriber.create({
       data: { email: normalized },
     });
+
+    /* First-party analytics event (no Telegram — keeps alerts signal-only). */
+    await notifyNewsletterSignup(req);
 
     return NextResponse.json(
       {

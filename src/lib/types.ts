@@ -36,6 +36,19 @@ export type Service = {
   featured?: boolean;
 };
 
+/* Education & training timeline entry (doctor dossier). */
+export type DoctorEducation = {
+  degree: string;
+  institution?: string;
+  year?: string;
+};
+
+/* Award / recognition entry (doctor dossier). */
+export type DoctorAward = {
+  title: string;
+  year?: string;
+};
+
 export type Doctor = {
   slug: string;
   id: number;
@@ -54,6 +67,19 @@ export type Doctor = {
   consultationDays: string[];
   verified: true;
   accent: string;
+  /* Portrait photo (round avatars / profile hero) — local path
+     (/images/..., /uploads/...) or any URL; initials fallback when unset. */
+  photo?: string;
+  /* Round 17-a — enriched profile dossier (all optional:
+     older rows simply skip these sections). */
+  education?: DoctorEducation[];
+  memberships?: string[];
+  awards?: DoctorAward[];
+  quote?: string;
+  quoteBn?: string;
+  /* Service slugs this doctor focuses on — rendered as links to
+     /services/<slug>. Must exist in services.ts. */
+  focusServices?: string[];
 };
 
 export type Testimonial = {

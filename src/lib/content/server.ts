@@ -12,6 +12,7 @@ import {
   blogRowToPost,
   caseRowToSmileCase,
   buildHomeHeroSlides,
+  buildPageHeroSlides,
   defaultHomeContent,
   defaultAboutContent,
   normalizeAboutContent,
@@ -21,6 +22,7 @@ import {
   type AboutContent,
   type SiteSettings,
 } from "@/lib/content/shared";
+import type { HeroSlide } from "@/lib/data/hero-media";
 import { services as staticServices } from "@/lib/data/services";
 
 /* ------------------------------------------------------------------ */
@@ -61,7 +63,7 @@ export async function getContentBundle(): Promise<ContentBundle> {
         db.faq.findMany({ where: { active: true }, orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] }),
         db.smileCase.findMany({ orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] }),
         db.serviceContent.findMany(),
-        db.heroSlide.findMany({ where: { scope: "home" }, orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] }),
+        db.heroSlide.findMany({ orderBy: [{ scope: "asc" }, { sort: "asc" }, { updatedAt: "asc" }] }),
         db.pageBlock.findMany(),
       ]);
 
@@ -88,6 +90,25 @@ export async function getContentBundle(): Promise<ContentBundle> {
       fallback.settings
     );
 
+    const homeHeroRows = heroRows.filter((r) => r.scope === "home");
+    /* Per-page backdrops: group active non-home rows by scope; scopes with
+       at least one usable slide land in the bundle — otherwise the page
+       keeps its curated static set. */
+    const pageHeroSlides: Record<string, HeroSlide[]> = {};
+    const rowsByScope = new Map<string, ReturnType<typeof mapHeroSlide>[]>();
+    for (const r of heroRows) {
+      if (r.scope === "home") continue;
+      const mapped = mapHeroSlide(r as unknown as Record<string, unknown>);
+      if (!mapped.active) continue;
+      const list = rowsByScope.get(r.scope) ?? [];
+      list.push(mapped);
+      rowsByScope.set(r.scope, list);
+    }
+    for (const [scope, rows] of rowsByScope) {
+      const slides = buildPageHeroSlides(rows);
+      if (slides.length > 0) pageHeroSlides[scope] = slides;
+    }
+
     bundle = {
       doctors: doctorRows.length
         ? doctorRows.map((r) => doctorRowToDoctor(mapDoctor(r as unknown as Record<string, unknown>)))
@@ -105,12 +126,13 @@ export async function getContentBundle(): Promise<ContentBundle> {
         ? caseRows.map((r) => caseRowToSmileCase(mapCase(r as unknown as Record<string, unknown>)))
         : fallback.cases,
       services,
-      heroSlides: heroRows.length
+      heroSlides: homeHeroRows.length
         ? buildHomeHeroSlides(
-            heroRows.map((r) => mapHeroSlide(r as unknown as Record<string, unknown>)),
+            homeHeroRows.map((r) => mapHeroSlide(r as unknown as Record<string, unknown>)),
             settings.heroVideoUrls ?? []
           )
         : fallback.heroSlides,
+      pageHeroSlides,
       home,
       about,
       settings,

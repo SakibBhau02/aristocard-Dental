@@ -1,0 +1,1156 @@
+     1→"use client";
+     2→
+     3→/* ------------------------------------------------------------------ */
+     4→/*  ADMIN — modular staff shell (#/admin)                               */
+     5→/*  • Login gate: username + password → POST /api/admin/login           */
+     6→/*    (httpOnly session cookie, 8h); session identity restored via      */
+     7→/*    GET /api/admin/session ({ user, expiresAt }).                     */
+     8→/*  • Professional sidebar shell (desktop lg+) with grouped modules:    */
+     9→/*    Dashboard · Bookings · Engagement · Content · Configuration ·     */
+    10→/*    Staff. Navigation is role-aware (settings/staff hidden for        */
+    11→/*    non-Owners); the server enforces RBAC centrally regardless.       */
+    12→/*  • Sidebar footer: signed-in staff chip (name, @username, role       */
+    13→/*    badge) + live session countdown with a "sign in again" warning.   */
+    14→/*  • Mobile: top bar + hamburger → Sheet drawer (shared chrome).       */
+    15→/*  • Panels live in ./panels/* — engagement modules, CMS editors,      */
+    16→/*    the activity audit log and the staff-accounts manager.            */
+    17→/* ------------------------------------------------------------------ */
+    18→
+    19→import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+    20→import { AnimatePresence, motion } from "framer-motion";
+    21→import {
+    22→  Building2,
+    23→  CalendarDays,
+    24→  CircleHelp,
+    25→  Clock,
+    26→  History,
+    27→  Home,
+    28→  Inbox,
+    29→  LayoutDashboard,
+    30→  Loader2,
+    31→  Lock,
+    32→  LogOut,
+    33→  Mails,
+    34→  Menu,
+    35→  MonitorPlay,
+    36→  Newspaper,
+    37→  Settings,
+    38→  ShieldCheck,
+    39→  Smile,
+    40→  Sparkles,
+    41→  Star,
+    42→  Stethoscope,
+    43→  Timer,
+    44→  UserCog,
+    45→  Users,
+    46→} from "lucide-react";
+    47→import { usePageMeta } from "@/lib/router";
+    48→import { cn } from "@/lib/utils";
+    49→import { Button } from "@/components/ui/button";
+    50→import {
+    51→  Sheet,
+    52→  SheetContent,
+    53→  SheetDescription,
+    54→  SheetHeader,
+    55→  SheetTitle,
+    56→} from "@/components/ui/sheet";
+    57→import {
+    58→  RoleBadge,
+    59→  initialsOf,
+    60→  type AdminRole,
+    61→  type AdminSessionUser,
+    62→  type AdminView,
+    63→} from "./admin-shared";
+    64→import { OverviewPanel } from "./panels/overview-panel";
+    65→import { AppointmentsPanel } from "./panels/appointments-panel";
+    66→import { ReviewsPanel } from "./panels/reviews-panel";
+    67→import { MessagesPanel } from "./panels/messages-panel";
+    68→import { SubscribersPanel } from "./panels/subscribers-panel";
+    69→import { PatientsPanel } from "./panels/patients-panel";
+    70→import { DoctorsPanel } from "./panels/doctors-panel";
+    71→import { BlogPanel } from "./panels/blog-panel";
+    72→import { FaqsPanel } from "./panels/faqs-panel";
+    73→import { CasesPanel } from "./panels/cases-panel";
+    74→import { ServicesPanel } from "./panels/services-panel";
+    75→import { HomepagePanel } from "./panels/homepage-panel";
+    76→import { AboutPanel } from "./panels/about-panel";
+    77→import { HeroPanel } from "./panels/hero-panel";
+    78→import { SettingsPanel } from "./panels/settings-panel";
+    79→import { ActivityPanel } from "./panels/activity-panel";
+    80→import { UsersPanel } from "./panels/users-panel";
+    81→
+    82→const LEGACY_SESSION_KEY = "adc-admin-code"; /* pre-session era; cleared on boot */
+    83→
+    84→/* ------------------------------------------------------------------ */
+    85→/*  Sidebar navigation model                                            */
+    86→/* ------------------------------------------------------------------ */
+    87→
+    88→type NavEntry = {
+    89→  id: AdminView;
+    90→  label: string;
+    91→  title: string;
+    92→  description: string;
+    93→  icon: typeof LayoutDashboard;
+    94→  badge?: "appointments" | "reviews" | "messages";
+    95→};
+    96→
+    97→type BadgeState = {
+    98→  appointments: number | null;
+    99→  reviews: number | null;
+   100→  messages: number | null;
+   101→};
+   102→
+   103→const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
+   104→  {
+   105→    label: "Dashboard",
+   106→    items: [
+   107→      {
+   108→        id: "overview",
+   109→        label: "Overview",
+   110→        title: "Clinic Overview",
+   111→        description: "Cross-module KPIs, the 14-day booking trend and quick jumps into every module.",
+   112→        icon: LayoutDashboard,
+   113→      },
+   114→      {
+   115→        id: "activity",
+   116→        label: "Activity Log",
+   117→        title: "Activity Log",
+   118→        description: "A full audit trail of staff sign-ins, edits, deletions and uploads.",
+   119→        icon: History,
+   120→      },
+   121→    ],
+   122→  },
+   123→  {
+   124→    label: "Bookings",
+   125→    items: [
+   126→      {
+   127→        id: "appointments",
+   128→        label: "Appointments",
+   129→        title: "Appointment Dashboard",
+   130→        description: "Bookings & schedules — confirm, complete or cancel patient visits.",
+   131→        icon: CalendarDays,
+   132→        badge: "appointments",
+   133→      },
+   134→    ],
+   135→  },
+   136→  {
+   137→    label: "Engagement",
+   138→    items: [
+   139→      {
+   140→        id: "reviews",
+   141→        label: "Reviews",
+   142→        title: "Review Moderation",
+   143→        description: "Approve, reject or delete patient reviews before they appear on the site.",
+   144→        icon: Star,
+   145→        badge: "reviews",
+   146→      },
+   147→      {
+   148→        id: "messages",
+   149→        label: "Messages",
+   150→        title: "Message Inbox",
+   151→        description: "Contact-form messages with reply links and handled/new triage.",
+   152→        icon: Inbox,
+   153→        badge: "messages",
+   154→      },
+   155→      {
+   156→        id: "subscribers",
+   157→        label: "Subscribers",
+   158→        title: "Newsletter Subscribers",
+   159→        description: "The clinic newsletter mailing list with CSV export.",
+   160→        icon: Mails,
+   161→      },
+   162→      {
+   163→        id: "patients",
+   164→        label: "Patients",
+   165→        title: "Patient Accounts",
+   166→        description: "Portal accounts with expandable booking drilldowns.",
+   167→        icon: Users,
+   168→      },
+   169→    ],
+   170→  },
+   171→  {
+   172→    label: "Content",
+   173→    items: [
+   174→      {
+   175→        id: "doctors",
+   176→        label: "Doctors",
+   177→        title: "Doctors",
+   178→        description: "Manage the doctor directory — profiles, credentials, photos and order.",
+   179→        icon: Stethoscope,
+   180→      },
+   181→      {
+   182→        id: "blog",
+   183→        label: "Blog Posts",
+   184→        title: "Blog Posts",
+   185→        description: "Write, publish and update dental health articles.",
+   186→        icon: Newspaper,
+   187→      },
+   188→      {
+   189→        id: "faqs",
+   190→        label: "FAQs",
+   191→        title: "FAQs",
+   192→        description: "Frequently asked questions shown across the website.",
+   193→        icon: CircleHelp,
+   194→      },
+   195→      {
+   196→        id: "cases",
+   197→        label: "Smile Cases",
+   198→        title: "Smile Cases",
+   199→        description: "Before/after smile transformation case gallery.",
+   200→        icon: Smile,
+   201→      },
+   202→      {
+   203→        id: "services",
+   204→        label: "Services",
+   205→        title: "Services",
+   206→        description: "Treatment catalogue — names, imagery and per-service details.",
+   207→        icon: Sparkles,
+   208→      },
+   209→      {
+   210→        id: "homepage",
+   211→        label: "Homepage",
+   212→        title: "Homepage Content",
+   213→        description: "Hero copy, highlights and the homepage section blocks.",
+   214→        icon: Home,
+   215→      },
+   216→      {
+   217→        id: "about",
+   218→        label: "About Page",
+   219→        title: "About Page Content",
+   220→        description: "Story, timeline and facility blocks for the about page.",
+   221→        icon: Building2,
+   222→      },
+   223→      {
+   224→        id: "hero",
+   225→        label: "Hero & Videos",
+   226→        title: "Hero Slides & Videos",
+   227→        description: "Background slides and YouTube videos behind page heroes.",
+   228→        icon: MonitorPlay,
+   229→      },
+   230→    ],
+   231→  },
+   232→  {
+   233→    label: "Configuration",
+   234→    items: [
+   235→      {
+   236→        id: "settings",
+   237→        label: "Site Settings",
+   238→        title: "Site Settings",
+   239→        description: "Clinic contact details, socials and global configuration.",
+   240→        icon: Settings,
+   241→      },
+   242→    ],
+   243→  },
+   244→  {
+   245→    label: "Staff",
+   246→    items: [
+   247→      {
+   248→        id: "users",
+   249→        label: "Staff Accounts",
+   250→        title: "Staff Accounts",
+   251→        description: "Who can sign in to the admin panel, and what each role may do.",
+   252→        icon: UserCog,
+   253→      },
+   254→    ],
+   255→  },
+   256→];
+   257→
+   258→/** The nav is role-aware client-side (polish); the server enforces the
+   259→    same rules on every request regardless of what the UI shows. */
+   260→function visibleNavGroups(role: AdminRole) {
+   261→  if (role === "OWNER") return NAV_GROUPS;
+   262→  return NAV_GROUPS.filter((group) => group.label !== "Staff")
+   263→    .map((group) => ({ ...group, items: group.items.filter((i) => i.id !== "settings") }))
+   264→    .filter((group) => group.items.length > 0);
+   265→}
+   266→
+   267→/* ------------------------------------------------------------------ */
+   268→/*  Session helpers                                                     */
+   269→/* ------------------------------------------------------------------ */
+   270→
+   271→/** Session payload captured from login/session responses. */
+   272→type SessionInfo = {
+   273→  user: AdminSessionUser;
+   274→  expiresAt: number | null;
+   275→};
+   276→
+   277→/** Live clock re-renders once a minute for the session countdown. */
+   278→function useMinuteNow(): number {
+   279→  const [now, setNow] = useState(() => Date.now());
+   280→  useEffect(() => {
+   281→    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+   282→    return () => window.clearInterval(id);
+   283→  }, []);
+   284→  return now;
+   285→}
+   286→
+   287→/** "7h 42m" / "42m" / "less than a minute". */
+   288→function formatSessionRemaining(ms: number): string {
+   289→  const totalMin = Math.max(0, Math.round(ms / 60_000));
+   290→  const h = Math.floor(totalMin / 60);
+   291→  const m = totalMin % 60;
+   292→  if (h > 0) return `${h}h ${m}m`;
+   293→  if (totalMin > 0) return `${m}m`;
+   294→  return "less than a minute";
+   295→}
+   296→
+   297→/* ------------------------------------------------------------------ */
+   298→/*  AdminPage — session gate + shell                                    */
+   299→/* ------------------------------------------------------------------ */
+   300→
+   301→export function AdminPage() {
+   302→  usePageMeta({
+   303→    title: "Admin — Staff Dashboard",
+   304→    description: "Staff-only clinic management dashboard.",
+   305→  });
+   306→
+   307→  /* noindex for this back-office page */
+   308→  useEffect(() => {
+   309→    const meta = document.createElement("meta");
+   310→    meta.name = "robots";
+   311→    meta.content = "noindex, nofollow";
+   312→    meta.dataset.adminNoindex = "true";
+   313→    document.head.appendChild(meta);
+   314→    return () => {
+   315→      meta.remove();
+   316→    };
+   317→  }, []);
+   318→
+   319→  const [authState, setAuthState] = useState<"checking" | "locked" | "open">(
+   320→    "checking"
+   321→  );
+   322→  const [sessionUser, setSessionUser] = useState<AdminSessionUser | null>(null);
+   323→  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
+   324→  const [gateNotice, setGateNotice] = useState<string | null>(null);
+   325→
+   326→  /* Restore an existing cookie session (and clear any legacy
+   327→     pre-session-era key). The identity travels in the httpOnly cookie;
+   328→     the password is never stored client-side. */
+   329→  useEffect(() => {
+   330→    try {
+   331→      sessionStorage.removeItem(LEGACY_SESSION_KEY);
+   332→    } catch {
+   333→      /* ignore */
+   334→    }
+   335→    let cancelled = false;
+   336→    (async () => {
+   337→      try {
+   338→        const res = await fetch("/api/admin/session");
+   339→        const data = (await res.json().catch(() => null)) as
+   340→          | { authenticated?: boolean; user?: AdminSessionUser; expiresAt?: number | null }
+   341→          | null;
+   342→        if (!cancelled && res.ok && data?.authenticated && data.user) {
+   343→          setSessionUser(data.user);
+   344→          setSessionExpiresAt(typeof data.expiresAt === "number" ? data.expiresAt : null);
+   345→          setAuthState("open");
+   346→          return;
+   347→        }
+   348→        if (!cancelled) setAuthState("locked");
+   349→      } catch {
+   350→        if (!cancelled) setAuthState("locked");
+   351→      }
+   352→    })();
+   353→    return () => {
+   354→      cancelled = true;
+   355→    };
+   356→  }, []);
+   357→
+   358→  const handleUnlock = useCallback((session: SessionInfo) => {
+   359→    setSessionUser(session.user);
+   360→    setSessionExpiresAt(session.expiresAt);
+   361→    setGateNotice(null);
+   362→    setAuthState("open");
+   363→  }, []);
+   364→
+   365→  const handleLogout = useCallback(async () => {
+   366→    try {
+   367→      await fetch("/api/admin/logout", { method: "POST" });
+   368→    } catch {
+   369→      /* clearing the local state matters more than the network call */
+   370→    }
+   371→    setSessionUser(null);
+   372→    setSessionExpiresAt(null);
+   373→    setGateNotice(null);
+   374→    setAuthState("locked");
+   375→  }, []);
+   376→
+   377→  /* Mid-session expiry: back to the gate with a notice (no dead panel). */
+   378→  const handleSessionExpired = useCallback(() => {
+   379→    setSessionUser(null);
+   380→    setSessionExpiresAt(null);
+   381→    setGateNotice("Session expired — sign in again to continue.");
+   382→    setAuthState("locked");
+   383→  }, []);
+   384→
+   385→  if (authState === "checking") return <AdminBoot />;
+   386→
+   387→  return authState === "open" && sessionUser ? (
+   388→    <AdminShell
+   389→      user={sessionUser}
+   390→      sessionExpiresAt={sessionExpiresAt}
+   391→      onLogout={handleLogout}
+   392→      onSessionExpired={handleSessionExpired}
+   393→    />
+   394→  ) : (
+   395→    <AdminGate onUnlock={handleUnlock} notice={gateNotice} />
+   396→  );
+   397→}
+   398→
+   399→/* ------------------------------------------------------------------ */
+   400→/*  Boot state while restoring the cookie session                       */
+   401→/* ------------------------------------------------------------------ */
+   402→
+   403→function AdminBoot() {
+   404→  return (
+   405→    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] px-4 py-24">
+   406→      <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
+   407→      <motion.div
+   408→        initial={{ opacity: 0, y: 16 }}
+   409→        animate={{ opacity: 1, y: 0 }}
+   410→        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+   411→        className="relative flex flex-col items-center gap-4"
+   412→      >
+   413→        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/15">
+   414→          <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+   415→        </span>
+   416→        <p className="text-sm font-medium text-blue-100/80">Checking your session…</p>
+   417→      </motion.div>
+   418→    </div>
+   419→  );
+   420→}
+   421→
+   422→/* ------------------------------------------------------------------ */
+   423→/*  Login gate — username + password (demo hint below the form)         */
+   424→/* ------------------------------------------------------------------ */
+   425→
+   426→const DEMO_ACCOUNTS: { username: string; password: string; role: AdminRole }[] = [
+   427→  { username: "admin", password: "Aristocrat#2026", role: "OWNER" },
+   428→  { username: "editor", password: "Editor#2026", role: "EDITOR" },
+   429→  { username: "frontdesk", password: "Frontdesk#2026", role: "VIEWER" },
+   430→];
+   431→
+   432→function AdminGate({
+   433→  onUnlock,
+   434→  notice,
+   435→}: {
+   436→  onUnlock: (session: SessionInfo) => void;
+   437→  notice?: string | null;
+   438→}) {
+   439→  const [username, setUsername] = useState("");
+   440→  const [password, setPassword] = useState("");
+   441→  const [error, setError] = useState<string | null>(null);
+   442→  const [checking, setChecking] = useState(false);
+   443→  const usernameRef = useRef<HTMLInputElement | null>(null);
+   444→
+   445→  /* focus management: land on the username field on every gate mount */
+   446→  useEffect(() => {
+   447→    usernameRef.current?.focus();
+   448→  }, []);
+   449→
+   450→  async function handleSubmit(e: React.FormEvent) {
+   451→    e.preventDefault();
+   452→    if (checking) return;
+   453→    setError(null);
+   454→    if (!username.trim() || !password) {
+   455→      setError("Enter both your username and password.");
+   456→      return;
+   457→    }
+   458→    setChecking(true);
+   459→    try {
+   460→      /* The password travels once, in this request body — the server
+   461→         responds with an httpOnly session cookie that does the rest. */
+   462→      const res = await fetch("/api/admin/login", {
+   463→        method: "POST",
+   464→        headers: { "Content-Type": "application/json" },
+   465→        body: JSON.stringify({ username: username.trim(), password }),
+   466→      });
+   467→      const data = (await res.json().catch(() => null)) as
+   468→        | { user?: AdminSessionUser; expiresAt?: number | null; error?: string }
+   469→        | null;
+   470→      if (res.status === 401) {
+   471→        setError(data?.error ?? "Incorrect username or password.");
+   472→        return;
+   473→      }
+   474→      if (res.status === 429) {
+   475→        setError(data?.error ?? "Too many attempts. Please wait a few minutes and try again.");
+   476→        return;
+   477→      }
+   478→      if (!res.ok || !data?.user) {
+   479→        setError(data?.error ?? "The sign-in request failed. Please try again.");
+   480→        return;
+   481→      }
+   482→      onUnlock({
+   483→        user: data.user,
+   484→        expiresAt: typeof data.expiresAt === "number" ? data.expiresAt : null,
+   485→      });
+   486→    } catch {
+   487→      setError("Could not reach the server. Check your connection and try again.");
+   488→    } finally {
+   489→      setChecking(false);
+   490→    }
+   491→  }
+   492→
+   493→  function fillDemo(account: (typeof DEMO_ACCOUNTS)[number]) {
+   494→    setUsername(account.username);
+   495→    setPassword(account.password);
+   496→    setError(null);
+   497→    usernameRef.current?.focus();
+   498→  }
+   499→
+   500→  return (
+   501→    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] px-4 py-20">
+   502→      <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
+   503→      <div className="pointer-events-none absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-blue/30 blur-3xl" aria-hidden="true" />
+   504→      <div className="pointer-events-none absolute -bottom-40 right-[12%] h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" aria-hidden="true" />
+   505→
+   506→      <motion.div
+   507→        initial={{ opacity: 0, y: 24 }}
+   508→        animate={{ opacity: 1, y: 0 }}
+   509→        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   510→        className="relative w-full max-w-md"
+   511→      >
+   512→        <div className="mb-7 text-center">
+   513→          <p className="font-heading text-xl font-bold tracking-wide text-white">
+   514→            Aristocrat Dental Care
+   515→          </p>
+   516→          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/90">
+   517→            Admin Panel
+   518→          </p>
+   519→        </div>
+   520→
+   521→        {notice ? (
+   522→          <p
+   523→            role="alert"
+   524→            className="mb-4 flex items-center gap-2 rounded-2xl bg-amber-400/10 px-4 py-3 text-xs font-semibold text-amber-200 ring-1 ring-amber-300/30"
+   525→          >
+   526→            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+   527→            {notice}
+   528→          </p>
+   529→        ) : null}
+   530→
+   531→        <form
+   532→          onSubmit={handleSubmit}
+   533→          className="card-shine rounded-[2rem] border border-white/40 bg-white p-8 shadow-[0_32px_80px_-24px_rgba(0,10,40,0.7)] sm:p-10"
+   534→        >
+   535→          <div className="flex items-center justify-center">
+   536→            <span className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-navy to-brand-blue text-white shadow-lg shadow-navy-900/30 ring-1 ring-blue-900/20">
+   537→              <Lock className="h-7 w-7" aria-hidden="true" />
+   538→            </span>
+   539→          </div>
+   540→          <h1 className="font-heading mt-6 text-center text-2xl font-bold text-brand-navy">
+   541→            Staff Access Only
+   542→          </h1>
+   543→          <p className="mt-2 text-center text-sm leading-relaxed text-slate-500">
+   544→            Sign in with your clinic account to manage appointments and site
+   545→            content. This area is for Aristocrat Dental Care staff.
+   546→          </p>
+   547→
+   548→          <div className="mt-7 space-y-4">
+   549→            <div>
+   550→              <label
+   551→                htmlFor="admin-username"
+   552→                className="block text-xs font-bold uppercase tracking-wider text-slate-500"
+   553→              >
+   554→                Username
+   555→              </label>
+   556→              <input
+   557→                ref={usernameRef}
+   558→                id="admin-username"
+   559→                name="username"
+   560→                type="text"
+   561→                autoComplete="username"
+   562→                autoFocus
+   563→                value={username}
+   564→                onChange={(e) => setUsername(e.target.value)}
+   565→                placeholder="e.g. admin"
+   566→                className="mt-1.5 h-13 w-full rounded-2xl border border-blue-100 bg-ice px-5 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   567→              />
+   568→            </div>
+   569→            <div>
+   570→              <label
+   571→                htmlFor="admin-password"
+   572→                className="block text-xs font-bold uppercase tracking-wider text-slate-500"
+   573→              >
+   574→                Password
+   575→              </label>
+   576→              <input
+   577→                id="admin-password"
+   578→                name="password"
+   579→                type="password"
+   580→                autoComplete="current-password"
+   581→                value={password}
+   582→                onChange={(e) => setPassword(e.target.value)}
+   583→                placeholder="Your password"
+   584→                className="mt-1.5 h-13 w-full rounded-2xl border border-blue-100 bg-ice px-5 text-sm text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/25"
+   585→              />
+   586→            </div>
+   587→          </div>
+   588→
+   589→          {error && (
+   590→            <p
+   591→              role="alert"
+   592→              className="mt-4 rounded-xl bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600 ring-1 ring-rose-100"
+   593→            >
+   594→              {error}
+   595→            </p>
+   596→          )}
+   597→
+   598→          <Button
+   599→            type="submit"
+   600→            disabled={checking || username.trim().length === 0 || password.length === 0}
+   601→            className="mt-5 h-12 w-full rounded-2xl bg-brand-navy text-sm font-bold text-white shadow-lg shadow-navy-900/25 hover:bg-brand-blue disabled:opacity-60"
+   602→          >
+   603→            {checking ? (
+   604→              <Loader2 className="h-4.5 w-4.5 animate-spin" aria-hidden="true" />
+   605→            ) : (
+   606→              <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
+   607→            )}
+   608→            Sign in
+   609→          </Button>
+   610→
+   611→          <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-400">
+   612→            You&rsquo;ll stay signed in for 8 hours on this device.
+   613→          </p>
+   614→        </form>
+   615→
+   616→        {/* Demo hint — intentionally styled as a dev note, not brand UI.
+   617→           The client asked for visible test credentials during the demo. */}
+   618→        <div className="mt-5 rounded-2xl border border-dashed border-white/20 bg-white/[0.04] p-4">
+   619→          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200/50">
+   620→            Demo access · test setup
+   621→          </p>
+   622→          <ul className="mt-2 space-y-0.5">
+   623→            {DEMO_ACCOUNTS.map((account) => (
+   624→              <li key={account.username}>
+   625→                <button
+   626→                  type="button"
+   627→                  onClick={() => fillDemo(account)}
+   628→                  aria-label={`Fill the form with the ${account.username} demo account (${account.role})`}
+   629→                  title={`Fill the form with the ${account.username} demo account (${account.role})`}
+   630→                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left font-mono text-[11px] text-blue-100/70 transition-colors duration-200 hover:bg-white/5 hover:text-white"
+   631→                >
+   632→                  <span className="min-w-0 truncate tabular-nums">
+   633→                    {account.username} / {account.password}
+   634→                  </span>
+   635→                  <span className="ml-auto shrink-0 font-sans text-[10px] font-semibold uppercase tracking-wider text-blue-200/40">
+   636→                    {account.role}
+   637→                  </span>
+   638→                </button>
+   639→              </li>
+   640→            ))}
+   641→          </ul>
+   642→          <p className="mt-2 text-[10px] text-blue-200/40">
+   643→            Tap a row to fill the form · change these passwords before going live.
+   644→          </p>
+   645→        </div>
+   646→      </motion.div>
+   647→    </div>
+   648→  );
+   649→}
+   650→
+   651→/* ------------------------------------------------------------------ */
+   652→/*  Resolve the active module's header metadata (title / description /  */
+   653→/*  icon / group label). Cheap lookup — no memoization needed.          */
+   654→/* ------------------------------------------------------------------ */
+   655→
+   656→function navMeta(view: AdminView) {
+   657→  for (const group of NAV_GROUPS) {
+   658→    const item = group.items.find((i) => i.id === view);
+   659→    if (item) return { ...item, group: group.label };
+   660→  }
+   661→  return { ...NAV_GROUPS[0].items[0], group: NAV_GROUPS[0].label };
+   662→}
+   663→
+   664→/* ------------------------------------------------------------------ */
+   665→/*  AdminShell — sidebar + content area + mobile Sheet                  */
+   666→/* ------------------------------------------------------------------ */
+   667→
+   668→function AdminShell({
+   669→  user,
+   670→  sessionExpiresAt,
+   671→  onLogout,
+   672→  onSessionExpired,
+   673→}: {
+   674→  user: AdminSessionUser;
+   675→  sessionExpiresAt: number | null;
+   676→  onLogout: () => void;
+   677→  onSessionExpired: () => void;
+   678→}) {
+   679→  const [view, setView] = useState<AdminView>("overview");
+   680→  const [navOpen, setNavOpen] = useState(false);
+   681→  const [badges, setBadges] = useState<BadgeState>({
+   682→    appointments: null,
+   683→    reviews: null,
+   684→    messages: null,
+   685→  });
+   686→
+   687→  const handleExpired = useCallback(() => onSessionExpired(), [onSessionExpired]);
+   688→  const setAppointmentsBadge = useCallback(
+   689→    (n: number) => setBadges((b) => ({ ...b, appointments: n })),
+   690→    []
+   691→  );
+   692→  const setReviewsBadge = useCallback(
+   693→    (n: number) => setBadges((b) => ({ ...b, reviews: n })),
+   694→    []
+   695→  );
+   696→  const setMessagesBadge = useCallback(
+   697→    (n: number) => setBadges((b) => ({ ...b, messages: n })),
+   698→    []
+   699→  );
+   700→  const syncBadges = useCallback(
+   701→    (appointments: number, reviews: number, messages: number) =>
+   702→      setBadges({ appointments, reviews, messages }),
+   703→    []
+   704→  );
+   705→
+   706→  /* Role-aware navigation (client-side polish; the server is the gate).
+   707→     A stale view (e.g. the role changed mid-session) falls back to the
+   708→     overview during render — no effect needed. */
+   709→  const nav = useMemo(() => visibleNavGroups(user.role), [user.role]);
+   710→  const viewVisible = useMemo(
+   711→    () => nav.some((group) => group.items.some((item) => item.id === view)),
+   712→    [nav, view]
+   713→  );
+   714→  const activeView: AdminView = viewVisible ? view : "overview";
+   715→
+   716→  /* Live session countdown (ticks once a minute). */
+   717→  const now = useMinuteNow();
+   718→  const sessionRemainingMs =
+   719→    typeof sessionExpiresAt === "number" ? sessionExpiresAt - now : null;
+   720→
+   721→  /* One light call carries every sidebar badge count before the staff
+   722→     member opens each view. (Cookie auth — no header.) */
+   723→  useEffect(() => {
+   724→    let cancelled = false;
+   725→    (async () => {
+   726→      try {
+   727→        const res = await fetch("/api/admin/overview");
+   728→        if (res.status === 401) {
+   729→          onSessionExpired();
+   730→          return;
+   731→        }
+   732→        if (!res.ok) return;
+   733→        const data = await res.json();
+   734→        if (cancelled || !data) return;
+   735→        setBadges({
+   736→          appointments: data.appointmentStats?.pending ?? 0,
+   737→          reviews: data.reviewStats?.pendingApproval ?? 0,
+   738→          messages: data.messageStats?.unhandled ?? 0,
+   739→        });
+   740→      } catch {
+   741→        /* badges are best-effort */
+   742→      }
+   743→    })();
+   744→    return () => {
+   745→      cancelled = true;
+   746→    };
+   747→  }, [onSessionExpired]);
+   748→
+   749→  const navigate = useCallback((next: AdminView) => {
+   750→    setView(next);
+   751→    setNavOpen(false);
+   752→    window.scrollTo({ top: 0 });
+   753→  }, []);
+   754→
+   755→  const meta = navMeta(activeView);
+   756→
+   757→  let panel: React.ReactNode = null;
+   758→  switch (activeView) {
+   759→    case "overview":
+   760→      panel = (
+   761→        <OverviewPanel
+   762→          onSessionExpired={handleExpired}
+   763→          onNavigate={navigate}
+   764→          onBadgeCounts={syncBadges}
+   765→        />
+   766→      );
+   767→      break;
+   768→    case "activity":
+   769→      panel = <ActivityPanel onSessionExpired={handleExpired} />;
+   770→      break;
+   771→    case "appointments":
+   772→      panel = (
+   773→        <AppointmentsPanel
+   774→          onSessionExpired={handleExpired}
+   775→          onPendingChange={setAppointmentsBadge}
+   776→        />
+   777→      );
+   778→      break;
+   779→    case "reviews":
+   780→      panel = (
+   781→        <ReviewsPanel
+   782→          onSessionExpired={handleExpired}
+   783→          onPendingChange={setReviewsBadge}
+   784→        />
+   785→      );
+   786→      break;
+   787→    case "messages":
+   788→      panel = (
+   789→        <MessagesPanel
+   790→          onSessionExpired={handleExpired}
+   791→          onUnhandledChange={setMessagesBadge}
+   792→        />
+   793→      );
+   794→      break;
+   795→    case "subscribers":
+   796→      panel = <SubscribersPanel onSessionExpired={handleExpired} />;
+   797→      break;
+   798→    case "patients":
+   799→      panel = <PatientsPanel onSessionExpired={handleExpired} />;
+   800→      break;
+   801→    case "doctors":
+   802→      panel = <DoctorsPanel onSessionExpired={handleExpired} />;
+   803→      break;
+   804→    case "blog":
+   805→      panel = <BlogPanel onSessionExpired={handleExpired} />;
+   806→      break;
+   807→    case "faqs":
+   808→      panel = <FaqsPanel onSessionExpired={handleExpired} />;
+   809→      break;
+   810→    case "cases":
+   811→      panel = <CasesPanel onSessionExpired={handleExpired} />;
+   812→      break;
+   813→    case "services":
+   814→      panel = <ServicesPanel onSessionExpired={handleExpired} />;
+   815→      break;
+   816→    case "homepage":
+   817→      panel = <HomepagePanel onSessionExpired={handleExpired} />;
+   818→      break;
+   819→    case "about":
+   820→      panel = <AboutPanel onSessionExpired={handleExpired} />;
+   821→      break;
+   822→    case "hero":
+   823→      panel = <HeroPanel onSessionExpired={handleExpired} />;
+   824→      break;
+   825→    case "settings":
+   826→      panel = <SettingsPanel onSessionExpired={handleExpired} />;
+   827→      break;
+   828→    case "users":
+   829→      panel = (
+   830→        <UsersPanel onSessionExpired={handleExpired} currentUser={user} />
+   831→      );
+   832→      break;
+   833→  }
+   834→
+   835→  return (
+   836→    <div className="section-wash flex-1 pb-16 lg:pb-20">
+   837→      <div className="lg:flex lg:min-h-screen lg:items-start">
+   838→        {/* Desktop sidebar — sticks to the viewport while content scrolls
+   839→            (the site navbar scrolls away; offset 0 keeps it flush) */}
+   840→        <aside className="hidden w-64 shrink-0 lg:sticky lg:top-0 lg:block lg:h-screen lg:flex-col bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] text-white">
+   841→          <SidebarChrome
+   842→            user={user}
+   843→            sessionRemainingMs={sessionRemainingMs}
+   844→            nav={nav}
+   845→            view={activeView}
+   846→            badges={badges}
+   847→            onNavigate={navigate}
+   848→            onLogout={onLogout}
+   849→          />
+   850→        </aside>
+   851→
+   852→        {/* Content column */}
+   853→        <div className="min-w-0 flex-1">
+   854→          {/* Mobile admin bar */}
+   855→          <div className="border-b border-blue-100 bg-white/90 backdrop-blur lg:hidden">
+   856→            <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+   857→              <Button
+   858→                variant="outline"
+   859→                size="icon"
+   860→                onClick={() => setNavOpen(true)}
+   861→                aria-label="Open admin navigation"
+   862→                className="rounded-xl border-blue-200 text-brand-navy hover:bg-blue-50"
+   863→              >
+   864→                <Menu className="h-5 w-5" aria-hidden="true" />
+   865→              </Button>
+   866→              <div className="min-w-0 flex-1">
+   867→                <p className="font-heading truncate text-sm font-bold text-brand-navy">
+   868→                  Aristocrat Admin
+   869→                </p>
+   870→                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+   871→                  @{user.username} · {meta.group}
+   872→                </p>
+   873→              </div>
+   874→              <RoleBadge role={user.role} />
+   875→              <Button
+   876→                variant="ghost"
+   877→                size="icon"
+   878→                onClick={onLogout}
+   879→                aria-label="Sign out"
+   880→                title="Sign out"
+   881→                className="rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+   882→              >
+   883→                <LogOut className="h-4.5 w-4.5" aria-hidden="true" />
+   884→              </Button>
+   885→            </div>
+   886→          </div>
+   887→
+   888→          {/* Module header strip */}
+   889→          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+   890→            <header className="flex items-center gap-4">
+   891→              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-navy-900/25">
+   892→                <meta.icon className="h-5 w-5" aria-hidden="true" />
+   893→              </span>
+   894→              <div className="min-w-0">
+   895→                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+   896→                  Admin · {meta.group}
+   897→                </p>
+   898→                <h1 className="font-heading truncate text-xl font-bold text-brand-navy">
+   899→                  {meta.title}
+   900→                </h1>
+   901→              </div>
+   902→              <p className="ml-auto hidden max-w-sm text-right text-sm leading-relaxed text-slate-500 md:block lg:max-w-md">
+   903→                {meta.description}
+   904→              </p>
+   905→            </header>
+   906→            <p className="mt-2 text-sm leading-relaxed text-slate-500 md:hidden">
+   907→              {meta.description}
+   908→            </p>
+   909→          </div>
+   910→
+   911→          {/* Active panel */}
+   912→          <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8 lg:pt-5">
+   913→            <AnimatePresence mode="wait">
+   914→              <motion.div
+   915→                key={activeView}
+   916→                initial={{ opacity: 0, y: 10 }}
+   917→                animate={{ opacity: 1, y: 0 }}
+   918→                exit={{ opacity: 0, y: -8 }}
+   919→                transition={{ duration: 0.22, ease: "easeOut" }}
+   920→              >
+   921→                {panel}
+   922→              </motion.div>
+   923→            </AnimatePresence>
+   924→          </div>
+   925→        </div>
+   926→      </div>
+   927→
+   928→      {/* Mobile navigation drawer */}
+   929→      <Sheet open={navOpen} onOpenChange={setNavOpen}>
+   930→        <SheetContent
+   931→          side="left"
+   932→          className="w-80 gap-0 border-0 bg-gradient-to-b from-brand-navy via-[#022450] to-[#011a34] p-0 text-white sm:max-w-none"
+   933→        >
+   934→          <SheetHeader className="sr-only">
+   935→            <SheetTitle>Admin navigation</SheetTitle>
+   936→            <SheetDescription>Switch between admin modules</SheetDescription>
+   937→          </SheetHeader>
+   938→          <SidebarChrome
+   939→            user={user}
+   940→            sessionRemainingMs={sessionRemainingMs}
+   941→            nav={nav}
+   942→            view={activeView}
+   943→            badges={badges}
+   944→            onNavigate={navigate}
+   945→            onLogout={onLogout}
+   946→          />
+   947→        </SheetContent>
+   948→      </Sheet>
+   949→    </div>
+   950→  );
+   951→}
+   952→
+   953→/* ------------------------------------------------------------------ */
+   954→/*  SidebarChrome — header + grouped nav + signed-in footer (shared     */
+   955→/*  by the desktop aside and the mobile Sheet drawer)                   */
+   956→/* ------------------------------------------------------------------ */
+   957→
+   958→function SidebarChrome({
+   959→  user,
+   960→  sessionRemainingMs,
+   961→  nav,
+   962→  view,
+   963→  badges,
+   964→  onNavigate,
+   965→  onLogout,
+   966→}: {
+   967→  user: AdminSessionUser;
+   968→  sessionRemainingMs: number | null;
+   969→  nav: { label: string; items: NavEntry[] }[];
+   970→  view: AdminView;
+   971→  badges: BadgeState;
+   972→  onNavigate: (view: AdminView) => void;
+   973→  onLogout: () => void;
+   974→}) {
+   975→  return (
+   976→    <div className="flex h-full min-h-0 flex-col">
+   977→      {/* Header */}
+   978→      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+   979→        <span
+   980→          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 font-heading text-lg font-black text-brand-navy shadow-lg shadow-amber-900/20"
+   981→          aria-hidden="true"
+   982→        >
+   983→          A
+   984→        </span>
+   985→        <div className="min-w-0">
+   986→          <p className="font-heading truncate text-sm font-bold leading-tight text-white">
+   987→            Aristocrat Dental Care
+   988→          </p>
+   989→          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200/70">
+   990→            Admin Panel
+   991→          </p>
+   992→        </div>
+   993→      </div>
+   994→
+   995→      {/* Grouped navigation (role-filtered by the shell) */}
+   996→      <nav
+   997→        className="scroll-area min-h-0 flex-1 overflow-y-auto px-3 py-4"
+   998→        aria-label="Admin modules"
+   999→      >
+  1000→        {nav.map((group, gi) => (
+  1001→          <div key={group.label} className={cn(gi > 0 && "mt-5")}>
+  1002→            <p className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-300/60">
+  1003→              {group.label}
+  1004→            </p>
+  1005→            <ul className="space-y-0.5">
+  1006→              {group.items.map((item) => (
+  1007→                <SidebarItem
+  1008→                  key={item.id}
+  1009→                  active={view === item.id}
+  1010→                  label={item.label}
+  1011→                  icon={item.icon}
+  1012→                  badge={item.badge ? badges[item.badge] : undefined}
+  1013→                  onClick={() => onNavigate(item.id)}
+  1014→                />
+  1015→              ))}
+  1016→            </ul>
+  1017→          </div>
+  1018→        ))}
+  1019→      </nav>
+  1020→
+  1021→      {/* Signed-in staff + session countdown + actions */}
+  1022→      <div className="border-t border-white/10">
+  1023→        <div className="px-4 py-3.5">
+  1024→          <div className="flex items-center gap-3">
+  1025→            <span
+  1026→              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-navy text-xs font-bold text-white ring-1 ring-white/15"
+  1027→              aria-hidden="true"
+  1028→            >
+  1029→              {initialsOf(user.displayName)}
+  1030→            </span>
+  1031→            <div className="min-w-0 flex-1">
+  1032→              <p className="truncate text-[13px] font-bold leading-tight text-white">
+  1033→                {user.displayName}
+  1034→              </p>
+  1035→              <p className="truncate text-[11px] leading-tight text-blue-200/60">
+  1036→                @{user.username}
+  1037→              </p>
+  1038→            </div>
+  1039→            <RoleBadge role={user.role} onDark />
+  1040→          </div>
+  1041→          <SessionCountdown remainingMs={sessionRemainingMs} />
+  1042→        </div>
+  1043→
+  1044→        <div className="space-y-1 border-t border-white/10 p-3">
+  1045→          <a
+  1046→            href="#/"
+  1047→            className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-blue-200/70 transition-colors duration-200 hover:bg-white/5 hover:text-white"
+  1048→          >
+  1049→            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5">
+  1050→              <Home className="h-4 w-4" aria-hidden="true" />
+  1051→            </span>
+  1052→            View site
+  1053→          </a>
+  1054→          <button
+  1055→            type="button"
+  1056→            onClick={onLogout}
+  1057→            className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-rose-300/80 transition-colors duration-200 hover:bg-rose-500/10 hover:text-rose-200"
+  1058→          >
+  1059→            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5">
+  1060→              <LogOut className="h-4 w-4" aria-hidden="true" />
+  1061→            </span>
+  1062→            Sign out
+  1063→          </button>
+  1064→        </div>
+  1065→      </div>
+  1066→    </div>
+  1067→  );
+  1068→}
+  1069→
+  1070→/** "Session expires in 7h 42m" — amber + re-sign-in hint under 10 min. */
+  1071→function SessionCountdown({ remainingMs }: { remainingMs: number | null }) {
+  1072→  if (remainingMs === null) return null;
+  1073→
+  1074→  if (remainingMs <= 0) {
+  1075→    return (
+  1076→      <p className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
+  1077→        <Timer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+  1078→        Session expired — sign in again
+  1079→      </p>
+  1080→    );
+  1081→  }
+  1082→
+  1083→  const text = formatSessionRemaining(remainingMs);
+  1084→  const warning = remainingMs < 10 * 60_000;
+  1085→  return (
+  1086→    <p
+  1087→      className={cn(
+  1088→        "mt-2.5 flex items-center gap-1.5 text-[11px] font-medium",
+  1089→        warning ? "text-amber-300" : "text-blue-200/50"
+  1090→      )}
+  1091→    >
+  1092→      {warning ? (
+  1093→        <Timer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+  1094→      ) : (
+  1095→        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+  1096→      )}
+  1097→      <span className="truncate">
+  1098→        {warning
+  1099→          ? `Session expires in ${text} — save your work and sign in again`
+  1100→          : `Session expires in ${text}`}
+  1101→      </span>
+  1102→    </p>
+  1103→  );
+  1104→}
+  1105→
+  1106→function SidebarItem({
+  1107→  active,
+  1108→  label,
+  1109→  icon: Icon,
+  1110→  badge,
+  1111→  onClick,
+  1112→}: {
+  1113→  active: boolean;
+  1114→  label: string;
+  1115→  icon: typeof LayoutDashboard;
+  1116→  badge?: number | null;
+  1117→  onClick: () => void;
+  1118→}) {
+  1119→  return (
+  1120→    <li className="relative">
+  1121→      <button
+  1122→        type="button"
+  1123→        onClick={onClick}
+  1124→        aria-current={active ? "page" : undefined}
+  1125→        className={cn(
+  1126→          "flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium transition-colors duration-200",
+  1127→          active
+  1128→            ? "bg-white/10 text-white"
+  1129→            : "text-blue-200/70 hover:bg-white/5 hover:text-white"
+  1130→        )}
+  1131→      >
+  1132→        {active && (
+  1133→          <span
+  1134→            className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-amber-400"
+  1135→            aria-hidden="true"
+  1136→          />
+  1137→        )}
+  1138→        <span
+  1139→          className={cn(
+  1140→            "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+  1141→            active ? "bg-white/15 text-amber-300" : "bg-white/5 text-blue-200/80"
+  1142→          )}
+  1143→        >
+  1144→          <Icon className="h-4 w-4" aria-hidden="true" />
+  1145→        </span>
+  1146→        <span className="min-w-0 flex-1 truncate">{label}</span>
+  1147→        {typeof badge === "number" && badge > 0 && (
+  1148→          <span className="shrink-0 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-brand-navy">
+  1149→            {badge}
+  1150→          </span>
+  1151→        )}
+  1152→      </button>
+  1153→    </li>
+  1154→  );
+  1155→}
+  1156→

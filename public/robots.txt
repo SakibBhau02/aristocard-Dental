@@ -24,7 +24,26 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: CCBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
 Sitemap: https://aristocratdentalcarebd.com/sitemap.xml
 
 # LLM / answer-engine guidance (GEO): https://llmstxt.org
 # Curated site overview for AI crawlers: https://aristocratdentalcarebd.com/llms.txt
+# Public machine-readable data API for AI agents: https://aristocratdentalcarebd.com/api/ai/content

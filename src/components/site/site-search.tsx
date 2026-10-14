@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
+  Calculator,
   CalendarCheck,
   CalendarClock,
   CircleHelp,
@@ -39,7 +40,9 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "@/lib/router";
 import { toBnDigits, useLang } from "@/lib/i18n";
+import { track, syncAnalyticsSearch } from "@/lib/tracker";
 import { useBundle } from "@/components/site/content-provider";
+import { useSearchShortcutLabel } from "@/lib/utils";
 import {
   buildSearchIndex,
   filterEntriesScored,
@@ -67,6 +70,7 @@ const ICONS: Record<string, LucideIcon> = {
   Newspaper,
   CircleHelp,
   ClipboardList,
+  Calculator,
   CalendarClock,
   Phone,
   Stethoscope,
@@ -117,10 +121,25 @@ export function SiteSearch() {
   const { settings } = useBundle();
   const bn = lang === "bn";
   const t = d.search;
+  const shortcutLabel = useSearchShortcutLabel();
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+
+  /* --- search-intent analytics (debounced) --------------------------- */
+  /* Fires once the visitor pauses on a query (≥3 chars) — captures    */
+  /* every real search INCLUDING zero-result ones, without tracking   */
+  /* intermediate keystrokes. Mirrors into GA4 / Meta when configured. */
+  useEffect(() => {
+    const q = query.trim();
+    if (!open || q.length < 3) return;
+    const id = window.setTimeout(() => {
+      track("search", q);
+      syncAnalyticsSearch(q);
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [query, open]);
 
   /* --- global triggers: ⌘K / Ctrl+K + custom event ---------------- */
 
@@ -269,6 +288,13 @@ export function SiteSearch() {
         tileClass: "bg-amber-50 text-amber-600 ring-amber-100",
         label: t.actionQuiz,
         run: () => go("/assessment"),
+      },
+      {
+        id: "qa-estimate",
+        icon: Calculator,
+        tileClass: "bg-teal-50 text-teal-600 ring-teal-100",
+        label: t.actionEstimate,
+        run: () => go("/estimator"),
       },
       {
         id: "qa-call",
@@ -462,7 +488,7 @@ export function SiteSearch() {
                     "{count}",
                     bn ? toBnDigits(renderedCount) : String(renderedCount)
                   )
-                : `⌘K ${t.shortcutHint}`}
+                : `${shortcutLabel} ${t.shortcutHint}`}
             </span>
             <span className="hidden shrink-0 items-center gap-3 sm:flex">
               <span className="flex items-center gap-1">

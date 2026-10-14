@@ -43,8 +43,11 @@ async function seed() {
         languagesJson: JSON.stringify(d.languages),
         consultationDaysJson: JSON.stringify(d.consultationDays),
         accent: d.accent,
+        photo: d.photo ?? null,
         active: true,
       },
+      /* update keeps sort + photo defaults only when the admin has not
+         set a custom photo already (null = untouched) */
       update: { sort: i },
     });
   }

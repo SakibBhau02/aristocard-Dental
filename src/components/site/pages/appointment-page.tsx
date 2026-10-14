@@ -19,10 +19,9 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import type { Lang } from "@/lib/data/dictionary";
-import { useBundle } from "@/components/site/content-provider";
+import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
 import { Reveal } from "@/components/site/motion";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
-import { slidesForRoute } from "@/lib/data/hero-media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +66,7 @@ export function AppointmentPage() {
   const bn = lang === "bn";
   const t = d.appointmentPage;
   const { services, doctors, settings } = useBundle();
+  const heroSlides = useRouteHeroSlides("appointment");
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -111,7 +111,7 @@ export function AppointmentPage() {
       name: "Book a Dental Appointment",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://aristocratdentalcarebd.com/#/appointment",
+        urlTemplate: "https://aristocratdentalcarebd.com/appointment",
         actionPlatform: "http://schema.org/DesktopWebPlatform",
       },
       result: { "@type": "Reservation", name: "Dental Consultation" },
@@ -341,7 +341,7 @@ export function AppointmentPage() {
     <>
       {/* Hero — centered over a sliding clinic backdrop */}
       <section className="relative isolate overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={slidesForRoute("appointment")} overlay="deep" interval={8000} />
+        <HeroBackdrop slides={heroSlides} overlay="deep" interval={8000} />
         <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -369,7 +369,7 @@ export function AppointmentPage() {
             <p className="mt-6 text-xs text-blue-200/70">
               {t.alreadyBooked}{" "}
               <a
-                href="#/status"
+                href="/status"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate("/status");

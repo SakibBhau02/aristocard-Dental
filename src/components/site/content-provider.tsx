@@ -14,6 +14,7 @@ import {
   staticBundle,
   type ContentBundle,
 } from "@/lib/content/shared";
+import { slidesForRoute, type HeroSlide } from "@/lib/data/hero-media";
 
 /* ------------------------------------------------------------------ */
 /*  ContentProvider — the live CMS context for the public site.        */
@@ -109,4 +110,16 @@ export function useContent(): ContentContextValue {
 /** Direct bundle accessor — convenience for pages that only read data. */
 export function useBundle(): ContentBundle {
   return useContent().bundle;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Route hero slides — DB-managed page backdrops with curated         */
+/*  static fallback. segment = first path segment ("about", "blog"…).  */
+/* ------------------------------------------------------------------ */
+
+export function useRouteHeroSlides(segment: string): HeroSlide[] {
+  const { pageHeroSlides } = useBundle();
+  const managed = pageHeroSlides?.[segment];
+  if (managed && managed.length > 0) return managed;
+  return slidesForRoute(segment);
 }

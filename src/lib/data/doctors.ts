@@ -28,6 +28,26 @@ export const doctors: Doctor[] = [
     consultationDays: ["Saturday", "Monday", "Wednesday"],
     verified: true,
     accent: "#1e7dff",
+    photo: "/images/doctor-shazia-khanam.png",
+    /* Round 17-a dossier — FACTUAL SAFETY: education entries derive only
+       from credentials already stated on the site ("BDS", "MDS" — no
+       institution claimed). Awards/memberships left empty for admin to
+       fill with real ones. Quote re-uses the philosophy already printed
+       in her bio. */
+    education: [
+      { degree: "BDS" },
+      { degree: "MDS" },
+    ],
+    quote:
+      "A healthy smile is a gateway to overall well-being.",
+    quoteBn:
+      "সুস্থ হাসি মানেই সুস্থ জীবনের সূচনা।",
+    focusServices: [
+      "invisalign-clear-aligners",
+      "traditional-braces-orthodontics",
+      "digital-smile-design",
+      "porcelain-veneers",
+    ],
   },
   {
     slug: "dr-abdur-rahim",
@@ -51,6 +71,22 @@ export const doctors: Doctor[] = [
     consultationDays: ["Sunday", "Tuesday", "Thursday"],
     verified: true,
     accent: "#002060",
+    photo: "/images/doctor-abdur-rahim.png",
+    /* Round 17-a dossier — education derived from stated credentials
+       ("BDS", "MDS", institution-free); quote is original editorial. */
+    education: [
+      { degree: "BDS" },
+      { degree: "MDS" },
+    ],
+    quote:
+      "Precision dentistry begins with listening — I explain the plan first, then treat one careful step at a time.",
+    quoteBn:
+      "নিখুঁত ডেন্টিস্ট্রি শুরু হয় রোগীর কথা শোনা থেকে — আগে পরিকল্পনা পরিষ্কার করে বোঝাই, তারপর এক এক ধাপে যত্ন নিয়ে চিকিৎসা।",
+    focusServices: [
+      "root-canal-treatment",
+      "oral-maxillofacial-surgery",
+      "crowns-bridges",
+    ],
   },
   {
     slug: "dr-jumla-binte-jafor",
@@ -74,6 +110,27 @@ export const doctors: Doctor[] = [
     consultationDays: ["Saturday", "Sunday", "Tuesday"],
     verified: true,
     accent: "#0ea5a5",
+    photo: "/images/doctor-jumla-jafor.png",
+    /* Round 17-a dossier — "BDS (DU)" + bio states her PGT trainings are
+       from the University of Dhaka, so those entries carry the institution. */
+    education: [
+      { degree: "BDS", institution: "University of Dhaka" },
+      { degree: "PGT (OMFS)", institution: "University of Dhaka" },
+      {
+        degree: "PGT (Conservative Dentistry & Endodontics)",
+        institution: "University of Dhaka",
+      },
+    ],
+    quote:
+      "The best tooth is your own tooth — my work is to save it with care and precision.",
+    quoteBn:
+      "সবচেয়ে ভালো দাঁত আপনার নিজের দাঁত — যত্ন আর নিখুঁততায় সেটিই বাঁচিয়ে রাখাই আমার কাজ।",
+    focusServices: [
+      "root-canal-treatment",
+      "laser-assisted-fillings",
+      "crowns-bridges",
+      "oral-maxillofacial-surgery",
+    ],
   },
   {
     slug: "dr-israt-jahan-rimi",
@@ -97,6 +154,22 @@ export const doctors: Doctor[] = [
     consultationDays: ["Monday", "Wednesday", "Thursday"],
     verified: true,
     accent: "#f59e0b",
+    photo: "/images/doctor-israt-rimi.png",
+    /* Round 17-a dossier — "BDS (DU)" carries the institution; PGT (OMFS)
+       stated without an institution in her bio, so kept institution-free. */
+    education: [
+      { degree: "BDS", institution: "University of Dhaka" },
+      { degree: "PGT (OMFS)" },
+    ],
+    quote:
+      "No child should fear the dentist — one calm, kind visit builds a lifetime of healthy smiles.",
+    quoteBn:
+      "কোনো শিশুরই ডেন্টিস্টকে ভয় পাওয়া উচিত নয় — শান্ত আর স্নেহময় একটি ভিজিটই গড়ে তোলে সারাজীবনের সুস্থ হাসি।",
+    focusServices: [
+      "pediatric-dentistry",
+      "periodontal-gum-treatment",
+      "oral-maxillofacial-surgery",
+    ],
   },
 ];
 

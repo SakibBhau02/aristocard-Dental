@@ -1,0 +1,1790 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  ArrowLeft,
+     7→  ArrowRight,
+     8→  ArrowUpRight,
+     9→  BookOpen,
+    10→  CalendarCheck,
+    11→  CalendarDays,
+    12→  Check,
+    13→  CheckCircle2,
+    14→  ChevronDown,
+    15→  Clock3,
+    16→  Facebook,
+    17→  LayoutGrid,
+    18→  Lightbulb,
+    19→  Link2,
+    20→  ListTree,
+    21→  Mail,
+    22→  MessageCircle,
+    23→  Search,
+    24→  Share2,
+    25→  Stethoscope,
+    26→  Tag,
+    27→  Twitter,
+    28→  Users,
+    29→  X,
+    30→} from "lucide-react";
+    31→import { usePageMeta, useRouter } from "@/lib/router";
+    32→import { useLang, toBnDigits } from "@/lib/i18n";
+    33→import { useToast } from "@/hooks/use-toast";
+    34→import { useBundle } from "@/components/site/content-provider";
+    35→import { DynamicIcon } from "@/components/site/icon-map";
+    36→import { PageHeader, CtaBanner } from "@/components/site/shared";
+    37→import { Reveal, SectionHeading } from "@/components/site/motion";
+    38→import { HeroBackdrop } from "@/components/site/hero-backdrop";
+    39→import { slidesForRoute } from "@/lib/data/hero-media";
+    40→import { NotFoundPage } from "@/components/site/pages/not-found-page";
+    41→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    42→import { Badge } from "@/components/ui/badge";
+    43→import { Input } from "@/components/ui/input";
+    44→import { cn } from "@/lib/utils";
+    45→import Image from "next/image";
+    46→import type { BlogPost } from "@/lib/types";
+    47→
+    48→/* ------------------------------------------------------------------ */
+    49→/*  Shared helpers                                                     */
+    50→/* ------------------------------------------------------------------ */
+    51→
+    52→/* "8 min read" → "৮ মিনিট পাঠ" when Bangla */
+    53→function localizeReadTime(readTime: string, bn: boolean, minRead: string) {
+    54→  if (!bn) return readTime;
+    55→  const n = readTime.match(/\d+/)?.[0] ?? "";
+    56→  return n ? `${toBnDigits(n)} ${minRead}` : readTime;
+    57→}
+    58→
+    59→/* "Dr. Shazia Khanam" → "SK" */
+    60→function initialsOf(name: string) {
+    61→  return name
+    62→    .replace("Dr. ", "")
+    63→    .split(" ")
+    64→    .map((n) => n[0])
+    65→    .slice(0, 2)
+    66→    .join("");
+    67→}
+    68→
+    69→/* Localized post date (bn-BD renders Bangla digits + month names) */
+    70→function formatPostDate(
+    71→  date: string,
+    72→  bn: boolean,
+    73→  opts?: Intl.DateTimeFormatOptions
+    74→) {
+    75→  return new Date(date).toLocaleDateString(
+    76→    bn ? "bn-BD" : "en-GB",
+    77→    opts ?? { day: "numeric", month: "short", year: "numeric" }
+    78→  );
+    79→}
+    80→
+    81→function localizeCount(bn: boolean, v: number) {
+    82→  return bn ? toBnDigits(String(v)) : String(v);
+    83→}
+    84→
+    85→/* Bangla conjunct-insensitive comparison aid: removes hasanta (U+09CD),
+    86→   ZWNJ and ZWJ so spelling variants like ইম্প্ল্যান্ট / ইমপ্ল্যান্ট match. */
+    87→function stripBnMarks(s: string) {
+    88→  return s.replace(/[\u09cd\u200c\u200d]/g, "");
+    89→}
+    90→
+    91→/* ------------------------------------------------------------------ */
+    92→/*  Article card — shared by the blog index grid + "Related reading"   */
+    93→/* ------------------------------------------------------------------ */
+    94→
+    95→function PostCard({ post, index = 0 }: { post: BlogPost; index?: number }) {
+    96→  const { lang, d } = useLang();
+    97→  const bn = lang === "bn";
+    98→  const t = d.blogPage;
+    99→  const title = bn && post.titleBn ? post.titleBn : post.title;
+   100→  const excerpt = bn && post.excerptBn ? post.excerptBn : post.excerpt;
+   101→  const categoryLabel =
+   102→    d.blogCategories[post.category as keyof typeof d.blogCategories] ??
+   103→    post.category;
+   104→
+   105→  return (
+   106→    <motion.article
+   107→      initial={{ opacity: 0, y: 20 }}
+   108→      whileInView={{ opacity: 1, y: 0 }}
+   109→      viewport={{ once: true, margin: "-30px" }}
+   110→      transition={{ duration: 0.5, delay: (index % 3) * 0.07 }}
+   111→      className="h-full"
+   112→    >
+   113→      <a
+   114→        href={`/blog/${post.slug}`}
+   115→        className="card-shine group flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:border-brand-blue/30 hover:shadow-[0_24px_50px_-16px_rgba(30,125,255,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   116→        aria-label={`${t.readMore}: ${title}`}
+   117→      >
+   118→        {/* cover */}
+   119→        {post.image ? (
+   120→          <div className="zoom-img relative h-44 w-full overflow-hidden">
+   121→            <Image
+   122→              src={post.image}
+   123→              alt={post.imageAlt ?? title}
+   124→              width={448}
+   125→              height={256}
+   126→              className="h-full w-full object-cover"
+   127→            />
+   128→            <span
+   129→              className="absolute inset-0 bg-gradient-to-t from-brand-navy/45 via-brand-navy/5 to-transparent"
+   130→              aria-hidden="true"
+   131→            />
+   132→            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue backdrop-blur">
+   133→              {categoryLabel}
+   134→            </span>
+   135→          </div>
+   136→        ) : (
+   137→          <div className="relative flex h-32 items-center justify-center bg-gradient-to-br from-blue-50 via-ice to-blue-100/70">
+   138→            <BookOpen
+   139→              className="h-10 w-10 text-brand-blue/40"
+   140→              aria-hidden="true"
+   141→            />
+   142→            <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-blue ring-1 ring-blue-100">
+   143→              {categoryLabel}
+   144→            </span>
+   145→          </div>
+   146→        )}
+   147→
+   148→        <div className="flex flex-1 flex-col p-6 pt-5">
+   149→          {/* meta row */}
+   150→          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+   151→            <span>{formatPostDate(post.date, bn)}</span>
+   152→            <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden="true" />
+   153→            <span className="inline-flex items-center gap-1">
+   154→              <Clock3 className="h-3 w-3" aria-hidden="true" />
+   155→              {localizeReadTime(post.readTime, bn, t.minRead)}
+   156→            </span>
+   157→          </div>
+   158→
+   159→          <h3 className="font-heading mt-2.5 line-clamp-2 text-lg font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
+   160→            {title}
+   161→          </h3>
+   162→          <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
+   163→            {excerpt}
+   164→          </p>
+   165→
+   166→          {/* tags preview */}
+   167→          {post.tags.length > 0 && (
+   168→            <div className="mt-4 flex flex-wrap gap-1.5">
+   169→              {post.tags.slice(0, 2).map((tag) => (
+   170→                <Badge
+   171→                  key={tag}
+   172→                  variant="outline"
+   173→                  className="border-blue-100 bg-ice text-[11px] font-medium text-brand-navy"
+   174→                >
+   175→                  #{tag}
+   176→                </Badge>
+   177→              ))}
+   178→            </div>
+   179→          )}
+   180→
+   181→          {/* author chip */}
+   182→          <div className="mt-5 flex items-center justify-between gap-3 border-t border-blue-50 pt-4">
+   183→            <span className="inline-flex min-w-0 items-center gap-2">
+   184→              <Avatar className="h-8 w-8 border border-blue-100">
+   185→                <AvatarFallback className="bg-ice font-heading text-[11px] font-bold text-brand-navy">
+   186→                  {initialsOf(post.author)}
+   187→                </AvatarFallback>
+   188→              </Avatar>
+   189→              <span className="truncate text-xs font-semibold text-brand-navy">
+   190→                {post.author}
+   191→              </span>
+   192→            </span>
+   193→            <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-blue">
+   194→              {t.readMore}
+   195→              <ArrowRight
+   196→                className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
+   197→                aria-hidden="true"
+   198→              />
+   199→            </span>
+   200→          </div>
+   201→        </div>
+   202→      </a>
+   203→    </motion.article>
+   204→  );
+   205→}
+   206→
+   207→/* ------------------------------------------------------------------ */
+   208→/*  Sidebar newsletter mini-card (POST /api/newsletter)                */
+   209→/* ------------------------------------------------------------------ */
+   210→
+   211→function SidebarNewsletter() {
+   212→  const { lang, d } = useLang();
+   213→  const bn = lang === "bn";
+   214→  const t = d.blogPage;
+   215→  const [email, setEmail] = useState("");
+   216→  const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
+   217→    "idle"
+   218→  );
+   219→
+   220→  const submit = async (e: React.FormEvent) => {
+   221→    e.preventDefault();
+   222→    if (state === "sending") return;
+   223→    setState("sending");
+   224→    try {
+   225→      const res = await fetch("/api/newsletter", {
+   226→        method: "POST",
+   227→        headers: { "Content-Type": "application/json" },
+   228→        body: JSON.stringify({ email }),
+   229→      });
+   230→      setState(res.ok ? "done" : "error");
+   231→    } catch {
+   232→      setState("error");
+   233→    }
+   234→  };
+   235→
+   236→  return (
+   237→    <div className="rounded-3xl border border-blue-100/80 bg-ice p-5">
+   238→      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-blue ring-1 ring-blue-100">
+   239→        <Mail className="h-4 w-4" aria-hidden="true" />
+   240→      </span>
+   241→      <h2 className="font-heading mt-3 text-base font-bold text-brand-navy">
+   242→        {t.newsletterTitle}
+   243→      </h2>
+   244→      <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+   245→        {t.newsletterText}
+   246→      </p>
+   247→      {state === "done" ? (
+   248→        <div
+   249→          className="mt-4 rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200"
+   250→          role="status"
+   251→        >
+   252→          <p className="flex items-center gap-2 text-sm font-bold text-emerald-700">
+   253→            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+   254→            {t.newsletterDone}
+   255→          </p>
+   256→          <p className="mt-1 text-xs leading-relaxed text-emerald-600">
+   257→            {t.newsletterDoneDesc}
+   258→          </p>
+   259→        </div>
+   260→      ) : (
+   261→        <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
+   262→          <Input
+   263→            type="email"
+   264→            required
+   265→            value={email}
+   266→            onChange={(e) => {
+   267→              setEmail(e.target.value);
+   268→              if (state === "error") setState("idle");
+   269→            }}
+   270→            placeholder={t.newsletterPlaceholder}
+   271→            aria-label={t.newsletterPlaceholder}
+   272→            className="h-11 rounded-full border-blue-200/80 bg-white text-sm shadow-sm placeholder:text-slate-400 focus-visible:border-brand-blue"
+   273→          />
+   274→          <button
+   275→            type="submit"
+   276→            disabled={state === "sending"}
+   277→            className="inline-flex h-11 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white shadow-lg shadow-navy-900/20 transition-all duration-300 hover:bg-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 disabled:opacity-60"
+   278→          >
+   279→            {state === "sending" ? "…" : t.newsletterCta}
+   280→          </button>
+   281→          {state === "error" && (
+   282→            <p className="text-xs text-red-500" role="alert">
+   283→              {t.newsletterFail} — {t.newsletterFailDesc}
+   284→            </p>
+   285→          )}
+   286→        </form>
+   287→      )}
+   288→    </div>
+   289→  );
+   290→}
+   291→
+   292→/* ------------------------------------------------------------------ */
+   293→/*  BLOG LIST PAGE (EN / বাংলা) — magazine experience                  */
+   294→/* ------------------------------------------------------------------ */
+   295→
+   296→const PAGE_SIZE_INITIAL = 9;
+   297→const PAGE_SIZE_MORE = 6;
+   298→
+   299→export function BlogPage() {
+   300→  const [category, setCategory] = useState("All");
+   301→  const { query } = useRouter();
+   302→  const { lang, d } = useLang();
+   303→  const bn = lang === "bn";
+   304→  const t = d.blogPage;
+   305→  const { posts } = useBundle();
+   306→
+   307→  usePageMeta({
+   308→    title: "Dental Health Blog — Expert Advice from Uttara's Trusted Dentists",
+   309→    description:
+   310→      "Evidence-based dental health guides from Aristocrat Dental Care specialists: checkup frequency, root canal facts, Invisalign vs braces, kids' dental care & more.",
+   311→    jsonLd: {
+   312→      "@context": "https://schema.org",
+   313→      "@type": "Blog",
+   314→      name: "Aristocrat Dental Care Health Blog",
+   315→      url: "https://aristocratdentalcarebd.com/blog",
+   316→      publisher: { "@type": "Organization", name: "Aristocrat Dental Care & Orthodontic Center" },
+   317→    },
+   318→  });
+   319→
+   320→  /* ?q= deep-link prefill (tag chips on article pages link here).
+   321→     The typed value is keyed against the URL query so navigating to
+   322→     /blog?q=… adopts it instantly, while typing never rewrites the URL. */
+   323→  const qParam = query.get("q") ?? "";
+   324→  const [searchState, setSearchState] = useState({ q: qParam, value: qParam });
+   325→  const search = searchState.q === qParam ? searchState.value : qParam;
+   326→  const setSearch = (v: string) => setSearchState({ q: qParam, value: v });
+   327→
+   328→  const searching = search.trim().length > 0;
+   329→
+   330→  /* Category chips — derived from the live posts (same as the static list) */
+   331→  const blogCategories = useMemo(
+   332→    () => ["All", ...Array.from(new Set(posts.map((p) => p.category)))],
+   333→    [posts]
+   334→  );
+   335→
+   336→  /* Category filter combined with text search (EN + BN content + tags).
+   337→     Bangla conjuncts can be typed several ways (ইম্প্ল্যান্ট vs ইমপ্ল্যান্ট —
+   338→     hasanta placement varies), so BN fields are matched with virama
+   339→     (U+09CD) and joiners stripped from BOTH sides; English matching stays
+   340→     an exact substring. An exact hit always implies a loose hit, so the
+   341→     BN checks collapse into the loose comparison. */
+   342→  const filtered = useMemo(() => {
+   343→    const q = search.trim().toLowerCase();
+   344→    const qLoose = stripBnMarks(q);
+   345→    return posts.filter((p) => {
+   346→      const matchCategory = category === "All" || p.category === category;
+   347→      const matchSearch =
+   348→        !q ||
+   349→        p.title.toLowerCase().includes(q) ||
+   350→        p.excerpt.toLowerCase().includes(q) ||
+   351→        p.category.toLowerCase().includes(q) ||
+   352→        p.tags.some((tag) => tag.toLowerCase().includes(q)) ||
+   353→        (qLoose.length > 0 &&
+   354→          ((p.titleBn
+   355→            ? stripBnMarks(p.titleBn.toLowerCase()).includes(qLoose)
+   356→            : false) ||
+   357→            (p.excerptBn
+   358→              ? stripBnMarks(p.excerptBn.toLowerCase()).includes(qLoose)
+   359→              : false)));
+   360→      return matchCategory && matchSearch;
+   361→    });
+   362→  }, [posts, category, search]);
+   363→
+   364→  /* pagination — derived against the active filter key so "load more"
+   365→     resets automatically whenever the category or search changes */
+   366→  const filterKey = `${category}|${search}`;
+   367→  const [pageState, setPageState] = useState({
+   368→    key: filterKey,
+   369→    visible: PAGE_SIZE_INITIAL,
+   370→  });
+   371→  const visible =
+   372→    pageState.key === filterKey ? pageState.visible : PAGE_SIZE_INITIAL;
+   373→  const showMore = () =>
+   374→    setPageState({ key: filterKey, visible: visible + PAGE_SIZE_MORE });
+   375→
+   376→  const featured = posts.find((p) => p.featured) ?? posts[0];
+   377→  /* The large featured card appears only on the unfiltered view; while
+   378→     searching or inside a category every match lives in the grid (so the
+   379→     visible count always matches the "Showing X articles" text). */
+   380→  const showFeatured = !searching && category === "All" && Boolean(featured);
+   381→  const rest = showFeatured
+   382→    ? filtered.filter((p) => p.slug !== featured.slug)
+   383→    : filtered;
+   384→  const shown = rest.slice(0, visible);
+   385→  const hasMore = rest.length > visible;
+   386→
+   387→  /* stats strip — computed from the live bundle */
+   388→  const stats = useMemo(
+   389→    () => ({
+   390→      guides: posts.length,
+   391→      topics: new Set(posts.map((p) => p.category)).size,
+   392→      authors: new Set(posts.map((p) => p.author)).size,
+   393→    }),
+   394→    [posts]
+   395→  );
+   396→
+   397→  /* sidebar "latest articles" — 5 most recent by publish date */
+   398→  const latestPosts = useMemo(
+   399→    () => [...posts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
+   400→    [posts]
+   401→  );
+   402→
+   403→  const resultCountText = t.searchResults.replace(
+   404→    "{count}",
+   405→    localizeCount(bn, rest.length)
+   406→  );
+   407→  const showingOfText = t.showingOf
+   408→    .replace("{shown}", localizeCount(bn, shown.length))
+   409→    .replace("{total}", localizeCount(bn, rest.length));
+   410→
+   411→  const clearFilters = () => {
+   412→    setSearch("");
+   413→    setCategory("All");
+   414→  };
+   415→
+   416→  const featuredTitle =
+   417→    bn && featured?.titleBn ? featured.titleBn : featured?.title ?? "";
+   418→
+   419→  return (
+   420→    <>
+   421→      <PageHeader
+   422→        eyebrow={t.eyebrow}
+   423→        title={t.title}
+   424→        description={t.description}
+   425→        breadcrumb={[{ label: d.chrome.nav.home, to: "/" }, { label: d.chrome.nav.blog }]}
+   426→      />
+   427→
+   428→      {/* Stats strip — floats over the hero's lower edge */}
+   429→      <section className="relative z-10 mx-auto -mt-9 max-w-4xl px-4 sm:-mt-12 sm:px-6">
+   430→        <Reveal>
+   431→          <dl className="grid grid-cols-3 divide-x divide-blue-100 rounded-3xl border border-blue-100/80 bg-white/95 p-4 shadow-[0_18px_50px_-24px_rgba(0,32,96,0.28)] backdrop-blur sm:p-6">
+   432→            <div className="flex flex-col items-center gap-1 px-2 text-center">
+   433→              <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+   434→                <BookOpen className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   435→                {t.statsGuides}
+   436→              </dt>
+   437→              <dd className="font-heading text-2xl font-bold tabular-nums text-brand-navy sm:text-3xl">
+   438→                {localizeCount(bn, stats.guides)}
+   439→              </dd>
+   440→            </div>
+   441→            <div className="flex flex-col items-center gap-1 px-2 text-center">
+   442→              <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+   443→                <LayoutGrid className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   444→                {t.statsTopics}
+   445→              </dt>
+   446→              <dd className="font-heading text-2xl font-bold tabular-nums text-brand-navy sm:text-3xl">
+   447→                {localizeCount(bn, stats.topics)}
+   448→              </dd>
+   449→            </div>
+   450→            <div className="flex flex-col items-center gap-1 px-2 text-center">
+   451→              <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+   452→                <Users className="h-3.5 w-3.5 text-brand-blue" aria-hidden="true" />
+   453→                {t.statsAuthors}
+   454→              </dt>
+   455→              <dd className="font-heading text-2xl font-bold tabular-nums text-brand-navy sm:text-3xl">
+   456→                {localizeCount(bn, stats.authors)}
+   457→              </dd>
+   458→            </div>
+   459→          </dl>
+   460→        </Reveal>
+   461→      </section>
+   462→
+   463→      {/* Featured post — large image card with gradient overlay (hidden while searching) */}
+   464→      {showFeatured && (
+   465→        <section className="py-12 sm:py-16" aria-label="Featured article">
+   466→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   467→            <Reveal>
+   468→              <a
+   469→                href={`/blog/${featured.slug}`}
+   470→                className="group relative flex min-h-[480px] flex-col overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-24px_rgba(0,32,96,0.45)] ring-1 ring-blue-100/60 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_32px_70px_-24px_rgba(30,125,255,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   471→                aria-label={`${t.readGuide}: ${featuredTitle}`}
+   472→              >
+   473→                {featured.image && (
+   474→                  <Image
+   475→                    src={featured.image}
+   476→                    alt=""
+   477→                    fill
+   478→                    priority
+   479→                    sizes="(max-width: 1280px) 100vw, 1280px"
+   480→                    className="object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.04]"
+   481→                  />
+   482→                )}
+   483→                <span
+   484→                  className="absolute inset-0 bg-gradient-to-t from-brand-navy via-brand-navy/85 to-brand-navy/45 sm:bg-gradient-to-r sm:from-brand-navy sm:via-brand-navy/90 sm:to-brand-navy/35"
+   485→                  aria-hidden="true"
+   486→                />
+   487→                <div
+   488→                  className="dot-grid-light pointer-events-none absolute inset-0 opacity-30"
+   489→                  aria-hidden="true"
+   490→                />
+   491→
+   492→                <div className="relative z-10 m-auto w-full max-w-6xl px-6 py-10 sm:px-10 sm:py-12 lg:px-12">
+   493→                  <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+   494→                    <div>
+   495→                      <div className="flex flex-wrap items-center gap-2">
+   496→                        <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25">
+   497→                          <Lightbulb className="h-3.5 w-3.5" aria-hidden="true" />
+   498→                          {t.featured}
+   499→                        </span>
+   500→                        <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-blue-200 ring-1 ring-white/15">
+   501→                          {d.blogCategories[featured.category as keyof typeof d.blogCategories] ?? featured.category}
+   502→                        </span>
+   503→                      </div>
+   504→                      <h2 className="font-heading mt-4 max-w-2xl text-2xl font-bold leading-snug text-white text-balance sm:text-3xl lg:text-4xl">
+   505→                        {featuredTitle}
+   506→                      </h2>
+   507→                      <p className="mt-4 max-w-xl text-sm leading-relaxed text-blue-100/85 sm:text-base">
+   508→                        {bn && featured.excerptBn ? featured.excerptBn : featured.excerpt}
+   509→                      </p>
+   510→                      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-xs text-blue-100/80">
+   511→                        <span className="inline-flex items-center gap-2">
+   512→                          <Avatar className="h-9 w-9 border border-white/25">
+   513→                            <AvatarFallback className="bg-white/10 font-heading text-xs font-bold text-white">
+   514→                              {initialsOf(featured.author)}
+   515→                            </AvatarFallback>
+   516→                          </Avatar>
+   517→                          <span>
+   518→                            <span className="block font-semibold text-white">
+   519→                              {featured.author}
+   520→                            </span>
+   521→                            <span className="block text-[11px] text-blue-200/75">
+   522→                              {featured.authorCredentials}
+   523→                            </span>
+   524→                          </span>
+   525→                        </span>
+   526→                        <span className="inline-flex items-center gap-1.5">
+   527→                          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+   528→                          {formatPostDate(featured.date, bn)}
+   529→                        </span>
+   530→                        <span className="inline-flex items-center gap-1.5">
+   531→                          <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+   532→                          {localizeReadTime(featured.readTime, bn, t.minRead)}
+   533→                        </span>
+   534→                      </div>
+   535→                      <span className="btn-shine mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 group-hover:gap-3">
+   536→                        {t.readGuide}
+   537→                        <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+   538→                      </span>
+   539→                    </div>
+   540→
+   541→                    {/* quick-answer glass card */}
+   542→                    <div className="rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-md sm:p-6">
+   543→                      <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">
+   544→                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+   545→                        {t.quickAnswer}
+   546→                      </span>
+   547→                      <p className="mt-2.5 text-sm leading-relaxed text-blue-50">
+   548→                        {(bn && featured.quickAnswerBn
+   549→                          ? featured.quickAnswerBn
+   550→                          : featured.quickAnswer
+   551→                        ).slice(0, 180)}
+   552→                        …
+   553→                      </p>
+   554→                      <div className="mt-4 flex flex-wrap gap-1.5">
+   555→                        {featured.tags.slice(0, 3).map((tag) => (
+   556→                          <span
+   557→                            key={tag}
+   558→                            className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium text-blue-100 ring-1 ring-white/10"
+   559→                          >
+   560→                            #{tag}
+   561→                          </span>
+   562→                        ))}
+   563→                      </div>
+   564→                    </div>
+   565→                  </div>
+   566→                </div>
+   567→              </a>
+   568→            </Reveal>
+   569→          </div>
+   570→        </section>
+   571→      )}
+   572→
+   573→      {/* Search + category chips + article grid + desktop sidebar */}
+   574→      <section className="pb-16 sm:pb-20" aria-label={t.allArticles}>
+   575→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+   576→          <h2 className="sr-only">{t.allArticles}</h2>
+   577→          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 xl:gap-12">
+   578→            {/* Main column */}
+   579→            <div className="min-w-0">
+   580→              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   581→                {/* Search — filters by title, excerpt, category and tags (EN + BN) */}
+   582→                <div className="relative w-full sm:w-64">
+   583→                  <Search
+   584→                    className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+   585→                    aria-hidden="true"
+   586→                  />
+   587→                  <Input
+   588→                    type="search"
+   589→                    value={search}
+   590→                    onChange={(e) => setSearch(e.target.value)}
+   591→                    placeholder={t.searchPlaceholder}
+   592→                    aria-label={t.searchPlaceholder}
+   593→                    className="h-11 rounded-full border-blue-200/80 bg-white pl-11 pr-11 text-sm shadow-sm ring-1 ring-transparent transition-all placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
+   594→                  />
+   595→                  {search && (
+   596→                    <button
+   597→                      type="button"
+   598→                      onClick={() => setSearch("")}
+   599→                      aria-label={t.searchClear}
+   600→                      title={t.searchClear}
+   601→                      className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-blue-50 hover:text-brand-navy"
+   602→                    >
+   603→                      <X className="h-4 w-4" aria-hidden="true" />
+   604→                    </button>
+   605→                  )}
+   606→                </div>
+   607→                <div className="scroll-area flex flex-1 items-center gap-2 overflow-x-auto pb-2">
+   608→                  <Tag className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+   609→                  {blogCategories.map((c) => (
+   610→                    <button
+   611→                      key={c}
+   612→                      type="button"
+   613→                      onClick={() => setCategory(c)}
+   614→                      aria-pressed={category === c}
+   615→                      className={cn(
+   616→                        "min-h-11 shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   617→                        category === c
+   618→                          ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30"
+   619→                          : "bg-blue-50 text-brand-navy hover:bg-blue-100"
+   620→                      )}
+   621→                    >
+   622→                      {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+   623→                      <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] font-bold">
+   624→                        {localizeCount(
+   625→                          bn,
+   626→                          c === "All"
+   627→                            ? posts.length
+   628→                            : posts.filter((p) => p.category === c).length
+   629→                        )}
+   630→                      </span>
+   631→                    </button>
+   632→                  ))}
+   633→                </div>
+   634→              </div>
+   635→
+   636→              {(searching || category !== "All") && rest.length > 0 && (
+   637→                <p className="mt-6 text-sm text-slate-500" aria-live="polite">
+   638→                  {resultCountText}
+   639→                </p>
+   640→              )}
+   641→
+   642→              <AnimatePresence mode="wait">
+   643→                {rest.length > 0 ? (
+   644→                  <motion.div
+   645→                    key={`${category}-${search}`}
+   646→                    className="mt-8 grid gap-6 sm:grid-cols-2"
+   647→                    initial={{ opacity: 0, y: 14 }}
+   648→                    animate={{ opacity: 1, y: 0 }}
+   649→                    exit={{ opacity: 0 }}
+   650→                    transition={{ duration: 0.35 }}
+   651→                  >
+   652→                    {shown.map((post, i) => (
+   653→                      <PostCard key={post.slug} post={post} index={i} />
+   654→                    ))}
+   655→                  </motion.div>
+   656→                ) : (
+   657→                  <motion.div
+   658→                    key="empty"
+   659→                    className="mx-auto mt-8 max-w-md rounded-3xl border border-dashed border-blue-200 bg-ice p-10 text-center sm:p-12"
+   660→                    initial={{ opacity: 0, y: 16 }}
+   661→                    animate={{ opacity: 1, y: 0 }}
+   662→                    exit={{ opacity: 0 }}
+   663→                  >
+   664→                    <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white ring-1 ring-blue-100">
+   665→                      <Search className="h-6 w-6 text-brand-blue/60" aria-hidden="true" />
+   666→                    </span>
+   667→                    <h3 className="font-heading mt-4 text-base font-bold text-brand-navy">
+   668→                      {t.noResultsTitle}
+   669→                    </h3>
+   670→                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+   671→                      {t.noResults}
+   672→                    </p>
+   673→                    {(searching || category !== "All") && (
+   674→                      <button
+   675→                        type="button"
+   676→                        onClick={clearFilters}
+   677→                        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-navy px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-navy-900/20 transition-all duration-300 hover:bg-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   678→                      >
+   679→                        <X className="h-4 w-4" aria-hidden="true" />
+   680→                        {t.clearFilters}
+   681→                      </button>
+   682→                    )}
+   683→                  </motion.div>
+   684→                )}
+   685→              </AnimatePresence>
+   686→
+   687→              {/* Load more */}
+   688→              {hasMore && (
+   689→                <div className="mt-10 text-center">
+   690→                  <p className="text-xs text-slate-400" aria-live="polite">
+   691→                    {showingOfText}
+   692→                  </p>
+   693→                  <button
+   694→                    type="button"
+   695→                    onClick={showMore}
+   696→                    className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-blue-200 bg-white px-8 py-3 text-sm font-bold text-brand-navy shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:text-brand-blue hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+   697→                  >
+   698→                    {t.loadMore}
+   699→                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+   700→                  </button>
+   701→                </div>
+   702→              )}
+   703→            </div>
+   704→
+   705→            {/* Desktop sidebar */}
+   706→            <aside className="mt-12 space-y-6 lg:mt-0">
+   707→              {/* Browse by category */}
+   708→              <nav
+   709→                className="rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]"
+   710→                aria-label={t.browseCategories}
+   711→              >
+   712→                <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   713→                  <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+   714→                  {t.browseCategories}
+   715→                </h2>
+   716→                <ul className="mt-3 space-y-1">
+   717→                  {blogCategories.map((c) => {
+   718→                    const count =
+   719→                      c === "All"
+   720→                        ? posts.length
+   721→                        : posts.filter((p) => p.category === c).length;
+   722→                    const isActive = category === c;
+   723→                    return (
+   724→                      <li key={c}>
+   725→                        <button
+   726→                          type="button"
+   727→                          onClick={() => setCategory(c)}
+   728→                          aria-current={isActive ? "true" : undefined}
+   729→                          className={cn(
+   730→                            "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   731→                            isActive
+   732→                              ? "bg-blue-50 font-semibold text-brand-blue"
+   733→                              : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+   734→                          )}
+   735→                        >
+   736→                          <span className="leading-snug">
+   737→                            {d.blogCategories[c as keyof typeof d.blogCategories] ?? c}
+   738→                          </span>
+   739→                          <span
+   740→                            className={cn(
+   741→                              "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums",
+   742→                              isActive
+   743→                                ? "bg-brand-blue text-white"
+   744→                                : "bg-blue-50 text-brand-blue"
+   745→                            )}
+   746→                          >
+   747→                            {localizeCount(bn, count)}
+   748→                          </span>
+   749→                        </button>
+   750→                      </li>
+   751→                    );
+   752→                  })}
+   753→                </ul>
+   754→              </nav>
+   755→
+   756→              {/* Latest articles — top 5 by date */}
+   757→              <div className="rounded-3xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]">
+   758→                <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+   759→                  <Clock3 className="h-4 w-4" aria-hidden="true" />
+   760→                  {t.latestArticles}
+   761→                </h2>
+   762→                <ul className="mt-3 space-y-1">
+   763→                  {latestPosts.map((p) => {
+   764→                    const title = bn && p.titleBn ? p.titleBn : p.title;
+   765→                    return (
+   766→                      <li key={p.slug}>
+   767→                        <a
+   768→                          href={`/blog/${p.slug}`}
+   769→                          aria-label={`${t.readMore}: ${title}`}
+   770→                          className="group flex items-start gap-3 rounded-xl p-2 transition-colors duration-300 hover:bg-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+   771→                        >
+   772→                          {p.image && (
+   773→                            <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100">
+   774→                              <Image
+   775→                                src={p.image}
+   776→                                alt=""
+   777→                                width={112}
+   778→                                height={112}
+   779→                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+   780→                              />
+   781→                            </span>
+   782→                          )}
+   783→                          <span className="min-w-0">
+   784→                            <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue">
+   785→                              {title}
+   786→                            </span>
+   787→                            <span className="mt-1 block text-[11px] text-slate-400">
+   788→                              {formatPostDate(p.date, bn)}
+   789→                            </span>
+   790→                          </span>
+   791→                        </a>
+   792→                      </li>
+   793→                    );
+   794→                  })}
+   795→                </ul>
+   796→              </div>
+   797→
+   798→              {/* Book appointment + newsletter — sticky on desktop */}
+   799→              <div className="space-y-6 lg:sticky lg:top-24">
+   800→                <div className="hero-mesh-dark relative overflow-hidden rounded-3xl p-6 text-white shadow-[0_18px_45px_-18px_rgba(0,32,96,0.5)]">
+   801→                  <div
+   802→                    className="dot-grid-light pointer-events-none absolute inset-0 opacity-30"
+   803→                    aria-hidden="true"
+   804→                  />
+   805→                  <div className="relative">
+   806→                    <h2 className="font-heading text-lg font-bold text-white">
+   807→                      {t.sidebarBookTitle}
+   808→                    </h2>
+   809→                    <p className="mt-2 text-xs leading-relaxed text-blue-100/85">
+   810→                      {t.sidebarBookText}
+   811→                    </p>
+   812→                    <a
+   813→                      href="/appointment"
+   814→                      className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+   815→                    >
+   816→                      <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+   817→                      {t.bookConsultation}
+   818→                    </a>
+   819→                    <a
+   820→                      href="tel:+8801715027522"
+   821→                      className="mt-3 flex items-center gap-2 text-xs text-blue-100/85 transition-colors hover:text-white"
+   822→                    >
+   823→                      {t.sidebarCallNote}: 01715-027522
+   824→                    </a>
+   825→                  </div>
+   826→                </div>
+   827→                <SidebarNewsletter />
+   828→              </div>
+   829→            </aside>
+   830→          </div>
+   831→        </div>
+   832→      </section>
+   833→
+   834→      <CtaBanner
+   835→        title={t.ctaTitle}
+   836→        description={t.ctaDescription}
+   837→      />
+   838→    </>
+   839→  );
+   840→}
+   841→
+   842→/* ------------------------------------------------------------------ */
+   843→/*  BLOG DETAIL PAGE — premium reading experience (EN / বাংলা)         */
+   844→/* ------------------------------------------------------------------ */
+   845→
+   846→/* ------------------------------------------------------------------ */
+   847→/*  Reading progress bar — top of viewport while reading an article    */
+   848→/* ------------------------------------------------------------------ */
+   849→
+   850→function ReadingProgress() {
+   851→  const [progress, setProgress] = useState(0);
+   852→
+   853→  useEffect(() => {
+   854→    let raf = 0;
+   855→    const update = () => {
+   856→      raf = 0;
+   857→      const el = document.documentElement;
+   858→      const total = el.scrollHeight - el.clientHeight;
+   859→      setProgress(total > 0 ? Math.min(1, el.scrollTop / total) : 0);
+   860→    };
+   861→    const onScroll = () => {
+   862→      if (!raf) raf = requestAnimationFrame(update);
+   863→    };
+   864→    update();
+   865→    window.addEventListener("scroll", onScroll, { passive: true });
+   866→    window.addEventListener("resize", onScroll, { passive: true });
+   867→    return () => {
+   868→      window.removeEventListener("scroll", onScroll);
+   869→      window.removeEventListener("resize", onScroll);
+   870→      if (raf) cancelAnimationFrame(raf);
+   871→    };
+   872→  }, []);
+   873→
+   874→  return (
+   875→    <div
+   876→      className="reading-progress"
+   877→      style={{
+   878→        transform: `scaleX(${progress})`,
+   879→        /* Lift ABOVE the site-wide ScrollProgress (z-[70]) so the bar a
+   880→           reader sees on an article page is the article reading bar; the
+   881→           navy→blue→gold ramp matches the brand gradient family. */
+   882→        zIndex: 80,
+   883→        backgroundImage:
+   884→          "linear-gradient(90deg, #012c5f 0%, #1e7dff 60%, #f59e0b 100%)",
+   885→      }}
+   886→      aria-hidden="true"
+   887→    />
+   888→  );
+   889→}
+   890→
+   891→/* Active-section tracking for the article table of contents.
+   892→   `routeKey` (the post slug) re-runs the observer when navigating
+   893→   between articles that happen to have the same section count; the
+   894→   active index is DERIVED against the key so it resets on navigation
+   895→   without setState-in-effect. */
+   896→function useActiveSection(count: number, routeKey: string) {
+   897→  const [state, setState] = useState({ key: routeKey, active: 0 });
+   898→  const active = state.key === routeKey ? state.active : 0;
+   899→
+   900→  useEffect(() => {
+   901→    if (count < 2) return;
+   902→    const headings = Array.from({ length: count }, (_, i) =>
+   903→      document.getElementById(`section-${i}`)
+   904→    );
+   905→    const visible = headings.filter(Boolean) as HTMLElement[];
+   906→    if (visible.length === 0) return;
+   907→    const observer = new IntersectionObserver(
+   908→      (entries) => {
+   909→        entries.forEach((entry) => {
+   910→          if (entry.isIntersecting) {
+   911→            const idx = Number(entry.target.id.replace("section-", ""));
+   912→            setState({ key: routeKey, active: idx });
+   913→          }
+   914→        });
+   915→      },
+   916→      { rootMargin: "-25% 0px -65% 0px", threshold: 0 }
+   917→    );
+   918→    visible.forEach((h) => observer.observe(h));
+   919→    return () => observer.disconnect();
+   920→  }, [count, routeKey]);
+   921→  return [active, (i: number) => setState({ key: routeKey, active: i })] as const;
+   922→}
+   923→
+   924→/* Numbered TOC entries — shared by the desktop sticky sidebar
+   925→   and the mobile collapsible accordion. */
+   926→function TocList({
+   927→  post,
+   928→  activeSection,
+   929→  onNavigate,
+   930→}: {
+   931→  post: BlogPost;
+   932→  activeSection: number;
+   933→  onNavigate: (i: number) => void;
+   934→}) {
+   935→  const { lang } = useLang();
+   936→  const bn = lang === "bn";
+   937→  return (
+   938→    <ol className="mt-3 space-y-1">
+   939→      {post.sections.map((section, i) => {
+   940→        const label = bn
+   941→          ? post.sectionsBn?.[i]?.heading ?? section.heading
+   942→          : section.heading;
+   943→        const isActive = activeSection === i;
+   944→        return (
+   945→          <li key={section.heading}>
+   946→            <button
+   947→              type="button"
+   948→              onClick={() => onNavigate(i)}
+   949→              aria-current={isActive ? "location" : undefined}
+   950→              className={cn(
+   951→                "flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left text-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   952→                isActive
+   953→                  ? "bg-blue-50 font-semibold text-brand-blue"
+   954→                  : "text-slate-600 hover:bg-ice hover:text-brand-navy"
+   955→              )}
+   956→            >
+   957→              <span
+   958→                className={cn(
+   959→                  "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold tabular-nums transition-colors",
+   960→                  isActive
+   961→                    ? "bg-brand-blue text-white"
+   962→                    : "bg-blue-50 text-brand-blue"
+   963→                )}
+   964→              >
+   965→                {bn ? toBnDigits(i + 1) : i + 1}
+   966→              </span>
+   967→              <span className="leading-snug">{label}</span>
+   968→            </button>
+   969→          </li>
+   970→        );
+   971→      })}
+   972→    </ol>
+   973→  );
+   974→}
+   975→
+   976→/* Prev / next post navigation card */
+   977→function PostNavCard({
+   978→  post,
+   979→  direction,
+   980→}: {
+   981→  post: BlogPost;
+   982→  direction: "prev" | "next";
+   983→}) {
+   984→  const { lang, d } = useLang();
+   985→  const bn = lang === "bn";
+   986→  const t = d.blogPage;
+   987→  const title = bn && post.titleBn ? post.titleBn : post.title;
+   988→  const label = direction === "prev" ? t.prevArticle : t.nextArticle;
+   989→  return (
+   990→    <a
+   991→      href={`/blog/${post.slug}`}
+   992→      aria-label={`${label}: ${title}`}
+   993→      className={cn(
+   994→        "group flex items-center gap-4 rounded-3xl border border-blue-100/80 bg-white p-5 transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/30 hover:shadow-[0_18px_40px_-16px_rgba(30,125,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+   995→        direction === "next" && "sm:flex-row-reverse sm:text-right"
+   996→      )}
+   997→    >
+   998→      {direction === "prev" ? (
+   999→        <ArrowLeft
+  1000→          className="h-5 w-5 shrink-0 text-brand-blue transition-transform duration-300 group-hover:-translate-x-1"
+  1001→          aria-hidden="true"
+  1002→        />
+  1003→      ) : (
+  1004→        <ArrowRight
+  1005→          className="h-5 w-5 shrink-0 text-brand-blue transition-transform duration-300 group-hover:translate-x-1"
+  1006→          aria-hidden="true"
+  1007→        />
+  1008→      )}
+  1009→      {post.image && (
+  1010→        <span className="relative hidden h-14 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-blue-100 sm:block">
+  1011→          <Image
+  1012→            src={post.image}
+  1013→            alt=""
+  1014→            width={160}
+  1015→            height={112}
+  1016→            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+  1017→          />
+  1018→        </span>
+  1019→      )}
+  1020→      <span className="min-w-0">
+  1021→        <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue">
+  1022→          {label}
+  1023→        </span>
+  1024→        <span className="font-heading mt-1 line-clamp-2 block text-sm font-bold leading-snug text-brand-navy transition-colors group-hover:text-brand-blue sm:text-[15px]">
+  1025→          {title}
+  1026→        </span>
+  1027→      </span>
+  1028→    </a>
+  1029→  );
+  1030→}
+  1031→
+  1032→export function BlogDetailPage({ slug }: { slug: string }) {
+  1033→  const { lang, d } = useLang();
+  1034→  const bn = lang === "bn";
+  1035→  const t = d.blogPage;
+  1036→  const { posts, services, doctors } = useBundle();
+  1037→  const post = posts.find((p) => p.slug === slug);
+  1038→  const [activeSection, setActiveSection] = useActiveSection(
+  1039→    post?.sections.length ?? 0,
+  1040→    slug
+  1041→  );
+  1042→  /* mobile "On this page" accordion — derived against the slug so it
+  1043→     collapses automatically when navigating to another article */
+  1044→  const [tocState, setTocState] = useState<{ slug: string; open: boolean }>({
+  1045→    slug,
+  1046→    open: false,
+  1047→  });
+  1048→  const tocOpen = tocState.slug === slug && tocState.open;
+  1049→  const { toast } = useToast();
+  1050→  const [copied, setCopied] = useState(false);
+  1051→
+  1052→  const goToSection = (i: number) => {
+  1053→    /* NOTE: never use href="#section-x" — a plain hash would collide
+  1054→       with legacy hash-route handling; smooth-scroll programmatically */
+  1055→    setTocState({ slug, open: false });
+  1056→    setActiveSection(i);
+  1057→    const el = document.getElementById(`section-${i}`);
+  1058→    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  1059→    el?.focus({ preventScroll: true });
+  1060→  };
+  1061→
+  1062→  /* Deep-linkable article URL (falls back to the canonical production URL) */
+  1063→  const pageUrl =
+  1064→    typeof window === "undefined"
+  1065→      ? `https://aristocratdentalcarebd.com/blog/${slug}`
+  1066→      : `${window.location.origin}/blog/${slug}`;
+  1067→  const shareTitle = bn && post?.titleBn ? post.titleBn : post?.title ?? "Dental health article";
+  1068→  const waHref = `https://wa.me/?text=${encodeURIComponent(`${shareTitle} — ${pageUrl}`)}`;
+  1069→  const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+  1070→  const xHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(pageUrl)}`;
+  1071→
+  1072→  const copyLink = async () => {
+  1073→    try {
+  1074→      await navigator.clipboard.writeText(pageUrl);
+  1075→      setCopied(true);
+  1076→      toast({
+  1077→        title: t.shareCopied,
+  1078→        description: t.shareCopiedDesc,
+  1079→      });
+  1080→      window.setTimeout(() => setCopied(false), 2600);
+  1081→    } catch {
+  1082→      toast({
+  1083→        title: t.shareFail,
+  1084→        description: t.shareFailDesc,
+  1085→        variant: "destructive",
+  1086→      });
+  1087→    }
+  1088→  };
+  1089→
+  1090→  /* AEO: full BlogPosting (headline, author Person w/ worksFor, dates,
+  1091→     image, keywords, wordCount, speakable) + BreadcrumbList, on top of the
+  1092→     baseline MedicalWebPage block — all from the live CMS post content. */
+  1093→  const postJsonLd = useMemo(() => {
+  1094→    if (!post) return undefined;
+  1095→    /* wordCount over the EN article body (quick answer + section bodies + lists) */
+  1096→    const bodyText = [
+  1097→      post.quickAnswer,
+  1098→      ...post.sections.flatMap((s) => [...s.body, ...(s.list ?? [])]),
+  1099→    ].join(" ");
+  1100→    const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
+  1101→    const postUrl = `https://aristocratdentalcarebd.com/blog/${post.slug}`;
+  1102→    return [
+  1103→      {
+  1104→        "@context": "https://schema.org",
+  1105→        "@type": "MedicalWebPage",
+  1106→        headline: post.title,
+  1107→        description: post.excerpt,
+  1108→        datePublished: post.date,
+  1109→        dateModified: post.updated,
+  1110→        author: {
+  1111→          "@type": "Person",
+  1112→          name: post.author,
+  1113→          jobTitle: post.authorCredentials,
+  1114→        },
+  1115→        publisher: {
+  1116→          "@type": "Organization",
+  1117→          name: "Aristocrat Dental Care & Orthodontic Center",
+  1118→        },
+  1119→        about: post.tags.map((tg) => ({ "@type": "MedicalCondition", name: tg })),
+  1120→        lastReviewed: post.updated,
+  1121→      },
+  1122→      {
+  1123→        "@context": "https://schema.org",
+  1124→        "@type": "BlogPosting",
+  1125→        headline: post.title,
+  1126→        description: post.excerpt,
+  1127→        author: {
+  1128→          "@type": "Person",
+  1129→          name: post.author,
+  1130→          jobTitle: post.authorCredentials,
+  1131→          worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+  1132→        },
+  1133→        publisher: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+  1134→        datePublished: post.date,
+  1135→        dateModified: post.updated ?? post.date,
+  1136→        image: [
+  1137→          post.image
+  1138→            ? `https://aristocratdentalcarebd.com${post.image}`
+  1139→            : "https://aristocratdentalcarebd.com/og-image.png",
+  1140→        ],
+  1141→        mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+  1142→        url: postUrl,
+  1143→        inLanguage: "en",
+  1144→        keywords: post.tags.join(", "),
+  1145→        articleSection: post.category,
+  1146→        wordCount,
+  1147→        speakable: {
+  1148→          "@type": "SpeakableSpecification",
+  1149→          cssSelector: ["h1", ".quick-answer"],
+  1150→        },
+  1151→      },
+  1152→      {
+  1153→        "@context": "https://schema.org",
+  1154→        "@type": "BreadcrumbList",
+  1155→        itemListElement: [
+  1156→          {
+  1157→            "@type": "ListItem",
+  1158→            position: 1,
+  1159→            name: "Home",
+  1160→            item: "https://aristocratdentalcarebd.com/",
+  1161→          },
+  1162→          {
+  1163→            "@type": "ListItem",
+  1164→            position: 2,
+  1165→            name: "Blog",
+  1166→            item: "https://aristocratdentalcarebd.com/blog",
+  1167→          },
+  1168→          {
+  1169→            "@type": "ListItem",
+  1170→            position: 3,
+  1171→            name: post.title,
+  1172→            item: postUrl,
+  1173→          },
+  1174→        ],
+  1175→      },
+  1176→    ];
+  1177→  }, [post]);
+  1178→
+  1179→  usePageMeta({
+  1180→    title: post
+  1181→      ? bn && post.titleBn
+  1182→        ? post.titleBn
+  1183→        : post.title
+  1184→      : "Article Not Found",
+  1185→    description: post ? (bn && post.excerptBn ? post.excerptBn : post.excerpt) : undefined,
+  1186→    jsonLd: postJsonLd,
+  1187→  });
+  1188→
+  1189→  if (!post) return <NotFoundPage />;
+  1190→
+  1191→  /* --- derived navigation & relations ----------------------------- */
+  1192→  const authorDoctor = doctors.find((doc) => doc.name === post.author);
+  1193→  const authorInitials = initialsOf(post.author);
+  1194→
+  1195→  /* chronological prev/next (by publish date) */
+  1196→  const ordered = [...posts].sort((a, b) => a.date.localeCompare(b.date));
+  1197→  const idx = ordered.findIndex((p) => p.slug === slug);
+  1198→  const prev = idx > 0 ? ordered[idx - 1] : undefined;
+  1199→  const next =
+  1200→    idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1] : undefined;
+  1201→
+  1202→  /* related reading — same category and/or shared serviceRefs */
+  1203→  const currentRefs = post.serviceRefs ?? [];
+  1204→  const related = posts
+  1205→    .filter((p) => p.slug !== post.slug)
+  1206→    .map((p) => ({
+  1207→      post: p,
+  1208→      score:
+  1209→        (p.category === post.category ? 2 : 0) +
+  1210→        (p.serviceRefs ?? []).filter((r) => currentRefs.includes(r)).length,
+  1211→    }))
+  1212→    .filter((s) => s.score > 0)
+  1213→    .sort((a, b) => b.score - a.score || b.post.date.localeCompare(a.post.date))
+  1214→    .slice(0, 3)
+  1215→    .map((s) => s.post);
+  1216→  if (related.length < 3) {
+  1217→    for (const p of [...posts].sort((a, b) => b.date.localeCompare(a.date))) {
+  1218→      if (related.length >= 3) break;
+  1219→      if (p.slug === post.slug || related.some((r) => r.slug === p.slug)) continue;
+  1220→      related.push(p);
+  1221→    }
+  1222→  }
+  1223→
+  1224→  /* end-of-article booking CTA — prefill the first related treatment */
+  1225→  const bookingHref = post.serviceRefs?.[0]
+  1226→    ? `/appointment?service=${post.serviceRefs[0]}`
+  1227→    : "/appointment";
+  1228→
+  1229→  const showUpdated = Boolean(post.updated && post.updated !== post.date);
+  1230→
+  1231→  return (
+  1232→    <>
+  1233→      <ReadingProgress />
+  1234→      {/* Article hero — centered over a sliding backdrop */}
+  1235→      <section className="relative isolate overflow-hidden bg-brand-navy">
+  1236→        <HeroBackdrop slides={slidesForRoute("blog")} overlay="deep" interval={8000} />
+  1237→        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-24 pt-12 text-center sm:px-6 sm:pt-16">
+  1238→          <nav aria-label="Breadcrumb" className="mb-8">
+  1239→            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+  1240→              <li>
+  1241→                <a href="/" className="transition-colors hover:text-white">
+  1242→                  {d.chrome.nav.home}
+  1243→                </a>
+  1244→              </li>
+  1245→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+  1246→              <li>
+  1247→                <a href="/blog" className="transition-colors hover:text-white">
+  1248→                  {d.chrome.nav.blog}
+  1249→                </a>
+  1250→              </li>
+  1251→              <li className="text-blue-300/50" aria-hidden="true">/</li>
+  1252→              <li className="max-w-[220px] truncate font-medium text-white">
+  1253→                {bn && post.titleBn ? post.titleBn : post.title}
+  1254→              </li>
+  1255→            </ol>
+  1256→          </nav>
+  1257→
+  1258→          <motion.div
+  1259→            initial={{ opacity: 0, y: 24 }}
+  1260→            animate={{ opacity: 1, y: 0 }}
+  1261→            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+  1262→          >
+  1263→            <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/25 backdrop-blur-sm">
+  1264→              {d.blogCategories[post.category as keyof typeof d.blogCategories] ?? post.category}
+  1265→            </span>
+  1266→            <h1 className="font-heading mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl">
+  1267→              {bn && post.titleBn ? post.titleBn : post.title}
+  1268→            </h1>
+  1269→            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-blue-200/85">
+  1270→              <span className="inline-flex items-center gap-2">
+  1271→                <Avatar className="h-9 w-9 border-2 border-white/20">
+  1272→                  <AvatarFallback className="bg-white/10 font-heading text-xs font-bold text-white">
+  1273→                    {authorInitials}
+  1274→                  </AvatarFallback>
+  1275→                </Avatar>
+  1276→                <span>
+  1277→                  <span className="sr-only">{t.writtenBy}: </span>
+  1278→                  <span className="block font-semibold text-white">{post.author}</span>
+  1279→                  <span className="block text-xs">{post.authorCredentials}</span>
+  1280→                </span>
+  1281→              </span>
+  1282→              <span className="inline-flex items-center gap-1.5">
+  1283→                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+  1284→                {t.published}:{" "}
+  1285→                {formatPostDate(post.date, bn, { day: "numeric", month: "long", year: "numeric" })}
+  1286→              </span>
+  1287→              {showUpdated && (
+  1288→                <span className="inline-flex items-center gap-1.5">
+  1289→                  <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+  1290→                  {t.updated}:{" "}
+  1291→                  {formatPostDate(post.updated!, bn, { day: "numeric", month: "long", year: "numeric" })}
+  1292→                </span>
+  1293→              )}
+  1294→              <span className="inline-flex items-center gap-1.5">
+  1295→                <Clock3 className="h-4 w-4" aria-hidden="true" />
+  1296→                {localizeReadTime(post.readTime, bn, t.minRead)}
+  1297→              </span>
+  1298→            </div>
+  1299→
+  1300→            {/* share row */}
+  1301→            <div
+  1302→              className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+  1303→              role="group"
+  1304→              aria-label={t.share}
+  1305→            >
+  1306→              <span className="mr-1 hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-blue-200/70 sm:inline-flex">
+  1307→                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+  1308→                {t.share}
+  1309→              </span>
+  1310→              <a
+  1311→                href={waHref}
+  1312→                target="_blank"
+  1313→                rel="noopener noreferrer"
+  1314→                aria-label={t.shareWa}
+  1315→                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/10 px-4 text-xs font-bold text-white ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-500 hover:ring-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  1316→              >
+  1317→                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+  1318→                <span className="hidden sm:inline">WhatsApp</span>
+  1319→              </a>
+  1320→              <a
+  1321→                href={fbHref}
+  1322→                target="_blank"
+  1323→                rel="noopener noreferrer"
+  1324→                aria-label={t.shareFb}
+  1325→                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/10 px-4 text-xs font-bold text-white ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#1877f2] hover:ring-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  1326→              >
+  1327→                <Facebook className="h-4 w-4" aria-hidden="true" />
+  1328→                <span className="hidden sm:inline">Facebook</span>
+  1329→              </a>
+  1330→              <a
+  1331→                href={xHref}
+  1332→                target="_blank"
+  1333→                rel="noopener noreferrer"
+  1334→                aria-label={t.shareX}
+  1335→                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/10 px-4 text-xs font-bold text-white ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:ring-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  1336→              >
+  1337→                <Twitter className="h-4 w-4" aria-hidden="true" />
+  1338→                <span className="hidden sm:inline">X</span>
+  1339→              </a>
+  1340→              <button
+  1341→                type="button"
+  1342→                onClick={copyLink}
+  1343→                aria-label={t.shareCopy}
+  1344→                className={cn(
+  1345→                  "inline-flex h-11 items-center gap-2 rounded-full px-4 text-xs font-bold ring-1 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+  1346→                  copied
+  1347→                    ? "bg-amber-400 text-brand-navy ring-amber-300"
+  1348→                    : "bg-white/10 text-white ring-white/20 hover:bg-white hover:text-brand-navy"
+  1349→                )}
+  1350→              >
+  1351→                {copied ? (
+  1352→                  <Check className="h-4 w-4" aria-hidden="true" />
+  1353→                ) : (
+  1354→                  <Link2 className="h-4 w-4" aria-hidden="true" />
+  1355→                )}
+  1356→                <span className="hidden sm:inline">
+  1357→                  {copied ? t.shareCopied : t.shareCopy}
+  1358→                </span>
+  1359→              </button>
+  1360→            </div>
+  1361→          </motion.div>
+  1362→        </div>
+  1363→      </section>
+  1364→
+  1365→      {/* Article body — prose column + sticky TOC sidebar on desktop */}
+  1366→      <article className="py-14 sm:py-16">
+  1367→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1368→          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10 xl:gap-14">
+  1369→            {/* Prose column */}
+  1370→            <div className="min-w-0">
+  1371→              {/* Cover image */}
+  1372→              {post.image && (
+  1373→                <Reveal>
+  1374→                  <figure className="zoom-img relative -mt-24 overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-20px_rgba(0,32,96,0.45)] ring-1 ring-blue-100 sm:-mt-28">
+  1375→                    <Image
+  1376→                      src={post.image}
+  1377→                      alt={post.imageAlt ?? post.title}
+  1378→                      width={896}
+  1379→                      height={504}
+  1380→                      priority
+  1381→                      className="h-56 w-full object-cover sm:h-80"
+  1382→                    />
+  1383→                    <span
+  1384→                      className="absolute inset-0 bg-gradient-to-t from-brand-navy/40 via-transparent to-transparent"
+  1385→                      aria-hidden="true"
+  1386→                    />
+  1387→                  </figure>
+  1388→                </Reveal>
+  1389→              )}
+  1390→
+  1391→              {/* AEO quick answer */}
+  1392→              <Reveal className="mt-10">
+  1393→                <div className="relative max-w-[70ch] overflow-hidden rounded-3xl border border-blue-100 bg-ice p-6 shadow-[0_14px_40px_-20px_rgba(0,32,96,0.25)] sm:p-8">
+  1394→                  <span
+  1395→                    className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-brand-blue/10 blur-2xl"
+  1396→                    aria-hidden="true"
+  1397→                  />
+  1398→                  <div className="relative flex items-center gap-3">
+  1399→                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-blue shadow-sm ring-1 ring-blue-100">
+  1400→                      <Stethoscope className="h-5 w-5" aria-hidden="true" />
+  1401→                    </span>
+  1402→                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1403→                      {t.quickAnswer}
+  1404→                    </span>
+  1405→                  </div>
+  1406→                  <p className="quick-answer relative mt-4 text-base font-medium leading-relaxed text-brand-navy sm:text-lg">
+  1407→                    {bn && post.quickAnswerBn ? post.quickAnswerBn : post.quickAnswer}
+  1408→                  </p>
+  1409→                </div>
+  1410→              </Reveal>
+  1411→
+  1412→              {/* Mobile "On this page" accordion (desktop uses the sticky sidebar) */}
+  1413→              {post.sections.length >= 3 && (
+  1414→                <div className="mt-6 lg:hidden">
+  1415→                  <div className="overflow-hidden rounded-2xl border border-blue-100/80 bg-white shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]">
+  1416→                    <button
+  1417→                      type="button"
+  1418→                      onClick={() => setTocState({ slug, open: !tocOpen })}
+  1419→                      aria-expanded={tocOpen}
+  1420→                      aria-controls="mobile-toc"
+  1421→                      className="flex min-h-11 w-full items-center justify-between gap-3 px-5 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-blue"
+  1422→                    >
+  1423→                      <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1424→                        <ListTree className="h-4 w-4" aria-hidden="true" />
+  1425→                        {t.onThisPage}
+  1426→                      </span>
+  1427→                      <ChevronDown
+  1428→                        className={cn(
+  1429→                          "h-4 w-4 shrink-0 text-brand-blue transition-transform duration-300",
+  1430→                          tocOpen && "rotate-180"
+  1431→                        )}
+  1432→                        aria-hidden="true"
+  1433→                      />
+  1434→                    </button>
+  1435→                    <AnimatePresence initial={false}>
+  1436→                      {tocOpen && (
+  1437→                        <motion.div
+  1438→                          id="mobile-toc"
+  1439→                          initial={{ height: 0, opacity: 0 }}
+  1440→                          animate={{ height: "auto", opacity: 1 }}
+  1441→                          exit={{ height: 0, opacity: 0 }}
+  1442→                          transition={{ duration: 0.3, ease: "easeInOut" }}
+  1443→                          className="overflow-hidden"
+  1444→                        >
+  1445→                          <nav aria-label={t.onThisPage} className="px-3 pb-3">
+  1446→                            <TocList
+  1447→                              post={post}
+  1448→                              activeSection={activeSection}
+  1449→                              onNavigate={goToSection}
+  1450→                            />
+  1451→                          </nav>
+  1452→                        </motion.div>
+  1453→                      )}
+  1454→                    </AnimatePresence>
+  1455→                  </div>
+  1456→                </div>
+  1457→              )}
+  1458→
+  1459→              {/* Sections */}
+  1460→              <div className="mt-10 max-w-[70ch] space-y-12">
+  1461→                {post.sections.map((section, i) => {
+  1462→                  const bnSection = bn ? post.sectionsBn?.[i] : undefined;
+  1463→                  const listItems = bnSection?.list ?? section.list;
+  1464→                  return (
+  1465→                    <Reveal key={section.heading} delay={i * 0.03}>
+  1466→                      <section aria-labelledby={`section-${i}`}>
+  1467→                        <span
+  1468→                          className="text-[11px] font-bold tabular-nums tracking-[0.22em] text-brand-blue/70"
+  1469→                          aria-hidden="true"
+  1470→                        >
+  1471→                          {bn
+  1472→                            ? toBnDigits(String(i + 1).padStart(2, "0"))
+  1473→                            : String(i + 1).padStart(2, "0")}
+  1474→                        </span>
+  1475→                        <h2
+  1476→                          id={`section-${i}`}
+  1477→                          tabIndex={-1}
+  1478→                          className="font-heading scroll-mt-28 text-[1.35rem] font-bold leading-snug text-brand-navy outline-none focus-visible:rounded-lg sm:text-2xl"
+  1479→                        >
+  1480→                          {bnSection?.heading ?? section.heading}
+  1481→                        </h2>
+  1482→                        <span
+  1483→                          className="mt-3 block h-0.5 w-12 rounded-full bg-gradient-to-r from-brand-blue to-amber-400"
+  1484→                          aria-hidden="true"
+  1485→                        />
+  1486→                        <div className="mt-5 space-y-4">
+  1487→                          {(bnSection?.body ?? section.body).map((para, j) => (
+  1488→                            <p
+  1489→                              key={j}
+  1490→                              className={cn(
+  1491→                                "text-[15px] leading-relaxed text-slate-600 sm:text-base",
+  1492→                                i === 0 && j === 0 && "article-lead"
+  1493→                              )}
+  1494→                            >
+  1495→                              {para}
+  1496→                            </p>
+  1497→                          ))}
+  1498→                        </div>
+  1499→                        {listItems && (
+  1500→                          <ul className="mt-5 space-y-3 rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-22px_rgba(0,32,96,0.2)] sm:p-6">
+  1501→                            {listItems.map((item) => (
+  1502→                              <li
+  1503→                                key={item}
+  1504→                                className="flex items-start gap-3 text-sm leading-relaxed text-slate-700 sm:text-[15px]"
+  1505→                              >
+  1506→                                <span
+  1507→                                  className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-50 text-brand-blue ring-1 ring-blue-100"
+  1508→                                  aria-hidden="true"
+  1509→                                >
+  1510→                                  <Check className="h-3 w-3" />
+  1511→                                </span>
+  1512→                                <span>{item}</span>
+  1513→                              </li>
+  1514→                            ))}
+  1515→                          </ul>
+  1516→                        )}
+  1517→                      </section>
+  1518→                    </Reveal>
+  1519→                  );
+  1520→                })}
+  1521→              </div>
+  1522→
+  1523→              {/* Tags → link back to the blog index with the search prefilled */}
+  1524→              {post.tags.length > 0 && (
+  1525→                <div className="mt-10 max-w-[70ch]">
+  1526→                  <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1527→                    <Tag className="h-4 w-4" aria-hidden="true" />
+  1528→                    {t.relatedTopics}
+  1529→                  </span>
+  1530→                  <div className="mt-3 flex flex-wrap gap-2">
+  1531→                    {post.tags.map((tag) => (
+  1532→                      <a
+  1533→                        key={tag}
+  1534→                        href={`/blog?q=${encodeURIComponent(tag)}`}
+  1535→                        aria-label={`${t.relatedTopics}: ${tag}`}
+  1536→                        className="inline-flex items-center rounded-full border border-blue-100 bg-ice px-3.5 py-2 text-xs font-medium text-brand-navy transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-blue/30 hover:bg-blue-50 hover:text-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+  1537→                      >
+  1538→                        #{tag}
+  1539→                      </a>
+  1540→                    ))}
+  1541→                  </div>
+  1542→                </div>
+  1543→              )}
+  1544→
+  1545→              {/* Author box */}
+  1546→              <Reveal className="mt-12">
+  1547→                <div className="max-w-[70ch] rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_12px_40px_-18px_rgba(0,32,96,0.2)] sm:p-8">
+  1548→                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+  1549→                    <Avatar className="h-16 w-16 shrink-0 border-4 border-blue-50">
+  1550→                      <AvatarFallback className="font-heading text-xl font-bold text-brand-navy">
+  1551→                        {authorInitials}
+  1552→                      </AvatarFallback>
+  1553→                    </Avatar>
+  1554→                    <div className="min-w-0">
+  1555→                      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1556→                        {t.authorLabel}
+  1557→                      </span>
+  1558→                      <h3 className="font-heading mt-1 text-lg font-bold text-brand-navy">
+  1559→                        {post.author}
+  1560→                      </h3>
+  1561→                      <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
+  1562→                        {post.authorCredentials} · {t.authorAtClinic}
+  1563→                      </p>
+  1564→                      {authorDoctor && (
+  1565→                        <p className="mt-1.5 text-xs text-slate-400">
+  1566→                          {bn && authorDoctor.roleBn ? authorDoctor.roleBn : authorDoctor.role}
+  1567→                          {" · "}
+  1568→                          {bn
+  1569→                            ? `${toBnDigits(authorDoctor.experienceYears)}+ ${d.shared.yrs} ${d.shared.patients}`
+  1570→                            : `${authorDoctor.experienceYears}+ ${d.shared.yrs} · ${authorDoctor.patientsTreated.toLocaleString("en-US")}+ ${d.shared.patients}`}
+  1571→                        </p>
+  1572→                      )}
+  1573→                    </div>
+  1574→                  </div>
+  1575→                  <div className="mt-6 flex flex-wrap gap-3 border-t border-blue-50 pt-5">
+  1576→                    {authorDoctor ? (
+  1577→                      <>
+  1578→                        <a
+  1579→                          href={`/doctors/${authorDoctor.slug}`}
+  1580→                          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-blue-50 px-5 py-2.5 text-sm font-bold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+  1581→                        >
+  1582→                          <ArrowUpRight className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+  1583→                          {t.viewAuthor}
+  1584→                        </a>
+  1585→                        <a
+  1586→                          href={`/appointment?doctor=${authorDoctor.slug}`}
+  1587→                          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-blue px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+  1588→                        >
+  1589→                          <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+  1590→                          {t.bookWithDoctor.replace(
+  1591→                            "{name}",
+  1592→                            authorDoctor.name.split(" ").slice(0, 2).join(" ")
+  1593→                          )}
+  1594→                        </a>
+  1595→                      </>
+  1596→                    ) : (
+  1597→                      <a
+  1598→                        href="/appointment"
+  1599→                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-blue px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+  1600→                      >
+  1601→                        <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+  1602→                        {t.consult} {post.author.split(" ").slice(0, 2).join(" ")}
+  1603→                      </a>
+  1604→                    )}
+  1605→                  </div>
+  1606→                </div>
+  1607→              </Reveal>
+  1608→
+  1609→              {/* Related treatments — curated cross-links to service pages */}
+  1610→              {post.serviceRefs && post.serviceRefs.length > 0 && (
+  1611→                <Reveal className="mt-8">
+  1612→                  <nav
+  1613→                    aria-label={d.shared.relatedTreatments}
+  1614→                    className="max-w-[70ch] rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)] sm:p-6"
+  1615→                  >
+  1616→                    <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1617→                      <Stethoscope className="h-4 w-4" aria-hidden="true" />
+  1618→                      {d.shared.relatedTreatments}
+  1619→                    </span>
+  1620→                    <p className="mt-2 text-sm text-slate-500">
+  1621→                      {d.shared.relatedTreatmentsSub}
+  1622→                    </p>
+  1623→                    <div className="mt-4 flex flex-wrap gap-2.5">
+  1624→                      {post.serviceRefs.map((serviceSlug) => {
+  1625→                        const svc = services.find((s) => s.slug === serviceSlug);
+  1626→                        if (!svc) return null;
+  1627→                        const svcName = bn && svc.nameBn ? svc.nameBn : svc.name;
+  1628→                        return (
+  1629→                          <a
+  1630→                            key={serviceSlug}
+  1631→                            href={`/services/${serviceSlug}`}
+  1632→                            aria-label={`${d.shared.relatedTreatments}: ${svcName}`}
+  1633→                            className="group inline-flex items-center gap-2.5 rounded-full bg-blue-50 py-2 pl-2 pr-4 text-sm font-semibold text-brand-navy ring-1 ring-blue-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+  1634→                          >
+  1635→                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-blue ring-1 ring-blue-100">
+  1636→                              <DynamicIcon name={svc.icon} className="h-4 w-4" />
+  1637→                            </span>
+  1638→                            <span className="leading-snug">{svcName}</span>
+  1639→                            <ArrowRight
+  1640→                              className="h-3.5 w-3.5 shrink-0 text-brand-blue/60 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-brand-blue"
+  1641→                              aria-hidden="true"
+  1642→                            />
+  1643→                          </a>
+  1644→                        );
+  1645→                      })}
+  1646→                    </div>
+  1647→                  </nav>
+  1648→                </Reveal>
+  1649→              )}
+  1650→            </div>
+  1651→
+  1652→            {/* Sticky table of contents (desktop) */}
+  1653→            {post.sections.length >= 3 && (
+  1654→              <aside className="hidden lg:block" aria-label={t.onThisPage}>
+  1655→                <div className="sticky top-24 space-y-6">
+  1656→                  <nav
+  1657→                    aria-label={t.onThisPage}
+  1658→                    className="rounded-2xl border border-blue-100/80 bg-white p-5 shadow-[0_10px_30px_-18px_rgba(0,32,96,0.18)]"
+  1659→                  >
+  1660→                    <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-blue">
+  1661→                      <ListTree className="h-4 w-4" aria-hidden="true" />
+  1662→                      {t.onThisPage}
+  1663→                    </span>
+  1664→                    <TocList
+  1665→                      post={post}
+  1666→                      activeSection={activeSection}
+  1667→                      onNavigate={goToSection}
+  1668→                    />
+  1669→                  </nav>
+  1670→
+  1671→                  {/* mini booking CTA under the TOC */}
+  1672→                  <a
+  1673→                    href={bookingHref}
+  1674→                    className="hero-mesh-dark group block rounded-2xl p-5 text-white shadow-[0_18px_45px_-18px_rgba(0,32,96,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_55px_-18px_rgba(30,125,255,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+  1675→                  >
+  1676→                    <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300">
+  1677→                      {t.stillQuestions}
+  1678→                    </span>
+  1679→                    <span className="mt-2 flex items-center gap-2 text-sm font-bold">
+  1680→                      {t.bookConsultation}
+  1681→                      <ArrowRight
+  1682→                        className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
+  1683→                        aria-hidden="true"
+  1684→                      />
+  1685→                    </span>
+  1686→                  </a>
+  1687→                </div>
+  1688→              </aside>
+  1689→            )}
+  1690→          </div>
+  1691→        </div>
+  1692→      </article>
+  1693→
+  1694→      {/* Related reading — same category and/or shared treatments */}
+  1695→      {related.length > 0 && (
+  1696→        <section className="bg-ice py-14 sm:py-16" aria-labelledby="related-posts">
+  1697→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1698→            <SectionHeading
+  1699→              align="left"
+  1700→              eyebrow={t.relatedEyebrow}
+  1701→              title={t.relatedTitle}
+  1702→            />
+  1703→            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  1704→              {related.map((p, i) => (
+  1705→                <PostCard key={p.slug} post={p} index={i} />
+  1706→              ))}
+  1707→            </div>
+  1708→          </div>
+  1709→        </section>
+  1710→      )}
+  1711→
+  1712→      {/* Prev / next article navigation (by publish date) */}
+  1713→      {(prev || next) && (
+  1714→        <section className="py-12 sm:py-14" aria-label={t.backToAll}>
+  1715→          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1716→            <Reveal>
+  1717→              <a
+  1718→                href="/blog"
+  1719→                className="group inline-flex items-center gap-2 text-sm font-semibold text-brand-blue transition-colors hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:rounded-lg"
+  1720→              >
+  1721→                <ArrowLeft
+  1722→                  className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5"
+  1723→                  aria-hidden="true"
+  1724→                />
+  1725→                {t.backToAll}
+  1726→              </a>
+  1727→              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+  1728→                {prev && <PostNavCard post={prev} direction="prev" />}
+  1729→                {next && (
+  1730→                  <PostNavCard post={next} direction="next" />
+  1731→                )}
+  1732→              </div>
+  1733→            </Reveal>
+  1734→          </div>
+  1735→        </section>
+  1736→      )}
+  1737→
+  1738→      {/* End-of-article CTA — prefill the primary related treatment */}
+  1739→      <section className="pb-16 sm:pb-20" aria-labelledby="article-cta">
+  1740→        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+  1741→          <Reveal>
+  1742→            <div className="hero-mesh-dark noise relative overflow-hidden rounded-[2.5rem] px-6 py-12 text-center shadow-2xl shadow-navy-900/30 sm:px-12 sm:py-14">
+  1743→              <div
+  1744→                className="dot-grid-light pointer-events-none absolute inset-0 opacity-40"
+  1745→                aria-hidden="true"
+  1746→              />
+  1747→              <span
+  1748→                className="animate-glow-drift pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-blue/25 blur-3xl"
+  1749→                aria-hidden="true"
+  1750→              />
+  1751→              <span
+  1752→                className="animate-glow-drift pointer-events-none absolute -bottom-20 -left-16 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl"
+  1753→                style={{ animationDelay: "-7s" }}
+  1754→                aria-hidden="true"
+  1755→              />
+  1756→              <div className="relative">
+  1757→                <h2
+  1758→                  id="article-cta"
+  1759→                  className="font-heading mx-auto max-w-2xl text-2xl font-bold leading-tight text-white text-balance sm:text-3xl"
+  1760→                >
+  1761→                  {t.stillQuestions}
+  1762→                </h2>
+  1763→                <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-blue-100/85 sm:text-base">
+  1764→                  {t.consultNote}
+  1765→                </p>
+  1766→                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+  1767→                  <a
+  1768→                    href={bookingHref}
+  1769→                    className="btn-shine inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-bold text-brand-navy shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  1770→                  >
+  1771→                    <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+  1772→                    {t.bookConsultation}
+  1773→                  </a>
+  1774→                  <a
+  1775→                    href="tel:+8801715027522"
+  1776→                    className="inline-flex min-h-11 items-center gap-2 rounded-full px-8 py-3.5 text-base font-bold text-white ring-2 ring-white/40 transition-all duration-300 hover:bg-white/10 hover:ring-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+  1777→                  >
+  1778→                    {d.shared.ctaCall} 01715-027522
+  1779→                  </a>
+  1780→                </div>
+  1781→                <p className="mt-6 text-xs text-blue-200/70">{d.shared.ctaHours}</p>
+  1782→              </div>
+  1783→            </div>
+  1784→          </Reveal>
+  1785→        </div>
+  1786→      </section>
+  1787→    </>
+  1788→  );
+  1789→}
+  1790→

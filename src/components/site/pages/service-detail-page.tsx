@@ -68,7 +68,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
         "@type": "MedicalTherapy",
         name: service.name,
         description: service.excerpt,
-        url: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+        url: `https://aristocratdentalcarebd.com/services/${service.slug}`,
         provider: {
           "@type": "Dentist",
           name: settings.name,
@@ -121,13 +121,13 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
           "@type": "ListItem",
           position: 2,
           name: "Services",
-          item: "https://aristocratdentalcarebd.com/#/services",
+          item: "https://aristocratdentalcarebd.com/services",
         },
         {
           "@type": "ListItem",
           position: 3,
           name: service.name,
-          item: `https://aristocratdentalcarebd.com/#/services/${service.slug}`,
+          item: `https://aristocratdentalcarebd.com/services/${service.slug}`,
         },
       ],
     });
@@ -176,7 +176,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
             <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>
                 <a
-                  href="#/"
+                  href="/"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/");
@@ -189,7 +189,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
               <li className="text-blue-300/50" aria-hidden="true">/</li>
               <li>
                 <a
-                  href="#/services"
+                  href="/services"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/services");
@@ -578,7 +578,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
               />
               <Reveal>
                 <a
-                  href="#/services"
+                  href="/services"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate("/services");
@@ -624,7 +624,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
                 return (
                   <Reveal key={post.slug} delay={i * 0.06} className="h-full">
                     <a
-                      href={`#/blog/${post.slug}`}
+                      href={`/blog/${post.slug}`}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate(`/blog/${post.slug}`);
