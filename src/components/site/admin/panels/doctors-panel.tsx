@@ -1042,7 +1042,7 @@ export function DoctorsPanel({ onSessionExpired }: PanelProps) {
   const load = useCallback(async () => {
     setLoadBusy(true);
     try {
-      const res = await fetch("/api/admin/doctors");
+      const res = await fetch("/api/admin/doctors", { cache: "no-store" });
       if (res.status === 401) {
         onSessionExpired();
         return;

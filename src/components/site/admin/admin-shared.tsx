@@ -546,7 +546,11 @@ export function useAdminFetch(onUnauthorized: () => void) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(path);
+        /* cache: "no-store" — admin reads must never be served from the
+           browser HTTP cache, otherwise a panel re-fetch after a save
+           (list reload / tab revisit) replays the pre-save payload and
+           the edit looks like it was "not saved". */
+        const res = await fetch(path, { cache: "no-store" });
         if (handle401(res)) return null;
         const data = await res.json().catch(() => null);
         if (!res.ok) {
@@ -1233,7 +1237,7 @@ export function WiredStub({
     setPhase("loading");
     (async () => {
       try {
-        const res = await fetch(endpoint);
+        const res = await fetch(endpoint, { cache: "no-store" });
         if (res.status === 401) {
           if (!cancelled) expiredRef.current();
           return;

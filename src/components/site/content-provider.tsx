@@ -53,7 +53,10 @@ export function ContentProvider({
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/content", { cache: "no-store" });
+      /* `no-cache` forces revalidation with the server (never a stale
+         browser/CDN copy); the endpoint itself is uncacheable by default
+         so admin saves are visible immediately. */
+      const res = await fetch("/api/content", { cache: "no-cache" });
       if (res.ok) {
         const next = (await res.json()) as ContentBundle;
         if (next && Array.isArray(next.services)) {

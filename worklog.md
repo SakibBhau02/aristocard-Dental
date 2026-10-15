@@ -1231,3 +1231,22 @@ Work Log:
 - `npm run vercel-build` FULL PASS (generate + migrate deploy + next build, 41 pages, /api/admin/upload soho sob route). Build prerender Neon thekei data niyeche.
 - Dev server restarted (build er jonno stop kora chilo).
 - Baki (user): Vercel import + .env values paste + Deploy. DB seed already Neon e live; purono sqlite demo data migrate kora hoy ni (production clean start).
+---
+Task ID: github-push — COMPLETE
+Agent: opencode (Muse Spark)
+Task: Push to github.com/SakibBhau02/aristocard-Dental
+
+Work Log:
+- Safety first: `git rm --cached .env db/custom.db .zscripts/dev.pid` — live secrets + sqlite binary ar track hoy na (gitignored). Verify: origin/main tree te .env/custom.db/dev.pid nei.
+- Commit d0adb66 (505 files: Neon/R2/Vercel changes + package-lock.json + .env.example + migration) + remote add + `git push -u origin main` SUCCESS (credential manager auth).
+Follow-up: `git add -A` had re-added untracked custom.db/dev.pid (not ignored) — fixed via .gitignore (db/*.db, dev.pid) + commit 2916d12 + push. origin/main verified clean: no .env, no custom.db, no dev.pid.
+---
+Task ID: vercel-deploy — COMPLETE
+Agent: opencode (Muse Spark)
+Task: Vercel env vars + production deploy
+
+Work Log:
+- Vercel CLI (E:\opencode\npm\vercel.ps1) already authed as sakibzoolyum-5090 -> `vercel link --yes` created linked project, connected GitHub repo.
+- All 10 env vars added to production+preview+development (30 entries): DATABASE_URL, DIRECT_URL, R2_ACCOUNT_ID/ACCESS_KEY_ID/SECRET_ACCESS_KEY/BUCKET_NAME/PUBLIC_URL, ADMIN_PASSCODE, ADMIN_SESSION_SECRET, PATIENT_SESSION_SECRET. `.env ls production` -> all 10 present (Secret).
+- `vercel --prod --yes` -> build PASS (needs DIRECT_URL fix was just the missing env var), READY. URL: https://aristocart-eight.vercel.app
+- Verify live: / 200, /api/reviews 200 (valid JSON from Neon), /api/content 200, /sitemap.xml 200; content JSON e 38?? R2 image ref; sample R2 URL 200.
