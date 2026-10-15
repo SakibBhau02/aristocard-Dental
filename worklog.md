@@ -1180,3 +1180,54 @@ Stage Summary:
 - NEW FEATURE live: /estimator â€” full bilingual treatment cost estimator (BDT ranges, EMI, print sheet, mobile sticky total bar), discoverable via services page CostTeaser, search palette page entry + quick action, sitemap.
 - Doctor photos are AI-generated placeholders (same convention as other site imagery) â€” swap with real clinic photos via admin when the client provides them.
 - Watch-outs for next rounds: (1) revisit-navigation hydration warnings are pre-existing dev noise â€” don't chase them; (2) estimator's print sheet uses EN item names by design (print-only); (3) doctor photo override lives in the Doctor CMS â€” verify admin doctors editor exposes photo upload before promising it in UI copy.
+---
+Task ID: neon-r2-vercel-env — COMPLETE
+Agent: opencode (Muse Spark)
+Task: Neon Postgres + Cloudflare R2 + Vercel host er jonno environment ready
+
+Work Log:
+- Prisma sqlite -> postgresql: datasource provider + directUrl (Neon pooled DATABASE_URL / direct DIRECT_URL). prisma/migrations/0_init/migration.sql created OFFLINE via `migrate diff --from-empty` (15 tables + indexes) + migration_lock.toml (postgresql). `prisma validate` clean; client regenerated for postgres.
+- .env.example (new, un-ignored via !.env.example): DATABASE_URL/DIRECT_URL, R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY/R2_BUCKET_NAME/R2_PUBLIC_URL, ADMIN_PASSCODE/ADMIN_SESSION_SECRET, PATIENT_SESSION_SECRET. Local .env te sudhu DIRECT_URL placeholder add (DATABASE_URL ekhono sqlite file — Neon URL bosalei local dev cholbe).
+- R2: npm i @aws-sdk/client-s3; new src/lib/r2.ts (S3Client for <account>.r2.cloudflarestorage.com, uploads/YYYY/MM/<uuid>.<ext>, 4MB + png/jpeg/webp/gif guard, isAllowedImageSrc allows /paths + R2 hosts, blocks random hotlinks).
+- NEW /api/admin/upload route (frontend age thekei etake call korto — route tai chilo na!): requireAdminRole guard, R2 te upload kore public URL return; R2 vars na thakle local-dev fallback public/uploads/; production e R2 chara 503.
+- cases + hero API validation relaxed: /paths + R2 https URLs accepted.
+- next.config.ts images.remotePatterns: R2_PUBLIC_URL host + *.r2.dev (next/image R2 thumbnails er jonno).
+- package.json: "vercel-build": "prisma generate && prisma migrate deploy && next build" (Vercel auto-picks vercel-build; Caddy `build` script untouched).
+- Verify: eslint clean on all touched files; tsc sudhu 2 pre-existing examples/websocket error (not related).
+- NOTE: dev server stopped (postgres client + sqlite .env mismatch lock korto). Neon URL .env e bosiye `npx next dev -p 3000` restart dite hobe.
+
+User manual steps (pending): (1) Neon project + pooled/direct URLs -> .env + Vercel env; (2) `prisma migrate deploy` + seed-admin-users; (3) R2 bucket + public access (r2.dev/custom domain) + API token -> R2_* vars; (4) Vercel import + env paste + deploy; (5) purono sqlite data auto-migrate hobe na — fresh DB, seed lagbe.
+---
+Task ID: neon-r2-connect — COMPLETE (DB live; R2 keys pending from user)
+Agent: opencode (Muse Spark)
+Task: User-provided Neon + R2 credentials connect kora
+
+Work Log:
+- .env te Neon pooled DATABASE_URL + derived direct DIRECT_URL (-pooler host minus, channel_binding dropped) bosano; R2_ACCOUNT_ID / R2_BUCKET_NAME=aristocart / R2_PUBLIC_URL (pub-....r2.dev) bosano. Values echo kora hoy ni.
+- `prisma migrate deploy` — 0_init Neon neondb te applied OK (direct connection verified).
+- Seed: seed-admin-users (admin/editor/frontdesk created) + seed-content (doctors 4, posts 5, faqs 12, cases 6, services 11, heroSlides 5, pageBlocks 3) — Neon e live.
+- Dev server restarted (detached npx next dev -p 3000); verify: / 200, /api/reviews 200 valid JSON (empty — kono review seed kora hoy ni), /api/admin/upload 401 auth gate OK.
+- PENDING: R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY user dey ni — "neon er api" string ta Cloudflare account API token (S3 keys na), upload end-to-end test atke ache. R2 dashboard -> bucket aristocart -> Manage API tokens theke Object Read & Write keypair lagbe.
+- Vercel deploy ekhono baki: repo import + env paste (DATABASE_URL, DIRECT_URL, R2_*, ADMIN_PASSCODE/ADMIN_SESSION_SECRET/PATIENT_SESSION_SECRET) + deploy (vercel-build auto).
+---
+Task ID: r2-connect-verify — COMPLETE
+Agent: opencode (Muse Spark)
+Task: User R2 keys connect + live verify
+
+Work Log:
+- .env te R2_ACCESS_KEY_ID (32hex) + R2_SECRET_ACCESS_KEY (64hex) bosano (cfat_... token ta S3 er jonno lage na — dashboard API token, ignore).
+- Live test: PutObject -> r2.dev public GET 200 -> DeleteObject OK (temp script, repo baire).
+- Dev restart (notun env), e2e: admin login 200 (Neon staff table) -> /api/admin/upload 200 -> https://pub-....r2.dev/uploads/2026/10/<uuid>.png -> public GET 200 image/png -> test object deleted.
+- NOTE: .env e ADMIN_PASSCODE/PATIENT_SESSION_SECRET ekhono default — Vercel e strong value dite hobe. Vercel deploypending: env paste + deploy.
+---
+Task ID: images-to-r2 + vercel-ready — COMPLETE
+Agent: opencode (Muse Spark)
+Task: Sob chobi R2 + Neon transfer, Vercel env fully ready
+
+Work Log:
+- scripts/migrate-images-to-r2.ts (new, idempotent, tsx): public/ er 53 images + upload/ er 4 legacy file R2 te (same keys + uploads/legacy/) = 57 files; Neon rewrites: doctor.photo 4, blog.image 5, case before/after 6+6, service.image 11, hero.src 5, pageblock.about 1. Kono SKIP nei. Code-level static paths (logo/og/footer) local-e thaklo (Vercel build er sathe ship hoy).
+- Verify: 3 R2 URL curl 200; /api/content e R2 URLs live; / 200.
+- Secrets rotated: ADMIN_PASSCODE/ADMIN_SESSION_SECRET/PATIENT_SESSION_SECRET strong random (.env only, Vercel e paste korte hobe).
+- `npm run vercel-build` FULL PASS (generate + migrate deploy + next build, 41 pages, /api/admin/upload soho sob route). Build prerender Neon thekei data niyeche.
+- Dev server restarted (build er jonno stop kora chilo).
+- Baki (user): Vercel import + .env values paste + Deploy. DB seed already Neon e live; purono sqlite demo data migrate kora hoy ni (production clean start).

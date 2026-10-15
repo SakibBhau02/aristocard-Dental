@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { mapHeroSlide } from "@/lib/content/shared";
 import { guard, readJson, bad, notFound, serverError, ok, s, os, b, n, clamp, clampLen } from "@/lib/content/admin-api";
 import { parseYouTubeId } from "@/lib/data/hero-media";
+import { isAllowedImageSrc } from "@/lib/r2";
 
 /* ------------------------------------------------------------------ */
 /*  Admin API — Hero slides (images + YouTube videos)                 */
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     const kind = s(body.kind) === "youtube" ? "youtube" : "image";
     const src = clampLen(s(body.src).trim(), 500);
     if (!src) return bad("An image path or YouTube URL is required.");
-    if (kind === "image" && !src.startsWith("/")) return bad("Image path must start with / (upload an image first).");
+    if (kind === "image" && !isAllowedImageSrc(src)) return bad("Image must be a site path (/images/… or /uploads/…) or an R2 image URL (upload an image first).");
     if (kind === "youtube" && !parseYouTubeId(src)) return bad("That does not look like a valid YouTube link.");
 
     const data = {

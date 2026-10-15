@@ -7,6 +7,22 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  /* Admin-uploaded images live on Cloudflare R2 (see src/lib/r2.ts).
+     next/image needs the R2 host allow-listed: the configured
+     R2_PUBLIC_URL host plus the default *.r2.dev public subdomains. */
+  images: {
+    remotePatterns: [
+      ...(process.env.R2_PUBLIC_URL
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: new URL(process.env.R2_PUBLIC_URL).hostname,
+            },
+          ]
+        : []),
+      { protocol: "https" as const, hostname: "*.r2.dev" },
+    ],
+  },
   /* SPA-style clean URLs: the public site is a single-route app
      (src/app/page.tsx renders every page client-side). This afterFiles
      rewrite maps every unknown path back to "/" so deep links such as

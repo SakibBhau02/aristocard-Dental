@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { mapCase } from "@/lib/content/shared";
+import { isAllowedImageSrc } from "@/lib/r2";
 import {
   guard, readJson, bad, notFound, serverError, ok,
   s, os, n, b, strList, validSlug, clamp, clampLen,
@@ -44,8 +45,8 @@ export async function POST(req: NextRequest) {
     if (treatment.length < 2) return bad("Treatment name is required.");
     const beforeSrc = s(body.beforeSrc).trim();
     const afterSrc = s(body.afterSrc).trim();
-    if (!beforeSrc.startsWith("/")) return bad("Before image path must start with / (e.g. /images/… or /uploads/…).");
-    if (!afterSrc.startsWith("/")) return bad("After image path must start with / (e.g. /images/… or /uploads/…).");
+    if (!isAllowedImageSrc(beforeSrc)) return bad("Before image must be a site path (/images/… or /uploads/…) or an R2 image URL.");
+    if (!isAllowedImageSrc(afterSrc)) return bad("After image must be a site path (/images/… or /uploads/…) or an R2 image URL.");
 
     const categoryInput = s(body.category, "Cosmetic");
     const category = (VALID_CATS as readonly string[]).includes(categoryInput) ? categoryInput : "Cosmetic";

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Neon pooled connection (pgbouncer, -pooler)
+  directUrl = env("DIRECT_URL")   // Neon direct connection (migrations)
 }
 
 /* ------------------------------------------------------------------ */
@@ -78,8 +79,9 @@ model Patient {
 }
 
 /* ------------------------------------------------------------------ */
-/*  CMS models — every editable piece of the public site               */
-/*  (SQLite has no array type → JSON strings, parsed in src/lib/content)*/
+/* CMS models — every editable piece of the public site               */
+/* (JSON-string convention kept from the SQLite era; Postgres could use  */
+/*  native arrays/Json, but String keeps reads/writes portable.)         */
 /* ------------------------------------------------------------------ */
 
 /* Doctors — full CRUD from the admin panel */
