@@ -46,12 +46,44 @@ function mergePageBlock<T>(
   }
 }
 
-let cache: { bundle: ContentBundle; at: number } | null = null;
+let cache: { bundle: ContentBundle; at: number; version: number } | null = null;
 const CACHE_TTL_MS = 5_000;
 
-/** Full content bundle (5s in-process cache to batch RSC + API hits). */
+/* Cross-instance freshness: serverless deployments run many isolated
+   processes, so an in-process cache alone would let instance B serve a
+   pre-edit bundle for up to CACHE_TTL_MS after instance A handled the
+   write (admin saves "don't stick" for a few seconds). Derive a cheap
+   version stamp from the newest content `updatedAt` and key the cache on
+   it — any instance that observes a newer version rebuilds immediately.
+   Falls back to the time-based TTL only if the probe query fails. */
+async function contentVersion(): Promise<number> {
+  const stamps = await Promise.all([
+    db.doctor.aggregate({ _max: { updatedAt: true } }),
+    db.blogPost.aggregate({ _max: { updatedAt: true } }),
+    db.faq.aggregate({ _max: { updatedAt: true } }),
+    db.smileCase.aggregate({ _max: { updatedAt: true } }),
+    db.serviceContent.aggregate({ _max: { updatedAt: true } }),
+    db.heroSlide.aggregate({ _max: { updatedAt: true } }),
+    db.pageBlock.aggregate({ _max: { updatedAt: true } }),
+  ]);
+  let max = 0;
+  for (const s of stamps) {
+    const t = (s._max as Record<string, Date | null> | undefined)?.updatedAt;
+    if (t) max = Math.max(max, new Date(t).getTime());
+  }
+  return max;
+}
+
+/** Full content bundle (version-keyed in-process cache to batch hits). */
 export async function getContentBundle(): Promise<ContentBundle> {
-  if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.bundle;
+  let version = 0;
+  try {
+    version = await contentVersion();
+    if (cache && cache.version === version) return cache.bundle;
+  } catch {
+    /* probe failed — fall through to the time-based guard below */
+    if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.bundle;
+  }
   const fallback = staticBundle();
 
   let bundle: ContentBundle;
@@ -142,7 +174,7 @@ export async function getContentBundle(): Promise<ContentBundle> {
     bundle = fallback;
   }
 
-  cache = { bundle, at: Date.now() };
+  cache = { bundle, at: Date.now(), version };
   return bundle;
 }
 

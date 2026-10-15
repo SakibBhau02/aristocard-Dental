@@ -1,0 +1,879 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e4]:
+      - navigation "Main navigation" [ref=e5]:
+        - link "Aristocrat Dental Care & Orthodontic Center — Home" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "Aristocrat Dental Care & Orthodontic Center logo" [ref=e8]
+        - generic [ref=e9]:
+          - link "Book Appointment" [ref=e10] [cursor=pointer]:
+            - /url: /appointment
+          - button "বাংলায় দেখুন" [ref=e14]:
+            - generic [ref=e19]: বাংলা
+          - button "Open menu" [ref=e20]
+    - main [ref=e22]:
+      - region [ref=e23]:
+        - generic [ref=e34]:
+          - button "Show hero slide 1" [ref=e35]
+          - button "Show hero slide 2" [ref=e36]
+          - button "Show hero slide 3" [ref=e37]
+          - button "Show hero slide 4" [ref=e38]
+          - button "Show hero slide 5" [ref=e39]
+        - generic [ref=e40]:
+          - generic [ref=e41]: Advanced Dental Care in Uttara, Dhaka
+          - heading "Excellence in Every Smile" [level=1] [ref=e44]
+          - paragraph [ref=e45]: A modern & well-equipped dental clinic combining advanced technology, strict sterilization and truly gentle care — from routine checkups to complete smile makeovers, all under one roof.
+          - generic [ref=e46]:
+            - link "Book Appointment Now" [ref=e47] [cursor=pointer]:
+              - /url: /appointment
+            - link "Explore Services" [ref=e48] [cursor=pointer]:
+              - /url: /services
+          - list [ref=e49]:
+            - listitem [ref=e50]: Pain-free treatment
+            - listitem [ref=e54]: Strict sterilization
+            - listitem [ref=e58]: Kids-friendly rooms
+            - listitem [ref=e62]: Advanced dental technology
+      - region "Clinic statistics" [ref=e66]:
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e76]: 0+
+            - generic [ref=e77]: Happy Patients
+          - generic [ref=e78]:
+            - generic [ref=e82]: 0+
+            - generic [ref=e83]: Specialty Services
+          - generic [ref=e84]:
+            - generic [ref=e90]: 0+
+            - generic [ref=e91]: Expert Dentists
+          - generic [ref=e92]:
+            - generic [ref=e96]: 0.0/5
+            - generic [ref=e97]: Patient Rating
+      - generic [ref=e99]:
+        - generic [ref=e100]: Crowns & Bridges
+        - generic [ref=e104]: Dental Implants
+        - generic [ref=e109]: Digital Smile Design (DSD)
+        - generic [ref=e113]: Invisalign® (Clear Aligners)
+        - generic [ref=e118]: Laser-Assisted Fillings
+        - generic [ref=e122]: Oral & Maxillofacial Surgery
+        - generic [ref=e130]: Pediatric Dentistry
+        - generic [ref=e135]: Periodontal (Gum) Treatment
+        - generic [ref=e140]: Porcelain Veneers
+        - generic [ref=e145]: Root Canal Treatment (Endodontics)
+        - generic [ref=e149]: Traditional Braces & Orthodontics
+        - generic [ref=e153]: Crowns & Bridges
+        - generic [ref=e157]: Dental Implants
+        - generic [ref=e162]: Digital Smile Design (DSD)
+        - generic [ref=e166]: Invisalign® (Clear Aligners)
+        - generic [ref=e171]: Laser-Assisted Fillings
+        - generic [ref=e175]: Oral & Maxillofacial Surgery
+        - generic [ref=e183]: Pediatric Dentistry
+        - generic [ref=e188]: Periodontal (Gum) Treatment
+        - generic [ref=e193]: Porcelain Veneers
+        - generic [ref=e198]: Root Canal Treatment (Endodontics)
+        - generic [ref=e202]: Traditional Braces & Orthodontics
+      - region [ref=e206]:
+        - generic [ref=e208]:
+          - generic [ref=e210]:
+            - generic [ref=e211]:
+              - generic [ref=e212]:
+                - generic [ref=e213]: Premium Facility
+                - generic [ref=e218]:
+                  - paragraph [ref=e219]: Doctor Search
+                  - paragraph [ref=e220]: Find the right specialist for your smile
+                - searchbox "Doctor Search" [ref=e227]
+              - group "Doctor Search" [ref=e228]:
+                - button "All" [pressed] [ref=e229]
+                - button "Braces" [ref=e230]
+                - button "Surgery" [ref=e231]
+                - button "Cosmetic" [ref=e232]
+                - button "Kids" [ref=e233]
+              - generic [ref=e234]:
+                - button "Dr. Shazia Khanam — Chief Dental Surgeon & Founder" [ref=e235]:
+                  - generic [ref=e236]:
+                    - generic [ref=e238]: SK
+                    - generic "BMDC verified doctor" [ref=e240]
+                  - generic [ref=e243]:
+                    - generic [ref=e244]: Dr. Shazia Khanam
+                    - generic [ref=e245]: Chief Dental Surgeon & Founder
+                - button "Dr. Jumla Binte Jafor — Consultant Dental Surgeon" [ref=e246]:
+                  - generic [ref=e247]:
+                    - generic [ref=e249]: JB
+                    - generic "BMDC verified doctor" [ref=e251]
+                  - generic [ref=e254]:
+                    - generic [ref=e255]: Dr. Jumla Binte Jafor
+                    - generic [ref=e256]: Consultant Dental Surgeon
+                - button "Dr. Israt Jahan Rimi — Consultant Dental Surgeon" [ref=e257]:
+                  - generic [ref=e258]:
+                    - generic [ref=e260]: IJ
+                    - generic "BMDC verified doctor" [ref=e262]
+                  - generic [ref=e265]:
+                    - generic [ref=e266]: Dr. Israt Jahan Rimi
+                    - generic [ref=e267]: Consultant Dental Surgeon
+              - generic [ref=e268]:
+                - generic [ref=e269]: BMDC-verified specialists
+                - generic [ref=e273]: 3 of 3 specialists
+            - generic [ref=e274]: 4.9/5 • 3,200+ reviews
+          - generic [ref=e287]:
+            - generic [ref=e288]:
+              - generic [ref=e289]: Why Choose Us
+              - heading "Why patients trust us with their smiles" [level=2] [ref=e291]
+              - paragraph [ref=e293]: Choosing a dentist is a big decision. Here's what makes Aristocrat Dental Care the preferred dental destination in Uttara.
+            - generic [ref=e294]:
+              - generic [ref=e296]:
+                - heading "Strict Sterilization" [level=3] [ref=e301]
+                - paragraph [ref=e302]: Hospital-grade autoclave sterilization and single-use disposables for every patient — your safety is non-negotiable.
+              - generic [ref=e304]:
+                - heading "Advanced Technology" [level=3] [ref=e310]
+                - paragraph [ref=e311]: Digital X-rays, intraoral cameras and laser dentistry for precise diagnoses and minimally invasive treatments.
+              - generic [ref=e313]:
+                - heading "Pain-Free Comfort" [level=3] [ref=e320]
+                - paragraph [ref=e321]: Gentle techniques, modern anesthesia and anxiety-easing care that makes every visit calm and stress-free.
+              - generic [ref=e323]:
+                - heading "Specialist Dentists" [level=3] [ref=e328]
+                - paragraph [ref=e329]: BDS & MDS qualified consultants in orthodontics, endodontics and oral surgery under one roof.
+      - region [ref=e330]:
+        - generic [ref=e331]:
+          - generic [ref=e332]:
+            - generic [ref=e333]: Our Services
+            - heading "Personalized dental care, designed around you" [level=2] [ref=e335]
+            - paragraph [ref=e337]: From preventive checkups to complete smile makeovers — 11 specialty services under one roof, delivered with modern technology and gentle hands.
+          - generic [ref=e338]:
+            - article [ref=e339]:
+              - generic [ref=e340]:
+                - img "Crowns & Bridges" [ref=e341]
+                - generic [ref=e342]: Restorative
+              - generic [ref=e343]:
+                - heading "Crowns & Bridges" [level=3] [ref=e347]
+                - paragraph [ref=e348]: Restore strength. Bridge the gaps.
+                - paragraph [ref=e349]: High-quality crowns protect and strengthen damaged teeth, while custom bridges replace missing teeth — restoring function, bite alignment and your natural facial contours.
+                - generic [ref=e350]:
+                  - generic [ref=e351]: 2 visits • ~60 min each
+                  - 'link "Learn more: Crowns & Bridges" [ref=e355] [cursor=pointer]':
+                    - /url: /services/crowns-bridges
+                    - text: Learn more
+            - article [ref=e358]:
+              - generic [ref=e359]:
+                - img "Dental Implants" [ref=e360]
+                - generic [ref=e361]: Surgical
+              - generic [ref=e362]:
+                - heading "Dental Implants" [level=3] [ref=e367]
+                - paragraph [ref=e368]: The gold standard in tooth replacement.
+                - paragraph [ref=e369]: Permanent, stable titanium implants that look, feel and function like natural teeth — preventing bone loss and restoring your freedom to eat, speak and smile.
+                - generic [ref=e370]:
+                  - generic [ref=e371]: 3–6 months total (implant + healing + crown)
+                  - 'link "Learn more: Dental Implants" [ref=e375] [cursor=pointer]':
+                    - /url: /services/dental-implants
+                    - text: Learn more
+            - article [ref=e378]:
+              - generic [ref=e379]:
+                - img "Digital Smile Design (DSD)" [ref=e380]
+                - generic [ref=e381]: Cosmetic
+              - generic [ref=e382]:
+                - heading "Digital Smile Design (DSD)" [level=3] [ref=e386]
+                - paragraph [ref=e387]: See your new smile before treatment begins.
+                - paragraph [ref=e388]: Advanced imaging software analyzes your facial structure and creates a digital simulation of your new smile — visualize and approve your transformation before any treatment starts.
+                - generic [ref=e389]:
+                  - generic [ref=e390]: "Consultation: 60–90 min"
+                  - 'link "Learn more: Digital Smile Design (DSD)" [ref=e394] [cursor=pointer]':
+                    - /url: /services/digital-smile-design
+                    - text: Learn more
+            - article [ref=e397]:
+              - generic [ref=e398]:
+                - img "Invisalign® (Clear Aligners)" [ref=e399]
+                - generic [ref=e400]: Orthodontics
+              - generic [ref=e401]:
+                - heading "Invisalign® (Clear Aligners)" [level=3] [ref=e406]
+                - paragraph [ref=e407]: Straighten your smile. Almost invisibly.
+                - paragraph [ref=e408]: Custom-made, virtually invisible clear aligners that gradually straighten your teeth — removable for eating and brushing, with no wires or metal braces.
+                - generic [ref=e409]:
+                  - generic [ref=e410]: 6–18 months (case-dependent)
+                  - 'link "Learn more: Invisalign® (Clear Aligners)" [ref=e414] [cursor=pointer]':
+                    - /url: /services/invisalign-clear-aligners
+                    - text: Learn more
+            - article [ref=e417]:
+              - generic [ref=e418]:
+                - img "Oral & Maxillofacial Surgery" [ref=e419]
+                - generic [ref=e420]: Surgical
+              - generic [ref=e421]:
+                - heading "Oral & Maxillofacial Surgery" [level=3] [ref=e429]
+                - paragraph [ref=e430]: Expert surgical care, gentle recovery.
+                - paragraph [ref=e431]: From wisdom tooth extractions to corrective jaw surgery — specialists handle complex dental, facial and jaw conditions with focus on safety and rapid recovery.
+                - generic [ref=e432]:
+                  - generic [ref=e433]: 45–120 min depending on procedure
+                  - 'link "Learn more: Oral & Maxillofacial Surgery" [ref=e437] [cursor=pointer]':
+                    - /url: /services/oral-maxillofacial-surgery
+                    - text: Learn more
+            - article [ref=e440]:
+              - generic [ref=e441]:
+                - img "Porcelain Veneers" [ref=e442]
+                - generic [ref=e443]: Cosmetic
+              - generic [ref=e444]:
+                - heading "Porcelain Veneers" [level=3] [ref=e449]
+                - paragraph [ref=e450]: The Hollywood smile, crafted for you.
+                - paragraph [ref=e451]: Ultra-thin porcelain shells bonded to your teeth — instantly correct chips, gaps and discoloration for a flawless, natural-looking smile with minimal invasiveness.
+                - generic [ref=e452]:
+                  - generic [ref=e453]: 2–3 visits over 2–3 weeks
+                  - 'link "Learn more: Porcelain Veneers" [ref=e457] [cursor=pointer]':
+                    - /url: /services/porcelain-veneers
+                    - text: Learn more
+          - link "View All 11 Services" [ref=e461] [cursor=pointer]:
+            - /url: /services
+          - generic [ref=e463]:
+            - generic [ref=e468]:
+              - paragraph [ref=e469]: Not sure which treatment you need?
+              - paragraph [ref=e470]: Answer 5 quick questions and get a personalized starting plan in 60 seconds.
+            - link "Take the Smile Check" [ref=e471] [cursor=pointer]:
+              - /url: /assessment
+      - region [ref=e474]:
+        - generic [ref=e475]:
+          - generic [ref=e476]:
+            - generic [ref=e477]: Inside Our Clinic
+            - heading "A facility designed around your comfort" [level=2] [ref=e479]
+            - paragraph [ref=e481]: Step inside — modern operatories, hospital-grade sterilization and a kids' room that turns fear into friendship.
+          - generic [ref=e482]:
+            - article [ref=e483]:
+              - img "Treatment room with digital X-ray and intraoral scanner at Aristocrat Dental Care" [ref=e485]
+              - generic [ref=e486]:
+                - heading "Digital Diagnostics" [level=3] [ref=e487]
+                - paragraph [ref=e488]: Intraoral scanners, low-radiation digital X-rays and chairside screens — see exactly what we see.
+            - article [ref=e489]:
+              - img "Cheerful pediatric dental room designed for children at Aristocrat Dental Care" [ref=e491]
+              - generic [ref=e492]:
+                - heading "Kids' Happy Room" [level=3] [ref=e493]
+                - paragraph [ref=e494]: A specially designed children's room where fear melts into curiosity — visit by visit.
+            - article [ref=e495]:
+              - img "Sterilization room with autoclave and sealed instrument pouches" [ref=e497]
+              - generic [ref=e498]:
+                - heading "Sterilization Suite" [level=3] [ref=e499]
+                - paragraph [ref=e500]: Autoclave-sterilized, pouch-sealed instruments opened in front of you — every single patient.
+      - region [ref=e501]:
+        - generic [ref=e503]:
+          - generic [ref=e504]:
+            - generic [ref=e505]:
+              - generic [ref=e506]: Smile Gallery
+              - heading "See real transformations, slide to compare" [level=2] [ref=e508]
+              - paragraph [ref=e510]: Whitening, orthodontics and veneer cases from our clinic — drag the slider handle to reveal each before & after.
+            - link "Explore Smile Gallery" [ref=e513] [cursor=pointer]:
+              - /url: /gallery
+          - generic [ref=e515]:
+            - slider "Before and after comparison slider — drag to compare" [ref=e516]:
+              - img "Smile after professional teeth whitening — bright radiant teeth" [ref=e517]
+              - img "Smile before professional teeth whitening — stained teeth" [ref=e518]
+              - generic: Before
+              - generic: After
+            - generic [ref=e519]: Teeth Whitening — drag me
+      - region [ref=e522]:
+        - generic [ref=e523]:
+          - generic [ref=e524]:
+            - generic [ref=e525]: Patient Stories
+            - heading "Our happy patients say it best" [level=2] [ref=e527]
+            - paragraph [ref=e529]: Real reviews from real patients across Uttara and greater Dhaka — in both Bangla and English.
+          - region "Patient testimonials" [ref=e531]:
+            - list [ref=e533]:
+              - listitem [ref=e534]:
+                - figure "TA Tanvir Ahmed Smile Makeover" [ref=e535]:
+                  - generic "5 out of 5 stars" [ref=e540]
+                  - blockquote [ref=e551]: "\"Professional, clean, and modern facility.\" From the moment I entered the clinic, I could tell this was a top-tier dental center. Modern equipment, hygienic environment, and a highly skilled team. My smile makeover exceeded expectations."
+                  - generic [ref=e552]:
+                    - generic [ref=e553]: TA
+                    - generic [ref=e555]:
+                      - generic [ref=e556]: Tanvir Ahmed
+                      - generic [ref=e557]: Smile Makeover
+              - listitem [ref=e558]:
+                - figure "IJ Israt Jahan Rimi Family Dental Care" [ref=e559]:
+                  - generic "5 out of 5 stars" [ref=e564]
+                  - blockquote [ref=e575]: A nice cozy ambience with providence of all dental health care. They have Best doctors who serving their best treatment to the patients. They also have specially designed room for kids — that helps reduce the fear of dental treatment on gradually visit 😊
+                  - generic [ref=e576]:
+                    - generic [ref=e577]: IJ
+                    - generic [ref=e579]:
+                      - generic [ref=e580]: Israt Jahan Rimi
+                      - generic [ref=e581]: Family Dental Care
+              - listitem [ref=e582]:
+                - figure "PI Paromita Islam Consultation & Treatment" [ref=e583]:
+                  - generic "5 out of 5 stars" [ref=e588]
+                  - blockquote [ref=e599]: Had a great experience at Aristocrat Dental Care and Orthodontic Center! The staff was warm and welcoming, and the treatment was smooth and professional. Dr. Shazia and Dr. Rimi both were kind, explained everything clearly, and made me feel at ease. Highly recommend for quality dental care!
+                  - generic [ref=e600]:
+                    - generic [ref=e601]: PI
+                    - generic [ref=e603]:
+                      - generic [ref=e604]: Paromita Islam
+                      - generic [ref=e605]: Consultation & Treatment
+              - listitem [ref=e606]:
+                - figure "PM Paula Mahzabeen General Dentistry" [ref=e607]:
+                  - generic "5 out of 5 stars" [ref=e612]
+                  - blockquote [ref=e623]: Professional, hygienic, and patient-focused dental care. The consultation and treatment were handled with precision and care. Outstanding dental care. Dr. Shazia Khanam was knowledgeable and made me feel comfortable throughout the treatment. Clean environment and great service. Strongly recommended.
+                  - generic [ref=e624]:
+                    - generic [ref=e625]: PM
+                    - generic [ref=e627]:
+                      - generic [ref=e628]: Paula Mahzabeen
+                      - generic [ref=e629]: General Dentistry
+              - listitem [ref=e630]:
+                - figure "RT Rayhan Topu Dental Care" [ref=e631]:
+                  - generic "5 out of 5 stars" [ref=e636]
+                  - blockquote [ref=e647]: One of the best dental clinics I have visited in my entire life.
+                  - generic [ref=e648]:
+                    - generic [ref=e649]: RT
+                    - generic [ref=e651]:
+                      - generic [ref=e652]: Rayhan Topu
+                      - generic [ref=e653]: Dental Care
+              - listitem [ref=e654]:
+                - figure "TA Tanvir Ahmed Smile Makeover" [ref=e655]:
+                  - generic "5 out of 5 stars" [ref=e660]
+                  - blockquote [ref=e671]: "\"Professional, clean, and modern facility.\" From the moment I entered the clinic, I could tell this was a top-tier dental center. Modern equipment, hygienic environment, and a highly skilled team. My smile makeover exceeded expectations."
+                  - generic [ref=e672]:
+                    - generic [ref=e673]: TA
+                    - generic [ref=e675]:
+                      - generic [ref=e676]: Tanvir Ahmed
+                      - generic [ref=e677]: Smile Makeover
+              - listitem [ref=e678]:
+                - figure "IJ Israt Jahan Rimi Family Dental Care" [ref=e679]:
+                  - generic "5 out of 5 stars" [ref=e684]
+                  - blockquote [ref=e695]: A nice cozy ambience with providence of all dental health care. They have Best doctors who serving their best treatment to the patients. They also have specially designed room for kids — that helps reduce the fear of dental treatment on gradually visit 😊
+                  - generic [ref=e696]:
+                    - generic [ref=e697]: IJ
+                    - generic [ref=e699]:
+                      - generic [ref=e700]: Israt Jahan Rimi
+                      - generic [ref=e701]: Family Dental Care
+              - listitem [ref=e702]:
+                - figure "PI Paromita Islam Consultation & Treatment" [ref=e703]:
+                  - generic "5 out of 5 stars" [ref=e708]
+                  - blockquote [ref=e719]: Had a great experience at Aristocrat Dental Care and Orthodontic Center! The staff was warm and welcoming, and the treatment was smooth and professional. Dr. Shazia and Dr. Rimi both were kind, explained everything clearly, and made me feel at ease. Highly recommend for quality dental care!
+                  - generic [ref=e720]:
+                    - generic [ref=e721]: PI
+                    - generic [ref=e723]:
+                      - generic [ref=e724]: Paromita Islam
+                      - generic [ref=e725]: Consultation & Treatment
+              - listitem [ref=e726]:
+                - figure "PM Paula Mahzabeen General Dentistry" [ref=e727]:
+                  - generic "5 out of 5 stars" [ref=e732]
+                  - blockquote [ref=e743]: Professional, hygienic, and patient-focused dental care. The consultation and treatment were handled with precision and care. Outstanding dental care. Dr. Shazia Khanam was knowledgeable and made me feel comfortable throughout the treatment. Clean environment and great service. Strongly recommended.
+                  - generic [ref=e744]:
+                    - generic [ref=e745]: PM
+                    - generic [ref=e747]:
+                      - generic [ref=e748]: Paula Mahzabeen
+                      - generic [ref=e749]: General Dentistry
+              - listitem [ref=e750]:
+                - figure "RT Rayhan Topu Dental Care" [ref=e751]:
+                  - generic "5 out of 5 stars" [ref=e756]
+                  - blockquote [ref=e767]: One of the best dental clinics I have visited in my entire life.
+                  - generic [ref=e768]:
+                    - generic [ref=e769]: RT
+                    - generic [ref=e771]:
+                      - generic [ref=e772]: Rayhan Topu
+                      - generic [ref=e773]: Dental Care
+              - listitem [ref=e774]:
+                - figure "TA Tanvir Ahmed Smile Makeover" [ref=e775]:
+                  - generic "5 out of 5 stars" [ref=e780]
+                  - blockquote [ref=e791]: "\"Professional, clean, and modern facility.\" From the moment I entered the clinic, I could tell this was a top-tier dental center. Modern equipment, hygienic environment, and a highly skilled team. My smile makeover exceeded expectations."
+                  - generic [ref=e792]:
+                    - generic [ref=e793]: TA
+                    - generic [ref=e795]:
+                      - generic [ref=e796]: Tanvir Ahmed
+                      - generic [ref=e797]: Smile Makeover
+              - listitem [ref=e798]:
+                - figure "IJ Israt Jahan Rimi Family Dental Care" [ref=e799]:
+                  - generic "5 out of 5 stars" [ref=e804]
+                  - blockquote [ref=e815]: A nice cozy ambience with providence of all dental health care. They have Best doctors who serving their best treatment to the patients. They also have specially designed room for kids — that helps reduce the fear of dental treatment on gradually visit 😊
+                  - generic [ref=e816]:
+                    - generic [ref=e817]: IJ
+                    - generic [ref=e819]:
+                      - generic [ref=e820]: Israt Jahan Rimi
+                      - generic [ref=e821]: Family Dental Care
+              - listitem [ref=e822]:
+                - figure "PI Paromita Islam Consultation & Treatment" [ref=e823]:
+                  - generic "5 out of 5 stars" [ref=e828]
+                  - blockquote [ref=e839]: Had a great experience at Aristocrat Dental Care and Orthodontic Center! The staff was warm and welcoming, and the treatment was smooth and professional. Dr. Shazia and Dr. Rimi both were kind, explained everything clearly, and made me feel at ease. Highly recommend for quality dental care!
+                  - generic [ref=e840]:
+                    - generic [ref=e841]: PI
+                    - generic [ref=e843]:
+                      - generic [ref=e844]: Paromita Islam
+                      - generic [ref=e845]: Consultation & Treatment
+              - listitem [ref=e846]:
+                - figure "PM Paula Mahzabeen General Dentistry" [ref=e847]:
+                  - generic "5 out of 5 stars" [ref=e852]
+                  - blockquote [ref=e863]: Professional, hygienic, and patient-focused dental care. The consultation and treatment were handled with precision and care. Outstanding dental care. Dr. Shazia Khanam was knowledgeable and made me feel comfortable throughout the treatment. Clean environment and great service. Strongly recommended.
+                  - generic [ref=e864]:
+                    - generic [ref=e865]: PM
+                    - generic [ref=e867]:
+                      - generic [ref=e868]: Paula Mahzabeen
+                      - generic [ref=e869]: General Dentistry
+              - listitem [ref=e870]:
+                - figure "RT Rayhan Topu Dental Care" [ref=e871]:
+                  - generic "5 out of 5 stars" [ref=e876]
+                  - blockquote [ref=e887]: One of the best dental clinics I have visited in my entire life.
+                  - generic [ref=e888]:
+                    - generic [ref=e889]: RT
+                    - generic [ref=e891]:
+                      - generic [ref=e892]: Rayhan Topu
+                      - generic [ref=e893]: Dental Care
+              - listitem [ref=e894]:
+                - figure "TA Tanvir Ahmed Smile Makeover" [ref=e895]:
+                  - generic "5 out of 5 stars" [ref=e900]
+                  - blockquote [ref=e911]: "\"Professional, clean, and modern facility.\" From the moment I entered the clinic, I could tell this was a top-tier dental center. Modern equipment, hygienic environment, and a highly skilled team. My smile makeover exceeded expectations."
+                  - generic [ref=e912]:
+                    - generic [ref=e913]: TA
+                    - generic [ref=e915]:
+                      - generic [ref=e916]: Tanvir Ahmed
+                      - generic [ref=e917]: Smile Makeover
+              - listitem [ref=e918]:
+                - figure "IJ Israt Jahan Rimi Family Dental Care" [ref=e919]:
+                  - generic "5 out of 5 stars" [ref=e924]
+                  - blockquote [ref=e935]: A nice cozy ambience with providence of all dental health care. They have Best doctors who serving their best treatment to the patients. They also have specially designed room for kids — that helps reduce the fear of dental treatment on gradually visit 😊
+                  - generic [ref=e936]:
+                    - generic [ref=e937]: IJ
+                    - generic [ref=e939]:
+                      - generic [ref=e940]: Israt Jahan Rimi
+                      - generic [ref=e941]: Family Dental Care
+              - listitem [ref=e942]:
+                - figure "PI Paromita Islam Consultation & Treatment" [ref=e943]:
+                  - generic "5 out of 5 stars" [ref=e948]
+                  - blockquote [ref=e959]: Had a great experience at Aristocrat Dental Care and Orthodontic Center! The staff was warm and welcoming, and the treatment was smooth and professional. Dr. Shazia and Dr. Rimi both were kind, explained everything clearly, and made me feel at ease. Highly recommend for quality dental care!
+                  - generic [ref=e960]:
+                    - generic [ref=e961]: PI
+                    - generic [ref=e963]:
+                      - generic [ref=e964]: Paromita Islam
+                      - generic [ref=e965]: Consultation & Treatment
+              - listitem [ref=e966]:
+                - figure "PM Paula Mahzabeen General Dentistry" [ref=e967]:
+                  - generic "5 out of 5 stars" [ref=e972]
+                  - blockquote [ref=e983]: Professional, hygienic, and patient-focused dental care. The consultation and treatment were handled with precision and care. Outstanding dental care. Dr. Shazia Khanam was knowledgeable and made me feel comfortable throughout the treatment. Clean environment and great service. Strongly recommended.
+                  - generic [ref=e984]:
+                    - generic [ref=e985]: PM
+                    - generic [ref=e987]:
+                      - generic [ref=e988]: Paula Mahzabeen
+                      - generic [ref=e989]: General Dentistry
+              - listitem [ref=e990]:
+                - figure "RT Rayhan Topu Dental Care" [ref=e991]:
+                  - generic "5 out of 5 stars" [ref=e996]
+                  - blockquote [ref=e1007]: One of the best dental clinics I have visited in my entire life.
+                  - generic [ref=e1008]:
+                    - generic [ref=e1009]: RT
+                    - generic [ref=e1011]:
+                      - generic [ref=e1012]: Rayhan Topu
+                      - generic [ref=e1013]: Dental Care
+            - list [ref=e1015]:
+              - listitem [ref=e1016]:
+                - figure "সআ সাদিয়া আক্তার Root Canal Treatment" [ref=e1017]:
+                  - generic "5 out of 5 stars" [ref=e1022]
+                  - blockquote [ref=e1033]: "\"অসাধারণ সেবা এবং যত্নশীল ডাক্তার!\" আমার দাঁতের সমস্যা নিয়ে অনেক জায়গায় গিয়েছিলাম, কিন্তু এখানে এসে আমি সত্যিকারের পার্থক্য অনুভব করেছি। ডাক্তার খুব ধৈর্য নিয়ে সব বুঝিয়েছেন এবং ট্রিটমেন্টও একদম ব্যথামুক্ত ছিল।"
+                  - generic [ref=e1034]:
+                    - generic [ref=e1035]: সআ
+                    - generic [ref=e1037]:
+                      - generic [ref=e1038]: সাদিয়া আক্তার
+                      - generic [ref=e1039]: Root Canal Treatment
+              - listitem [ref=e1040]:
+                - figure "RH Riyad Hassan Rana Root Canal Treatment" [ref=e1041]:
+                  - generic "5 out of 5 stars" [ref=e1046]
+                  - blockquote [ref=e1057]: "\"The best dental experience I've ever had!\" The staff at Aristocrat Dental Care made me feel comfortable from the moment I walked in. My root canal treatment was painless, and the doctor explained every step clearly. Highly recommended."
+                  - generic [ref=e1058]:
+                    - generic [ref=e1059]: RH
+                    - generic [ref=e1061]:
+                      - generic [ref=e1062]: Riyad Hassan Rana
+                      - generic [ref=e1063]: Root Canal Treatment
+              - listitem [ref=e1064]:
+                - figure "S Shohan Orthodontics • Uttara, Dhaka" [ref=e1065]:
+                  - generic "5 out of 5 stars" [ref=e1070]
+                  - blockquote [ref=e1081]: Aristocrat Dental Care & Orthodontic Center is truly the best dental clinic in Uttara. Their work quality is excellent, the environment is clean and professional, and the staff are very caring. The doctors are amazing, especially Dr. Sazia Khanam — she is highly skilled, gentle, and explains everything clearly. I felt very comfortable and confident during my treatment. Highly recommended for anyone looking for the best dental care in Uttara.
+                  - generic [ref=e1082]:
+                    - generic [ref=e1083]: S
+                    - generic [ref=e1085]:
+                      - generic [ref=e1086]: Shohan
+                      - generic [ref=e1087]: Orthodontics • Uttara, Dhaka
+              - listitem [ref=e1088]:
+                - figure "IR Ivy Rahman Prosthetic Dentistry" [ref=e1089]:
+                  - generic "5 out of 5 stars" [ref=e1094]
+                  - blockquote [ref=e1105]: অনেক জায়গায় ডক্টর দেখিয়েছে। বাট আপু আপনার এখানে এত সুন্দর করে দাঁতের কাজ করে এটা আমি না করলে বুঝতে পারতাম না। এত যত্ন সহকারে আপনারা পেশেন্ট দেখেন এটা আমার খুব ভালো লেগেছে। আমি খুবই খুশি আপনার এখানে ট্রিটমেন্ট নিতে পেরে। আপনার জন্য দোয়া ভালোবাসা দুইটাই থাকলো অনেক দূর এগিয়ে যান। আমি খুব শান্তি পেলাম আমি একটা বিশ্বাসের জায়গা পেলাম।
+                  - generic [ref=e1106]:
+                    - generic [ref=e1107]: IR
+                    - generic [ref=e1109]:
+                      - generic [ref=e1110]: Ivy Rahman
+                      - generic [ref=e1111]: Prosthetic Dentistry
+              - listitem [ref=e1112]:
+                - figure "SN Sabia Nazneen General Dentistry" [ref=e1113]:
+                  - generic "5 out of 5 stars" [ref=e1118]
+                  - blockquote [ref=e1129]: I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.
+                  - generic [ref=e1130]:
+                    - generic [ref=e1131]: SN
+                    - generic [ref=e1133]:
+                      - generic [ref=e1134]: Sabia Nazneen
+                      - generic [ref=e1135]: General Dentistry
+              - listitem [ref=e1136]:
+                - figure "সআ সাদিয়া আক্তার Root Canal Treatment" [ref=e1137]:
+                  - generic "5 out of 5 stars" [ref=e1142]
+                  - blockquote [ref=e1153]: "\"অসাধারণ সেবা এবং যত্নশীল ডাক্তার!\" আমার দাঁতের সমস্যা নিয়ে অনেক জায়গায় গিয়েছিলাম, কিন্তু এখানে এসে আমি সত্যিকারের পার্থক্য অনুভব করেছি। ডাক্তার খুব ধৈর্য নিয়ে সব বুঝিয়েছেন এবং ট্রিটমেন্টও একদম ব্যথামুক্ত ছিল।"
+                  - generic [ref=e1154]:
+                    - generic [ref=e1155]: সআ
+                    - generic [ref=e1157]:
+                      - generic [ref=e1158]: সাদিয়া আক্তার
+                      - generic [ref=e1159]: Root Canal Treatment
+              - listitem [ref=e1160]:
+                - figure "RH Riyad Hassan Rana Root Canal Treatment" [ref=e1161]:
+                  - generic "5 out of 5 stars" [ref=e1166]
+                  - blockquote [ref=e1177]: "\"The best dental experience I've ever had!\" The staff at Aristocrat Dental Care made me feel comfortable from the moment I walked in. My root canal treatment was painless, and the doctor explained every step clearly. Highly recommended."
+                  - generic [ref=e1178]:
+                    - generic [ref=e1179]: RH
+                    - generic [ref=e1181]:
+                      - generic [ref=e1182]: Riyad Hassan Rana
+                      - generic [ref=e1183]: Root Canal Treatment
+              - listitem [ref=e1184]:
+                - figure "S Shohan Orthodontics • Uttara, Dhaka" [ref=e1185]:
+                  - generic "5 out of 5 stars" [ref=e1190]
+                  - blockquote [ref=e1201]: Aristocrat Dental Care & Orthodontic Center is truly the best dental clinic in Uttara. Their work quality is excellent, the environment is clean and professional, and the staff are very caring. The doctors are amazing, especially Dr. Sazia Khanam — she is highly skilled, gentle, and explains everything clearly. I felt very comfortable and confident during my treatment. Highly recommended for anyone looking for the best dental care in Uttara.
+                  - generic [ref=e1202]:
+                    - generic [ref=e1203]: S
+                    - generic [ref=e1205]:
+                      - generic [ref=e1206]: Shohan
+                      - generic [ref=e1207]: Orthodontics • Uttara, Dhaka
+              - listitem [ref=e1208]:
+                - figure "IR Ivy Rahman Prosthetic Dentistry" [ref=e1209]:
+                  - generic "5 out of 5 stars" [ref=e1214]
+                  - blockquote [ref=e1225]: অনেক জায়গায় ডক্টর দেখিয়েছে। বাট আপু আপনার এখানে এত সুন্দর করে দাঁতের কাজ করে এটা আমি না করলে বুঝতে পারতাম না। এত যত্ন সহকারে আপনারা পেশেন্ট দেখেন এটা আমার খুব ভালো লেগেছে। আমি খুবই খুশি আপনার এখানে ট্রিটমেন্ট নিতে পেরে। আপনার জন্য দোয়া ভালোবাসা দুইটাই থাকলো অনেক দূর এগিয়ে যান। আমি খুব শান্তি পেলাম আমি একটা বিশ্বাসের জায়গা পেলাম।
+                  - generic [ref=e1226]:
+                    - generic [ref=e1227]: IR
+                    - generic [ref=e1229]:
+                      - generic [ref=e1230]: Ivy Rahman
+                      - generic [ref=e1231]: Prosthetic Dentistry
+              - listitem [ref=e1232]:
+                - figure "SN Sabia Nazneen General Dentistry" [ref=e1233]:
+                  - generic "5 out of 5 stars" [ref=e1238]
+                  - blockquote [ref=e1249]: I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.
+                  - generic [ref=e1250]:
+                    - generic [ref=e1251]: SN
+                    - generic [ref=e1253]:
+                      - generic [ref=e1254]: Sabia Nazneen
+                      - generic [ref=e1255]: General Dentistry
+              - listitem [ref=e1256]:
+                - figure "সআ সাদিয়া আক্তার Root Canal Treatment" [ref=e1257]:
+                  - generic "5 out of 5 stars" [ref=e1262]
+                  - blockquote [ref=e1273]: "\"অসাধারণ সেবা এবং যত্নশীল ডাক্তার!\" আমার দাঁতের সমস্যা নিয়ে অনেক জায়গায় গিয়েছিলাম, কিন্তু এখানে এসে আমি সত্যিকারের পার্থক্য অনুভব করেছি। ডাক্তার খুব ধৈর্য নিয়ে সব বুঝিয়েছেন এবং ট্রিটমেন্টও একদম ব্যথামুক্ত ছিল।"
+                  - generic [ref=e1274]:
+                    - generic [ref=e1275]: সআ
+                    - generic [ref=e1277]:
+                      - generic [ref=e1278]: সাদিয়া আক্তার
+                      - generic [ref=e1279]: Root Canal Treatment
+              - listitem [ref=e1280]:
+                - figure "RH Riyad Hassan Rana Root Canal Treatment" [ref=e1281]:
+                  - generic "5 out of 5 stars" [ref=e1286]
+                  - blockquote [ref=e1297]: "\"The best dental experience I've ever had!\" The staff at Aristocrat Dental Care made me feel comfortable from the moment I walked in. My root canal treatment was painless, and the doctor explained every step clearly. Highly recommended."
+                  - generic [ref=e1298]:
+                    - generic [ref=e1299]: RH
+                    - generic [ref=e1301]:
+                      - generic [ref=e1302]: Riyad Hassan Rana
+                      - generic [ref=e1303]: Root Canal Treatment
+              - listitem [ref=e1304]:
+                - figure "S Shohan Orthodontics • Uttara, Dhaka" [ref=e1305]:
+                  - generic "5 out of 5 stars" [ref=e1310]
+                  - blockquote [ref=e1321]: Aristocrat Dental Care & Orthodontic Center is truly the best dental clinic in Uttara. Their work quality is excellent, the environment is clean and professional, and the staff are very caring. The doctors are amazing, especially Dr. Sazia Khanam — she is highly skilled, gentle, and explains everything clearly. I felt very comfortable and confident during my treatment. Highly recommended for anyone looking for the best dental care in Uttara.
+                  - generic [ref=e1322]:
+                    - generic [ref=e1323]: S
+                    - generic [ref=e1325]:
+                      - generic [ref=e1326]: Shohan
+                      - generic [ref=e1327]: Orthodontics • Uttara, Dhaka
+              - listitem [ref=e1328]:
+                - figure "IR Ivy Rahman Prosthetic Dentistry" [ref=e1329]:
+                  - generic "5 out of 5 stars" [ref=e1334]
+                  - blockquote [ref=e1345]: অনেক জায়গায় ডক্টর দেখিয়েছে। বাট আপু আপনার এখানে এত সুন্দর করে দাঁতের কাজ করে এটা আমি না করলে বুঝতে পারতাম না। এত যত্ন সহকারে আপনারা পেশেন্ট দেখেন এটা আমার খুব ভালো লেগেছে। আমি খুবই খুশি আপনার এখানে ট্রিটমেন্ট নিতে পেরে। আপনার জন্য দোয়া ভালোবাসা দুইটাই থাকলো অনেক দূর এগিয়ে যান। আমি খুব শান্তি পেলাম আমি একটা বিশ্বাসের জায়গা পেলাম।
+                  - generic [ref=e1346]:
+                    - generic [ref=e1347]: IR
+                    - generic [ref=e1349]:
+                      - generic [ref=e1350]: Ivy Rahman
+                      - generic [ref=e1351]: Prosthetic Dentistry
+              - listitem [ref=e1352]:
+                - figure "SN Sabia Nazneen General Dentistry" [ref=e1353]:
+                  - generic "5 out of 5 stars" [ref=e1358]
+                  - blockquote [ref=e1369]: I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.
+                  - generic [ref=e1370]:
+                    - generic [ref=e1371]: SN
+                    - generic [ref=e1373]:
+                      - generic [ref=e1374]: Sabia Nazneen
+                      - generic [ref=e1375]: General Dentistry
+              - listitem [ref=e1376]:
+                - figure "সআ সাদিয়া আক্তার Root Canal Treatment" [ref=e1377]:
+                  - generic "5 out of 5 stars" [ref=e1382]
+                  - blockquote [ref=e1393]: "\"অসাধারণ সেবা এবং যত্নশীল ডাক্তার!\" আমার দাঁতের সমস্যা নিয়ে অনেক জায়গায় গিয়েছিলাম, কিন্তু এখানে এসে আমি সত্যিকারের পার্থক্য অনুভব করেছি। ডাক্তার খুব ধৈর্য নিয়ে সব বুঝিয়েছেন এবং ট্রিটমেন্টও একদম ব্যথামুক্ত ছিল।"
+                  - generic [ref=e1394]:
+                    - generic [ref=e1395]: সআ
+                    - generic [ref=e1397]:
+                      - generic [ref=e1398]: সাদিয়া আক্তার
+                      - generic [ref=e1399]: Root Canal Treatment
+              - listitem [ref=e1400]:
+                - figure "RH Riyad Hassan Rana Root Canal Treatment" [ref=e1401]:
+                  - generic "5 out of 5 stars" [ref=e1406]
+                  - blockquote [ref=e1417]: "\"The best dental experience I've ever had!\" The staff at Aristocrat Dental Care made me feel comfortable from the moment I walked in. My root canal treatment was painless, and the doctor explained every step clearly. Highly recommended."
+                  - generic [ref=e1418]:
+                    - generic [ref=e1419]: RH
+                    - generic [ref=e1421]:
+                      - generic [ref=e1422]: Riyad Hassan Rana
+                      - generic [ref=e1423]: Root Canal Treatment
+              - listitem [ref=e1424]:
+                - figure "S Shohan Orthodontics • Uttara, Dhaka" [ref=e1425]:
+                  - generic "5 out of 5 stars" [ref=e1430]
+                  - blockquote [ref=e1441]: Aristocrat Dental Care & Orthodontic Center is truly the best dental clinic in Uttara. Their work quality is excellent, the environment is clean and professional, and the staff are very caring. The doctors are amazing, especially Dr. Sazia Khanam — she is highly skilled, gentle, and explains everything clearly. I felt very comfortable and confident during my treatment. Highly recommended for anyone looking for the best dental care in Uttara.
+                  - generic [ref=e1442]:
+                    - generic [ref=e1443]: S
+                    - generic [ref=e1445]:
+                      - generic [ref=e1446]: Shohan
+                      - generic [ref=e1447]: Orthodontics • Uttara, Dhaka
+              - listitem [ref=e1448]:
+                - figure "IR Ivy Rahman Prosthetic Dentistry" [ref=e1449]:
+                  - generic "5 out of 5 stars" [ref=e1454]
+                  - blockquote [ref=e1465]: অনেক জায়গায় ডক্টর দেখিয়েছে। বাট আপু আপনার এখানে এত সুন্দর করে দাঁতের কাজ করে এটা আমি না করলে বুঝতে পারতাম না। এত যত্ন সহকারে আপনারা পেশেন্ট দেখেন এটা আমার খুব ভালো লেগেছে। আমি খুবই খুশি আপনার এখানে ট্রিটমেন্ট নিতে পেরে। আপনার জন্য দোয়া ভালোবাসা দুইটাই থাকলো অনেক দূর এগিয়ে যান। আমি খুব শান্তি পেলাম আমি একটা বিশ্বাসের জায়গা পেলাম।
+                  - generic [ref=e1466]:
+                    - generic [ref=e1467]: IR
+                    - generic [ref=e1469]:
+                      - generic [ref=e1470]: Ivy Rahman
+                      - generic [ref=e1471]: Prosthetic Dentistry
+              - listitem [ref=e1472]:
+                - figure "SN Sabia Nazneen General Dentistry" [ref=e1473]:
+                  - generic "5 out of 5 stars" [ref=e1478]
+                  - blockquote [ref=e1489]: I had a great experience at this dental clinic. Their service and equipment are truly top-notch. The environment is neat, clean, and very comfortable. The staff are professional, friendly, and attentive, which made the whole experience pleasant and stress free. Highly recommended for anyone looking for quality dental care.
+                  - generic [ref=e1490]:
+                    - generic [ref=e1491]: SN
+                    - generic [ref=e1493]:
+                      - generic [ref=e1494]: Sabia Nazneen
+                      - generic [ref=e1495]: General Dentistry
+      - region [ref=e1496]:
+        - generic [ref=e1497]:
+          - generic [ref=e1498]:
+            - generic [ref=e1499]: Patient Reviews
+            - heading "Hear it from our patients" [level=2] [ref=e1501]
+            - paragraph [ref=e1503]: Verified reviews from patients across Uttara and greater Dhaka — every review is checked by our team before it appears.
+          - generic [ref=e1505]:
+            - generic [ref=e1506]:
+              - generic [aria-hidden] [ref=e1507]: –.–
+              - generic [ref=e1508]:
+                - img "0 / 5" [ref=e1509]
+                - paragraph [ref=e1520]: …
+            - button "Write a Review" [ref=e1521]
+          - paragraph [ref=e1551]: Reviews are checked for authenticity — we never edit your words.
+      - region [ref=e1555]:
+        - generic [ref=e1556]:
+          - generic [ref=e1557]:
+            - generic [ref=e1558]: Meet Our Experts
+            - heading "Specialists in personalized dental care" [level=2] [ref=e1560]
+            - paragraph [ref=e1562]: BDS & MDS qualified consultants in orthodontics, endodontics, oral surgery and cosmetic dentistry.
+          - generic [ref=e1563]:
+            - article [ref=e1564]:
+              - generic [ref=e1565]:
+                - generic [ref=e1566]: SK
+                - generic "BMDC verified doctor" [ref=e1568]
+              - heading "Dr. Shazia Khanam" [level=3] [ref=e1571]
+              - paragraph [ref=e1572]: Chief Dental Surgeon & Founder
+              - paragraph [ref=e1573]:
+                - generic [ref=e1574]: BDS
+                - generic [ref=e1575]: MDS
+              - generic "Rating 4.9 out of 5" [ref=e1576]:
+                - generic [ref=e1579]: "4.9"
+                - generic [ref=e1580]: • 8+ yrs • 5,000+ patients
+              - button "View Profile" [ref=e1581]
+              - button "Book Appointment Now"
+            - article [ref=e1584]:
+              - generic [ref=e1585]:
+                - generic [ref=e1586]: JB
+                - generic "BMDC verified doctor" [ref=e1588]
+              - heading "Dr. Jumla Binte Jafor" [level=3] [ref=e1591]
+              - paragraph [ref=e1592]: Consultant Dental Surgeon
+              - paragraph [ref=e1593]:
+                - generic [ref=e1594]: BDS (DU)
+                - generic [ref=e1595]: PGT (OMFS)
+                - generic [ref=e1596]: PGT (Conservative Dentistry & Endodontics)
+              - generic "Rating 4.7 out of 5" [ref=e1597]:
+                - generic [ref=e1600]: "4.7"
+                - generic [ref=e1601]: • 5+ yrs • 1,200+ patients
+              - button "View Profile" [ref=e1602]
+              - button "Book Appointment Now"
+            - article [ref=e1605]:
+              - generic [ref=e1606]:
+                - generic [ref=e1607]: IJ
+                - generic "BMDC verified doctor" [ref=e1609]
+              - heading "Dr. Israt Jahan Rimi" [level=3] [ref=e1612]
+              - paragraph [ref=e1613]: Consultant Dental Surgeon
+              - paragraph [ref=e1614]:
+                - generic [ref=e1615]: BDS (DU)
+                - generic [ref=e1616]: PGT (OMFS)
+              - generic "Rating 4.8 out of 5" [ref=e1617]:
+                - generic [ref=e1620]: "4.8"
+                - generic [ref=e1621]: • 4+ yrs • 800+ patients
+              - button "View Profile" [ref=e1622]
+              - button "Book Appointment Now"
+          - link "View Medical Board" [ref=e1626] [cursor=pointer]:
+            - /url: /doctors
+      - region [ref=e1629]:
+        - generic [ref=e1631]:
+          - generic [ref=e1632]:
+            - generic [ref=e1633]:
+              - generic [ref=e1634]: Frequently Asked Questions
+              - heading "Answers to the questions patients ask most" [level=2] [ref=e1636]
+              - paragraph [ref=e1638]: Straightforward, expert answers about dental care — from checkup frequency to smile makeovers.
+            - paragraph [ref=e1641]:
+              - generic [ref=e1644]:
+                - text: Still have questions? Call us at
+                - link "01715-027522" [ref=e1645] [cursor=pointer]:
+                  - /url: tel:+8801715027522
+                - text: or
+                - link "send a message" [ref=e1646] [cursor=pointer]:
+                  - /url: /contact
+                - text: — our team replies within hours.
+          - generic [ref=e1647]:
+            - generic [ref=e1648]:
+              - heading [level=3] [ref=e1650]:
+                - button "What causes tooth decay?" [ref=e1651]
+              - heading [level=3] [ref=e1653]:
+                - button "How often should I visit the dentist?" [ref=e1654]
+              - heading [level=3] [ref=e1656]:
+                - button "How can I prevent gum disease?" [ref=e1657]
+              - heading [level=3] [ref=e1659]:
+                - button "Are teeth whitening treatments safe?" [ref=e1660]
+              - heading [level=3] [ref=e1662]:
+                - button "What are dental implants?" [ref=e1663]
+              - heading [level=3] [ref=e1665]:
+                - button "Where is Aristocrat Dental Care located?" [ref=e1666]
+            - generic [ref=e1667]:
+              - link "Browse all FAQs" [ref=e1668] [cursor=pointer]:
+                - /url: /faqs
+              - link "Read more expert answers in our blog" [ref=e1672] [cursor=pointer]:
+                - /url: /blog
+      - region [ref=e1675]:
+        - generic [ref=e1679]:
+          - heading "Ready for a healthier, brighter smile?" [level=2] [ref=e1680]
+          - paragraph [ref=e1681]: Book your consultation with our specialist dentists today — modern technology, pain-free care and specialist expertise, all under one roof in Uttara.
+          - generic [ref=e1682]:
+            - button "Book Appointment Now" [ref=e1683]
+            - link "Call 01715-027522" [ref=e1687] [cursor=pointer]:
+              - /url: tel:+8801715027522
+          - paragraph [ref=e1688]: Open Saturday–Thursday, 10:00 AM – 9:00 PM • Same-week appointments available
+    - contentinfo [ref=e1689]:
+      - generic [ref=e1690]:
+        - generic [ref=e1691]:
+          - generic [ref=e1692]:
+            - img "Aristocrat Dental Care & Orthodontic Center logo" [ref=e1693]
+            - paragraph [ref=e1694]: Aristocrat Dental Care & Orthodontic Center — a modern, well-equipped dental clinic in Uttara, Dhaka combining advanced technology, strict sterilization and specialist care. Excellence in Every Smile!
+            - generic "Rated 4.9 out of 5" [ref=e1695]:
+              - generic [ref=e1706]: 4.9/5
+              - generic [ref=e1707]: (3,200+ patient reviews)
+            - generic [ref=e1708]:
+              - link "Facebook (opens in new tab)" [ref=e1709] [cursor=pointer]:
+                - /url: https://www.facebook.com/aristocratdental
+              - link "Instagram (opens in new tab)" [ref=e1712] [cursor=pointer]:
+                - /url: https://www.instagram.com/aristocratdentalcare01
+              - link "LinkedIn (opens in new tab)" [ref=e1716] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/aristocrat-dental-care-orthodontic-center
+          - navigation "Footer quick links" [ref=e1721]:
+            - heading "Quick Links" [level=3] [ref=e1722]
+            - list [ref=e1723]:
+              - listitem [ref=e1724]:
+                - link "Home" [ref=e1725] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e1727]:
+                - link "About Us" [ref=e1728] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e1730]:
+                - link "Our Services" [ref=e1731] [cursor=pointer]:
+                  - /url: /services
+              - listitem [ref=e1733]:
+                - link "Smile Gallery" [ref=e1734] [cursor=pointer]:
+                  - /url: /gallery
+              - listitem [ref=e1736]:
+                - link "Our Doctors" [ref=e1737] [cursor=pointer]:
+                  - /url: /doctors
+              - listitem [ref=e1739]:
+                - link "Health Blog" [ref=e1740] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e1742]:
+                - link "Contact" [ref=e1743] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e1745]:
+                - link "Book Appointment" [ref=e1746] [cursor=pointer]:
+                  - /url: /appointment
+              - listitem [ref=e1748]:
+                - link "Check Appointment Status" [ref=e1749] [cursor=pointer]:
+                  - /url: /status
+              - listitem [ref=e1751]:
+                - link "FAQs" [ref=e1752] [cursor=pointer]:
+                  - /url: /faqs
+              - listitem [ref=e1754]:
+                - link "Patient Portal" [ref=e1755] [cursor=pointer]:
+                  - /url: /portal
+          - navigation "Footer services" [ref=e1757]:
+            - heading "Our Services" [level=3] [ref=e1758]
+            - list [ref=e1759]:
+              - listitem [ref=e1760]:
+                - link "Crowns & Bridges" [ref=e1761] [cursor=pointer]:
+                  - /url: /services/crowns-bridges
+              - listitem [ref=e1763]:
+                - link "Implants" [ref=e1764] [cursor=pointer]:
+                  - /url: /services/dental-implants
+              - listitem [ref=e1766]:
+                - link "Smile Design" [ref=e1767] [cursor=pointer]:
+                  - /url: /services/digital-smile-design
+              - listitem [ref=e1769]:
+                - link "Invisalign®" [ref=e1770] [cursor=pointer]:
+                  - /url: /services/invisalign-clear-aligners
+              - listitem [ref=e1772]:
+                - link "Laser Fillings" [ref=e1773] [cursor=pointer]:
+                  - /url: /services/laser-assisted-fillings
+              - listitem [ref=e1775]:
+                - link "Oral Surgery" [ref=e1776] [cursor=pointer]:
+                  - /url: /services/oral-maxillofacial-surgery
+              - listitem [ref=e1778]:
+                - link "Kids' Dentistry" [ref=e1779] [cursor=pointer]:
+                  - /url: /services/pediatric-dentistry
+              - listitem [ref=e1781]:
+                - link "Gum Treatment" [ref=e1782] [cursor=pointer]:
+                  - /url: /services/periodontal-gum-treatment
+              - listitem [ref=e1784]:
+                - link "View all 11 services →" [ref=e1785] [cursor=pointer]:
+                  - /url: /services
+          - generic [ref=e1786]:
+            - heading "Get In Touch" [level=3] [ref=e1787]
+            - list [ref=e1788]:
+              - listitem [ref=e1789]:
+                - link "Hotline (Call or WhatsApp) 01715-027522" [ref=e1790] [cursor=pointer]:
+                  - /url: tel:+8801715027522
+                  - generic [ref=e1794]:
+                    - generic [ref=e1795]: Hotline (Call or WhatsApp)
+                    - text: 01715-027522
+              - listitem [ref=e1796]:
+                - link "Email aristocratdentalcare01@gmail.com" [ref=e1797] [cursor=pointer]:
+                  - /url: mailto:aristocratdentalcare01@gmail.com
+                  - generic [ref=e1802]:
+                    - generic [ref=e1803]: Email
+                    - text: aristocratdentalcare01@gmail.com
+              - listitem [ref=e1804]:
+                - generic [ref=e1809]:
+                  - generic [ref=e1810]: Location
+                  - text: Uttara, Dhaka, Bangladesh
+              - listitem [ref=e1811]:
+                - generic [ref=e1816]:
+                  - generic [ref=e1817]: Opening Hours
+                  - text: "Sat – Thu: 10:00 AM – 9:00 PM"
+                  - generic [aria-hidden] [ref=e1818]: Open now
+        - generic [ref=e1821]:
+          - generic [ref=e1822]:
+            - heading "Dental health tips, worth reading" [level=3] [ref=e1823]
+            - paragraph [ref=e1826]: One short, genuinely useful email a month — seasonal care reminders, clinic offers and new expert guides from our blog. No spam, ever.
+          - generic [ref=e1827]:
+            - generic [ref=e1828]: Email address for newsletter
+            - textbox "Email address for newsletter" [ref=e1829]:
+              - /placeholder: your@email.com
+            - button "Subscribe" [ref=e1830]
+        - generic [ref=e1834]:
+          - generic [ref=e1835]: Strict Sterilization Protocols
+          - generic [ref=e1839]: Same-Week Appointments
+          - generic [ref=e1843]: "Bilingual Care: বাংলা & English"
+        - generic [ref=e1846]:
+          - paragraph [ref=e1847]: © 2026 Aristocrat Dental Care & Orthodontic Center. All rights reserved.
+          - paragraph [ref=e1848]: Excellence in Every Smile — Uttara, Dhaka, Bangladesh
+      - button "Back to top"
+    - generic [ref=e1849]:
+      - link "Chat on WhatsApp (opens in new tab)" [ref=e1850] [cursor=pointer]:
+        - /url: https://wa.me/8801715027522?text=Hello%2C%20I%20would%20like%20to%20book%20an%20appointment%20at%20Aristocrat%20Dental%20Care.
+        - generic: WhatsApp us
+      - link "Call 01715-027522" [ref=e1854] [cursor=pointer]:
+        - /url: tel:+8801715027522
+        - generic: 01715-027522
+      - button "Book appointment online" [ref=e1857]:
+        - generic: Book appointment
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e1866] [cursor=pointer]

@@ -1250,3 +1250,22 @@ Work Log:
 - All 10 env vars added to production+preview+development (30 entries): DATABASE_URL, DIRECT_URL, R2_ACCOUNT_ID/ACCESS_KEY_ID/SECRET_ACCESS_KEY/BUCKET_NAME/PUBLIC_URL, ADMIN_PASSCODE, ADMIN_SESSION_SECRET, PATIENT_SESSION_SECRET. `.env ls production` -> all 10 present (Secret).
 - `vercel --prod --yes` -> build PASS (needs DIRECT_URL fix was just the missing env var), READY. URL: https://aristocart-eight.vercel.app
 - Verify live: / 200, /api/reviews 200 (valid JSON from Neon), /api/content 200, /sitemap.xml 200; content JSON e 38?? R2 image ref; sample R2 URL 200.
+---
+Task ID: admin-stale-data-fix — COMPLETE
+Agent: opencode (Muse Spark)
+Task: Admin panel e save korar poro purono data dekhacchilo — fix
+
+Root cause (3 layers of caching, DB was always correct):
+1. /api/admin/* GET responses were browser-cacheable (no Cache-Control) -> panel list reload after save replayed the pre-save payload.
+2. Public /api/content ALWAYS sent "public, max-age=30, stale-while-revalidate=60" -> admin refresh() got a 30-90s stale bundle.
+3. Vercel per-instance in-process content cache (5s TTL) only cleared on the writing instance.
+
+Fix:
+- NEW src/middleware.ts -> forces "no-store, max-age=0, must-revalidate" + Pragma on EVERY /api/admin/:path* response (one central fix for all 15+ panels, current + future).
+- src/app/api/content/route.ts -> uncacheable by default (no-store); public CDN window now opt-in via ?cache=1. export dynamic = force-dynamic.
+- content-provider.tsx refresh() -> fetch cache:"no-cache" (revalidate, never stale).
+- admin-shared.tsx get() + AdminDataGate + doctors-panel load() -> fetch cache:"no-store".
+
+Verify (dev + prod): admin API Cache-Control: no-store; save->reload MATCHES_SAVED=true (full E2E incl. restore); DB restored to real photos (no test data); npm run vercel-build PASS (40 pages); pushed c2a01ab; Vercel --prod READY; live: /api/admin/doctors no-store, /api/content no-store, home 200.
+
+Note: 6 pre-existing eslint errors in admin-shared.tsx/doctors-panel.tsx (refs-during-render, setState-in-effect) unchanged — verified identical on the committed baseline, unrelated to this fix.
