@@ -4,18 +4,25 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
+  ArrowRight,
   Award,
+  BadgeCheck,
   CheckCircle2,
+  GraduationCap,
+  Images,
+  Sparkles,
   Star,
   Stethoscope,
   Target,
   Telescope,
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
+import { scrollToId } from "@/lib/anchor";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
 import { pickBn, testimonials } from "@/lib/content/shared";
 import { PageHeader, CtaBanner, DoctorCard } from "@/components/site/shared";
+import { ClinicGallery } from "@/components/site/clinic-gallery";
 import {
   AnimatedCounter,
   Reveal,
@@ -76,9 +83,55 @@ export function AboutPage() {
         name: about.founderName,
         jobTitle: about.founderRole,
         worksFor: { "@id": "https://aristocratdentalcarebd.com/#organization" },
+        ...(about.founderBio?.[0]
+          ? { description: about.founderBio[0] }
+          : {}),
+        ...(about.founderImage
+          ? {
+              image: about.founderImage.startsWith("http")
+                ? about.founderImage
+                : `https://aristocratdentalcarebd.com${about.founderImage}`,
+            }
+          : {}),
         ...(founderDoctorSlug
           ? { url: `https://aristocratdentalcarebd.com/doctors/${founderDoctorSlug}` }
           : {}),
+        /* Education / credentials come straight from the CMS dossier, so
+           the structured data always matches what the page shows. */
+        ...((about.founderEducation ?? []).length > 0
+          ? {
+              alumniOf: (about.founderEducation ?? [])
+                .filter((entry) => entry.institution)
+                .map((entry) => ({
+                  "@type": "EducationalOrganization",
+                  name: entry.institution,
+                })),
+            }
+          : {}),
+        ...((about.founderCredentials ?? []).length > 0
+          ? {
+              hasCredential: (about.founderCredentials ?? []).map((credential) => ({
+                "@type": "EducationalOccupationalCredential",
+                name: credential.title,
+                ...(credential.issuer
+                  ? {
+                      recognizedBy: {
+                        "@type": "Organization",
+                        name: credential.issuer,
+                      },
+                    }
+                  : {}),
+              })),
+            }
+          : {}),
+        knowsAbout: [
+          "Orthodontics",
+          "Clear aligners",
+          "Braces",
+          "Digital smile design",
+          "Dental implants",
+          "Cosmetic dentistry",
+        ],
       },
       {
         "@context": "https://schema.org",
@@ -99,13 +152,14 @@ export function AboutPage() {
         ],
       },
     ],
-    [about.description, about.founderName, about.founderRole, settings.name, founderDoctorSlug]
+    [about.description, about.founderName, about.founderRole, settings.name, founderDoctorSlug,
+     about.founderBio, about.founderImage, about.founderEducation, about.founderCredentials]
   );
 
   usePageMeta({
     title: "About Us — Our Story, Mission & Values",
     description:
-      "Welcome to Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka — combining art, medical science and compassion under the leadership of Dr. Shazia Khanam. 50,000+ happy patients.",
+      "Meet Dr. Shazia Khanam — founder & Chief Consultant of Aristocrat Dental Care & Orthodontic Center, Uttara Dhaka. 18+ years of experience, FCPS (Orthodontics), WFO Fellow (USA), and a clinic built on precision and kindness.",
     jsonLd: aboutJsonLd,
   });
 
@@ -399,6 +453,18 @@ export function AboutPage() {
                     </span>
                   </span>
                 </div>
+                {/* Experience badge — the number the owner wants front and
+                    centre. Hidden when the CMS field is blank. */}
+                {about.founderYears ? (
+                  <div className="absolute -left-3 -top-5 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 py-3 text-center shadow-xl shadow-amber-500/30 ring-1 ring-white/40 sm:-left-6">
+                    <span className="font-heading block text-2xl font-bold leading-none text-brand-navy">
+                      {bn ? toBnDigits(about.founderYears) : about.founderYears}
+                    </span>
+                    <span className="mt-1 block max-w-[7.5rem] text-[10px] font-semibold uppercase leading-tight tracking-wider text-brand-navy/75">
+                      {pickBn(about.founderYearsLabel, about.founderYearsLabelBn, bn)}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </Reveal>
 
@@ -414,13 +480,43 @@ export function AboutPage() {
                   </>
                 }
               />
-              <Reveal className="mt-6">
-                <p className="text-base leading-relaxed text-blue-100/85">
-                  {bn
-                    ? "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ারের কেন্দ্রে আছেন ডা. শাজিয়া খানম — নিজের কাজের প্রতি নিবেদিতপ্রাণ, অত্যন্ত দক্ষ ও অভিজ্ঞ একজন ডেন্টিস্ট। ক্রমাগত শেখার আগ্রহ আর বিখ্যাত কোমল স্পর্শ নিয়ে ডা. খানম তৈরি করেন ব্যক্তিগত চিকিৎসা পরিকল্পনা — যা প্রতিটি রোগীর স্বতন্ত্র প্রয়োজন মেটায়।"
-                    : "At the heart of Aristocrat Dental Care is Dr. Shazia Khanam — a highly skilled and experienced dentist dedicated to her craft. With a passion for continued learning and a famously gentle touch, Dr. Khanam specializes in creating personalized treatment plans that address the unique needs of every patient."}
-                </p>
-              </Reveal>
+              {about.founderTagline ? (
+                <Reveal className="mt-6">
+                  <p className="border-l-2 border-amber-400/70 pl-4 text-lg font-medium italic leading-relaxed text-amber-100/90">
+                    {pickBn(about.founderTagline, about.founderTaglineBn, bn)}
+                  </p>
+                </Reveal>
+              ) : null}
+
+              {(about.founderCredentials ?? []).length > 0 ? (
+                <Reveal className="mt-6">
+                  <ul className="flex flex-wrap gap-2">
+                    {(about.founderCredentials ?? []).slice(0, 5).map((credential, i) => (
+                      <li
+                        key={`${credential.title}-${i}`}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-[11.5px] font-semibold text-blue-100 ring-1 ring-white/15"
+                      >
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+                        {pickBn(credential.title, credential.titleBn, bn)}
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              ) : null}
+
+              <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-blue-100/85 sm:text-base">
+                {(about.founderBio ?? []).map((paragraph, i) => {
+                  const text = bn
+                    ? about.founderBioBn?.[i]?.trim() || paragraph
+                    : paragraph;
+                  if (!text?.trim()) return null;
+                  return (
+                    <Reveal key={i} delay={0.05 + i * 0.05}>
+                      <p>{text}</p>
+                    </Reveal>
+                  );
+                })}
+              </div>
               <StaggerContainer className="mt-8 space-y-4">
                 {about.founderItems.map((item, i) => (
                   <StaggerItem key={i}>
@@ -441,26 +537,241 @@ export function AboutPage() {
                 ))}
               </StaggerContainer>
               <Reveal className="mt-8">
-                <Button
-                  asChild
-                  className="rounded-full bg-white px-7 py-4 text-sm font-bold text-brand-navy shadow-xl hover:-translate-y-0.5 hover:shadow-2xl"
-                >
-                  <a
-                    href="/doctors/dr-shazia-khanam"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate("/doctors/dr-shazia-khanam");
-                    }}
-                    className="inline-flex items-center gap-2"
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    asChild
+                    className="rounded-full bg-white px-7 py-4 text-sm font-bold text-brand-navy shadow-xl hover:-translate-y-0.5 hover:shadow-2xl"
                   >
-                    {t.viewFullProfile}
-                  </a>
-                </Button>
+                    <a
+                      href={`/doctors/${founderDoctorSlug ?? "dr-shazia-khanam"}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/doctors/${founderDoctorSlug ?? "dr-shazia-khanam"}`);
+                      }}
+                      className="inline-flex items-center gap-2"
+                    >
+                      {t.viewFullProfile}
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="rounded-full border-white/25 bg-white/5 px-7 py-4 text-sm font-bold text-white backdrop-blur hover:bg-white/12 hover:text-white"
+                  >
+                    <a
+                      href="#founder-credentials"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollToId("founder-credentials");
+                      }}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <GraduationCap className="h-4.5 w-4.5" aria-hidden="true" />
+                      {bn ? "শিক্ষা ও সার্টিফিকেট" : "Education & credentials"}
+                    </a>
+                  </Button>
+                </div>
               </Reveal>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ============ EDUCATION, CREDENTIALS & MILESTONES ============ */}
+      {(about.founderEducation ?? []).length > 0 ||
+      (about.founderCredentials ?? []).length > 0 ? (
+        <section
+          id="founder-credentials"
+          className="relative scroll-mt-24 bg-ice py-16 sm:py-20"
+          aria-labelledby="founder-credentials-heading"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <SectionHeading
+              eyebrow={bn ? "শিক্ষা ও সার্টিফিকেট" : "Education & credentials"}
+              title={
+                bn ? (
+                  <>
+                    হাসির পেছনের <span className="gradient-text">প্রশিক্ষণ</span>
+                  </>
+                ) : (
+                  <>
+                    The training behind <span className="gradient-text">every smile</span>
+                  </>
+                )
+              }
+              description={
+                bn
+                  ? "ডা. শাজিয়া খানমের একাডেমিক যাত্রা, বিশেষজ্ঞ যোগ্যতা এবং আন্তর্জাতিক স্বীকৃতি — সব এক জায়গায়।"
+                  : "Dr. Shazia Khanam's academic path, specialist qualifications and international recognition — in one place."
+              }
+            />
+
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              {/* ---- education timeline ---- */}
+              {(about.founderEducation ?? []).length > 0 ? (
+                <Reveal>
+                  <div className="h-full rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_16px_45px_-30px_rgba(0,32,96,0.5)] sm:p-8">
+                    <h3 className="font-heading flex items-center gap-2.5 text-lg font-bold text-brand-navy">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue ring-1 ring-blue-100">
+                        <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      {bn ? "শিক্ষা ও প্রশিক্ষণ" : "Education & training"}
+                    </h3>
+                    <ol className="relative mt-6 space-y-6 border-l border-blue-100 pl-6">
+                      {(about.founderEducation ?? []).map((item, i) => (
+                        <li key={`${item.degree}-${i}`} className="relative">
+                          <span
+                            className="absolute -left-[1.9rem] top-1.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white ring-2 ring-brand-blue"
+                            aria-hidden="true"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-brand-blue" />
+                          </span>
+                          {item.year ? (
+                            <span className="font-heading inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-brand-blue">
+                              {bn ? toBnDigits(item.year) : item.year}
+                            </span>
+                          ) : null}
+                          <p className="font-heading mt-1.5 text-[15px] font-bold leading-snug text-brand-navy">
+                            {pickBn(item.degree, item.degreeBn, bn)}
+                          </p>
+                          {item.institution ? (
+                            <p className="mt-0.5 text-[13px] font-medium text-slate-600">
+                              {pickBn(item.institution, item.institutionBn, bn)}
+                            </p>
+                          ) : null}
+                          {item.detail ? (
+                            <p className="mt-1 text-[12.5px] leading-relaxed text-slate-500">
+                              {pickBn(item.detail, item.detailBn, bn)}
+                            </p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </Reveal>
+              ) : null}
+
+              {/* ---- credentials ---- */}
+              <div className="flex flex-col gap-6">
+                {(about.founderCredentials ?? []).length > 0 ? (
+                  <Reveal delay={0.08}>
+                    <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_16px_45px_-30px_rgba(0,32,96,0.5)] sm:p-8">
+                      <h3 className="font-heading flex items-center gap-2.5 text-lg font-bold text-brand-navy">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/15 text-amber-600 ring-1 ring-amber-200">
+                          <BadgeCheck className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        {bn ? "সার্টিফিকেট ও সদস্যপদ" : "Certificates & memberships"}
+                      </h3>
+                      <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
+                        {(about.founderCredentials ?? []).map((credential, i) => (
+                          <li
+                            key={`${credential.title}-${i}`}
+                            className="rounded-2xl bg-ice px-4 py-3 ring-1 ring-blue-100/70"
+                          >
+                            <p className="text-[13px] font-bold leading-snug text-brand-navy">
+                              {pickBn(credential.title, credential.titleBn, bn)}
+                            </p>
+                            {credential.issuer ? (
+                              <p className="mt-0.5 text-[11.5px] leading-snug text-slate-500">
+                                {pickBn(credential.issuer, credential.issuerBn, bn)}
+                              </p>
+                            ) : null}
+                            {credential.year ? (
+                              <p className="mt-1 text-[10.5px] font-bold uppercase tracking-wider text-brand-blue">
+                                {bn ? toBnDigits(credential.year) : credential.year}
+                              </p>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Reveal>
+                ) : null}
+
+                {/* ---- career milestones ---- */}
+                {(about.founderMilestones ?? []).length > 0 ? (
+                  <Reveal delay={0.16}>
+                    <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_16px_45px_-30px_rgba(0,32,96,0.5)] sm:p-8">
+                      <h3 className="font-heading flex items-center gap-2.5 text-lg font-bold text-brand-navy">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-100">
+                          <Award className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        {bn ? "কর্মজীবনের মাইলফলক" : "Career milestones"}
+                      </h3>
+                      <ol className="mt-5 space-y-3">
+                        {(about.founderMilestones ?? []).map((milestone, i) => (
+                          <li key={`${milestone.title}-${i}`} className="flex gap-3">
+                            <span className="font-heading mt-0.5 inline-flex h-7 min-w-12 shrink-0 items-center justify-center rounded-lg bg-brand-navy px-1.5 text-[10.5px] font-bold text-white">
+                              {milestone.year
+                                ? bn
+                                  ? toBnDigits(milestone.year)
+                                  : milestone.year
+                                : String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-[13px] font-bold leading-snug text-brand-navy">
+                                {pickBn(milestone.title, milestone.titleBn, bn)}
+                              </span>
+                              {milestone.description ? (
+                                <span className="mt-0.5 block text-[11.5px] leading-relaxed text-slate-500">
+                                  {pickBn(milestone.description, milestone.descriptionBn, bn)}
+                                </span>
+                              ) : null}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </Reveal>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* ============ CLINIC TOUR (rooms + equipment) ============ */}
+      {(about.clinicRooms ?? []).length > 0 ? (
+        <section
+          id="clinic-tour"
+          className="relative scroll-mt-24 py-16 sm:py-20"
+          aria-labelledby="clinic-tour-heading"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <SectionHeading
+              eyebrow={
+                pickBn(about.clinicGalleryEyebrow, about.clinicGalleryEyebrowBn, bn) ||
+                (bn ? "ক্লিনিকের ভেতরে" : "Inside the clinic")
+              }
+              title={
+                pickBn(about.clinicGalleryTitle, about.clinicGalleryTitleBn, bn) ||
+                (bn ? "প্রতিটি রুম, প্রতিটি যন্ত্র" : "Every room, every instrument")
+              }
+              description={
+                pickBn(
+                  about.clinicGalleryDescription,
+                  about.clinicGalleryDescriptionBn,
+                  bn
+                ) || undefined
+              }
+            />
+            <div className="mt-12">
+              <ClinicGallery rooms={about.clinicRooms ?? []} />
+            </div>
+            <Reveal className="mt-10">
+              <p className="mx-auto flex max-w-3xl items-start gap-2.5 rounded-2xl border border-blue-100 bg-ice px-5 py-4 text-[12.5px] leading-relaxed text-slate-500">
+                <Images className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
+                <span>
+                  {bn
+                    ? "গ্যালারির ছবিগুলো ক্লিনিকের আসল রুম ও ইকুইপমেন্টের — নতুন ছবি যোগ হলে এখানেই আপডেট হবে।"
+                    : "These photographs show the clinic's own rooms and equipment; the gallery is updated from the clinic's content panel as new photos are added."}
+                </span>
+              </p>
+            </Reveal>
+          </div>
+        </section>
+      ) : null}
 
       {/* ============ VALUES ============ */}
       <section className="py-16 sm:py-20" aria-labelledby="values-heading">

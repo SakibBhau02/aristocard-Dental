@@ -16,10 +16,14 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  Award,
+  BadgeCheck,
   BookOpenText,
   ChevronDown,
   Compass,
+  GraduationCap,
   HeartHandshake,
+  Images,
   Landmark,
   Plus,
   RefreshCw,
@@ -32,6 +36,8 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Collapsible,
   CollapsibleContent,
@@ -83,6 +89,13 @@ const MAX_TIMELINE = 8;
 const MAX_STORY_STATS = 4;
 const MAX_FOUNDER_ITEMS = 3;
 const MAX_VALUES = 4;
+/* Founder dossier + clinic tour caps — generous but bounded, so a runaway
+   repeater can never blow past the API's 200 KB page-block limit. */
+const MAX_FOUNDER_BIO = 6;
+const MAX_FOUNDER_EDUCATION = 12;
+const MAX_FOUNDER_CREDENTIALS = 16;
+const MAX_FOUNDER_MILESTONES = 12;
+const MAX_CLINIC_ROOMS = 30;
 
 /* ------------------------------------------------------------------ */
 /*  Local helpers                                                       */
@@ -189,6 +202,50 @@ function MiniField({
         {label}
       </span>
       {children}
+    </label>
+  );
+}
+
+/** Swap an array item with its neighbour (bounded). */
+function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
+  const target = index + dir;
+  if (target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+/** One-item-per-line editor for string arrays (equipment chips). */
+function LinesField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+  hint,
+}: {
+  label: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  rows?: number;
+  hint?: string;
+}) {
+  return (
+    <label className="min-w-0 block">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </span>
+      <Textarea
+        value={value.join("\n")}
+        rows={rows}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value.split("\n"))}
+        className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+      />
+      <span className="mt-1 block text-[10px] text-slate-400">
+        {hint ?? "One item per line."}
+      </span>
     </label>
   );
 }
@@ -452,6 +509,203 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
   const removeFounderItem = (index: number) =>
     setForm((f) => (f ? { ...f, founderItems: f.founderItems.filter((_, i) => i !== index) } : f));
 
+  /* ---- founder dossier: bio paragraphs ---- */
+  const setFounderBio = (index: number, patch: { en?: string; bn?: string }) =>
+    setForm((f) => {
+      if (!f) return f;
+      const bio = [...(f.founderBio ?? [])];
+      const bioBn = [...(f.founderBioBn ?? [])];
+      while (bioBn.length < bio.length) bioBn.push("");
+      if (patch.en !== undefined) bio[index] = patch.en;
+      if (patch.bn !== undefined) bioBn[index] = patch.bn;
+      return { ...f, founderBio: bio, founderBioBn: bioBn };
+    });
+
+  const addFounderBio = () =>
+    setForm((f) =>
+      f && (f.founderBio ?? []).length < MAX_FOUNDER_BIO
+        ? {
+            ...f,
+            founderBio: [...(f.founderBio ?? []), ""],
+            founderBioBn: [...(f.founderBioBn ?? []), ""],
+          }
+        : f
+    );
+
+  const removeFounderBio = (index: number) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderBio: (f.founderBio ?? []).filter((_, i) => i !== index),
+            founderBioBn: (f.founderBioBn ?? []).filter((_, i) => i !== index),
+          }
+        : f
+    );
+
+  /* ---- founder dossier: education / credentials / milestones ---- */
+  const setEducation = (
+    index: number,
+    patch: Partial<NonNullable<AboutContent["founderEducation"]>[number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderEducation: (f.founderEducation ?? []).map((item, i) =>
+              i === index ? { ...item, ...patch } : item
+            ),
+          }
+        : f
+    );
+
+  const addEducation = () =>
+    setForm((f) =>
+      f && (f.founderEducation ?? []).length < MAX_FOUNDER_EDUCATION
+        ? {
+            ...f,
+            founderEducation: [
+              ...(f.founderEducation ?? []),
+              { degree: "", institution: "", year: "", detail: "" },
+            ],
+          }
+        : f
+    );
+
+  const removeEducation = (index: number) =>
+    setForm((f) =>
+      f
+        ? { ...f, founderEducation: (f.founderEducation ?? []).filter((_, i) => i !== index) }
+        : f
+    );
+
+  const moveEducation = (index: number, dir: -1 | 1) =>
+    setForm((f) =>
+      f ? { ...f, founderEducation: moveItem(f.founderEducation ?? [], index, dir) } : f
+    );
+
+  const setCredential = (
+    index: number,
+    patch: Partial<NonNullable<AboutContent["founderCredentials"]>[number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderCredentials: (f.founderCredentials ?? []).map((item, i) =>
+              i === index ? { ...item, ...patch } : item
+            ),
+          }
+        : f
+    );
+
+  const addCredential = () =>
+    setForm((f) =>
+      f && (f.founderCredentials ?? []).length < MAX_FOUNDER_CREDENTIALS
+        ? {
+            ...f,
+            founderCredentials: [...(f.founderCredentials ?? []), { title: "", issuer: "", year: "" }],
+          }
+        : f
+    );
+
+  const removeCredential = (index: number) =>
+    setForm((f) =>
+      f
+        ? { ...f, founderCredentials: (f.founderCredentials ?? []).filter((_, i) => i !== index) }
+        : f
+    );
+
+  const moveCredential = (index: number, dir: -1 | 1) =>
+    setForm((f) =>
+      f ? { ...f, founderCredentials: moveItem(f.founderCredentials ?? [], index, dir) } : f
+    );
+
+  const setMilestone = (
+    index: number,
+    patch: Partial<NonNullable<AboutContent["founderMilestones"]>[number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderMilestones: (f.founderMilestones ?? []).map((item, i) =>
+              i === index ? { ...item, ...patch } : item
+            ),
+          }
+        : f
+    );
+
+  const addMilestone = () =>
+    setForm((f) =>
+      f && (f.founderMilestones ?? []).length < MAX_FOUNDER_MILESTONES
+        ? {
+            ...f,
+            founderMilestones: [
+              ...(f.founderMilestones ?? []),
+              { year: "", title: "", description: "" },
+            ],
+          }
+        : f
+    );
+
+  const removeMilestone = (index: number) =>
+    setForm((f) =>
+      f
+        ? { ...f, founderMilestones: (f.founderMilestones ?? []).filter((_, i) => i !== index) }
+        : f
+    );
+
+  const moveMilestone = (index: number, dir: -1 | 1) =>
+    setForm((f) =>
+      f ? { ...f, founderMilestones: moveItem(f.founderMilestones ?? [], index, dir) } : f
+    );
+
+  /* ---- clinic tour rooms ---- */
+  const setRoom = (
+    index: number,
+    patch: Partial<NonNullable<AboutContent["clinicRooms"]>[number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            clinicRooms: (f.clinicRooms ?? []).map((room, i) =>
+              i === index ? { ...room, ...patch } : room
+            ),
+          }
+        : f
+    );
+
+  const addRoom = () =>
+    setForm((f) => {
+      if (!f || (f.clinicRooms ?? []).length >= MAX_CLINIC_ROOMS) return f;
+      const id = `room-${Date.now().toString(36)}`;
+      return {
+        ...f,
+        clinicRooms: [
+          ...(f.clinicRooms ?? []),
+          {
+            id,
+            category: "Treatment Rooms",
+            title: "",
+            description: "",
+            equipment: [],
+            equipmentBn: [],
+            featured: false,
+          },
+        ],
+      };
+    });
+
+  const removeRoom = (index: number) =>
+    setForm((f) =>
+      f ? { ...f, clinicRooms: (f.clinicRooms ?? []).filter((_, i) => i !== index) } : f
+    );
+
+  const moveRoom = (index: number, dir: -1 | 1) =>
+    setForm((f) => (f ? { ...f, clinicRooms: moveItem(f.clinicRooms ?? [], index, dir) } : f));
+
   /* ---- values ---- */
   const setValue = (index: number, patch: Partial<AboutContent["values"][number]>) =>
     setForm((f) =>
@@ -503,7 +757,7 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
     <div className="space-y-4">
       <PanelHeader
         title="About Page Content"
-        description="Story, mission & vision, journey timeline, founder, values and the closing CTA — saves go live instantly."
+        description="Story, mission & vision, journey timeline, founder dossier (education, certificates, milestones) and the clinic tour gallery — saves go live instantly."
       />
       {error ? <ErrorNote message={error} /> : null}
 
@@ -817,7 +1071,7 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
       <FormSection
         icon={UserRound}
         title="Founder"
-        description="Photo, name, role line, chip and the three credential items"
+        description="Photo, name, role, experience badge, biography, chip and the three highlights"
         edited={groupDirty((a) => [
           a.founderName,
           a.founderRole,
@@ -826,6 +1080,10 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
           a.founderChipTitle,
           a.founderChipNote,
           a.founderItems,
+          a.founderYears,
+          a.founderYearsLabel,
+          a.founderTagline,
+          a.founderBio,
         ])}
       >
         <ImageUploadField
@@ -869,6 +1127,90 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
           onEnChange={(v) => set("founderRole", v)}
           onBnChange={(v) => set("founderRoleBn", v)}
         />
+        <div className="grid gap-4 sm:grid-cols-[9rem_1fr]">
+          <MiniField label="Experience badge">
+            <Input
+              value={form.founderYears ?? ""}
+              maxLength={8}
+              placeholder="18+"
+              onChange={(e) => set("founderYears", e.target.value)}
+              className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+            />
+          </MiniField>
+          <BilingualField
+            label="Experience label"
+            enValue={form.founderYearsLabel ?? ""}
+            bnValue={form.founderYearsLabelBn}
+            onEnChange={(v) => set("founderYearsLabel", v)}
+            onBnChange={(v) => set("founderYearsLabelBn", v)}
+          />
+        </div>
+        <Hint>
+          The badge sits on the founder portrait. Enter digits in English — the
+          বাংলা site converts them automatically. Leave the badge empty to hide it.
+        </Hint>
+        <BilingualField
+          label="Tagline (shown under the section title)"
+          textarea
+          rows={2}
+          enValue={form.founderTagline ?? ""}
+          bnValue={form.founderTaglineBn}
+          onEnChange={(v) => set("founderTagline", v)}
+          onBnChange={(v) => set("founderTaglineBn", v)}
+        />
+
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Founder biography
+          </p>
+          <Hint>
+            One paragraph per block. This replaces the old single hard-coded
+            paragraph — write the story once and it appears on the About page
+            (and feeds the Person schema for search engines).
+          </Hint>
+          {(form.founderBio ?? []).map((paragraph, i) => (
+            <div
+              key={i}
+              className="space-y-2 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  Paragraph {i + 1}
+                </p>
+                <RowRemoveButton
+                  onClick={() => removeFounderBio(i)}
+                  label={`Remove biography paragraph ${i + 1}`}
+                />
+              </div>
+              <BilingualField
+                label="Text"
+                textarea
+                rows={4}
+                enValue={paragraph}
+                bnValue={form.founderBioBn?.[i] ?? ""}
+                onEnChange={(v) => setFounderBio(i, { en: v })}
+                onBnChange={(v) => setFounderBio(i, { bn: v })}
+              />
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={(form.founderBio ?? []).length >= MAX_FOUNDER_BIO}
+              onClick={addFounderBio}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add paragraph
+            </Button>
+            {(form.founderBio ?? []).length >= MAX_FOUNDER_BIO ? (
+              <Hint>Capped at {MAX_FOUNDER_BIO} paragraphs.</Hint>
+            ) : null}
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <BilingualField
             label="Chip title"
@@ -935,6 +1277,431 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
             </Button>
             {form.founderItems.length >= MAX_FOUNDER_ITEMS ? (
               <Hint>Capped at {MAX_FOUNDER_ITEMS} highlights.</Hint>
+            ) : null}
+          </div>
+        </div>
+      </FormSection>
+
+      {/* ============ FOUNDER EDUCATION ============ */}
+      <FormSection
+        icon={GraduationCap}
+        title="Founder education & training"
+        description="Degree / fellowship timeline shown under the founder spotlight"
+        edited={groupDirty((a) => a.founderEducation)}
+      >
+        <Hint>
+          These entries also generate the founder's Person schema
+          (alumniOf / hasCredential) for search engines. Leave a year blank if
+          you would rather not publish it — the timeline simply omits it.
+        </Hint>
+        <div className="space-y-3">
+          {(form.founderEducation ?? []).map((item, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {item.degree.trim() ? item.degree : `Education ${i + 1}`}
+                </p>
+                <span className="flex items-center gap-1">
+                  <RowMoveButton
+                    onClick={() => moveEducation(i, -1)}
+                    disabled={i === 0}
+                    label={`Move education ${i + 1} up`}
+                    icon={ArrowUp}
+                  />
+                  <RowMoveButton
+                    onClick={() => moveEducation(i, 1)}
+                    disabled={i === (form.founderEducation ?? []).length - 1}
+                    label={`Move education ${i + 1} down`}
+                    icon={ArrowDown}
+                  />
+                  <RowRemoveButton
+                    onClick={() => removeEducation(i)}
+                    label={`Remove education ${i + 1}`}
+                  />
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
+                <MiniField label="Year">
+                  <Input
+                    value={item.year ?? ""}
+                    maxLength={12}
+                    placeholder="2002–2007"
+                    onChange={(e) => setEducation(i, { year: e.target.value })}
+                    className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                  />
+                </MiniField>
+                <BilingualField
+                  label="Degree / qualification"
+                  enValue={item.degree}
+                  bnValue={item.degreeBn}
+                  onEnChange={(v) => setEducation(i, { degree: v })}
+                  onBnChange={(v) => setEducation(i, { degreeBn: v })}
+                />
+              </div>
+              <BilingualField
+                label="Institution"
+                enValue={item.institution ?? ""}
+                bnValue={item.institutionBn}
+                onEnChange={(v) => setEducation(i, { institution: v })}
+                onBnChange={(v) => setEducation(i, { institutionBn: v })}
+              />
+              <BilingualField
+                label="Detail (optional)"
+                textarea
+                rows={2}
+                enValue={item.detail ?? ""}
+                bnValue={item.detailBn}
+                onEnChange={(v) => setEducation(i, { detail: v })}
+                onBnChange={(v) => setEducation(i, { detailBn: v })}
+              />
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={(form.founderEducation ?? []).length >= MAX_FOUNDER_EDUCATION}
+              onClick={addEducation}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add education
+            </Button>
+            {(form.founderEducation ?? []).length >= MAX_FOUNDER_EDUCATION ? (
+              <Hint>Capped at {MAX_FOUNDER_EDUCATION} entries.</Hint>
+            ) : null}
+          </div>
+        </div>
+      </FormSection>
+
+      {/* ============ CERTIFICATES ============ */}
+      <FormSection
+        icon={BadgeCheck}
+        title="Certificates & memberships"
+        description="Credential cards (FCPS, fellowships, appointments) shown beside the timeline"
+        edited={groupDirty((a) => a.founderCredentials)}
+      >
+        <div className="space-y-3">
+          {(form.founderCredentials ?? []).map((item, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {item.title.trim() ? item.title : `Certificate ${i + 1}`}
+                </p>
+                <span className="flex items-center gap-1">
+                  <RowMoveButton
+                    onClick={() => moveCredential(i, -1)}
+                    disabled={i === 0}
+                    label={`Move certificate ${i + 1} up`}
+                    icon={ArrowUp}
+                  />
+                  <RowMoveButton
+                    onClick={() => moveCredential(i, 1)}
+                    disabled={i === (form.founderCredentials ?? []).length - 1}
+                    label={`Move certificate ${i + 1} down`}
+                    icon={ArrowDown}
+                  />
+                  <RowRemoveButton
+                    onClick={() => removeCredential(i)}
+                    label={`Remove certificate ${i + 1}`}
+                  />
+                </span>
+              </div>
+              <BilingualField
+                label="Title"
+                enValue={item.title}
+                bnValue={item.titleBn}
+                onEnChange={(v) => setCredential(i, { title: v })}
+                onBnChange={(v) => setCredential(i, { titleBn: v })}
+              />
+              <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
+                <MiniField label="Year (optional)">
+                  <Input
+                    value={item.year ?? ""}
+                    maxLength={8}
+                    placeholder="2025"
+                    onChange={(e) => setCredential(i, { year: e.target.value })}
+                    className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                  />
+                </MiniField>
+                <BilingualField
+                  label="Issuer"
+                  enValue={item.issuer ?? ""}
+                  bnValue={item.issuerBn}
+                  onEnChange={(v) => setCredential(i, { issuer: v })}
+                  onBnChange={(v) => setCredential(i, { issuerBn: v })}
+                />
+              </div>
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={(form.founderCredentials ?? []).length >= MAX_FOUNDER_CREDENTIALS}
+              onClick={addCredential}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add certificate
+            </Button>
+            {(form.founderCredentials ?? []).length >= MAX_FOUNDER_CREDENTIALS ? (
+              <Hint>Capped at {MAX_FOUNDER_CREDENTIALS} certificates.</Hint>
+            ) : null}
+          </div>
+        </div>
+      </FormSection>
+
+      {/* ============ CAREER MILESTONES ============ */}
+      <FormSection
+        icon={Award}
+        title="Founder career milestones"
+        description="Short dated achievements listed under the certificates"
+        edited={groupDirty((a) => a.founderMilestones)}
+      >
+        <div className="space-y-3">
+          {(form.founderMilestones ?? []).map((item, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {item.title.trim() ? item.title : `Milestone ${i + 1}`}
+                </p>
+                <span className="flex items-center gap-1">
+                  <RowMoveButton
+                    onClick={() => moveMilestone(i, -1)}
+                    disabled={i === 0}
+                    label={`Move milestone ${i + 1} up`}
+                    icon={ArrowUp}
+                  />
+                  <RowMoveButton
+                    onClick={() => moveMilestone(i, 1)}
+                    disabled={i === (form.founderMilestones ?? []).length - 1}
+                    label={`Move milestone ${i + 1} down`}
+                    icon={ArrowDown}
+                  />
+                  <RowRemoveButton
+                    onClick={() => removeMilestone(i)}
+                    label={`Remove milestone ${i + 1}`}
+                  />
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
+                <MiniField label="Year (optional)">
+                  <Input
+                    value={item.year ?? ""}
+                    maxLength={8}
+                    placeholder="2007"
+                    onChange={(e) => setMilestone(i, { year: e.target.value })}
+                    className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                  />
+                </MiniField>
+                <BilingualField
+                  label="Title"
+                  enValue={item.title}
+                  bnValue={item.titleBn}
+                  onEnChange={(v) => setMilestone(i, { title: v })}
+                  onBnChange={(v) => setMilestone(i, { titleBn: v })}
+                />
+              </div>
+              <BilingualField
+                label="Description"
+                textarea
+                rows={2}
+                enValue={item.description ?? ""}
+                bnValue={item.descriptionBn}
+                onEnChange={(v) => setMilestone(i, { description: v })}
+                onBnChange={(v) => setMilestone(i, { descriptionBn: v })}
+              />
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={(form.founderMilestones ?? []).length >= MAX_FOUNDER_MILESTONES}
+              onClick={addMilestone}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add milestone
+            </Button>
+            {(form.founderMilestones ?? []).length >= MAX_FOUNDER_MILESTONES ? (
+              <Hint>Capped at {MAX_FOUNDER_MILESTONES} milestones.</Hint>
+            ) : null}
+          </div>
+        </div>
+      </FormSection>
+
+      {/* ============ CLINIC TOUR ============ */}
+      <FormSection
+        icon={Images}
+        title="Clinic tour (rooms & equipment)"
+        description="Photographs, room names and the equipment list shown in the About gallery and the home preview"
+        edited={groupDirty((a) => [
+          a.clinicGalleryEyebrow,
+          a.clinicGalleryTitle,
+          a.clinicGalleryDescription,
+          a.clinicRooms,
+        ])}
+      >
+        <BilingualField
+          label="Section eyebrow"
+          enValue={form.clinicGalleryEyebrow ?? ""}
+          bnValue={form.clinicGalleryEyebrowBn}
+          onEnChange={(v) => set("clinicGalleryEyebrow", v)}
+          onBnChange={(v) => set("clinicGalleryEyebrowBn", v)}
+        />
+        <BilingualField
+          label="Section title"
+          enValue={form.clinicGalleryTitle ?? ""}
+          bnValue={form.clinicGalleryTitleBn}
+          onEnChange={(v) => set("clinicGalleryTitle", v)}
+          onBnChange={(v) => set("clinicGalleryTitleBn", v)}
+        />
+        <BilingualField
+          label="Section description"
+          textarea
+          rows={3}
+          enValue={form.clinicGalleryDescription ?? ""}
+          bnValue={form.clinicGalleryDescriptionBn}
+          onEnChange={(v) => set("clinicGalleryDescription", v)}
+          onBnChange={(v) => set("clinicGalleryDescriptionBn", v)}
+        />
+        <Hint>
+          Upload a photo for each room (JPG/PNG/WebP). Rooms without a photo
+          show a designed placeholder, so you can publish the equipment lists
+          first and add photographs later. Rooms marked “featured” also appear
+          in the home-page preview.
+        </Hint>
+
+        <div className="space-y-4">
+          {(form.clinicRooms ?? []).map((room, i) => (
+            <div
+              key={room.id}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading min-w-0 truncate text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {room.title.trim() || `Room ${i + 1}`}
+                </p>
+                <span className="flex items-center gap-1">
+                  <RowMoveButton
+                    onClick={() => moveRoom(i, -1)}
+                    disabled={i === 0}
+                    label={`Move room ${i + 1} up`}
+                    icon={ArrowUp}
+                  />
+                  <RowMoveButton
+                    onClick={() => moveRoom(i, 1)}
+                    disabled={i === (form.clinicRooms ?? []).length - 1}
+                    label={`Move room ${i + 1} down`}
+                    icon={ArrowDown}
+                  />
+                  <RowRemoveButton onClick={() => removeRoom(i)} label={`Remove room ${i + 1}`} />
+                </span>
+              </div>
+
+              <ImageUploadField
+                label="Room photo"
+                hint="Landscape 16:11 works best. Leave empty to use the placeholder."
+                value={room.image || undefined}
+                onChange={(url) => setRoom(i, { image: url ?? "" })}
+                onUnauthorized={onSessionExpired}
+              />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Photo alt text
+                </p>
+                <Input
+                  value={room.imageAlt ?? ""}
+                  onChange={(e) => setRoom(i, { imageAlt: e.target.value })}
+                  placeholder="Digital diagnosis room with X-ray unit and intraoral scanner"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <BilingualField
+                  label="Filter category"
+                  enValue={room.category}
+                  bnValue={room.categoryBn}
+                  onEnChange={(v) => setRoom(i, { category: v })}
+                  onBnChange={(v) => setRoom(i, { categoryBn: v })}
+                />
+                <div className="flex items-end">
+                  <label className="flex w-full items-center justify-between gap-3 rounded-xl border border-blue-100 bg-white px-3.5 py-2.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                      Show on home page
+                    </span>
+                    <Switch
+                      checked={room.featured === true}
+                      onCheckedChange={(checked) => setRoom(i, { featured: checked })}
+                      aria-label={`Feature room ${i + 1} on the home page`}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <BilingualField
+                label="Room name"
+                enValue={room.title}
+                bnValue={room.titleBn}
+                onEnChange={(v) => setRoom(i, { title: v })}
+                onBnChange={(v) => setRoom(i, { titleBn: v })}
+              />
+              <BilingualField
+                label="Description"
+                textarea
+                rows={3}
+                enValue={room.description}
+                bnValue={room.descriptionBn}
+                onEnChange={(v) => setRoom(i, { description: v })}
+                onBnChange={(v) => setRoom(i, { descriptionBn: v })}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <LinesField
+                  label="Equipment — English"
+                  value={room.equipment}
+                  onChange={(next) => setRoom(i, { equipment: next })}
+                  placeholder={"Digital X-ray\nIntraoral 3D scanner"}
+                />
+                <LinesField
+                  label="Equipment — বাংলা"
+                  value={room.equipmentBn ?? []}
+                  onChange={(next) => setRoom(i, { equipmentBn: next })}
+                  placeholder={"ডিজিটাল এক্স-রে\nইন্ট্রাওরাল থ্রিডি স্ক্যানার"}
+                  hint="One item per line, matching the English order. Leave blank to use English."
+                />
+              </div>
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={(form.clinicRooms ?? []).length >= MAX_CLINIC_ROOMS}
+              onClick={addRoom}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add room
+            </Button>
+            {(form.clinicRooms ?? []).length >= MAX_CLINIC_ROOMS ? (
+              <Hint>Capped at {MAX_CLINIC_ROOMS} rooms.</Hint>
             ) : null}
           </div>
         </div>

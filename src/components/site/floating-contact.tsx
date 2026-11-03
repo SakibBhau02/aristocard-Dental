@@ -7,6 +7,8 @@ import { useRouter } from "@/lib/router";
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/tracker";
 import { useBundle } from "@/components/site/content-provider";
+import { useScrollDirection } from "@/hooks/use-auto-hide-header";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  Floating quick-contact buttons (mobile-first) + scroll-to-top      */
@@ -25,6 +27,9 @@ export function FloatingContact() {
   const [showTop, setShowTop] = useState(false);
   const [progress, setProgress] = useState(0);
   const ticking = useRef(false);
+  /* Floating actions duck out of the way while reading downward and
+     return as soon as the visitor scrolls back up. */
+  const scrollingDown = useScrollDirection({ threshold: 200 });
 
   useEffect(() => {
     const measure = () => {
@@ -54,10 +59,18 @@ export function FloatingContact() {
   return (
     <>
       <motion.div
-        className="fab-stack fixed bottom-5 right-5 z-40 flex flex-col items-end gap-4"
+        className={cn(
+          "fab-stack fixed bottom-5 right-5 z-40 flex flex-col items-end gap-4",
+          scrollingDown && "pointer-events-none"
+        )}
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        animate={{
+          opacity: scrollingDown ? 0 : 1,
+          y: scrollingDown ? 28 : 0,
+          scale: scrollingDown ? 0.92 : 1,
+        }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        aria-hidden={scrollingDown}
       >
         <a
           href={`https://wa.me/${settings.phoneRaw.replace("+", "")}?text=${encodeURIComponent(

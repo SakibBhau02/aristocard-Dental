@@ -27,7 +27,7 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
 import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
-import { testimonials } from "@/lib/content/shared";
+import { pickBn, testimonials } from "@/lib/content/shared";
 import type { Doctor, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
@@ -37,6 +37,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
 /*  DOCTORS LIST PAGE (EN / বাংলা)                                     */
@@ -215,16 +216,29 @@ function DoctorProfileCard({
         </div>
       </div>
 
-      <div className="mt-auto w-full pt-5">
-        {/* expand/collapse toggle */}
+      <div className="mt-auto w-full space-y-2 pt-5">
+        {/* primary action — opens the doctor's own profile page */}
+        <a
+          href={`/doctors/${doctor.slug}`}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(`/doctors/${doctor.slug}`);
+          }}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-navy px-5 py-3 text-sm font-bold text-white shadow-lg shadow-navy-900/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+        >
+          {t.viewProfile}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+
+        {/* secondary — inline dossier without leaving the page */}
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls={panelId}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
         >
-          {expanded ? t.hideProfile : t.viewProfile}
+          {expanded ? t.hideProfile : bn ? "দ্রুত তথ্য দেখুন" : "Quick details"}
           <ChevronDown
             className={`h-4 w-4 transition-transform duration-300 motion-reduce:transition-none ${
               expanded ? "rotate-180" : ""
@@ -614,10 +628,154 @@ function DoctorProfileCard({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Founder spotlight on the doctors list                              */
+/*                                                                     */
+/*  Dr. Shazia Khanam leads the team, so she gets a dedicated card      */
+/*  above the grid instead of a regular profile tile.                  */
+/* ------------------------------------------------------------------ */
+
+function FounderTeamCard({ doctor }: { doctor: Doctor }) {
+  const { navigate } = useRouter();
+  const { lang, d } = useLang();
+  const bn = lang === "bn";
+  const { about } = useBundle();
+
+  const years = about.founderYears?.trim() || String(doctor.experienceYears);
+  const bio = (bn ? about.founderBioBn?.[0]?.trim() || about.founderBio?.[0] : about.founderBio?.[0]) || doctor.bio;
+  const credentials = (about.founderCredentials ?? []).slice(0, 4);
+  const photo = doctor.photo || about.founderImage;
+
+  return (
+    <Reveal>
+      <article
+        className="relative overflow-hidden rounded-[2.2rem] bg-brand-navy p-6 text-white shadow-2xl shadow-navy-900/25 sm:p-9"
+        aria-labelledby="founder-team-heading"
+      >
+        <span className="dot-grid-light pointer-events-none absolute inset-0 opacity-25" aria-hidden="true" />
+        <span className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-400/20 blur-3xl" aria-hidden="true" />
+
+        <div className="relative grid gap-8 lg:grid-cols-[15rem_1fr] lg:items-center lg:gap-10">
+          {/* portrait */}
+          <div className="relative mx-auto w-full max-w-[15rem]">
+            <div className="relative aspect-[4/4.7] overflow-hidden rounded-[1.6rem] bg-white/10 ring-1 ring-white/20">
+              {photo ? (
+                <Image
+                  src={photo}
+                  alt={about.founderImageAlt || doctor.name}
+                  fill
+                  sizes="(max-width: 1024px) 60vw, 240px"
+                  className="object-cover object-top"
+                />
+              ) : (
+                <Avatar className="h-full w-full rounded-none">
+                  <AvatarFallback className="text-4xl">{doctor.name.slice(3, 5)}</AvatarFallback>
+                </Avatar>
+              )}
+            </div>
+            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-4 py-1.5 text-[11px] font-bold text-brand-navy shadow-lg">
+              {bn
+                ? `${toBnDigits(years)} বছরের অভিজ্ঞতা`
+                : `${years} years of experience`}
+            </span>
+          </div>
+
+          {/* copy */}
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-amber-300/30">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                {bn ? "প্রতিষ্ঠাতা ও প্রধান পরামর্শদাতা" : "Founder & Chief Consultant"}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-blue-100 ring-1 ring-white/15">
+                <BadgeCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
+                {bn ? "ভেরিফায়েড" : "Verified"}
+              </span>
+            </div>
+
+            <h2 id="founder-team-heading" className="font-heading mt-3 text-3xl font-bold sm:text-4xl">
+              {doctor.name}
+            </h2>
+            <p className="mt-1.5 text-sm font-semibold text-blue-200">
+              {bn && doctor.roleBn ? doctor.roleBn : doctor.role}
+            </p>
+
+            {credentials.length > 0 ? (
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {credentials.map((credential, i) => (
+                  <li
+                    key={`${credential.title}-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold text-blue-50 ring-1 ring-white/15"
+                  >
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+                    {pickBn(credential.title, credential.titleBn, bn)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <p className="mt-4 max-w-2xl text-[14.5px] leading-relaxed text-blue-100/85">
+              {bio}
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px] font-semibold text-blue-100/80">
+              <span className="inline-flex items-center gap-1.5">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                {localizedNumber(doctor.rating, lang, { decimals: 1 })} {bn ? "রেটিং" : "rating"}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-blue-300" aria-hidden="true" />
+                {localizedNumber(doctor.patientsTreated, lang)}+ {d.shared.patients}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Languages className="h-3.5 w-3.5 text-blue-300" aria-hidden="true" />
+                {bn ? "বাংলা, ইংরেজি" : "Bangla, English"}
+              </span>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href={`/doctors/${doctor.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/doctors/${doctor.slug}`);
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-brand-navy shadow-lg transition-transform hover:-translate-y-0.5"
+              >
+                {bn ? "সম্পূর্ণ প্রোফাইল" : "View full profile"}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <a
+                href={`/appointment?doctor=${doctor.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/appointment?doctor=${doctor.slug}`);
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/20"
+              >
+                <CalendarCheck className="h-4 w-4" aria-hidden="true" />
+                {d.shared.ctaBook}
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </Reveal>
+  );
+}
+
 export function DoctorsPage() {
   const { lang, d } = useLang();
   const t = d.doctorsPage;
-  const { doctors, services, settings } = useBundle();
+  const bn = lang === "bn";
+  const { doctors, services, settings, about } = useBundle();
+
+  /* The founder leads the team — she gets her own spotlight card above
+     the grid, so she is not repeated as a regular profile tile. */
+  const founder =
+    doctors.find((doc) => doc.slug === "dr-shazia-khanam") ??
+    doctors.find((doc) => doc.name === about.founderName);
+  const team = doctors.filter((doc) => doc.slug !== founder?.slug);
 
   /* Physician JSON-LD — enriched with the dossier fields (education
      alumniOf, spoken languages, focus treatments as availableService).
@@ -668,7 +826,7 @@ export function DoctorsPage() {
   usePageMeta({
     title: "Our Doctors — Specialist Dentists in Uttara, Dhaka",
     description:
-      "Meet the verified medical board of Aristocrat Dental Care: Dr. Shazia Khanam, Dr. Abdur Rahim, Dr. Jumla Binte Jafor & Dr. Israt Jahan Rimi — BDS/MDS qualified dental specialists.",
+      "Meet the specialist team led by Dr. Shazia Khanam — founder, FCPS (Orthodontics), WFO Fellow (USA), 18+ years of experience — alongside our consultant dental surgeons in Uttara, Dhaka.",
     jsonLd: doctorsJsonLd,
   });
 
@@ -682,11 +840,26 @@ export function DoctorsPage() {
       />
       <section className="py-16 sm:py-20" aria-label="Doctor profiles">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-6 sm:grid-cols-2">
-            {doctors.map((doctor, i) => (
-              <DoctorProfileCard key={doctor.slug} doctor={doctor} index={i} />
-            ))}
-          </div>
+          {founder ? <FounderTeamCard doctor={founder} /> : null}
+
+          {team.length > 0 ? (
+            <div className={founder ? "mt-14" : ""}>
+              <div className="max-w-2xl">
+                <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-blue ring-1 ring-blue-100">
+                  <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                  {bn ? "বিশেষজ্ঞ দল" : "The specialist team"}
+                </span>
+                <h2 className="font-heading mt-3 text-2xl font-bold text-brand-navy sm:text-3xl">
+                  {bn ? "আপনার পাশে থাকা চিকিৎসকরা" : "The specialists beside her"}
+                </h2>
+              </div>
+              <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                {team.map((doctor, i) => (
+                  <DoctorProfileCard key={doctor.slug} doctor={doctor} index={i} />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* assurance strip */}
           <Reveal className="mt-12">
@@ -816,9 +989,9 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
   return (
     <>
       {/* HERO — centered over a sliding team backdrop */}
-      <section className="relative isolate overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="deep" interval={8000} />
-        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+      <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={heroSlides} overlay="light" interval={8000} indicators priority />
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
               <li>

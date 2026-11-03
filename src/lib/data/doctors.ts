@@ -9,13 +9,13 @@ export const doctors: Doctor[] = [
     slug: "dr-shazia-khanam",
     id: 22,
     name: "Dr. Shazia Khanam",
-    credentials: ["BDS", "MDS"],
+    credentials: ["BDS", "PGT (OMFS)", "FCPS (Orthodontics)", "Fellow — WFO"],
     role: "Chief Dental Surgeon & Founder",
     roleBn: "প্রধান ডেন্টাল সার্জন ও প্রতিষ্ঠাতা",
     department: "Advanced Dentistry & Orthodontics",
     departmentBn: "অ্যাডভান্সড ডেন্টিস্ট্রি ও অর্থোডন্টিক্স",
-    bio: "At the heart of Aristocrat Dental Care is Dr. Shazia Khanam, a highly skilled and experienced dentist dedicated to her craft. With a passion for continued learning and a gentle touch, Dr. Khanam specializes in creating personalized treatment plans that address the unique needs of every patient. Her philosophy: \u201CA healthy smile is a gateway to overall well-being.\u201D Known for a compassionate approach that eases dental anxiety, she leads the clinic's standard of clinical excellence.",
-    experienceYears: 8,
+    bio: "At the heart of Aristocrat Dental Care is Dr. Shazia Khanam, founder and Chief Consultant — an orthodontist with more than eighteen years of clinical experience. Trained at Rajshahi Medical College (BDS), Dhaka Dental College (PGT, Oral & Maxillofacial Surgery) and the Bangladesh College of Physicians & Surgeons (FCPS, Orthodontics), and a Fellow of the World Federation of Orthodontists (USA), she leads the clinic's standard of clinical excellence. Her philosophy: \u201CA healthy smile is a gateway to overall well-being.\u201D",
+    experienceYears: 18,
     patientsTreated: 5000,
     rating: 4.9,
     specializations: [
@@ -29,14 +29,37 @@ export const doctors: Doctor[] = [
     verified: true,
     accent: "#1e7dff",
     photo: "/images/doctor-shazia-khanam.png",
-    /* Round 17-a dossier — FACTUAL SAFETY: education entries derive only
-       from credentials already stated on the site ("BDS", "MDS" — no
-       institution claimed). Awards/memberships left empty for admin to
-       fill with real ones. Quote re-uses the philosophy already printed
-       in her bio. */
+    /* Public record (LinkedIn / clinic profiles): BDS at Rajshahi Medical
+       College 2002–2007, PGT in Oral & Maxillofacial Surgery at Dhaka
+       Dental College, FCPS (Orthodontics) at BCPS, and a WFO fellowship
+       from the USA. No institution or year is invented here. */
     education: [
-      { degree: "BDS" },
-      { degree: "MDS" },
+      {
+        degree: "BDS",
+        institution: "Rajshahi Medical College",
+        year: "2002–2007",
+      },
+      {
+        degree: "PGT — Oral & Maxillofacial Surgery",
+        institution: "Dhaka Dental College",
+      },
+      {
+        degree: "FCPS (Orthodontics)",
+        institution: "Bangladesh College of Physicians & Surgeons (BCPS)",
+      },
+      {
+        degree: "Fellow, World Federation of Orthodontists",
+        institution: "World Federation of Orthodontists (WFO), USA",
+      },
+    ],
+    memberships: [
+      "World Federation of Orthodontists (WFO) — Fellow",
+    ],
+    awards: [
+      {
+        title: "FDI World Dental Congress 2025 — Delegate, Shanghai",
+        year: "2025",
+      },
     ],
     quote:
       "A healthy smile is a gateway to overall well-being.",

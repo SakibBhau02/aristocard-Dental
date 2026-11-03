@@ -340,9 +340,9 @@ export function AppointmentPage() {
   return (
     <>
       {/* Hero — centered over a sliding clinic backdrop */}
-      <section className="relative isolate overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="deep" interval={8000} />
-        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+      <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={heroSlides} overlay="light" interval={8000} indicators priority />
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}

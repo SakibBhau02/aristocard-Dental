@@ -168,9 +168,9 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
   return (
     <>
       {/* ============ HERO — centered over the service's own imagery ============ */}
-      <section className="relative isolate overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="deep" interval={7500} priority />
-        <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+      <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
+        <HeroBackdrop slides={heroSlides} overlay="light" interval={7500} indicators priority />
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           {/* breadcrumb (centered) */}
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">

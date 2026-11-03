@@ -25,6 +25,7 @@ import {
   Stethoscope,
   Trash2,
   TrendingUp,
+  UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -45,6 +46,8 @@ import {
 import { useContent } from "@/components/site/content-provider";
 import type {
   FacilityContent,
+  FounderSlide,
+  FounderSpotlightContent,
   HomeContent,
   SectionHead,
   StatItem,
@@ -52,6 +55,7 @@ import type {
 } from "@/lib/content/shared";
 import {
   BilingualField,
+  ImageUploadField,
   PanelHeader,
   PanelSkeleton,
   SaveBar,
@@ -84,6 +88,17 @@ const HIGHLIGHT_ICONS = [
 const MAX_STATS = 4;
 const MAX_HIGHLIGHTS = 4;
 const MAX_FACILITY_CARDS = 3;
+const MAX_FOUNDER_SLIDES = 6;
+const MAX_SLIDE_CARDS = 3;
+
+/** Swap an array item with its neighbour (bounded). */
+function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
+  const target = index + dir;
+  if (target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Local helpers                                                       */
@@ -526,6 +541,138 @@ export function HomepagePanel({ onSessionExpired }: PanelProps) {
         : f
     );
 
+  /* ---- founder spotlight ---- */
+  const setFounder = <K extends keyof FounderSpotlightContent>(
+    key: K,
+    value: FounderSpotlightContent[K]
+  ) =>
+    setForm((f) =>
+      f ? { ...f, founderSpotlight: { ...f.founderSpotlight, [key]: value } } : f
+    );
+
+  const setSlide = (index: number, patch: Partial<FounderSlide>) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: f.founderSpotlight.slides.map((s, i) =>
+                i === index ? { ...s, ...patch } : s
+              ),
+            },
+          }
+        : f
+    );
+
+  const addSlide = () =>
+    setForm((f) => {
+      if (!f || f.founderSpotlight.slides.length >= MAX_FOUNDER_SLIDES) return f;
+      const id = `slide-${Date.now().toString(36)}`;
+      return {
+        ...f,
+        founderSpotlight: {
+          ...f.founderSpotlight,
+          slides: [
+            ...f.founderSpotlight.slides,
+            {
+              id,
+              imageAlt: "",
+              fit: "cover",
+              caption: "",
+              cards: [{ label: "", value: "" }],
+            },
+          ],
+        },
+      };
+    });
+
+  const removeSlide = (index: number) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: f.founderSpotlight.slides.filter((_, i) => i !== index),
+            },
+          }
+        : f
+    );
+
+  const moveSlide = (index: number, dir: -1 | 1) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: moveItem(f.founderSpotlight.slides, index, dir),
+            },
+          }
+        : f
+    );
+
+  const setSlideCard = (
+    slideIndex: number,
+    cardIndex: number,
+    patch: Partial<FounderSlide["cards"][number]>
+  ) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: f.founderSpotlight.slides.map((s, i) =>
+                i === slideIndex
+                  ? {
+                      ...s,
+                      cards: s.cards.map((c, ci) =>
+                        ci === cardIndex ? { ...c, ...patch } : c
+                      ),
+                    }
+                  : s
+              ),
+            },
+          }
+        : f
+    );
+
+  const addSlideCard = (slideIndex: number) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: f.founderSpotlight.slides.map((s, i) =>
+                i === slideIndex && s.cards.length < MAX_SLIDE_CARDS
+                  ? { ...s, cards: [...s.cards, { label: "", value: "" }] }
+                  : s
+              ),
+            },
+          }
+        : f
+    );
+
+  const removeSlideCard = (slideIndex: number, cardIndex: number) =>
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            founderSpotlight: {
+              ...f.founderSpotlight,
+              slides: f.founderSpotlight.slides.map((s, i) =>
+                i === slideIndex
+                  ? { ...s, cards: s.cards.filter((_, ci) => ci !== cardIndex) }
+                  : s
+              ),
+            },
+          }
+        : f
+    );
+
   /* ---- section heads ---- */
   const setSection = <K extends "services" | "facility" | "galleryPreview" | "testimonials" | "doctors" | "faq">(
     key: K,
@@ -775,10 +922,15 @@ export function HomepagePanel({ onSessionExpired }: PanelProps) {
       {/* ============ WHY CHOOSE US ============ */}
       <FormSection
         icon={HeartHandshake}
-        title="Why Choose Us"
-        description="Section head, quote card and four highlight cards"
+        title="Why Choose Us — highlights"
+        description="The four clinic highlight cards and the rating note shown under the founder spotlight"
         edited={groupDirty((h) => h.why)}
       >
+        <Hint>
+          The section heading now comes from “Founder spotlight” above. The
+          eyebrow / title / description fields below are kept for reference
+          only — edit the founder spotlight heading to change what visitors see.
+        </Hint>
         <BilingualField
           label="Eyebrow"
           enValue={form.why.eyebrow}
@@ -892,6 +1044,268 @@ export function HomepagePanel({ onSessionExpired }: PanelProps) {
             {form.why.highlights.length >= MAX_HIGHLIGHTS ? (
               <Hint>Capped at {MAX_HIGHLIGHTS} — the grid is laid out as a 2×2.</Hint>
             ) : null}
+          </div>
+        </div>
+      </FormSection>
+
+      {/* ============ FOUNDER SPOTLIGHT ============ */}
+      <FormSection
+        icon={UserRound}
+        title="Founder spotlight"
+        description="Why-Choose-Us visual — Dr. Shazia's photo slider, the info pop-ups that change with each photo, and her 18-year headline"
+        edited={groupDirty((h) => h.founderSpotlight)}
+      >
+        <Hint>
+          Each photo slide carries its own caption and up to three info cards.
+          On desktop the cards float around the photo; on mobile they stack
+          underneath. Photos without an image show the designed placeholder.
+        </Hint>
+        <BilingualField
+          label="Section eyebrow"
+          enValue={form.founderSpotlight.eyebrow}
+          bnValue={form.founderSpotlight.eyebrowBn}
+          onEnChange={(v) => setFounder("eyebrow", v)}
+          onBnChange={(v) => setFounder("eyebrowBn", v)}
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BilingualField
+            label="Heading — part A"
+            enValue={form.founderSpotlight.titleA}
+            bnValue={form.founderSpotlight.titleABn}
+            onEnChange={(v) => setFounder("titleA", v)}
+            onBnChange={(v) => setFounder("titleABn", v)}
+          />
+          <BilingualField
+            label="Heading — accent part B"
+            enValue={form.founderSpotlight.titleB}
+            bnValue={form.founderSpotlight.titleBBn}
+            onEnChange={(v) => setFounder("titleB", v)}
+            onBnChange={(v) => setFounder("titleBBn", v)}
+          />
+        </div>
+        <BilingualField
+          label="Description"
+          textarea
+          rows={3}
+          enValue={form.founderSpotlight.description}
+          bnValue={form.founderSpotlight.descriptionBn}
+          onEnChange={(v) => setFounder("description", v)}
+          onBnChange={(v) => setFounder("descriptionBn", v)}
+        />
+
+        <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
+          <MiniField label="Experience badge">
+            <Input
+              value={form.founderSpotlight.years}
+              maxLength={8}
+              placeholder="18+"
+              onChange={(e) => setFounder("years", e.target.value)}
+              className="mt-1 border-blue-100 bg-white text-sm text-brand-navy placeholder:text-slate-400 focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+            />
+          </MiniField>
+          <BilingualField
+            label="Experience label"
+            enValue={form.founderSpotlight.yearsLabel}
+            bnValue={form.founderSpotlight.yearsLabelBn}
+            onEnChange={(v) => setFounder("yearsLabel", v)}
+            onBnChange={(v) => setFounder("yearsLabelBn", v)}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BilingualField
+            label="Founder name"
+            enValue={form.founderSpotlight.name}
+            bnValue={form.founderSpotlight.nameBn}
+            onEnChange={(v) => setFounder("name", v)}
+            onBnChange={(v) => setFounder("nameBn", v)}
+          />
+          <BilingualField
+            label="Role"
+            enValue={form.founderSpotlight.role}
+            bnValue={form.founderSpotlight.roleBn}
+            onEnChange={(v) => setFounder("role", v)}
+            onBnChange={(v) => setFounder("roleBn", v)}
+          />
+        </div>
+        <BilingualField
+          label="Short biography"
+          textarea
+          rows={4}
+          enValue={form.founderSpotlight.bio}
+          bnValue={form.founderSpotlight.bioBn}
+          onEnChange={(v) => setFounder("bio", v)}
+          onBnChange={(v) => setFounder("bioBn", v)}
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BilingualField
+            label="Profile button"
+            enValue={form.founderSpotlight.ctaProfile}
+            bnValue={form.founderSpotlight.ctaProfileBn}
+            onEnChange={(v) => setFounder("ctaProfile", v)}
+            onBnChange={(v) => setFounder("ctaProfileBn", v)}
+          />
+          <BilingualField
+            label="Booking button"
+            enValue={form.founderSpotlight.ctaBook}
+            bnValue={form.founderSpotlight.ctaBookBn}
+            onEnChange={(v) => setFounder("ctaBook", v)}
+            onBnChange={(v) => setFounder("ctaBookBn", v)}
+          />
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Photo slides
+          </p>
+          {form.founderSpotlight.slides.map((slide, i) => (
+            <div
+              key={slide.id || i}
+              className="space-y-3 rounded-xl border border-blue-100/70 bg-ice/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading min-w-0 truncate text-xs font-bold uppercase tracking-wider text-brand-blue">
+                  {slide.caption.trim() || `Slide ${i + 1}`}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveSlide(i, -1)}
+                    disabled={i === 0}
+                    aria-label={`Move slide ${i + 1} up`}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 ring-1 ring-blue-100 transition hover:bg-blue-50 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSlide(i, 1)}
+                    disabled={i === form.founderSpotlight.slides.length - 1}
+                    aria-label={`Move slide ${i + 1} down`}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 ring-1 ring-blue-100 transition hover:bg-blue-50 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    ↓
+                  </button>
+                  <RowRemoveButton
+                    onClick={() => removeSlide(i)}
+                    label={`Remove slide ${i + 1}`}
+                  />
+                </div>
+              </div>
+
+              <ImageUploadField
+                label="Slide photo"
+                hint="Portrait 4:5 works best. Transparent / white-background cut-outs should use “contain”."
+                value={slide.image || undefined}
+                onChange={(url) => setSlide(i, { image: url ?? "" })}
+                onUnauthorized={onSessionExpired}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                <MiniField label="Photo framing">
+                  <Select
+                    value={slide.fit ?? "cover"}
+                    onValueChange={(v) => setSlide(i, { fit: v as "cover" | "contain" })}
+                  >
+                    <SelectTrigger
+                      aria-label={`Slide ${i + 1} framing`}
+                      className="mt-1 h-9 w-full rounded-xl border-blue-100 bg-white text-sm text-brand-navy focus-visible:border-brand-blue focus-visible:ring-brand-blue/25"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-blue-100">
+                      <SelectItem value="cover">Cover (scene photo)</SelectItem>
+                      <SelectItem value="contain">Contain (cut-out)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </MiniField>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Photo alt text
+                  </p>
+                  <Input
+                    value={slide.imageAlt ?? ""}
+                    onChange={(e) => setSlide(i, { imageAlt: e.target.value })}
+                    placeholder="Dr. Shazia Khanam in the operatory"
+                    className="mt-1.5"
+                  />
+                </div>
+              </div>
+
+              <BilingualField
+                label="Caption (over the photo)"
+                enValue={slide.caption}
+                bnValue={slide.captionBn}
+                onEnChange={(v) => setSlide(i, { caption: v })}
+                onBnChange={(v) => setSlide(i, { captionBn: v })}
+              />
+
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Info pop-ups for this slide
+                </p>
+                {slide.cards.map((card, ci) => (
+                  <div
+                    key={ci}
+                    className="space-y-2 rounded-lg border border-blue-100/70 bg-white p-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue">
+                        Card {ci + 1}
+                      </span>
+                      <RowRemoveButton
+                        onClick={() => removeSlideCard(i, ci)}
+                        label={`Remove slide ${i + 1} card ${ci + 1}`}
+                      />
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <BilingualField
+                        label="Label"
+                        enValue={card.label}
+                        bnValue={card.labelBn}
+                        onEnChange={(v) => setSlideCard(i, ci, { label: v })}
+                        onBnChange={(v) => setSlideCard(i, ci, { labelBn: v })}
+                      />
+                      <BilingualField
+                        label="Value"
+                        enValue={card.value}
+                        bnValue={card.valueBn}
+                        onEnChange={(v) => setSlideCard(i, ci, { value: v })}
+                        onBnChange={(v) => setSlideCard(i, ci, { valueBn: v })}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={slide.cards.length >= MAX_SLIDE_CARDS}
+                  onClick={() => addSlideCard(i)}
+                  className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add pop-up card
+                </Button>
+              </div>
+            </div>
+          ))}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={form.founderSpotlight.slides.length >= MAX_FOUNDER_SLIDES}
+              onClick={addSlide}
+              className="rounded-full border-blue-200 text-brand-navy hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add slide
+            </Button>
+            <Hint>
+              Up to {MAX_FOUNDER_SLIDES} slides, {MAX_SLIDE_CARDS} pop-up cards
+              each. The slider cycles automatically and pauses on hover.
+            </Hint>
           </div>
         </div>
       </FormSection>

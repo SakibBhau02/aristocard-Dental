@@ -61,3 +61,7 @@ server.log
 /skills/
 .vercel
 .env*
+
+# Playwright MCP run artifacts
+.playwright-mcp/
+

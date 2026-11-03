@@ -11,6 +11,7 @@ import { navItems } from "@/lib/site";
 import { useBundle } from "@/components/site/content-provider";
 import { pickBn } from "@/lib/content/shared";
 import { cn, useSearchShortcutLabel } from "@/lib/utils";
+import { useAutoHideHeader } from "@/hooks/use-auto-hide-header";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/site/language-toggle";
 import { ClinicStatusBadge } from "@/components/site/clinic-status";
@@ -26,6 +27,7 @@ export function Navbar() {
   const { settings } = useBundle();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { hidden, reveal } = useAutoHideHeader();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -67,8 +69,20 @@ export function Navbar() {
 
   return (
     <>
-      {/* Top info bar */}
-      <div className="hidden bg-brand-navy text-white lg:block">
+      {/* Top bar + navbar — slides away while scrolling down so the hero
+          media stays clean; it returns on scroll-up, when the pointer
+          reaches the top edge, or when focus enters it (keyboard/a11y). */}
+      <div
+        className={cn(
+          "sticky top-0 z-50 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+          hidden && !open ? "-translate-y-[130%]" : "translate-y-0"
+        )}
+        data-hidden={hidden && !open ? "true" : "false"}
+        onFocusCapture={reveal}
+        onMouseEnter={reveal}
+      >
+        {/* Top info bar */}
+        <div className="hidden bg-brand-navy text-white lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2 text-xs">
           <div className="flex items-center gap-5 text-blue-100/90">
             <ClinicStatusBadge variant="on-dark" className="text-xs" />
@@ -94,7 +108,7 @@ export function Navbar() {
       {/* Main navbar */}
       <header
         className={cn(
-          "nav-hairline sticky top-0 z-50 transition-all duration-500",
+          "nav-hairline transition-all duration-500",
           scrolled
             ? "glass is-scrolled border-b border-blue-100/70 shadow-[0_8px_30px_-12px_rgba(0,32,96,0.25)]"
             : "bg-white"
@@ -276,6 +290,7 @@ export function Navbar() {
           </div>
         </nav>
       </header>
+      </div>
 
       {/* Mobile drawer */}
       <AnimatePresence>

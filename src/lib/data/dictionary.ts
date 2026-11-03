@@ -381,7 +381,7 @@ const en = {
     founderEyebrow: "Meet Our Founder",
     founderTitleA: "A gentle hand behind",
     founderTitleB: " every confident smile",
-    founderRole: "BDS, MDS — Chief Dental Surgeon & Founder",
+    founderRole: "Founder & Chief Consultant — FCPS (Orthodontics), WFO Fellow (USA)",
     founderChipTitle: "5,000+ patients treated",
     founderChipNote: "Orthodontics & Cosmetic Dentistry",
     founderItems: [

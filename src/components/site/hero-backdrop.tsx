@@ -31,7 +31,7 @@ export function HeroBackdrop({
   slides: HeroSlide[];
   interval?: number;
   videoDuration?: number;
-  overlay?: "deep" | "medium";
+  overlay?: "deep" | "medium" | "light";
   indicators?: boolean;
   priority?: boolean;
   className?: string;
@@ -110,13 +110,17 @@ export function HeroBackdrop({
           </div>
         )}
 
-        {/* overlay — navy gradients for readability */}
+        {/* overlay — navy gradients for readability. "light" keeps the
+            photos/videos clearly visible while large bold white type
+            still passes contrast against the gradient. */}
         <span
           className={cn(
             "absolute inset-0",
             overlay === "deep"
               ? "bg-brand-navy/72"
-              : "bg-brand-navy/55"
+              : overlay === "medium"
+                ? "bg-brand-navy/55"
+                : "bg-brand-navy/46"
           )}
         />
         <span
@@ -124,11 +128,20 @@ export function HeroBackdrop({
             "absolute inset-0 bg-gradient-to-b",
             overlay === "deep"
               ? "from-brand-navy/90 via-brand-navy/25 to-brand-navy/95"
-              : "from-brand-navy/80 via-brand-navy/10 to-brand-navy/85"
+              : overlay === "medium"
+                ? "from-brand-navy/80 via-brand-navy/10 to-brand-navy/85"
+                : "from-brand-navy/78 via-brand-navy/32 to-brand-navy/85"
           )}
         />
         {/* subtle side vignette */}
-        <span className="absolute inset-0 bg-gradient-to-r from-brand-navy/45 via-transparent to-brand-navy/45" />
+        <span
+          className={cn(
+            "absolute inset-0 bg-gradient-to-r via-transparent",
+            overlay === "light"
+              ? "from-brand-navy/25 to-brand-navy/25"
+              : "from-brand-navy/45 to-brand-navy/45"
+          )}
+        />
       </div>
 
       {/* indicator bars (interactive → outside the aria-hidden layer) */}

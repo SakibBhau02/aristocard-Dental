@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { RouterProvider, useRouter } from "@/lib/router";
 import { LanguageProvider } from "@/lib/i18n";
 import { track, syncAnalyticsPageView } from "@/lib/tracker";
-import { ContentProvider } from "@/components/site/content-provider";
+import { ContentProvider, useBundle } from "@/components/site/content-provider";
 import type { ContentBundle } from "@/lib/content/shared";
 import { ScrollProgress } from "@/components/site/motion";
 import { Navbar } from "@/components/site/navbar";
@@ -17,6 +17,7 @@ import { AboutPage } from "@/components/site/pages/about-page";
 import { ServicesPage } from "@/components/site/pages/services-page";
 import { ServiceDetailPage } from "@/components/site/pages/service-detail-page";
 import { DoctorsPage, DoctorDetailPage } from "@/components/site/pages/doctors-page";
+import { FounderProfilePage } from "@/components/site/pages/founder-profile-page";
 import { BlogPage, BlogDetailPage } from "@/components/site/pages/blog-page";
 import { ContactPage } from "@/components/site/pages/contact-page";
 import { AppointmentPage } from "@/components/site/pages/appointment-page";
@@ -54,7 +55,15 @@ function useRouteTracking() {
 
 function PageRouter() {
   const { path, segments } = useRouter();
+  const { about, doctors } = useBundle();
   useRouteTracking();
+
+  /* The founder gets her own, richer profile page — every other doctor
+     keeps the standard dossier. Matched by the live CMS founder name so
+     an admin-edited name still routes correctly. */
+  const founderSlug =
+    doctors.find((doc) => doc.name === about.founderName)?.slug ??
+    "dr-shazia-khanam";
 
   let page: React.ReactNode;
   let key = path;
@@ -69,7 +78,12 @@ function PageRouter() {
   } else if (segments[0] === "services") {
     page = <ServicesPage />;
   } else if (segments[0] === "doctors" && segments[1]) {
-    page = <DoctorDetailPage slug={segments[1]} />;
+    page =
+      segments[1] === founderSlug ? (
+        <FounderProfilePage slug={segments[1]} />
+      ) : (
+        <DoctorDetailPage slug={segments[1]} />
+      );
     key = `/doctors/${segments[1]}`;
   } else if (segments[0] === "doctors") {
     page = <DoctorsPage />;

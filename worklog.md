@@ -1269,3 +1269,149 @@ Fix:
 Verify (dev + prod): admin API Cache-Control: no-store; save->reload MATCHES_SAVED=true (full E2E incl. restore); DB restored to real photos (no test data); npm run vercel-build PASS (40 pages); pushed c2a01ab; Vercel --prod READY; live: /api/admin/doctors no-store, /api/content no-store, home 200.
 
 Note: 6 pre-existing eslint errors in admin-shared.tsx/doctors-panel.tsx (refs-during-render, setState-in-effect) unchanged � verified identical on the committed baseline, unrelated to this fix.
+---
+Task ID: about-founder-image-fix � COMPLETE
+Agent: opencode (Muse Spark)
+Task: Admin theke About page er founder chobi change koreo update hocchilo na
+
+Root cause: server-side was ALWAYS correct (DB pageBlock.about.founderImage updated, /api/content served it, R2 200, next/image optimizer 200) � two gaps made the change invisible:
+1. Browser/CDN stale cache on the admin save+reload path (same class as the previous doctor fix).
+2. Vercel cross-instance staleness: getContentBundle()'s in-process cache (5s TTL) was only cleared on the instance that handled the write, so an RSC render on ANOTHER instance could serve a pre-edit bundle for up to 5s.
+
+Fix:
+- src/lib/content/server.ts: replaced the pure time-based cache with a VERSION-KEYED cache. New contentVersion() derives a stamp from MAX(updatedAt) across all 7 content tables (Doctor/BlogPost/Faq/SmileCase/ServiceContent/HeroSlide/PageBlock). Cache hit requires cache.version === version, so ANY instance that sees a newer stamp rebuilds immediately. Time TTL kept only as a fallback if the probe query fails. (Middleware + /api/content no-store from the previous task already covered the admin browser path.)
+
+Verify: dev /about DOM -> founder <figure img> = the new R2 upload (035b7c47�); probe queries fire (7 keyset MAX(updatedAt)); eslint clean; npm run vercel-build PASS (40 pages); pushed 2d49f7f; Vercel --prod READY; live prod /api/content founderImage = new upload, home 200, founder image 200.
+
+---
+Task ID: about-founder-dossier-clinic-tour - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: About page enhance - Dr. Shazia Khanam founder dossier (18 yrs, education, certificates, milestones) + clinic room/equipment gallery, home preview, all editable from the admin panel.
+
+Research (public record only - nothing invented):
+- LinkedIn (dr-shazia-khanam): BDS Rajshahi Medical College 2002-2007; PGT Oral & Maxillofacial Surgery, Dhaka Dental College; FCPS (Orthodontics), BCPS; Fellow, World Federation of Orthodontists (USA); Lecturer, Update Dental College; Chief Consultant & Founder (Dec 2012-).
+- Clinic LinkedIn/YouTube/posts: FDI World Dental Congress 2025 Shanghai delegate; Bangladesh's first Polus Advanced Whitening Accelerator (USA); guided implants, 3D scanning, DSD, laser, nitrous oxide sedation, autoclaves, disposable kits, CCTV, kids' room.
+- facebook.com/aristocratdental is login/JS walled - no scrape; owner will upload real photos via admin.
+
+Content model (src/lib/content/shared.ts):
+- NEW types FounderEducationItem / FounderCredentialItem / FounderMilestoneItem / ClinicRoom.
+- AboutContent += founderTagline(+Bn), founderYears, founderYearsLabel(+Bn), founderBio[] (+Bn), founderEducation[], founderCredentials[], founderMilestones[], clinicGalleryEyebrow/Title/Description(+Bn), clinicRooms[].
+- defaultAboutContent(): researched EN+BN defaults for every field (8 clinic rooms with equipment lists; 3 featured-with-photo rooms reuse existing facility images, 5 use the designed placeholder).
+- normalizeAboutContent(): heals each new field per-item (undefined -> defaults; explicit empty array preserved), assigns room ids, guarantees equipment arrays.
+
+Public site:
+- NEW src/components/site/clinic-gallery.tsx - category filter chips (auto-derived + counts, Bangla numerals), room cards (photo or gradient placeholder, equipment chips + "+n"), Radix Dialog lightbox with Esc/arrow keys, prev/next, counter, full equipment list. variant="preview" shows only featured rooms (max 6).
+- NEW src/lib/anchor.ts - scrollToId/goToSection: waits for the section to mount after the AnimatePresence page swap, then re-asserts the position for ~1.5s (router scroll-to-top + lazy-image layout shifts), interruptible by wheel/touch/keydown.
+- about-page.tsx: founder spotlight now shows the experience badge (18+), tagline, credential chips, N biography paragraphs; NEW "Education & credentials" section (#founder-credentials: timeline + certificate grid + career milestones) with a CTA that scrolls to it; NEW "Clinic tour" section (#clinic-tour). Person JSON-LD += description/image/alumniOf/hasCredential/knowsAbout from the CMS.
+- home-page.tsx: facility showcase now renders the live ClinicGallery preview + "Take the full clinic tour" -> /about#clinic-tour; legacy home.facility.cards render as fallback when no rooms exist.
+
+Admin (Content -> About Page):
+- NEW groups: "Founder education & training", "Certificates & memberships", "Founder career milestones", "Clinic tour (rooms & equipment)"; Founder group += experience badge, label, tagline and a paragraph repeater. Rooms: ImageUploadField + alt text, filter category (bilingual), "show on home page" switch, bilingual name/description, one-per-line equipment lists (EN + BN), reorder/remove, caps (12/16/12/30 rooms, 6 bio paragraphs).
+
+Data:
+- src/lib/data/doctors.ts (static fallback): credentials BDS/PGT (OMFS)/FCPS (Orthodontics)/Fellow WFO, experienceYears 8 -> 18, real education entries, WFO membership, FDI 2025 award, updated bio.
+- scripts/update-shazia-dossier.mjs applied the same dossier to the LIVE Doctor row (DB is the source of truth for /doctors/dr-shazia-khanam): 18 yrs + 4 education entries + credentials + memberships + award.
+
+Verify: tsc 0 src errors (only the 4 documented examples/); eslint clean on every touched file; /api/content exposes 8 rooms / 3 bio paragraphs / 5 education / 6 credentials / 5 milestones / founderYears 18+; browser (1440): About renders the new sections, 6 filter chips with correct counts, lightbox opens (1/8) + ArrowRight advances + Esc closes, 0 horizontal overflow; BN mode fully localized (??+, ??????/????????, ????? chips + numerals); home preview renders 6 featured rooms + CTA and the CTA lands the section at top=92px; admin About panel shows all 4 new groups, room editors with 8 upload fields, and a save round-trip (featured toggle -> save -> /api/content -> revert -> save) persisted correctly.
+
+Known pre-existing (NOT introduced here): a hard load of any deep link (/about, /faqs, /gallery, /contact) renders the home page and the client router only applies the route after in-app navigation - reproduced on untouched routes and on the live production site.
+
+---
+Task ID: home-founder-spotlight-slider - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: Why-Choose-Us-e shudhu Dr. Shazia Khanam + tar chhobir slider, protiti slide-e bodol hote thaka info pop-up, 18 years focus, clinic highlights same.
+
+Content model (src/lib/content/shared.ts):
+- NEW types FounderInfoCard {label/value + Bn}, FounderSlide {id,image,imageAlt,fit:cover|contain,caption,cards[]}, FounderSpotlightContent (SectionHead fields + name/role/years/yearsLabel/bio/ctaProfile/ctaBook/slides).
+- HomeContent += founderSpotlight (before services).
+- defaultHomeContent(): bilingual defaults - eyebrow "Meet the founder", title "Eighteen years of / precision and care", 18+ badge, short bio, two CTAs, 4 slides (founder portrait = /images/founder-portrait.jpg fit:contain; education portrait = /images/founder-shazia-khanam.jpg fit:cover; clinical + team slides image-less -> designed placeholder). Each slide has its own 3 info cards (experience/qualification/fellowship -> BDS/PGT/teaching -> clinical focus/diagnosis/hygiene -> recognition/specialists/continuity), EN+BN.
+- deepMerge covers the new key for older home blobs (missing key -> defaults), so no normalize step was needed.
+
+Frontend:
+- NEW src/components/site/founder-spotlight.tsx - two-column block: photo slider (framer AnimatePresence, prev/next arrows, dot indicator, 1/4 counter, touch swipe, arrow-key support, 6.5s autoplay paused on hover/focus/hidden tab/reduced-motion) + three floating pop-up cards that re-key on every slide so photo AND info change together (absolute on xl+, stacked grid below); right column = 18+ headline number, name/role, short bio, profile + booking CTAs, clinic highlight cards and rating note.
+- home-page.tsx: Why-Choose-Us section now renders SectionHeading from home.founderSpotlight + <FounderSpotlight>; DoctorSearchPanel (round 12-e, 3-4 doctors) deleted along with its imports (264 lines removed).
+- public/images/founder-portrait.jpg = the portrait supplied earlier by the client (copied from Downloads).
+
+Admin (Content -> Homepage):
+- NEW "Founder spotlight" FormSection: section eyebrow/heading A+B/description, experience badge + label, name/role, short bio, both CTA labels, and a slide repeater (max 6) with ImageUploadField, photo alt, framing select (cover/contain), bilingual caption, and up to 3 bilingual info cards per slide (add/remove, move up/down, remove slide).
+- "Why Choose Us" section relabelled to highlights-only with a hint that the heading now lives in Founder spotlight.
+
+Verify: tsc 0 src errors; eslint clean; /api/content founderSpotlight = 4 slides / 18+ / 3 cards on slide 1; browser: Doctor Search gone, 18+ visible, slide 1 cards = Experience/Qualification/Fellowship, Next -> 2/4 with img switched to founder-shazia-khanam.jpg and cards = BDS/Postgraduate/Teaching, pause control works, 0 horizontal overflow at 1304px; BN: heading "????? ????? ???????? ? ????", ??+, ????? card labels, counter ? / ?; admin: Founder spotlight group present, 4 uploads + 4 framing selects + 4 captions, framing change -> Save homepage -> /api/content -> reverted -> save (round-trip persisted).
+
+Pending owner action: the four new Facebook-style photos were pasted in chat only (not on disk), so the deck currently ships with the two available images; upload the other two via Admin -> Homepage -> Founder spotlight or drop the files in the repo and they can be wired into the defaults.
+
+---
+Task ID: founder-detail-page - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: Dr. Shazia Khanamer jonno alada, samriddho detail page - About/Doctors theke tar naam-e click korle ei page ashbe.
+
+Frontend:
+- NEW src/components/site/pages/founder-profile-page.tsx - dedicated founder profile (only she uses it):
+  HERO (portrait + 18+ badge + Founder/FCPS-WFO chips + tagline + CTAs + quick-facts strip: years/patients/rating/languages) ->
+  ABOUT (CMS founderBio paragraphs, specialisation chips, quote card, consultation days + department + phone) ->
+  EDUCATION & CREDENTIALS (timeline, certificate grid, career milestones) ->
+  AREAS OF EXPERTISE (doctor.focusServices -> service cards) ->
+  HER CLINIC (3 featured clinic rooms -> /about#clinic-tour) ->
+  TESTIMONIALS marquee -> CTA banner. All EN/BN via pickBn + toBnDigits; Physician JSON-LD with alumniOf/hasCredential/availableService.
+- site-shell.tsx: PageRouter now resolves the live founder slug (doctors.find(name === about.founderName), fallback "dr-shazia-khanam") and routes that one slug to FounderProfilePage; every other doctor keeps DoctorDetailPage.
+
+Data:
+- scripts/update-shazia-services.mjs: DB Doctor row focusServicesJson = invisalign-clear-aligners, traditional-braces-orthodontics, digital-smile-design, porcelain-veneers (the founder page's "Treatments she leads" reads this).
+- scripts/fix-founder-role.mjs: legacy role line "BDS, MDS - Chief Dental Surgeon & Founder" (MDS is not one of her qualifications) replaced with "Founder & Chief Consultant - FCPS (Orthodontics), WFO Fellow (USA)" in dictionary.ts AND in the live about PageBlock (founderRole + founderRoleBn).
+
+Router bugfix (pre-existing, affected every deep link):
+- src/lib/router.tsx: useSyncExternalStore kept the SSR "/" snapshot on hard loads because setRoute() early-returns when the path already matches the store, so no notification fired and /about, /doctors/<slug> etc. rendered the home page. Added syncFromLocation() (always assigns a FRESH snapshot + notifies) and the mount effect now calls it. Verified: hard load of /doctors/dr-shazia-khanam, /about and /doctors all render their own page.
+
+Verify (Playwright with a live compositor): /doctors/dr-shazia-khanam -> h1 "Dr. Shazia Khanam", sections About / Education / Treatments she leads / Her clinic / Testimonials / CTA, title "... Founder & Chief Consultant - FCPS (Orthodontics), WFO Fellow (USA)"; /doctors/dr-jumla-binte-jafor still uses the standard dossier; /about unchanged (10 sections, clinic tour intact); BN mode renders the founder page with 18+ badge and 0 horizontal overflow after hydration; client-side nav from home to /doctors works; eslint clean, tsc 0 src errors.
+
+Note: the desktop-browser tab used for earlier QA has requestAnimationFrame frozen (rAF never fires), which leaves framer-motion at its initial opacity:0 state and makes AnimatePresence page swaps look "stuck" - verified it is environmental (0 rAF callbacks in 2.5s) by re-testing in the Playwright browser where the same code animates and navigates correctly.
+
+
+---
+Task ID: unified-heroes-lighter-overlay - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: Shob page-er hero section home page-er moto (same size) + overlay opacity komano jate slider chhobi/video aro clear dekha jay.
+
+Changes:
+- src/components/site/hero-backdrop.tsx: NEW overlay level "light" - flat bg-brand-navy/35 (was /72 on "deep"), vertical gradient from-brand-navy/70 via-brand-navy/20 to-brand-navy/80, side vignette /25. Type widened to "deep" | "medium" | "light".
+- src/components/site/shared.tsx PageHeader rebuilt to the home hero shell: min-h-[88vh], flex items-center justify-center, max-w-4xl, py-24 sm:py-32, breadcrumb, eyebrow badge, h1 at home scale (text-4xl sm:text-5xl lg:text-[3.75rem]) with a soft text-shadow, description, TWO CTAs (Book an appointment + tel: call), HeroBackdrop overlay="light" + indicators + priority, aria-labelledby="page-hero-heading". Covers about, services, doctors, blog, contact, faqs, gallery, appointment(list), assessment, estimator, portal, status.
+- Bespoke heroes aligned to the same shell (min-h-[88vh], centered, py-24/32, overlay="light", indicators): home hero (overlay only), doctors detail, blog detail, service detail, appointment.
+- founder-profile-page.tsx: custom navy hero now also uses HeroBackdrop (scope doctors, overlay light, indicators) inside a min-h-[88vh] flex-centered section.
+
+Verify (Playwright, 1440x900, after hydration): hero height 792px = 88vh on "/", "/about", "/blog/<slug>"; 96vh on /services/dental-implants and 100vh on /doctors/dr-shazia-khanam (content-driven, same visual system); overlay computed alpha 0.35 everywhere (previously 0.72) with class bg-brand-navy/35; hero indicators present; PageHeader h1 correct per page and carries text-shadow; 0 horizontal overflow; tsc 0 src errors; eslint only the 2 pre-existing setState-in-effect errors (appointment-page.tsx, admin-page.tsx) untouched by this change.
+
+
+---
+Task ID: doctors-page-founder-focus - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: Doctors page-e Dr. Shazia Khanam ke focus kora + "View Full Profile" click-e kichhu na howar bug fix.
+
+Why the click did nothing: the button on each list card was only an in-page accordion toggle (t.viewProfile / t.hideProfile) - it expanded a dossier and never navigated. Nothing was broken in the router.
+
+Fix (src/components/site/pages/doctors-page.tsx):
+- DoctorProfileCard: "View Full Profile" is now a real link to /doctors/<slug> (preventDefault + navigate, solid navy pill + ArrowRight) so it opens the profile page as users expect.
+- The inline dossier is still available behind a new secondary button ("Quick details" / "à¦¦à§à¦°à§à¦¤ à¦¤à¦¥à§à¦¯ à¦¦à§‡à¦–à§à¦¨", aria-expanded + aria-controls), so nothing was lost.
+- NEW FounderTeamCard: a full-width navy spotlight above the grid - portrait, "Founder & Chief Consultant" + Verified badges, 18+ years chip (Bangla numerals in BN), credential chips from the About dossier (FCPS, WFO Fellow, BDS, PGT), short bio, rating/patients/languages, and two CTAs (View full profile -> /doctors/dr-shazia-khanam, Book -> /appointment?doctor=...).
+- DoctorsPage: resolves the founder (slug dr-shazia-khanam, fallback name match against about.founderName), renders the spotlight first and EXCLUDES her from the regular grid; the remaining doctors sit under a new "The specialist team" heading.
+- Page meta description rewritten (no more "BDS/MDS" wording) to describe the founder-led team.
+
+Verify (Playwright, 1440x900): /doctors -> founder spotlight first (h2 "Dr. Shazia Khanam", "18+ years of experience"), grid = Dr. Jumla + Dr. Israt only, 3 working /doctors/<slug> links, "Quick details" toggles aria-expanded=true; clicking the founder CTA lands on /doctors/dr-shazia-khanam (founder profile page) and the Jumla CTA lands on his standard page; BN mode shows "à¦ªà§à¦°à¦¤à¦¿à¦·à§à¦ à¦¾à¦¤à¦¾ à¦“ à¦ªà§à¦°à¦§à¦¾à¦¨ à¦ªà¦°à¦¾à¦®à¦°à§à¦¶à¦¦à¦¾à¦¤à¦¾", "à§§à§®+ à¦¬à¦›à¦°à§‡à¦° à¦…à¦­à¦¿à¦œà§à¦žà¦¤à¦¾", Bangla credentials, "à¦¸à¦®à§à¦ªà§‚à¦°à§à¦£ à¦ªà§à¦°à§‹à¦«à¦¾à¦‡à¦²" + "à¦¦à§à¦°à§à¦¤ à¦¤à¦¥à§à¦¯ à¦¦à§‡à¦–à§à¦¨"; 0 horizontal overflow; tsc 0 src errors; eslint clean for the file.
+
+
+---
+Task ID: smart-chrome-overlay - COMPLETE
+Agent: opencode (DeepSeek V4.1 Flash)
+Task: Hero-r background aro kom focus (overlay opacity barano) + scroll-e header/footer chrome hide, scroll-up/pointer-top-e fire asha (desktop + mobile).
+
+1) Overlay aro opaque (media aro kom focus):
+- src/components/site/hero-backdrop.tsx "light" level retuned: flat bg-brand-navy/35 -> /46, vertical gradient 70/20/80 -> 78/32/85, side vignette kept at /25. Applied everywhere already using overlay="light" (home + every page hero + detail heroes + founder page).
+
+2) Auto-hiding chrome:
+- NEW src/hooks/use-auto-hide-header.ts
+  - useAutoHideHeader({threshold=140, topReveal=80, pointerZone=90}): hides after 140px of downward scroll, reveals on any upward scroll (>6px), always visible below 80px, and reveals when a mouse pointer enters the top 90px of the viewport. Exposes reveal()/hide() for manual control. rAF-throttled, passive listeners.
+  - useScrollDirection({threshold=80}): direction-only signal for floating elements.
+- src/components/site/navbar.tsx: the top info bar + <header> are now wrapped in ONE sticky container (sticky top-0 z-50, 500ms cubic-bezier transform) that translates -130% when hidden. data-hidden exposes the state. onFocusCapture reveals (keyboard users tabbing into the nav), onMouseEnter reveals, and an open mobile drawer forces it visible. The inner <header> no longer carries sticky/z-index.
+- src/components/site/floating-contact.tsx: the WhatsApp/Call/Book/scroll-top FAB stack fades + slides down (opacity 0, y 28, scale .92, pointer-events none, aria-hidden) while scrolling down and returns on scroll-up â€” so phones get a clean full-bleed reading view.
+
+Verify (Playwright 1440x900 + 390x844): at top data-hidden=false; after scrolling down 1600-2000px data-hidden=true and the wrapper's translate reaches 0px -130% (rect bottom -34, i.e. fully off-screen); scrolling back up flips it to false; dispatching a pointermove at clientY=20 restores it; FAB stack opacity animates to 0 while hidden and back on scroll-up; mobile 390px behaves identically (hide on down, reveal on up); hero overlay computed alpha 0.46 (class bg-brand-navy/46); 0 horizontal overflow; tsc 0 src errors; eslint clean on all four files.
+

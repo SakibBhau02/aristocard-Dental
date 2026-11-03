@@ -67,10 +67,45 @@ export type FacilityContent = SectionHead & {
   cards: { title: string; titleBn?: string; text: string; textBn?: string }[];
 };
 
+/* ---- Founder spotlight (Why-Choose-Us visual + slide info pop-ups) ---- */
+
+/** One floating info card pinned around the founder photo. */
+export type FounderInfoCard = {
+  label: string; labelBn?: string;
+  value: string; valueBn?: string;
+};
+
+/** One photo in the founder slide deck — its own caption + info cards. */
+export type FounderSlide = {
+  id: string;
+  image?: string;
+  imageAlt?: string;
+  /* "contain" suits cut-out portraits on white; "cover" suits scene shots. */
+  fit?: "cover" | "contain";
+  caption: string; captionBn?: string;
+  cards: FounderInfoCard[];
+};
+
+export type FounderSpotlightContent = {
+  eyebrow: string; eyebrowBn?: string;
+  titleA: string; titleABn?: string;
+  titleB: string; titleBBn?: string;
+  description: string; descriptionBn?: string;
+  name: string; nameBn?: string;
+  role: string; roleBn?: string;
+  years: string;
+  yearsLabel: string; yearsLabelBn?: string;
+  bio: string; bioBn?: string;
+  ctaProfile: string; ctaProfileBn?: string;
+  ctaBook: string; ctaBookBn?: string;
+  slides: FounderSlide[];
+};
+
 export type HomeContent = {
   hero: HomeHeroContent;
   stats: StatItem[];
   why: WhyContent;
+  founderSpotlight: FounderSpotlightContent;
   services: SectionHead;
   facility: FacilityContent;
   galleryPreview: SectionHead;
@@ -92,6 +127,47 @@ export type StoryStatItem = {
   value: string;
   label: string;
   labelBn?: string;
+};
+
+/* ---- Founder dossier (About → Founder spotlight) ------------------- */
+
+/** One entry in the founder's education / training timeline. */
+export type FounderEducationItem = {
+  degree: string; degreeBn?: string;
+  institution?: string; institutionBn?: string;
+  year?: string;
+  detail?: string; detailBn?: string;
+};
+
+/** Certificate / fellowship / appointment shown as a credential card. */
+export type FounderCredentialItem = {
+  title: string; titleBn?: string;
+  issuer?: string; issuerBn?: string;
+  year?: string;
+};
+
+/** Career milestone in the founder's professional timeline. */
+export type FounderMilestoneItem = {
+  year?: string;
+  title: string; titleBn?: string;
+  description?: string; descriptionBn?: string;
+};
+
+/* ---- Clinic tour (About → Inside the clinic) ----------------------- */
+
+/** One room / area of the clinic with its equipment list. */
+export type ClinicRoom = {
+  id: string;
+  /* Short category label used by the filter chips ("Treatment Rooms"). */
+  category: string; categoryBn?: string;
+  title: string; titleBn?: string;
+  description: string; descriptionBn?: string;
+  image?: string;
+  imageAlt?: string;
+  equipment: string[];
+  equipmentBn?: string[];
+  /* Featured rooms also appear in the home-page preview. */
+  featured?: boolean;
 };
 
 export type AboutContent = {
@@ -120,6 +196,21 @@ export type AboutContent = {
   founderChipTitle: string; founderChipTitleBn?: string;
   founderChipNote: string; founderChipNoteBn?: string;
   founderItems: { title: string; titleBn?: string; text: string; textBn?: string }[];
+  /* ---- Founder dossier (optional: blobs saved before it existed heal
+     to the researched defaults via normalizeAboutContent). ---- */
+  founderTagline?: string; founderTaglineBn?: string;
+  /* Experience chip — "18+" is rendered as-is (digits become Bangla in
+     বাংলা mode). Keep the clinic's founding year out of this. */
+  founderYears?: string; founderYearsLabel?: string; founderYearsLabelBn?: string;
+  founderBio?: string[]; founderBioBn?: string[];
+  founderEducation?: FounderEducationItem[];
+  founderCredentials?: FounderCredentialItem[];
+  founderMilestones?: FounderMilestoneItem[];
+  /* ---- Clinic tour gallery (rooms + equipment) ---- */
+  clinicGalleryEyebrow?: string; clinicGalleryEyebrowBn?: string;
+  clinicGalleryTitle?: string; clinicGalleryTitleBn?: string;
+  clinicGalleryDescription?: string; clinicGalleryDescriptionBn?: string;
+  clinicRooms?: ClinicRoom[];
   valuesEyebrow: string; valuesEyebrowBn?: string;
   valuesTitle: string; valuesTitleBn?: string;
   values: { icon: string; title: string; titleBn?: string; description: string; descriptionBn?: string }[];
@@ -186,6 +277,132 @@ export function defaultHomeContent(): HomeContent {
         title: hi.title, titleBn: hb.why.highlights[i]?.title,
         description: hi.description, descriptionBn: hb.why.highlights[i]?.description,
       })),
+    },
+    /* ---- Founder spotlight (Why-Choose-Us visual) ---- */
+    founderSpotlight: {
+      eyebrow: "Meet the founder",
+      eyebrowBn: "প্রতিষ্ঠাতার পরিচয়",
+      titleA: "Eighteen years of ",
+      titleABn: "আঠারো বছরের ",
+      titleB: "precision and care",
+      titleBBn: "নিখুঁততা ও যত্ন",
+      description:
+        "Dr. Shazia Khanam personally leads the diagnosis and the treatment plan — the same specialist from your first consultation to the final result.",
+      descriptionBn:
+        "ডা. শাজিয়া খানম নিজেই ডায়াগনোসিস ও চিকিৎসা পরিকল্পনার নেতৃত্ব দেন — প্রথম পরামর্শ থেকে চূড়ান্ত ফলাফল, একই বিশেষজ্ঞ আপনার পাশে।",
+      name: "Dr. Shazia Khanam",
+      nameBn: "ডা. শাজিয়া খানম",
+      role: "Founder & Chief Consultant",
+      roleBn: "প্রতিষ্ঠাতা ও চিফ কনসালট্যান্ট",
+      years: "18+",
+      yearsLabel: "Years of clinical experience",
+      yearsLabelBn: "বছরের ক্লিনিক্যাল অভিজ্ঞতা",
+      bio: "An orthodontist with FCPS (Orthodontics) and a fellowship from the World Federation of Orthodontists, USA. She has treated thousands of smiles — from a child's first check-up to guided implants and complete smile makeovers.",
+      bioBn:
+        "এফসিপিএস (অর্থোডন্টিকস) এবং যুক্তরাষ্ট্রের ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টসের ফেলোশিপপ্রাপ্ত অর্থোডন্টিস্ট। শিশুর প্রথম চেক-আপ থেকে গাইডেড ইমপ্ল্যান্ট ও সম্পূর্ণ স্মাইল মেকওভার — হাজারো হাসির চিকিৎসা তাঁর হাতে।",
+      ctaProfile: "Full profile",
+      ctaProfileBn: "সম্পূর্ণ প্রোফাইল",
+      ctaBook: "Book an appointment",
+      ctaBookBn: "অ্যাপয়েন্টমেন্ট নিন",
+      /* Slide deck — the info cards change with every photo. Photos are
+         uploaded in Admin → Homepage → Founder spotlight; a slide without
+         an image renders the designed placeholder. */
+      slides: [
+        {
+          id: "founder",
+          image: "/images/founder-portrait.jpg",
+          imageAlt: "Dr. Shazia Khanam, founder and Chief Consultant of Aristocrat Dental Care",
+          fit: "contain",
+          caption: "Founder & Chief Consultant",
+          captionBn: "প্রতিষ্ঠাতা ও চিফ কনসালট্যান্ট",
+          cards: [
+            {
+              label: "Experience", labelBn: "অভিজ্ঞতা",
+              value: "18+ years of practice", valueBn: "১৮+ বছরের অভিজ্ঞতা",
+            },
+            {
+              label: "Qualification", labelBn: "যোগ্যতা",
+              value: "FCPS (Orthodontics)", valueBn: "এফসিপিএস (অর্থোডন্টিকস)",
+            },
+            {
+              label: "Fellowship", labelBn: "ফেলোশিপ",
+              value: "World Federation of Orthodontists, USA",
+              valueBn: "ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টস, যুক্তরাষ্ট্র",
+            },
+          ],
+        },
+        {
+          id: "education",
+          image: "/images/founder-shazia-khanam.jpg",
+          imageAlt: "Portrait of Dr. Shazia Khanam at Aristocrat Dental Care",
+          fit: "cover",
+          caption: "The training behind the practice",
+          captionBn: "চিকিৎসার পেছনের প্রশিক্ষণ",
+          cards: [
+            {
+              label: "BDS", labelBn: "বিডিএস",
+              value: "Rajshahi Medical College (2002–2007)",
+              valueBn: "রাজশাহী মেডিকেল কলেজ (২০০২–২০০৭)",
+            },
+            {
+              label: "Postgraduate", labelBn: "পোস্টগ্র্যাজুয়েট",
+              value: "PGT — Oral & Maxillofacial Surgery, Dhaka Dental College",
+              valueBn: "পিজিটি — ওরাল ও ম্যাক্সিলোফেসিয়াল সার্জারি, ঢাকা ডেন্টাল কলেজ",
+            },
+            {
+              label: "Teaching", labelBn: "শিক্ষকতা",
+              value: "Lecturer, Update Dental College",
+              valueBn: "লেকচারার, আপডেট ডেন্টাল কলেজ",
+            },
+          ],
+        },
+        {
+          id: "clinical",
+          imageAlt: "Dr. Shazia Khanam treating a patient in the operatory",
+          caption: "Precision in the operatory",
+          captionBn: "চিকিৎসা কক্ষে নিখুঁততা",
+          cards: [
+            {
+              label: "Clinical focus", labelBn: "ক্লিনিক্যাল ফোকাস",
+              value: "Guided implants, aligners & laser dentistry",
+              valueBn: "গাইডেড ইমপ্ল্যান্ট, অ্যালাইনার ও লেজার ডেন্টিস্ট্রি",
+            },
+            {
+              label: "Diagnosis", labelBn: "ডায়াগনোসিস",
+              value: "Digital X-ray · 3D scanning · Smile Design",
+              valueBn: "ডিজিটাল এক্স-রে · থ্রিডি স্ক্যানিং · স্মাইল ডিজাইন",
+            },
+            {
+              label: "Hygiene", labelBn: "হাইজিন",
+              value: "Autoclave sterilization + single-use kits",
+              valueBn: "অটোক্লেভ স্টেরিলাইজেশন + সিঙ্গেল-ইউজ কিট",
+            },
+          ],
+        },
+        {
+          id: "team",
+          imageAlt: "The Aristocrat Dental Care team in the clinic",
+          caption: "A team behind every smile",
+          captionBn: "প্রতিটি হাসির পেছনে একটি দল",
+          cards: [
+            {
+              label: "Recognition", labelBn: "স্বীকৃতি",
+              value: "FDI World Dental Congress 2025, Shanghai",
+              valueBn: "এফডিআই ওয়ার্ল্ড ডেন্টাল কংগ্রেস ২০২৫, সাংহাই",
+            },
+            {
+              label: "Specialists", labelBn: "বিশেষজ্ঞ",
+              value: "Orthodontics · Oral surgery · Endodontics",
+              valueBn: "অর্থোডন্টিকস · ওরাল সার্জারি · এন্ডোডন্টিকস",
+            },
+            {
+              label: "Continuity", labelBn: "ধারাবাহিকতা",
+              value: "The same specialist follows every visit",
+              valueBn: "প্রতিটি ভিজিটে একই বিশেষজ্ঞ",
+            },
+          ],
+        },
+      ],
     },
     services: {
       eyebrow: h.services.eyebrow, eyebrowBn: hb.services.eyebrow,
@@ -285,6 +502,342 @@ export function defaultAboutContent(): AboutContent {
       title: f.title, titleBn: ab.founderItems[i]?.title,
       text: f.text, textBn: ab.founderItems[i]?.text,
     })),
+
+    /* ---- Founder dossier -------------------------------------------
+       FACTUAL SOURCE (public): Dr. Shazia Khanam's own LinkedIn profile,
+       the clinic's LinkedIn/YouTube profiles and the clinic's own posts.
+       No institution, year or award is invented here — entries without a
+       verified year simply omit it. Everything is editable in Admin →
+       About → Founder, so the owner can correct or extend any line.   */
+    founderTagline:
+      "Orthodontist, educator and founder — where clinical precision meets genuine kindness.",
+    founderTaglineBn:
+      "অর্থোডন্টিস্ট, শিক্ষক ও প্রতিষ্ঠাতা — যেখানে ক্লিনিক্যাল নিখুঁততা মেলে আন্তরিক যত্নের সঙ্গে।",
+    founderYears: "18+",
+    founderYearsLabel: "Years of clinical experience",
+    founderYearsLabelBn: "বছরের ক্লিনিক্যাল অভিজ্ঞতা",
+    founderBio: [
+      "Dr. Shazia Khanam is the founder and Chief Consultant of Aristocrat Dental Care & Orthodontic Center in Uttara, Dhaka. Across more than eighteen years of clinical practice she has treated thousands of patients — from a child's first check-up to full-mouth orthodontic and implant rehabilitation.",
+      "Her work centres on orthodontics and digital dentistry: clear aligners, self-ligating braces, digital smile design, guided implants and laser-assisted treatment. Every plan begins with a careful diagnosis, and the same specialist follows the patient through the whole journey.",
+      "Beyond the chair she teaches as a Lecturer at Update Dental College and keeps her practice aligned with global standards — most recently representing the clinic at the FDI World Dental Congress 2025 in Shanghai.",
+    ],
+    founderBioBn: [
+      "ডা. শাজিয়া খানম উত্তরা, ঢাকার অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ার অ্যান্ড অর্থোডন্টিক সেন্টারের প্রতিষ্ঠাতা ও চিফ কনসালট্যান্ট। আঠারো বছরের বেশি ক্লিনিক্যাল অভিজ্ঞতায় তিনি হাজারো রোগীর চিকিৎসা করেছেন — শিশুর প্রথম চেক-আপ থেকে শুরু করে সম্পূর্ণ মুখের অর্থোডন্টিক ও ইমপ্ল্যান্ট পুনর্গঠন।",
+      "তাঁর কাজের কেন্দ্রে আছে অর্থোডন্টিকস ও ডিজিটাল ডেন্টিস্ট্রি — ক্লিয়ার অ্যালাইনার, সেলফ-লিগেটিং ব্রেসেস, ডিজিটাল স্মাইল ডিজাইন, গাইডেড ইমপ্ল্যান্ট এবং লেজার-সহায়ক চিকিৎসা। প্রতিটি পরিকল্পনা শুরু হয় সতর্ক ডায়াগনোসিস দিয়ে, আর পুরো চিকিৎসাকালে একই বিশেষজ্ঞ রোগীর পাশে থাকেন।",
+      "চেম্বারের বাইরে তিনি আপডেট ডেন্টাল কলেজে লেকচারার হিসেবে পড়ান এবং নিজের চর্চাকে আন্তর্জাতিক মানে ধরে রাখেন — সম্প্রতি চীনের সাংহাইতে অনুষ্ঠিত FDI World Dental Congress 2025-এ ক্লিনিকের প্রতিনিধিত্ব করেছেন।",
+    ],
+    founderEducation: [
+      {
+        degree: "BDS", degreeBn: "বিডিএস (ডেন্টাল সার্জারি)",
+        institution: "Rajshahi Medical College", institutionBn: "রাজশাহী মেডিকেল কলেজ",
+        year: "2002–2007",
+        detail: "Bachelor of Dental Surgery", detailBn: "ব্যাচেলর অব ডেন্টাল সার্জারি",
+      },
+      {
+        degree: "PGT — Oral & Maxillofacial Surgery",
+        degreeBn: "পিজিটি — ওরাল ও ম্যাক্সিলোফেসিয়াল সার্জারি",
+        institution: "Dhaka Dental College", institutionBn: "ঢাকা ডেন্টাল কলেজ",
+        detail: "Postgraduate training", detailBn: "পোস্টগ্র্যাজুয়েট প্রশিক্ষণ",
+      },
+      {
+        degree: "FCPS (Orthodontics)", degreeBn: "এফসিপিএস (অর্থোডন্টিকস)",
+        institution: "Bangladesh College of Physicians & Surgeons (BCPS)",
+        institutionBn: "বাংলাদেশ কলেজ অব ফিজিশিয়ানস অ্যান্ড সার্জনস (বিসিপিএস)",
+        detail: "Fellow of the College of Physicians & Surgeons",
+        detailBn: "ফেলো অব দ্য কলেজ অব ফিজিশিয়ানস অ্যান্ড সার্জনস",
+      },
+      {
+        degree: "Fellow, World Federation of Orthodontists",
+        degreeBn: "ফেলো, ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টস",
+        institution: "World Federation of Orthodontists (WFO), USA",
+        institutionBn: "ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টস (ডব্লিউএফও), যুক্তরাষ্ট্র",
+        detail: "International orthodontic fellowship",
+        detailBn: "আন্তর্জাতিক অর্থোডন্টিক ফেলোশিপ",
+      },
+      {
+        degree: "Lecturer", degreeBn: "লেকচারার",
+        institution: "Update Dental College", institutionBn: "আপডেট ডেন্টাল কলেজ",
+        detail: "Undergraduate teaching appointment",
+        detailBn: "আন্ডারগ্র্যাজুয়েট শিক্ষকতা",
+      },
+    ],
+    founderCredentials: [
+      {
+        title: "FCPS (Orthodontics)", titleBn: "এফসিপিএস (অর্থোডন্টিকস)",
+        issuer: "Bangladesh College of Physicians & Surgeons",
+        issuerBn: "বাংলাদেশ কলেজ অব ফিজিশিয়ানস অ্যান্ড সার্জনস",
+      },
+      {
+        title: "Fellow — World Federation of Orthodontists",
+        titleBn: "ফেলো — ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টস",
+        issuer: "WFO, United States", issuerBn: "ডব্লিউএফও, যুক্তরাষ্ট্র",
+      },
+      {
+        title: "BDS", titleBn: "বিডিএস",
+        issuer: "Rajshahi Medical College", issuerBn: "রাজশাহী মেডিকেল কলেজ",
+        year: "2007",
+      },
+      {
+        title: "PGT — Oral & Maxillofacial Surgery",
+        titleBn: "পিজিটি — ওরাল ও ম্যাক্সিলোফেসিয়াল সার্জারি",
+        issuer: "Dhaka Dental College", issuerBn: "ঢাকা ডেন্টাল কলেজ",
+      },
+      {
+        title: "FDI World Dental Congress 2025",
+        titleBn: "এফডিআই ওয়ার্ল্ড ডেন্টাল কংগ্রেস ২০২৫",
+        issuer: "Delegate — Shanghai, China", issuerBn: "ডেলিগেট — সাংহাই, চীন",
+        year: "2025",
+      },
+      {
+        title: "Lecturer, Update Dental College",
+        titleBn: "লেকচারার, আপডেট ডেন্টাল কলেজ",
+        issuer: "Teaching appointment", issuerBn: "শিক্ষকতা",
+      },
+    ],
+    founderMilestones: [
+      {
+        year: "2007", title: "BDS — Rajshahi Medical College",
+        titleBn: "বিডিএস — রাজশাহী মেডিকেল কলেজ",
+        description: "Graduated in dental surgery and began clinical practice.",
+        descriptionBn: "ডেন্টাল সার্জারিতে স্নাতক সম্পন্ন করে ক্লিনিক্যাল চর্চা শুরু করেন।",
+      },
+      {
+        title: "Postgraduate training in Oral & Maxillofacial Surgery",
+        titleBn: "ওরাল ও ম্যাক্সিলোফেসিয়াল সার্জারিতে পোস্টগ্র্যাজুয়েট প্রশিক্ষণ",
+        description: "Dhaka Dental College — surgical diagnosis and operating-room training.",
+        descriptionBn: "ঢাকা ডেন্টাল কলেজ — সার্জিক্যাল ডায়াগনোসিস ও অপারেশন থিয়েটার প্রশিক্ষণ।",
+      },
+      {
+        title: "FCPS in Orthodontics",
+        titleBn: "অর্থোডন্টিকসে এফসিপিএস",
+        description: "Bangladesh College of Physicians & Surgeons — specialist orthodontic qualification.",
+        descriptionBn: "বাংলাদেশ কলেজ অব ফিজিশিয়ানস অ্যান্ড সার্জনস — বিশেষজ্ঞ অর্থোডন্টিক যোগ্যতা।",
+      },
+      {
+        title: "Fellow, World Federation of Orthodontists",
+        titleBn: "ফেলো, ওয়ার্ল্ড ফেডারেশন অব অর্থোডন্টিস্টস",
+        description: "International fellowship recognising her orthodontic standards.",
+        descriptionBn: "অর্থোডন্টিক মানের স্বীকৃতি হিসেবে আন্তর্জাতিক ফেলোশিপ।",
+      },
+      {
+        year: "2025", title: "FDI World Dental Congress — Shanghai",
+        titleBn: "এফডিআই ওয়ার্ল্ড ডেন্টাল কংগ্রেস — সাংহাই",
+        description: "Represented the clinic at the world's largest dental congress.",
+        descriptionBn: "বিশ্বের সবচেয়ে বড় ডেন্টাল কংগ্রেসে ক্লিনিকের প্রতিনিধিত্ব করেন।",
+      },
+    ],
+
+    /* ---- Clinic tour ------------------------------------------------
+       Rooms + equipment reflect what the clinic publicly describes
+       (guided implants, 3D scanning, digital smile design, laser,
+       Polus whitening, nitrous oxide sedation, autoclaves, disposable
+       kits, CCTV, kids' room). Photos are uploaded in Admin → About →
+       Clinic tour; rooms without a photo render a designed placeholder. */
+    clinicGalleryEyebrow: "Inside the clinic",
+    clinicGalleryEyebrowBn: "ক্লিনিকের ভেতরে",
+    clinicGalleryTitle: "Every room, every instrument",
+    clinicGalleryTitleBn: "প্রতিটি রুম, প্রতিটি যন্ত্র",
+    clinicGalleryDescription:
+      "Walk through Aristocrat Dental Care room by room — the equipment we use, the spaces we treat in, and the hygiene protocols that run behind every appointment.",
+    clinicGalleryDescriptionBn:
+      "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ারের প্রতিটি রুম ঘুরে দেখুন — কোন যন্ত্রপাতি ব্যবহার করি, কোথায় চিকিৎসা হয়, আর প্রতিটি অ্যাপয়েন্টমেন্টের পেছনে যেসব হাইজিন প্রোটোকল কাজ করে।",
+    clinicRooms: [
+      {
+        id: "reception",
+        category: "Reception", categoryBn: "রিসেপশন",
+        title: "Reception & Waiting Lounge",
+        titleBn: "রিসেপশন ও ওয়েটিং লাউঞ্জ",
+        description:
+          "A calm, air-conditioned lounge where appointments are confirmed, records are opened and families wait comfortably before treatment.",
+        descriptionBn:
+          "শান্ত, শীতাতপ নিয়ন্ত্রিত লাউঞ্জ — এখানেই অ্যাপয়েন্টমেন্ট নিশ্চিত হয়, রোগীর রেকর্ড খোলা হয় এবং পরিবারগুলো আরামে অপেক্ষা করে।",
+        imageAlt: "Reception and waiting lounge at Aristocrat Dental Care",
+        equipment: [
+          "Air-conditioned lounge",
+          "CCTV-monitored premises",
+          "Bottled drinking water",
+          "Patient records & appointment desk",
+        ],
+        equipmentBn: [
+          "শীতাতপ নিয়ন্ত্রিত লাউঞ্জ",
+          "সিসিটিভি নিয়ন্ত্রিত চত্বর",
+          "বোতলজাত বিশুদ্ধ পানি",
+          "রোগীর রেকর্ড ও অ্যাপয়েন্টমেন্ট ডেস্ক",
+        ],
+        featured: true,
+      },
+      {
+        id: "diagnosis",
+        category: "Diagnostics", categoryBn: "ডায়াগনসিস",
+        title: "Consultation & Digital Diagnosis",
+        titleBn: "কনসালটেশন ও ডিজিটাল ডায়াগনসিস",
+        description:
+          "Where every treatment starts: digital imaging, 3D scanning and a face-to-face plan you can see and understand before anything begins.",
+        descriptionBn:
+          "প্রতিটি চিকিৎসা এখানেই শুরু — ডিজিটাল ইমেজিং, থ্রিডি স্ক্যানিং এবং মুখোমুখি আলোচনায় পরিকল্পনা, যা শুরু করার আগেই আপনি দেখে বুঝে নিতে পারেন।",
+        image: "/images/facility-tech.png",
+        imageAlt: "Digital diagnosis room with X-ray unit and intraoral scanner",
+        equipment: [
+          "Digital X-ray",
+          "Intraoral 3D scanner",
+          "Digital Smile Design workstation",
+          "Treatment-planning display",
+        ],
+        equipmentBn: [
+          "ডিজিটাল এক্স-রে",
+          "ইন্ট্রাওরাল থ্রিডি স্ক্যানার",
+          "ডিজিটাল স্মাইল ডিজাইন ওয়ার্কস্টেশন",
+          "ট্রিটমেন্ট প্ল্যানিং ডিসপ্লে",
+        ],
+        featured: true,
+      },
+      {
+        id: "treatment",
+        category: "Treatment Rooms", categoryBn: "ট্রিটমেন্ট রুম",
+        title: "General Treatment Room",
+        titleBn: "জেনারেল ট্রিটমেন্ট রুম",
+        description:
+          "The everyday operatory — fillings, scaling, root canal treatment and extractions, with a fresh single-use kit opened for every patient.",
+        descriptionBn:
+          "প্রতিদিনের চিকিৎসা কক্ষ — ফিলিং, স্কেলিং, রুট ক্যানেল ও টুথ এক্সট্র্যাকশন; প্রতিটি রোগীর জন্য নতুন সিঙ্গেল-ইউজ কিট খোলা হয়।",
+        imageAlt: "General dental treatment room with modern dental chair",
+        equipment: [
+          "Dental chair with LED operatory light",
+          "Ultrasonic scaler",
+          "Endodontic (root canal) rotary system",
+          "Single-use disposable patient kit",
+        ],
+        equipmentBn: [
+          "এলইডি অপারেটরি লাইটসহ ডেন্টাল চেয়ার",
+          "আল্ট্রাসনিক স্কেলার",
+          "এন্ডোডন্টিক (রুট ক্যানেল) রোটারি সিস্টেম",
+          "সিঙ্গেল-ইউজ ডিসপোজেবল কিট",
+        ],
+        featured: true,
+      },
+      {
+        id: "ortho",
+        category: "Treatment Rooms", categoryBn: "ট্রিটমেন্ট রুম",
+        title: "Orthodontic & Aligner Bay",
+        titleBn: "অর্থোডন্টিক ও অ্যালাইনার বে",
+        description:
+          "Dr. Shazia Khanam's core specialty: braces, self-ligating systems and clear aligners, planned digitally and reviewed with progress photography at every visit.",
+        descriptionBn:
+          "ডা. শাজিয়া খানমের মূল বিশেষত্ব — ব্রেসেস, সেলফ-লিগেটিং সিস্টেম ও ক্লিয়ার অ্যালাইনার; ডিজিটালি পরিকল্পিত এবং প্রতিটি ভিজিটে প্রোগ্রেস ফটোগ্রাফিতে পর্যালোচনা।",
+        imageAlt: "Orthodontic bay for braces and clear aligner fitting",
+        equipment: [
+          "Self-ligating braces system",
+          "Clear aligner fitting sets",
+          "Orthodontic pliers & instruments",
+          "Progress photography setup",
+        ],
+        equipmentBn: [
+          "সেলফ-লিগেটিং ব্রেসেস সিস্টেম",
+          "ক্লিয়ার অ্যালাইনার ফিটিং সেট",
+          "অর্থোডন্টিক প্লায়ার ও ইন্সট্রুমেন্ট",
+          "প্রোগ্রেস ফটোগ্রাফি সেটআপ",
+        ],
+        featured: true,
+      },
+      {
+        id: "kids",
+        category: "Kids", categoryBn: "শিশু কক্ষ",
+        title: "Children's Dental Room",
+        titleBn: "শিশুদের ডেন্টাল রুম",
+        description:
+          "A room designed to remove fear: child-scaled furniture, a friendly layout and nitrous oxide sedation support for anxious young patients.",
+        descriptionBn:
+          "ভয় দূর করার জন্য তৈরি কক্ষ — শিশুদের মাপে আসবাব, বন্ধুত্বপূর্ণ পরিবেশ এবং উদ্বিগ্ন শিশুদের জন্য নাইট্রাস অক্সাইড সিডেশনের ব্যবস্থা।",
+        image: "/images/facility-kids.png",
+        imageAlt: "Child-friendly pediatric dental room at Aristocrat Dental Care",
+        equipment: [
+          "Child-friendly interior & seating",
+          "Nitrous oxide sedation support",
+          "Pediatric instrument set",
+          "Preventive care (fluoride & sealants)",
+        ],
+        equipmentBn: [
+          "শিশু-বান্ধব ইন্টেরিয়র ও আসন",
+          "নাইট্রাস অক্সাইড সিডেশন ব্যবস্থা",
+          "পেডিয়াট্রিক ইন্সট্রুমেন্ট সেট",
+          "প্রতিরোধমূলক চিকিৎসা (ফ্লোরাইড ও সিল্যান্ট)",
+        ],
+        featured: true,
+      },
+      {
+        id: "sterile",
+        category: "Sterilization", categoryBn: "স্টেরিলাইজেশন",
+        title: "Sterilization & Utility Room",
+        titleBn: "স্টেরিলাইজেশন ও ইউটিলিটি রুম",
+        description:
+          "The backbone of the clinic: instruments are cleaned, pouched, autoclaved and stored under a documented international hygiene protocol.",
+        descriptionBn:
+          "ক্লিনিকের মূল ভিত্তি — যন্ত্রপাতি পরিষ্কার, পাউচে সিল করে অটোক্লেভে স্টেরিলাইজ এবং লিখিত আন্তর্জাতিক হাইজিন প্রোটোকল অনুযায়ী সংরক্ষণ করা হয়।",
+        image: "/images/facility-sterile.png",
+        imageAlt: "Sterilization room with autoclave and sealed instrument pouches",
+        equipment: [
+          "Class B autoclave",
+          "Ultrasonic cleaner",
+          "Sealed instrument pouches",
+          "Single-use disposables",
+        ],
+        equipmentBn: [
+          "ক্লাস বি অটোক্লেভ",
+          "আল্ট্রাসনিক ক্লিনার",
+          "সিলড ইন্সট্রুমেন্ট পাউচ",
+          "সিঙ্গেল-ইউজ ডিসপোজেবল",
+        ],
+        featured: true,
+      },
+      {
+        id: "whitening",
+        category: "Treatment Rooms", categoryBn: "ট্রিটমেন্ট রুম",
+        title: "Whitening & Cosmetic Suite",
+        titleBn: "হোয়াইটেনিং ও কসমেটিক স্যুট",
+        description:
+          "Veneers, smile design and whitening — including the Polus Advanced Whitening Accelerator, a LED + halogen system imported from the USA.",
+        descriptionBn:
+          "ভিনিয়ার, স্মাইল ডিজাইন ও হোয়াইটেনিং — যুক্তরাষ্ট্র থেকে আনা পোলাস অ্যাডভান্সড হোয়াইটেনিং অ্যাক্সিলারেটর (এলইডি + হ্যালোজেন সিস্টেম) সহ।",
+        imageAlt: "Cosmetic dentistry suite for veneers and teeth whitening",
+        equipment: [
+          "Polus Advanced Whitening Accelerator (USA)",
+          "LED + halogen whitening light",
+          "Veneer & smile-design kit",
+          "Shade-matching kit",
+        ],
+        equipmentBn: [
+          "পোলাস অ্যাডভান্সড হোয়াইটেনিং অ্যাক্সিলারেটর (যুক্তরাষ্ট্র)",
+          "এলইডি + হ্যালোজেন হোয়াইটেনিং লাইট",
+          "ভিনিয়ার ও স্মাইল-ডিজাইন কিট",
+          "শেড ম্যাচিং কিট",
+        ],
+        featured: false,
+      },
+      {
+        id: "surgery",
+        category: "Treatment Rooms", categoryBn: "ট্রিটমেন্ট রুম",
+        title: "Implant & Surgical Suite",
+        titleBn: "ইমপ্ল্যান্ট ও সার্জিক্যাল স্যুট",
+        description:
+          "Guided implant placement and minor oral surgery, performed with digitally planned guides and laser-assisted precision.",
+        descriptionBn:
+          "গাইডেড ইমপ্ল্যান্ট ও ছোট ওরাল সার্জারি — ডিজিটালি পরিকল্পিত গাইড এবং লেজার-সহায়ক নিখুঁততায় সম্পন্ন।",
+        imageAlt: "Implant and oral surgery suite with guided implant kit",
+        equipment: [
+          "Guided implant surgery kit",
+          "Surgical handpiece & physiodispenser",
+          "Laser dentistry unit",
+          "Sterile surgical drape set",
+        ],
+        equipmentBn: [
+          "গাইডেড ইমপ্ল্যান্ট সার্জারি কিট",
+          "সার্জিক্যাল হ্যান্ডপিস ও ফিজিওডিসপেনসার",
+          "লেজার ডেন্টিস্ট্রি ইউনিট",
+          "স্টেরাইল সার্জিক্যাল ড্রেপ সেট",
+        ],
+        featured: false,
+      },
+    ],
     valuesEyebrow: a.valuesEyebrow, valuesEyebrowBn: ab.valuesEyebrow,
     valuesTitle: a.valuesTitle, valuesTitleBn: ab.valuesTitle,
     values: a.values.map((v, i) => ({
@@ -330,6 +883,91 @@ export function normalizeAboutContent(about: AboutContent): AboutContent {
         };
       })
     : defaults.storyStats;
+
+  /* ---- Founder dossier ------------------------------------------------
+     A blob saved before these fields existed has NO key at all (undefined)
+     — heal it from the researched defaults. A key that exists but is an
+     empty array is a deliberate owner choice and is preserved. */
+  const founderBio = (v: unknown, fallback: string[]): string[] =>
+    v === undefined ? fallback : Array.isArray(v) ? v.map((p) => str(p)) : fallback;
+  const founderBioBn = (v: unknown, fallback: string[] | undefined): string[] | undefined =>
+    v === undefined ? fallback : Array.isArray(v) ? v.map((p) => str(p)) : fallback;
+
+  const founderEducation: FounderEducationItem[] =
+    about.founderEducation === undefined
+      ? defaults.founderEducation ?? []
+      : (Array.isArray(about.founderEducation) ? about.founderEducation : []).map((e) => {
+          const raw = obj(e);
+          return {
+            degree: str(raw.degree),
+            degreeBn: ostr(raw.degreeBn),
+            institution: ostr(raw.institution),
+            institutionBn: ostr(raw.institutionBn),
+            year: ostr(raw.year),
+            detail: ostr(raw.detail),
+            detailBn: ostr(raw.detailBn),
+          };
+        });
+
+  const founderCredentials: FounderCredentialItem[] =
+    about.founderCredentials === undefined
+      ? defaults.founderCredentials ?? []
+      : (Array.isArray(about.founderCredentials) ? about.founderCredentials : []).map((c) => {
+          const raw = obj(c);
+          return {
+            title: str(raw.title),
+            titleBn: ostr(raw.titleBn),
+            issuer: ostr(raw.issuer),
+            issuerBn: ostr(raw.issuerBn),
+            year: ostr(raw.year),
+          };
+        });
+
+  const founderMilestones: FounderMilestoneItem[] =
+    about.founderMilestones === undefined
+      ? defaults.founderMilestones ?? []
+      : (Array.isArray(about.founderMilestones) ? about.founderMilestones : []).map((m) => {
+          const raw = obj(m);
+          return {
+            year: ostr(raw.year),
+            title: str(raw.title),
+            titleBn: ostr(raw.titleBn),
+            description: ostr(raw.description),
+            descriptionBn: ostr(raw.descriptionBn),
+          };
+        });
+
+  /* ---- Clinic rooms ---------------------------------------------------
+     Rooms need a stable id (React keys + lightbox), a category for the
+     filter chips and an equipment array; anything missing is filled in
+     without dropping the owner's own text. */
+  const clinicRooms: ClinicRoom[] =
+    about.clinicRooms === undefined
+      ? defaults.clinicRooms ?? []
+      : (Array.isArray(about.clinicRooms) ? about.clinicRooms : []).map((r, i) => {
+          const raw = obj(r);
+          const equipment = Array.isArray(raw.equipment)
+            ? raw.equipment.map((x) => str(x)).filter(Boolean)
+            : [];
+          const equipmentBn = Array.isArray(raw.equipmentBn)
+            ? raw.equipmentBn.map((x) => str(x)).filter(Boolean)
+            : undefined;
+          return {
+            id: str(raw.id).trim() || `room-${i + 1}`,
+            category: str(raw.category).trim() || "Clinic",
+            categoryBn: ostr(raw.categoryBn),
+            title: str(raw.title),
+            titleBn: ostr(raw.titleBn),
+            description: str(raw.description),
+            descriptionBn: ostr(raw.descriptionBn),
+            image: ostr(raw.image),
+            imageAlt: ostr(raw.imageAlt),
+            equipment,
+            equipmentBn,
+            featured: raw.featured === true,
+          };
+        });
+
   return {
     ...about,
     timeline,
@@ -339,6 +977,14 @@ export function normalizeAboutContent(about: AboutContent): AboutContent {
       about.founderImage === undefined ? defaults.founderImage : str(about.founderImage),
     founderImageAlt:
       about.founderImageAlt === undefined ? defaults.founderImageAlt : str(about.founderImageAlt),
+    founderYears: str(about.founderYears).trim() || defaults.founderYears,
+    founderYearsLabel: str(about.founderYearsLabel) || defaults.founderYearsLabel,
+    founderBio: founderBio(about.founderBio, defaults.founderBio ?? []),
+    founderBioBn: founderBioBn(about.founderBioBn, defaults.founderBioBn),
+    founderEducation,
+    founderCredentials,
+    founderMilestones,
+    clinicRooms,
   };
 }
 

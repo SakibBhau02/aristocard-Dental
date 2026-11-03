@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Sparkles, Wallet } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Phone, Sparkles, Wallet } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
 import { Reveal } from "@/components/site/motion";
 import { HeroBackdrop } from "@/components/site/hero-backdrop";
 import { useRouteHeroSlides } from "@/components/site/content-provider";
+import { Button } from "@/components/ui/button";
 import type { Service, Doctor } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
@@ -30,24 +31,38 @@ export function PageHeader({
   breadcrumb: { label: string; to?: string }[];
 }) {
   const { navigate, segments } = useRouter();
-  /* themed backdrop per route — DB-managed when the admin has uploaded
+  const { lang } = useLang();
+  const bn = lang === "bn";
+  /* themed backdrop per route - DB-managed when the admin has uploaded
      custom slides for this page, otherwise the curated static set */
   const slides = useRouteHeroSlides(segments[0] ?? "");
   return (
-    <section className="relative isolate overflow-hidden bg-brand-navy">
-      <HeroBackdrop slides={slides} overlay="deep" interval={8000} />
-      <div className="relative z-10 mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-16">
+    /* Same hero shell as the home page: full-height, centered copy over
+       the sliding media, and a lighter overlay so the photos/videos stay
+       clearly visible behind the text. */
+    <section
+      className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy"
+      aria-labelledby="page-hero-heading"
+    >
+      <HeroBackdrop
+        slides={slides}
+        overlay="light"
+        interval={8000}
+        indicators
+        priority
+      />
+      <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          <nav aria-label="Breadcrumb" className="mb-6">
-            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">
+          <nav aria-label="Breadcrumb" className="mb-7">
+            <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-100/85">
               {breadcrumb.map((item, i) => (
                 <li key={item.label} className="flex items-center gap-1.5">
                   {i > 0 && (
-                    <ChevronRight className="h-3 w-3 text-blue-300/50" aria-hidden="true" />
+                    <ChevronRight className="h-3 w-3 text-blue-200/50" aria-hidden="true" />
                   )}
                   {item.to ? (
                     <a
@@ -67,24 +82,55 @@ export function PageHeader({
               ))}
             </ol>
           </nav>
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-white/15 backdrop-blur-sm">
+
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20 backdrop-blur-sm">
             <span className="eyebrow-dot h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
             {eyebrow}
           </span>
-          <h1 className="font-heading mx-auto mt-4 max-w-3xl text-3xl font-bold leading-tight text-white text-balance sm:text-4xl lg:text-5xl">
+
+          <h1
+            id="page-hero-heading"
+            className="font-heading mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.08] text-white text-balance [text-shadow:0_2px_24px_rgba(0,16,48,0.55)] sm:text-5xl sm:leading-[1.06] lg:text-[3.75rem]"
+          >
             {title}
           </h1>
+
           {description && (
-            <>
-              <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-blue-100/85 sm:text-lg">
-                {description}
-              </p>
-              <span
-                className="divider-dots mt-5 opacity-70"
-                aria-hidden="true"
-              />
-            </>
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-blue-50/95 [text-shadow:0_1px_16px_rgba(0,16,48,0.6)] sm:text-lg">
+              {description}
+            </p>
           )}
+
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              asChild
+              size="lg"
+              className="btn-press btn-shine group relative overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-9 py-6 text-base font-bold text-brand-navy shadow-xl shadow-amber-500/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/40"
+            >
+              <a
+                href="/appointment"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/appointment");
+                }}
+                className="inline-flex items-center gap-2"
+              >
+                <CalendarCheck className="h-5 w-5" aria-hidden="true" />
+                {bn ? "অ্যাপয়েন্টমেন্ট নিন" : "Book an appointment"}
+              </a>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-full border-white/30 bg-white/10 px-9 py-6 text-base font-bold text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/60 hover:bg-white/20"
+            >
+              <a href="tel:+8801715027522" className="inline-flex items-center gap-2">
+                <Phone className="h-5 w-5" aria-hidden="true" />
+                {bn ? "কল করুন — ০১৭১৫ ০২৭৫২২" : "Call — 01715 027522"}
+              </a>
+            </Button>
+          </div>
         </motion.div>
       </div>
     </section>

@@ -120,6 +120,21 @@ function locationUrl(r: RouteSnapshot): string {
   return q ? `${r.path}?${q}` : r.path;
 }
 
+/* Re-read the real URL and force subscribers to re-read the snapshot.
+   setRoute() early-returns when the path is unchanged, which leaves the
+   store holding the SSR placeholder ("/") on a hard load of a deep link —
+   React then keeps serving the server snapshot and the page never swaps.
+   Assigning a fresh object guarantees the identity check fails and the
+   client router takes over. */
+function syncFromLocation() {
+  const next = routeFromLocation(window.location);
+  currentRoute = {
+    path: next.path,
+    query: new URLSearchParams(next.query.toString()),
+  };
+  routeListeners.forEach((fn) => fn());
+}
+
 /* --- history event handlers (module level) -------------------------- */
 
 function onPopState() {
@@ -215,8 +230,10 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
         locationUrl(routeFromLocation(window.location))
       );
     }
-    /* Catch a URL change that happened during the hydration window. */
-    setRoute(routeFromLocation(window.location));
+    /* Catch a URL change that happened during the hydration window —
+       and always re-apply the real URL, so a deep link never keeps the
+       server's "/" snapshot. */
+    syncFromLocation();
 
     window.addEventListener("popstate", onPopState);
     window.addEventListener("hashchange", onHashChange);
