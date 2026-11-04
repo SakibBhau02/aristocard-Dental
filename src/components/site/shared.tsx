@@ -10,7 +10,6 @@ import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import { useRouteHeroSlides } from "@/components/site/content-provider";
 import { Button } from "@/components/ui/button";
 import type { Service, Doctor } from "@/lib/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
@@ -242,32 +241,42 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative flex h-full flex-col items-center overflow-hidden rounded-3xl border border-blue-100/80 bg-white p-7 text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)]"
     >
       {/* top accent */}
       <span
-        className="absolute inset-x-0 top-0 h-1.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+        className="absolute inset-x-0 top-0 z-10 h-1.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
         style={{ background: `linear-gradient(90deg, ${doctor.accent}, #002060)` }}
         aria-hidden="true"
       />
-      <div className="relative">
-        <Avatar className="h-24 w-24 border-4 border-blue-50 shadow-inner transition-transform duration-500 group-hover:scale-105">
-          {doctor.photo ? (
-            <AvatarImage
-              src={doctor.photo}
-              alt={`${doctor.name} — ${role}`}
-              className="aspect-square size-full object-cover"
-            />
-          ) : undefined}
-          <AvatarFallback
-            className="font-heading text-2xl font-bold"
-            style={{ background: `${doctor.accent}18`, color: doctor.accent }}
+
+      {/* big portrait */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-blue-50">
+        {doctor.photo ? (
+          <Image
+            src={doctor.photo}
+            alt={`${doctor.name} — ${role}`}
+            fill
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 300px"
+            className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: `${doctor.accent}14` }}
           >
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+            <span
+              className="font-heading text-5xl font-bold"
+              style={{ color: doctor.accent }}
+              aria-hidden="true"
+            >
+              {initials}
+            </span>
+          </div>
+        )}
+
         <span
-          className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white ring-4 ring-white"
+          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg ring-4 ring-white/90"
           title="BMDC Verified"
           aria-label="BMDC verified doctor"
         >
@@ -277,46 +286,37 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
         </span>
       </div>
 
-      <h3 className="font-heading mt-5 text-lg font-bold text-brand-navy">
-        {doctor.name}
-      </h3>
-      <p className="mt-1 text-sm font-medium text-brand-blue">{role}</p>
-      <p className="mt-2 flex flex-wrap justify-center gap-1.5">
-        {doctor.credentials.slice(0, 3).map((c) => (
-          <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
-            {c}
-          </Badge>
-        ))}
-      </p>
+      <div className="flex flex-1 flex-col items-center px-5 pb-6 pt-5">
+        <h3 className="font-heading text-lg font-bold leading-snug text-brand-navy">
+          {doctor.name}
+        </h3>
+        <p className="mt-1 text-[13px] font-semibold leading-snug text-brand-blue">{role}</p>
 
-      <div className="mt-4 flex items-center gap-1" aria-label={`Rating ${doctor.rating} out of 5`}>
-        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
-        <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
-        <span className="text-xs text-slate-400">
-          • {toBnDigitsIfBn(lang, doctor.experienceYears)}+ {d.shared.yrs} • {localizedCount(lang, doctor.patientsTreated)}+ {d.shared.patients}
-        </span>
+        <p className="mt-3 flex flex-wrap justify-center gap-1.5">
+          {doctor.credentials.slice(0, 3).map((c) => (
+            <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
+              {c}
+            </Badge>
+          ))}
+        </p>
+
+        <div className="mt-3 flex items-center gap-1" aria-label={`Rating ${doctor.rating} out of 5`}>
+          <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+          <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
+          <span className="text-xs text-slate-400">
+            • {toBnDigitsIfBn(lang, doctor.experienceYears)}+ {d.shared.yrs}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate(`/doctors/${doctor.slug}`)}
+          className="mt-auto inline-flex w-full items-center justify-center gap-1.5 self-stretch rounded-full px-5 py-2.5 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
+        >
+          {d.shared.viewProfile}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
-
-      <button
-        type="button"
-        onClick={() => navigate(`/doctors/${doctor.slug}`)}
-        className="mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
-      >
-        {d.shared.viewProfile}
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {/* hover-reveal quick book */}
-      <button
-        type="button"
-        onClick={() => navigate(`/appointment?doctor=${doctor.slug}`)}
-        className="pointer-events-none mt-2 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-semibold text-white opacity-0 shadow-lg shadow-navy-900/25 transition-all duration-300 hover:bg-brand-blue focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
-        style={{ backgroundColor: "#002060" }}
-      >
-        <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-        {d.shared.ctaBook}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
     </motion.article>
   );
 }
@@ -475,8 +475,4 @@ export function CtaBanner({
 /* helpers for localized numerals */
 function toBnDigitsIfBn(lang: "en" | "bn", v: string | number) {
   return lang === "bn" ? toBnDigits(v) : String(v);
-}
-function localizedCount(lang: "en" | "bn", v: number) {
-  const s = v.toLocaleString("en-US");
-  return lang === "bn" ? toBnDigits(s) : s;
 }

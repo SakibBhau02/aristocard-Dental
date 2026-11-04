@@ -539,7 +539,7 @@ export function HomePage() {
             }
             description={pickBn(home.doctors.description, home.doctors.descriptionBn, bn)}
           />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {doctors.map((doctor, i) => (
               <DoctorCard key={doctor.slug} doctor={doctor} index={i} />
             ))}

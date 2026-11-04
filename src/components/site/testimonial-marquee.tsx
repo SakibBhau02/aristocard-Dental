@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  TestimonialMarquee — two rows of continuously scrolling cards      */
-/*  (top row drifts left, bottom row drifts right; pauses on hover)    */
+/*  (both rows drift left → right; pauses on hover)                    */
 /* ------------------------------------------------------------------ */
 
 function initialsOf(name: string) {
@@ -134,8 +134,8 @@ export function TestimonialMarquee({
   dark?: boolean;
 }) {
   if (testimonials.length === 0) return null;
-  /* split into two rows — even indices top (drift left),
-     odd indices bottom (drift right) */
+  /* split into two rows — both drift left → right now (the direction
+     the owner asked for), staggered durations keep them in sync-ish */
   const rowA = testimonials.filter((_, i) => i % 2 === 0);
   const rowB = testimonials.filter((_, i) => i % 2 === 1);
   /* ensure both rows have content even with 1 testimonial */
@@ -149,7 +149,7 @@ export function TestimonialMarquee({
     >
       <MarqueeRow
         items={rowA}
-        direction="left"
+        direction="right"
         dark={dark}
         duration={48000}
       />
