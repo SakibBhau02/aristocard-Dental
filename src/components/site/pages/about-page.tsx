@@ -183,190 +183,11 @@ export function AboutPage() {
         ]}
       />
 
-      {/* ============ STORY ============ */}
-      <section className="py-16 sm:py-20" aria-labelledby="story-heading">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <Reveal>
-              <div className="relative">
-                <div className="hero-mesh-dark overflow-hidden rounded-[2rem] p-10 shadow-2xl shadow-navy-900/25">
-                  <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/15">
-                    <Award className="h-3.5 w-3.5" aria-hidden="true" />
-                    {pickBn(about.storyBadge, about.storyBadgeBn, bn)}
-                  </span>
-                  <blockquote className="font-heading relative mt-8 text-2xl font-bold leading-snug text-white sm:text-[1.75rem]">
-                    {pickBn(about.storyQuote, about.storyQuoteBn, bn)}
-                  </blockquote>
-                  {storyStats.length > 0 ? (
-                  <div
-                    className="relative mt-10 grid gap-4"
-                    style={{
-                      gridTemplateColumns: `repeat(${Math.min(
-                        Math.max(storyStats.length, 1),
-                        4
-                      )}, minmax(0, 1fr))`,
-                    }}
-                  >
-                    {storyStats.map((stat, i) => (
-                      <div
-                        key={`${stat.label}-${i}`}
-                        className="rounded-2xl bg-white/8 p-4 text-center ring-1 ring-white/12"
-                      >
-                        <span className="font-heading block text-2xl font-bold text-white">
-                          {stat.value}
-                        </span>
-                        <span className="mt-1 block text-[11px] text-blue-200/80">
-                          {stat.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  ) : null}
-                </div>
-                <div className="animate-float-soft absolute -right-3 -top-5 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-6">
-                  <span className="flex items-center gap-2">
-                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" aria-hidden="true" />
-                    <span>
-                      <span className="block font-heading text-sm font-bold text-brand-navy">
-                        {t.ratingChipTitle}
-                      </span>
-                      <span className="block text-[11px] text-slate-500">
-                        {t.ratingChipNote}
-                      </span>
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </Reveal>
-
-            <div>
-              <SectionHeading
-                align="left"
-                eyebrow={t.storyEyebrow}
-                title={t.storyTitle}
-              />
-              <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
-                <Reveal delay={0.05}>
-                  <p>
-                    {t.storyP1a.replace("{site}", settings.name)}
-                    <strong className="text-brand-navy">
-                      {pickBn(about.founderName, about.founderNameBn, bn)}
-                    </strong>
-                    {t.storyP1b}
-                  </p>
-                </Reveal>
-                <Reveal delay={0.1}>
-                  <p>{pickBn(about.storyP2, about.storyP2Bn, bn)}</p>
-                </Reveal>
-                <Reveal delay={0.15}>
-                  <ul className="grid gap-3 pt-2 sm:grid-cols-2">
-                    {t.storyChecklist.map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-start gap-2.5 text-sm font-medium text-slate-700"
-                      >
-                        <CheckCircle2
-                          className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500"
-                          aria-hidden="true"
-                        />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </Reveal>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ MISSION & VISION ============ */}
-      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="mission-heading">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow={pickBn(about.missionEyebrow, about.missionEyebrowBn, bn)}
-            title={pickBn(about.missionTitle, about.missionTitleBn, bn)}
-          />
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
-            <Reveal>
-              <article className="card-shine group h-full rounded-3xl border border-blue-100/80 bg-white p-8 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_50px_-18px_rgba(30,125,255,0.3)] sm:p-10">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-blue text-white shadow-lg shadow-blue-500/30 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                  <Target className="h-7 w-7" aria-hidden="true" />
-                </span>
-                <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
-                  {pickBn(about.missionHeading, about.missionHeadingBn, bn)}
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-slate-600">
-                  {pickBn(about.missionText, about.missionTextBn, bn)}
-                </p>
-              </article>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <article className="card-shine group h-full rounded-3xl border border-blue-100/80 bg-white p-8 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_50px_-18px_rgba(0,32,96,0.3)] sm:p-10">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-navy-900/30 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
-                  <Telescope className="h-7 w-7" aria-hidden="true" />
-                </span>
-                <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
-                  {pickBn(about.visionHeading, about.visionHeadingBn, bn)}
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-slate-600">
-                  {pickBn(about.visionText, about.visionTextBn, bn)}
-                </p>
-              </article>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ TIMELINE ============ */}
-      {about.timeline.length > 0 ? (
-      <section className="relative py-16 sm:py-20" aria-labelledby="timeline-heading">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow={pickBn(about.journeyEyebrow, about.journeyEyebrowBn, bn)}
-            title={pickBn(about.journeyTitle, about.journeyTitleBn, bn)}
-          />
-          <div className="relative mt-14">
-            <span
-              className="absolute left-[27px] top-4 hidden h-[calc(100%-32px)] w-0.5 bg-gradient-to-b from-brand-blue via-brand-blue/40 to-transparent sm:block"
-              aria-hidden="true"
-            />
-            <ol className="space-y-10">
-              {about.timeline.map((item, i) => (
-                <li key={`${item.year}-${i}`}>
-                  <Reveal delay={i * 0.06}>
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                      <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
-                        {bn ? toBnDigits(item.year) : item.year}
-                      </span>
-                      <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
-                        <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
-                          {bn ? toBnDigits(item.year) : item.year}
-                        </span>
-                        <h3 className="font-heading mt-1 flex items-center gap-2 text-lg font-bold text-brand-navy sm:mt-0">
-                          <DynamicIcon
-                            name={item.icon}
-                            className="h-4.5 w-4.5 shrink-0 text-brand-blue"
-                          />
-                          {pickBn(item.title, item.titleBn, bn)}
-                        </h3>
-                        <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
-                          {pickBn(item.description, item.descriptionBn, bn)}
-                        </p>
-                      </div>
-                    </div>
-                  </Reveal>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      </section>
-      ) : null}
-
       {/* ============ FOUNDER SPOTLIGHT ============ */}
-      <section className="relative bg-brand-navy py-16 sm:py-20" aria-labelledby="founder-heading">
+      <section
+        className="relative border-t border-white/10 bg-brand-navy py-16 sm:py-20"
+        aria-labelledby="founder-heading"
+      >
         <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
@@ -729,6 +550,188 @@ export function AboutPage() {
             </div>
           </div>
         </section>
+      ) : null}
+
+      {/* ============ STORY ============ */}
+      <section className="py-16 sm:py-20" aria-labelledby="story-heading">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <Reveal>
+              <div className="relative">
+                <div className="hero-mesh-dark overflow-hidden rounded-[2rem] p-10 shadow-2xl shadow-navy-900/25">
+                  <div className="dot-grid-light pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/15">
+                    <Award className="h-3.5 w-3.5" aria-hidden="true" />
+                    {pickBn(about.storyBadge, about.storyBadgeBn, bn)}
+                  </span>
+                  <blockquote className="font-heading relative mt-8 text-2xl font-bold leading-snug text-white sm:text-[1.75rem]">
+                    {pickBn(about.storyQuote, about.storyQuoteBn, bn)}
+                  </blockquote>
+                  {storyStats.length > 0 ? (
+                  <div
+                    className="relative mt-10 grid gap-4"
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.min(
+                        Math.max(storyStats.length, 1),
+                        4
+                      )}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {storyStats.map((stat, i) => (
+                      <div
+                        key={`${stat.label}-${i}`}
+                        className="rounded-2xl bg-white/8 p-4 text-center ring-1 ring-white/12"
+                      >
+                        <span className="font-heading block text-2xl font-bold text-white">
+                          {stat.value}
+                        </span>
+                        <span className="mt-1 block text-[11px] text-blue-200/80">
+                          {stat.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  ) : null}
+                </div>
+                <div className="animate-float-soft absolute -right-3 -top-5 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-blue-100 sm:-right-6">
+                  <span className="flex items-center gap-2">
+                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                    <span>
+                      <span className="block font-heading text-sm font-bold text-brand-navy">
+                        {t.ratingChipTitle}
+                      </span>
+                      <span className="block text-[11px] text-slate-500">
+                        {t.ratingChipNote}
+                      </span>
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </Reveal>
+
+            <div>
+              <SectionHeading
+                align="left"
+                eyebrow={t.storyEyebrow}
+                title={t.storyTitle}
+              />
+              <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
+                <Reveal delay={0.05}>
+                  <p>
+                    {t.storyP1a.replace("{site}", settings.name)}
+                    <strong className="text-brand-navy">
+                      {pickBn(about.founderName, about.founderNameBn, bn)}
+                    </strong>
+                    {t.storyP1b}
+                  </p>
+                </Reveal>
+                <Reveal delay={0.1}>
+                  <p>{pickBn(about.storyP2, about.storyP2Bn, bn)}</p>
+                </Reveal>
+                <Reveal delay={0.15}>
+                  <ul className="grid gap-3 pt-2 sm:grid-cols-2">
+                    {t.storyChecklist.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-2.5 text-sm font-medium text-slate-700"
+                      >
+                        <CheckCircle2
+                          className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500"
+                          aria-hidden="true"
+                        />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ MISSION & VISION ============ */}
+      <section className="relative bg-ice py-16 sm:py-20" aria-labelledby="mission-heading">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <SectionHeading
+            eyebrow={pickBn(about.missionEyebrow, about.missionEyebrowBn, bn)}
+            title={pickBn(about.missionTitle, about.missionTitleBn, bn)}
+          />
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            <Reveal>
+              <article className="card-shine group h-full rounded-3xl border border-blue-100/80 bg-white p-8 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_50px_-18px_rgba(30,125,255,0.3)] sm:p-10">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-blue text-white shadow-lg shadow-blue-500/30 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                  <Target className="h-7 w-7" aria-hidden="true" />
+                </span>
+                <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
+                  {pickBn(about.missionHeading, about.missionHeadingBn, bn)}
+                </h3>
+                <p className="mt-4 text-base leading-relaxed text-slate-600">
+                  {pickBn(about.missionText, about.missionTextBn, bn)}
+                </p>
+              </article>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <article className="card-shine group h-full rounded-3xl border border-blue-100/80 bg-white p-8 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_50px_-18px_rgba(0,32,96,0.3)] sm:p-10">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-navy-900/30 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
+                  <Telescope className="h-7 w-7" aria-hidden="true" />
+                </span>
+                <h3 className="font-heading mt-6 text-2xl font-bold text-brand-navy">
+                  {pickBn(about.visionHeading, about.visionHeadingBn, bn)}
+                </h3>
+                <p className="mt-4 text-base leading-relaxed text-slate-600">
+                  {pickBn(about.visionText, about.visionTextBn, bn)}
+                </p>
+              </article>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ TIMELINE ============ */}
+      {about.timeline.length > 0 ? (
+      <section className="relative py-16 sm:py-20" aria-labelledby="timeline-heading">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <SectionHeading
+            eyebrow={pickBn(about.journeyEyebrow, about.journeyEyebrowBn, bn)}
+            title={pickBn(about.journeyTitle, about.journeyTitleBn, bn)}
+          />
+          <div className="relative mt-14">
+            <span
+              className="absolute left-[27px] top-4 hidden h-[calc(100%-32px)] w-0.5 bg-gradient-to-b from-brand-blue via-brand-blue/40 to-transparent sm:block"
+              aria-hidden="true"
+            />
+            <ol className="space-y-10">
+              {about.timeline.map((item, i) => (
+                <li key={`${item.year}-${i}`}>
+                  <Reveal delay={i * 0.06}>
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                      <span className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-navy font-heading text-sm font-bold text-white shadow-lg shadow-navy-900/30 ring-4 ring-white sm:flex">
+                        {bn ? toBnDigits(item.year) : item.year}
+                      </span>
+                      <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-[0_10px_35px_-18px_rgba(0,32,96,0.18)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_45px_-18px_rgba(30,125,255,0.35)] sm:ml-4 sm:flex-1 sm:p-7">
+                        <span className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-brand-blue sm:hidden">
+                          {bn ? toBnDigits(item.year) : item.year}
+                        </span>
+                        <h3 className="font-heading mt-1 flex items-center gap-2 text-lg font-bold text-brand-navy sm:mt-0">
+                          <DynamicIcon
+                            name={item.icon}
+                            className="h-4.5 w-4.5 shrink-0 text-brand-blue"
+                          />
+                          {pickBn(item.title, item.titleBn, bn)}
+                        </h3>
+                        <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+                          {pickBn(item.description, item.descriptionBn, bn)}
+                        </p>
+                      </div>
+                    </div>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
       ) : null}
 
       {/* ============ CLINIC TOUR (photos only) ============ */}
