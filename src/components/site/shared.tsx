@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarCheck, ChevronRight, Clock3, Phone, Sparkles, Wallet } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import { useRouter } from "@/lib/router";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { DynamicIcon, categoryColors } from "@/components/site/icon-map";
@@ -241,24 +242,18 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-blue-100/80 bg-white text-center shadow-[0_10px_30px_-14px_rgba(0,32,96,0.16)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_-16px_rgba(0,32,96,0.28)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-blue-100/70 bg-white shadow-[0_6px_24px_-16px_rgba(0,32,96,0.25)] transition-all duration-500 hover:-translate-y-1 hover:border-brand-blue/25 hover:shadow-[0_18px_40px_-22px_rgba(0,32,96,0.35)]"
     >
-      {/* top accent */}
-      <span
-        className="absolute inset-x-0 top-0 z-10 h-1.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, ${doctor.accent}, #002060)` }}
-        aria-hidden="true"
-      />
-
-      {/* big portrait */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-blue-50">
+      {/* portrait — square on phones, 4:5 from tablet up, so the card
+          never eats a whole screen on a small device */}
+      <div className="relative aspect-square w-full overflow-hidden bg-blue-50 sm:aspect-[4/5]">
         {doctor.photo ? (
           <Image
             src={doctor.photo}
             alt={`${doctor.name} — ${role}`}
             fill
-            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 300px"
-            className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 330px"
+            className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
           />
         ) : (
           <div
@@ -266,7 +261,7 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
             style={{ background: `${doctor.accent}14` }}
           >
             <span
-              className="font-heading text-5xl font-bold"
+              className="font-heading text-4xl font-bold"
               style={{ color: doctor.accent }}
               aria-hidden="true"
             >
@@ -274,48 +269,46 @@ export function DoctorCard({ doctor, index = 0 }: { doctor: Doctor; index?: numb
             </span>
           </div>
         )}
-
-        <span
-          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg ring-4 ring-white/90"
-          title="BMDC Verified"
-          aria-label="BMDC verified doctor"
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-          </svg>
-        </span>
       </div>
 
-      <div className="flex flex-1 flex-col items-center px-5 pb-6 pt-5">
-        <h3 className="font-heading text-lg font-bold leading-snug text-brand-navy">
-          {doctor.name}
-        </h3>
-        <p className="mt-1 text-[13px] font-semibold leading-snug text-brand-blue">{role}</p>
-
-        <p className="mt-3 flex flex-wrap justify-center gap-1.5">
-          {doctor.credentials.slice(0, 3).map((c) => (
-            <Badge key={c} variant="secondary" className="bg-blue-50 text-[10px] font-medium text-brand-navy">
-              {c}
-            </Badge>
-          ))}
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+        <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600">
+          <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+          BMDC verified
         </p>
 
-        <div className="mt-3 flex items-center gap-1" aria-label={`Rating ${doctor.rating} out of 5`}>
-          <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
-          <span className="text-sm font-semibold text-brand-navy">{doctor.rating}</span>
-          <span className="text-xs text-slate-400">
-            • {toBnDigitsIfBn(lang, doctor.experienceYears)}+ {d.shared.yrs}
-          </span>
-        </div>
+        <h3 className="font-heading mt-1.5 text-[17px] font-bold leading-snug text-brand-navy">
+          {doctor.name}
+        </h3>
+        <p className="mt-0.5 text-[12.5px] leading-snug text-slate-500">{role}</p>
 
-        <button
-          type="button"
-          onClick={() => navigate(`/doctors/${doctor.slug}`)}
-          className="mt-auto inline-flex w-full items-center justify-center gap-1.5 self-stretch rounded-full px-5 py-2.5 text-sm font-semibold text-brand-blue ring-1 ring-blue-100 transition-all duration-300 hover:bg-brand-blue hover:text-white hover:ring-brand-blue"
-        >
-          {d.shared.viewProfile}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
+        {doctor.credentials.length > 0 ? (
+          <p className="mt-2.5 line-clamp-2 text-[11px] leading-relaxed text-slate-400">
+            {doctor.credentials.slice(0, 3).join(" · ")}
+          </p>
+        ) : null}
+
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-blue-50 pt-3.5">
+          <span
+            className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-brand-navy"
+            aria-label={`Rating ${doctor.rating} out of 5`}
+          >
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+            {doctor.rating}
+            <span className="font-normal text-slate-400">
+              · {toBnDigitsIfBn(lang, doctor.experienceYears)}+ {d.shared.yrs}
+            </span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => navigate(`/doctors/${doctor.slug}`)}
+            className="inline-flex items-center gap-1 text-[12px] font-bold text-brand-blue transition-all duration-300 hover:gap-2 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2"
+          >
+            {d.shared.viewProfile}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </motion.article>
   );
