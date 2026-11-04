@@ -53,7 +53,12 @@ export function FounderSpotlight({
   const { lang } = useLang();
   const bn = lang === "bn";
 
-  const slides = content.slides ?? [];
+  const allSlides = content.slides ?? [];
+  /* Only slides with a real photograph are part of the rotation — an
+     empty slot in the CMS should never surface a "photo coming soon"
+     frame in the middle of her gallery. */
+  const photoSlides = allSlides.filter((s) => Boolean(s.image?.trim()));
+  const slides = photoSlides.length > 0 ? photoSlides : allSlides;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -96,7 +101,7 @@ export function FounderSpotlight({
       exit={{ opacity: 0, y: floating ? -12 : -6, scale: 0.97 }}
       transition={{ duration: 0.35, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "rounded-2xl border border-blue-100/80 bg-white/95 shadow-[0_18px_40px_-24px_rgba(0,32,96,0.5)] backdrop-blur",
+        "rounded-2xl border border-white/70 bg-white/85 shadow-[0_18px_40px_-24px_rgba(0,32,96,0.5)] backdrop-blur-xl",
         floating ? "w-[13.5rem] px-4 py-3" : "px-4 py-3"
       )}
     >
@@ -119,7 +124,7 @@ export function FounderSpotlight({
         onFocusCapture={() => setPaused(true)}
         onBlurCapture={() => setPaused(false)}
       >
-        <div className="relative mx-auto max-w-[26rem]">
+        <div className="relative mx-auto max-w-[24rem] sm:max-w-[26rem]">
           {/* decorative halo */}
           <span
             className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-brand-blue/12 via-transparent to-amber-200/20 blur-2xl"
@@ -127,7 +132,7 @@ export function FounderSpotlight({
           />
 
           <div
-            className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-ice shadow-[0_30px_70px_-40px_rgba(0,32,96,0.6)]"
+            className="relative aspect-square overflow-hidden rounded-[2rem] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-ice shadow-[0_30px_70px_-40px_rgba(0,32,96,0.6)]"
             tabIndex={0}
             role="group"
             aria-roledescription="carousel"
@@ -188,9 +193,10 @@ export function FounderSpotlight({
               </motion.div>
             </AnimatePresence>
 
-            {/* caption + counter */}
+            {/* caption — a light glass panel instead of a heavy scrim, so
+                the photograph stays visible behind the text */}
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy/90 via-brand-navy/35 to-transparent p-5 pt-16"
+              className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/25 bg-brand-navy/45 px-4 py-3 shadow-[0_16px_36px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl backdrop-saturate-150"
               aria-live="polite"
             >
               <AnimatePresence mode="wait">
@@ -200,12 +206,12 @@ export function FounderSpotlight({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3 }}
-                  className="font-heading text-[15px] font-bold text-white drop-shadow-sm"
+                  className="font-heading text-[14px] font-bold leading-snug text-white drop-shadow-sm"
                 >
                   {caption}
                 </motion.p>
               </AnimatePresence>
-              <p className="mt-1 text-[11px] font-medium text-blue-100/80">
+              <p className="mt-0.5 text-[10.5px] font-medium text-blue-50/80">
                 {bn
                   ? `${toBnDigits(index + 1)} / ${toBnDigits(total)}`
                   : `${index + 1} / ${total}`}
@@ -235,7 +241,7 @@ export function FounderSpotlight({
             ) : null}
           </div>
 
-          {/* dots + play/pause */}
+          {/* square thumbnails — act as both the indicator and the picker */}
           {total > 1 ? (
             <div className="mt-4 flex items-center justify-center gap-2">
               {slides.map((item, i) => (
@@ -248,18 +254,30 @@ export function FounderSpotlight({
                   }
                   aria-current={i === index}
                   className={cn(
-                    "h-1.5 rounded-full transition-all duration-300",
+                    "relative h-12 w-12 shrink-0 overflow-hidden rounded-xl ring-2 transition-all duration-300",
                     i === index
-                      ? "w-7 bg-brand-blue"
-                      : "w-1.5 bg-brand-navy/20 hover:bg-brand-navy/40"
+                      ? "ring-brand-blue shadow-md shadow-blue-500/25"
+                      : "ring-transparent opacity-65 hover:opacity-100"
                   )}
-                />
+                >
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt=""
+                      fill
+                      sizes="48px"
+                      className="object-cover object-top"
+                    />
+                  ) : (
+                    <span className="block h-full w-full bg-blue-100" />
+                  )}
+                </button>
               ))}
               <button
                 type="button"
                 onClick={() => setPaused((p) => !p)}
                 aria-label={paused ? (bn ? "স্লাইড চালু করুন" : "Play slideshow") : bn ? "স্লাইড থামান" : "Pause slideshow"}
-                className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-brand-navy/50 transition hover:bg-blue-50 hover:text-brand-blue"
+                className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-brand-navy/50 transition hover:bg-blue-50 hover:text-brand-blue"
               >
                 {paused ? (
                   <Play className="h-3 w-3" aria-hidden="true" />
@@ -283,7 +301,9 @@ export function FounderSpotlight({
                 {cards[1] ? infoCard(cards[1], 1, true) : null}
               </AnimatePresence>
             </div>
-            <div className="absolute -bottom-6 left-6">
+            {/* anchored off the container bottom, which includes the
+                thumbnail rail — kept high enough to clear the caption */}
+            <div className="absolute -left-12 bottom-40">
               <AnimatePresence mode="popLayout">
                 {cards[2] ? infoCard(cards[2], 2, true) : null}
               </AnimatePresence>

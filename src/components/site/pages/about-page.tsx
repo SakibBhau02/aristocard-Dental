@@ -192,7 +192,7 @@ export function AboutPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <Reveal>
-              <div className="relative mx-auto max-w-sm">
+              <div className="relative mx-auto max-w-sm sm:max-w-md lg:max-w-lg">
                 <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-blue/30 to-transparent p-1.5">
                   {about.founderImage ? (
                     /* Founder portrait — uploaded from the admin panel
@@ -206,32 +206,34 @@ export function AboutPage() {
                           pickBn(about.founderName, about.founderNameBn, bn)
                         }
                         fill
-                        sizes="(min-width: 1024px) 384px, (min-width: 640px) 60vw, 90vw"
+                        sizes="(min-width: 1024px) 512px, (min-width: 640px) 70vw, 92vw"
                         className="object-cover object-top"
                       />
+                      {/* Barely-there scrim: just enough to seat the glass
+                          card without hiding her portrait. */}
                       <div
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-navy/95 via-brand-navy/35 to-transparent"
+                        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-brand-navy/45 to-transparent"
                         aria-hidden="true"
                       />
-                      <figcaption className="absolute inset-x-0 bottom-0 p-6 pt-14 text-center">
-                        <h3 className="font-heading text-2xl font-bold text-white drop-shadow-sm">
+                      <figcaption className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/25 bg-brand-navy/45 px-5 py-4 text-center shadow-[0_18px_40px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl backdrop-saturate-150">
+                        <h3 className="font-heading text-xl font-bold text-white drop-shadow-sm sm:text-2xl">
                           {pickBn(about.founderName, about.founderNameBn, bn)}
                         </h3>
-                        <p className="mt-1 text-sm font-medium text-blue-200">
+                        <p className="mt-0.5 text-[13px] font-medium text-blue-50/90">
                           {pickBn(about.founderRole, about.founderRoleBn, bn)}
                         </p>
                         <div
-                          className="mt-4 flex items-center justify-center gap-2"
+                          className="mt-3 flex items-center justify-center gap-1.5"
                           aria-label="Rating 4.9"
                         >
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star
                               key={i}
-                              className="h-4 w-4 fill-amber-400 text-amber-400"
+                              className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
                               aria-hidden="true"
                             />
                           ))}
-                          <span className="text-sm font-semibold text-white">
+                          <span className="ml-1 text-[13px] font-semibold text-white">
                             {bn ? "৪.৯" : "4.9"}
                           </span>
                         </div>
@@ -261,7 +263,7 @@ export function AboutPage() {
                   </div>
                   )}
                 </div>
-                <div className="animate-float-soft absolute -bottom-5 -right-3 rounded-2xl bg-white p-4 shadow-xl sm:-right-8">
+                <div className="animate-float-soft absolute -right-3 -top-5 hidden rounded-2xl bg-white p-4 shadow-xl sm:block sm:-right-6">
                   <span className="flex items-center gap-3">
                     <Stethoscope className="h-6 w-6 text-brand-blue" aria-hidden="true" />
                     <span>
