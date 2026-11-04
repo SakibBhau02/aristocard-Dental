@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
-import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
-import { pickBn, testimonials } from "@/lib/content/shared";
+import { useBundle, useRouteHeroSlides, useTestimonials } from "@/components/site/content-provider";
+import { pickBn } from "@/lib/content/shared";
 import { goToSection } from "@/lib/anchor";
 import { CtaBanner } from "@/components/site/shared";
 import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
@@ -51,6 +51,7 @@ export function FounderProfilePage({ slug }: { slug: string }) {
   const { lang } = useLang();
   const bn = lang === "bn";
   const { about, doctors, services, settings } = useBundle();
+  const testimonials = useTestimonials();
   const heroSlides = useRouteHeroSlides("doctors");
 
   const doctor = doctors.find((d) => d.slug === slug);

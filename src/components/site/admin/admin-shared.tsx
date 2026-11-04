@@ -168,6 +168,7 @@ export type ReviewRow = {
   phone: string | null;
   rating: number;
   serviceSlug: string | null;
+  treatment: string | null;
   title: string | null;
   message: string;
   approved: boolean;

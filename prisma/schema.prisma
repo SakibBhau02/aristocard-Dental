@@ -56,11 +56,13 @@ model Review {
   name        String
   phone       String? // optional, for verification
   rating      Int // 1-5
-  serviceSlug String? // optional treatment
+  serviceSlug String? // optional link to a service page
+  treatment   String? // free-text treatment the patient had ("Smile Makeover")
   title       String?
   message     String
   approved    Boolean  @default(false) // moderation: only approved shown publicly
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 /* Registered patient accounts — powers the Patient Portal (#/portal).

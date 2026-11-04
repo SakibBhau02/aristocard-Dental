@@ -13,8 +13,44 @@ import { reviewsToCsv } from "@/lib/admin-csv";
 /*        (issued by POST /api/admin/login)                             */
 /* ------------------------------------------------------------------ */
 
-const VALID_ACTIONS = ["approve", "reject", "delete"] as const;
+const VALID_ACTIONS = ["create", "update", "approve", "reject", "delete"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
+
+type ReviewFields = {
+  name: string;
+  rating: number;
+  treatment: string | null;
+  title: string | null;
+  message: string;
+  approved: boolean;
+};
+
+/* Shared validation for create/update — the admin panel and the API
+   must agree on what a valid review looks like. */
+function parseFields(body: Record<string, unknown>): ReviewFields | string {
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  const treatment = typeof body.treatment === "string" ? body.treatment.trim() : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const rating = typeof body.rating === "number" ? body.rating : NaN;
+
+  if (name.length < 2 || name.length > 60) return "Patient name must be 2–60 characters.";
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5)
+    return "Rating must be a whole number from 1 to 5.";
+  if (message.length < 10 || message.length > 600)
+    return "Review text must be 10–600 characters.";
+  if (treatment.length > 60) return "Treatment label must be 60 characters or fewer.";
+  if (title.length > 80) return "Review title must be 80 characters or fewer.";
+
+  return {
+    name,
+    rating,
+    message,
+    treatment: treatment || null,
+    title: title || null,
+    approved: body.approved !== false,
+  };
+}
 
 async function isAuthorized(req: NextRequest): Promise<NextResponse | null> {
   /* Central RBAC gate (src/lib/admin-auth.ts) — session roles or passcode. */
@@ -87,15 +123,46 @@ export async function POST(req: NextRequest) {
     }
     const { id, action } = body ?? {};
 
-    if (!id || typeof id !== "string" || id.length > 40) {
-      return NextResponse.json(
-        { error: "A valid review id is required." },
-        { status: 400 }
-      );
-    }
     if (!action || !VALID_ACTIONS.includes(action)) {
       return NextResponse.json(
         { error: `Action must be one of: ${VALID_ACTIONS.join(", ")}.` },
+        { status: 400 }
+      );
+    }
+
+    /* ---- create / update: the owner writes the review by hand ---- */
+    if (action === "create" || action === "update") {
+      const fields = parseFields(body as Record<string, unknown>);
+      if (typeof fields === "string") {
+        return NextResponse.json({ error: fields }, { status: 400 });
+      }
+      if (action === "create") {
+        const created = await db.review.create({ data: fields });
+        return NextResponse.json({
+          success: true,
+          review: created,
+          message: "Review added.",
+        });
+      }
+      if (!id || typeof id !== "string" || id.length > 40) {
+        return NextResponse.json({ error: "A valid review id is required." }, { status: 400 });
+      }
+      const exists = await db.review.findFirst({ where: { id } });
+      if (!exists) {
+        return NextResponse.json({ error: "No review found with that id." }, { status: 404 });
+      }
+      const updated = await db.review.update({ where: { id }, data: fields });
+      return NextResponse.json({
+        success: true,
+        review: updated,
+        message: "Review updated.",
+      });
+    }
+
+    /* ---- moderation actions need an existing row ---- */
+    if (!id || typeof id !== "string" || id.length > 40) {
+      return NextResponse.json(
+        { error: "A valid review id is required." },
         { status: 400 }
       );
     }

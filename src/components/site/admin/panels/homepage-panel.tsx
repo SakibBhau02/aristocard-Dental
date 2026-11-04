@@ -1401,11 +1401,11 @@ export function HomepagePanel({ onSessionExpired }: PanelProps) {
         />
       </FormSection>
 
-      {/* ============ TESTIMONIALS SECTION ============ */}
+      {/* ============ PATIENT REVIEWS SECTION ============ */}
       <FormSection
         icon={Star}
-        title="Testimonials Section"
-        description="Heading above the review marquee"
+        title="Patient Reviews Section"
+        description="Heading above the review grid — the reviews themselves are written in Admin → Reviews"
         edited={groupDirty((h) => h.testimonials)}
       >
         <SectionHeadFields

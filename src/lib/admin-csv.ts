@@ -172,6 +172,7 @@ export type CsvReviewRow = {
   phone: string | null;
   rating: number;
   serviceSlug: string | null;
+  treatment: string | null;
   title: string | null;
   message: string;
   approved: boolean;
@@ -183,6 +184,7 @@ const REVIEW_CSV_COLUMNS = [
   "Name",
   "Phone",
   "Rating",
+  "Treatment",
   "Service",
   "Title",
   "Message",
@@ -202,6 +204,7 @@ export function reviewsToCsv(rows: CsvReviewRow[]): string {
         csvCell(r.name),
         csvCell(r.phone),
         csvCell(r.rating),
+        csvCell(r.treatment),
         csvCell(r.serviceSlug ? serviceNames.get(r.serviceSlug) ?? r.serviceSlug : ""),
         csvCell(r.title),
         csvCell(r.message),

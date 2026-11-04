@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import { useRouter, usePageMeta } from "@/lib/router";
 import { useLang, toBnDigits, localizedNumber } from "@/lib/i18n";
-import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
-import { pickBn, testimonials } from "@/lib/content/shared";
+import { useBundle, useRouteHeroSlides, useTestimonials } from "@/components/site/content-provider";
+import { pickBn } from "@/lib/content/shared";
 import type { Doctor, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader, CtaBanner } from "@/components/site/shared";
@@ -902,6 +902,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
   const t = d.doctorDetail;
   const tp = d.doctorsPage;
   const { doctors, services, settings } = useBundle();
+  const testimonials = useTestimonials();
   const heroSlides = useRouteHeroSlides("doctors");
   const doctor = doctors.find((doc) => doc.slug === slug);
 
@@ -967,11 +968,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
     .slice(0, 2)
     .join("");
   const others = doctors.filter((doc) => doc.slug !== doctor.slug);
-  const docTestimonials = testimonials.filter((tm) =>
-    doctor.name.toLowerCase().includes("shazia")
-      ? tm.name !== "সাদিয়া আক্তার"
-      : true
-  ).slice(0, 3);
+  const docTestimonials = testimonials.slice(0, 3);
 
   const role = bn && doctor.roleBn ? doctor.roleBn : doctor.role;
   const department = bn && doctor.departmentBn ? doctor.departmentBn : doctor.department;

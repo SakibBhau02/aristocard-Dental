@@ -1039,9 +1039,26 @@ export type ContentBundle = {
      (about / services / doctors / blog / contact / gallery / faqs /
      appointment). Empty record → pages use their curated static sets. */
   pageHeroSlides: Record<string, HeroSlide[]>;
+  /* Approved patient reviews — the single source behind every review /
+     story block on the site (home, about, founder, doctor pages). */
+  reviews: PublicReview[];
   home: HomeContent;
   about: AboutContent;
   settings: SiteSettings;
+};
+
+/* One approved review, shaped for the public site. `treatment` is the
+   free-text treatment the patient received ("Smile Makeover",
+   "Root Canal Treatment"); `serviceSlug` optionally links to a service. */
+export type PublicReview = {
+  id: string;
+  name: string;
+  rating: number;
+  treatment: string | null;
+  serviceSlug: string | null;
+  title: string | null;
+  message: string;
+  createdAt: string;
 };
 
 export function staticBundle(): ContentBundle {
@@ -1058,6 +1075,16 @@ export function staticBundle(): ContentBundle {
     services: staticServices,
     heroSlides: buildHeroSlides(homeHeroImages, videos),
     pageHeroSlides: {},
+    reviews: staticTestimonials.map((t, i) => ({
+      id: `static-${i}`,
+      name: t.name,
+      rating: t.rating,
+      treatment: t.treatment ?? null,
+      serviceSlug: null,
+      title: null,
+      message: t.text,
+      createdAt: new Date(2025, 0, 1).toISOString(),
+    })),
     home: defaultHomeContent(),
     about: defaultAboutContent(),
     settings,

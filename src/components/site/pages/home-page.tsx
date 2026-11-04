@@ -31,7 +31,7 @@ import { useRouter, usePageMeta } from "@/lib/router";
 import { goToSection } from "@/lib/anchor";
 import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
-import { featuredServices, pickBn, testimonials } from "@/lib/content/shared";
+import { featuredServices, pickBn } from "@/lib/content/shared";
 import { DynamicIcon } from "@/components/site/icon-map";
 import { ClinicGallery, hasClinicPhotos } from "@/components/site/clinic-gallery";
 import {
@@ -43,7 +43,6 @@ import {
 } from "@/components/site/motion";
 import { ServiceCard, DoctorCard, CtaBanner, QuizTeaser } from "@/components/site/shared";
 import { FounderSpotlight } from "@/components/site/founder-spotlight";
-import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
 import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
@@ -507,27 +506,23 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ============ TESTIMONIALS ============ */}
-      <section className="section-wash relative py-20 sm:py-24" aria-labelledby="testimonials-heading">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow={pickBn(home.testimonials.eyebrow, home.testimonials.eyebrowBn, bn)}
-            title={
-              <>
-                {pickBn(home.testimonials.titleA, home.testimonials.titleABn, bn)}
-                <span className="gradient-text">{pickBn(home.testimonials.titleB, home.testimonials.titleBBn, bn)}</span>
-              </>
-            }
-            description={pickBn(home.testimonials.description, home.testimonials.descriptionBn, bn)}
-          />
-          <Reveal className="mt-12">
-            <TestimonialMarquee testimonials={testimonials} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ============ PATIENT REVIEWS (live, moderated) ============ */}
-      <PatientReviews />
+      {/* ============ PATIENT REVIEWS (reviews = patient stories) ============ */}
+      <PatientReviews
+        eyebrow={pickBn(home.testimonials.eyebrow, home.testimonials.eyebrowBn, bn)}
+        title={
+          <>
+            {pickBn(home.testimonials.titleA, home.testimonials.titleABn, bn)}
+            <span className="gradient-text">
+              {pickBn(home.testimonials.titleB, home.testimonials.titleBBn, bn)}
+            </span>
+          </>
+        }
+        description={pickBn(
+          home.testimonials.description,
+          home.testimonials.descriptionBn,
+          bn
+        )}
+      />
 
       {/* ============ DOCTORS PREVIEW ============ */}
       <section className="relative bg-brand-navy py-20 sm:py-24" aria-labelledby="doctors-heading">

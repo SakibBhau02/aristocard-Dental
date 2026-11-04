@@ -10,10 +10,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  staticBundle,
-  type ContentBundle,
-} from "@/lib/content/shared";
+import { staticBundle, type ContentBundle } from "@/lib/content/shared";
+import type { Testimonial } from "@/lib/types";
 import { slidesForRoute, type HeroSlide } from "@/lib/data/hero-media";
 
 /* ------------------------------------------------------------------ */
@@ -125,4 +123,27 @@ export function useRouteHeroSlides(segment: string): HeroSlide[] {
   const managed = pageHeroSlides?.[segment];
   if (managed && managed.length > 0) return managed;
   return slidesForRoute(segment);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reviews → testimonials                                             */
+/*                                                                     */
+/*  Reviews and patient "stories" are one thing now. This maps the      */
+/*  approved reviews from the content bundle onto the testimonial       */
+/*  shape used by the marquee/doctor-page components, so every block    */
+/*  on the site shows the same, admin-managed list.                    */
+/* ------------------------------------------------------------------ */
+
+export function useTestimonials(): Testimonial[] {
+  const { reviews } = useBundle();
+  return useMemo(
+    () =>
+      reviews.map((r) => ({
+        name: r.name,
+        rating: r.rating,
+        text: r.message,
+        treatment: r.treatment ?? undefined,
+      })),
+    [reviews]
+  );
 }

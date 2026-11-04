@@ -68,6 +68,7 @@ async function contentVersion(): Promise<number> {
         (SELECT MAX("updatedAt") FROM "public"."SmileCase"),
         (SELECT MAX("updatedAt") FROM "public"."ServiceContent"),
         (SELECT MAX("updatedAt") FROM "public"."HeroSlide"),
+        (SELECT MAX("updatedAt") FROM "public"."Review"),
         (SELECT MAX("updatedAt") FROM "public"."PageBlock")
       ) AS "v"
     `;
@@ -83,6 +84,7 @@ async function contentVersion(): Promise<number> {
     db.smileCase.aggregate({ _max: { updatedAt: true } }),
     db.serviceContent.aggregate({ _max: { updatedAt: true } }),
     db.heroSlide.aggregate({ _max: { updatedAt: true } }),
+    db.review.aggregate({ _max: { updatedAt: true } }),
     db.pageBlock.aggregate({ _max: { updatedAt: true } }),
   ]);
   let max = 0;
@@ -107,7 +109,7 @@ export async function getContentBundle(): Promise<ContentBundle> {
 
   let bundle: ContentBundle;
   try {
-    const [doctorRows, postRows, faqRows, caseRows, serviceRows, heroRows, pageRows] =
+    const [doctorRows, postRows, faqRows, caseRows, serviceRows, heroRows, reviewRows, pageRows] =
       await Promise.all([
         db.doctor.findMany({ where: { active: true }, orderBy: [{ sort: "asc" }, { createdAt: "asc" }] }),
         db.blogPost.findMany({ where: { status: "PUBLISHED" }, orderBy: { date: "desc" } }),
@@ -115,6 +117,13 @@ export async function getContentBundle(): Promise<ContentBundle> {
         db.smileCase.findMany({ orderBy: [{ sort: "asc" }, { updatedAt: "asc" }] }),
         db.serviceContent.findMany(),
         db.heroSlide.findMany({ orderBy: [{ scope: "asc" }, { sort: "asc" }, { updatedAt: "asc" }] }),
+        /* Approved patient reviews — shown on the home page and every
+           other review/story block. */
+        db.review.findMany({
+          where: { approved: true },
+          orderBy: { createdAt: "desc" },
+          take: 60,
+        }),
         db.pageBlock.findMany(),
       ]);
 
@@ -184,6 +193,18 @@ export async function getContentBundle(): Promise<ContentBundle> {
           )
         : fallback.heroSlides,
       pageHeroSlides,
+      reviews: reviewRows.length
+        ? reviewRows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            rating: r.rating,
+            treatment: r.treatment ?? null,
+            serviceSlug: r.serviceSlug ?? null,
+            title: r.title ?? null,
+            message: r.message,
+            createdAt: r.createdAt.toISOString(),
+          }))
+        : fallback.reviews,
       home,
       about,
       settings,

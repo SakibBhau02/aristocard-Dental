@@ -150,8 +150,9 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
       {
         id: "reviews",
         label: "Reviews",
-        title: "Review Moderation",
-        description: "Approve, reject or delete patient reviews before they appear on the site.",
+        title: "Patient Reviews",
+        description:
+          "Write, edit and publish the patient reviews that appear on the website — treatment included.",
         icon: Star,
         badge: "reviews",
       },

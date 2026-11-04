@@ -19,8 +19,8 @@ import {
 import { useRouter, usePageMeta } from "@/lib/router";
 import { scrollToId } from "@/lib/anchor";
 import { useLang, toBnDigits } from "@/lib/i18n";
-import { useBundle } from "@/components/site/content-provider";
-import { pickBn, testimonials } from "@/lib/content/shared";
+import { useBundle, useTestimonials } from "@/components/site/content-provider";
+import { pickBn } from "@/lib/content/shared";
 import { PageHeader, CtaBanner, DoctorCard } from "@/components/site/shared";
 import { ClinicGallery, hasClinicPhotos } from "@/components/site/clinic-gallery";
 import {
@@ -53,6 +53,7 @@ export function AboutPage() {
   const { navigate } = useRouter();
   const { lang, d } = useLang();
   const { home, about, settings, doctors } = useBundle();
+  const testimonials = useTestimonials();
   const bn = lang === "bn";
   const t = d.about;
 

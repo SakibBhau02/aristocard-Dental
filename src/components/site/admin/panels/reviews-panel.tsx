@@ -1,23 +1,24 @@
 "use client";
 
 /* ------------------------------------------------------------------ */
-/*  Reviews panel — patient review moderation                           */
-/*  Extracted verbatim from the former monolithic admin page; the      */
-/*  shell owns the module header + logout (refresh lives in the        */
-/*  PanelToolbar below).                                               */
+/*  Reviews panel — the single place patient reviews are written       */
+/*                                                                     */
+/*  Reviews ARE the patient stories: one approved row per patient,     */
+/*  carrying the treatment they received. Visitors cannot submit       */
+/*  anything; the owner adds / edits here and it goes live at once.    */
 /* ------------------------------------------------------------------ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
-  CalendarClock,
   CheckCircle2,
   Clock,
   Download,
   Inbox,
   Loader2,
   MessageSquareQuote,
+  Plus,
   Search,
   Sparkles,
   Star,
@@ -25,6 +26,18 @@ import {
 import { services } from "@/lib/data/services";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   type ReviewFilter,
   type ReviewRow,
@@ -32,7 +45,32 @@ import {
   PanelToolbar,
   SmallAction,
   StarsRow,
+  useAdminToast,
 } from "../admin-shared";
+
+/* Treatment suggestions for the editor — the clinic's own service names.
+   The field stays free text so older / one-off labels still work. */
+const TREATMENTS = services.map((s) => s.shortName);
+
+type Draft = {
+  id: string | null;
+  name: string;
+  rating: number;
+  treatment: string;
+  title: string;
+  message: string;
+  approved: boolean;
+};
+
+const EMPTY_DRAFT: Draft = {
+  id: null,
+  name: "",
+  rating: 5,
+  treatment: "",
+  title: "",
+  message: "",
+  approved: true,
+};
 
 export function ReviewsPanel({
   onSessionExpired,
@@ -50,7 +88,11 @@ export function ReviewsPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const loadIdRef = useRef(0);
+  const { ok, fail } = useAdminToast();
 
   const load = useCallback(async () => {
     const requestId = ++loadIdRef.current;
@@ -144,11 +186,72 @@ export function ReviewsPanel({
     }
   }
 
-  const serviceMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    services.forEach((s) => (m[s.slug] = s.shortName));
-    return m;
-  }, []);
+  /* --- create / edit --- */
+  function openNew() {
+    setFormError(null);
+    setDraft({ ...EMPTY_DRAFT });
+  }
+
+  function openEdit(r: ReviewRow) {
+    setFormError(null);
+    setDraft({
+      id: r.id,
+      name: r.name,
+      rating: r.rating,
+      treatment: r.treatment ?? "",
+      title: r.title ?? "",
+      message: r.message,
+      approved: r.approved,
+    });
+  }
+
+  async function saveDraft() {
+    if (!draft || saving) return;
+    const problems: string[] = [];
+    const name = draft.name.trim();
+    const message = draft.message.trim();
+    if (name.length < 2 || name.length > 60)
+      problems.push("Patient name must be 2–60 characters.");
+    if (draft.rating < 1 || draft.rating > 5) problems.push("Choose a rating from 1 to 5.");
+    if (message.length < 10 || message.length > 600)
+      problems.push("Review text must be 10–600 characters.");
+    if (problems.length) {
+      setFormError(problems[0]);
+      return;
+    }
+
+    setSaving(true);
+    setFormError(null);
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: draft.id ? "update" : "create",
+          id: draft.id ?? undefined,
+          name,
+          rating: draft.rating,
+          treatment: draft.treatment.trim(),
+          title: draft.title.trim(),
+          message,
+          approved: draft.approved,
+        }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        onSessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "Could not save the review.");
+      ok(draft.id ? "Review updated" : "Review added", "It is live on the site right away.");
+      setDraft(null);
+      await load();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not save the review.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -250,6 +353,14 @@ export function ReviewsPanel({
             </div>
             <Button
               type="button"
+              onClick={openNew}
+              className="h-11 rounded-full bg-brand-navy px-5 text-sm font-bold text-white shadow-md shadow-navy-900/25 hover:bg-brand-blue"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add review
+            </Button>
+            <Button
+              type="button"
               onClick={exportCsv}
               disabled={exporting}
               title="Download every review as a CSV file"
@@ -290,7 +401,7 @@ export function ReviewsPanel({
           </p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             {rows.length === 0
-              ? "Patient reviews submitted on the website will appear here for approval."
+              ? "Add your first patient review — it appears on the website immediately."
               : "Try a different filter or search term."}
           </p>
         </motion.div>
@@ -338,10 +449,10 @@ export function ReviewsPanel({
                         <p className="mt-1 line-clamp-2 max-w-md text-xs leading-relaxed text-slate-500" title={r.message}>
                           {r.message}
                         </p>
-                        {r.serviceSlug && (
+                        {r.treatment && (
                           <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
                             <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
-                            {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+                            {r.treatment}
                           </span>
                         )}
                       </td>
@@ -366,6 +477,11 @@ export function ReviewsPanel({
                             <Loader2 className="h-4 w-4 animate-spin text-brand-blue" aria-hidden="true" />
                           ) : (
                             <>
+                              <SmallAction
+                                label="Edit"
+                                tone="neutral"
+                                onClick={() => openEdit(r)}
+                              />
                               {!r.approved && (
                                 <SmallAction
                                   label="Approve"
@@ -442,10 +558,10 @@ export function ReviewsPanel({
                   <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-500">
                     {r.message}
                   </p>
-                  {r.serviceSlug && (
+                  {r.treatment && (
                     <span className="mt-2 inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-brand-blue ring-1 ring-blue-100">
                       <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
-                      {serviceMap[r.serviceSlug] ?? r.serviceSlug}
+                      {r.treatment}
                     </span>
                   )}
                 </div>
@@ -455,6 +571,7 @@ export function ReviewsPanel({
                   </div>
                 ) : (
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <SmallAction label="Edit" tone="neutral" onClick={() => openEdit(r)} />
                     {!r.approved && (
                       <SmallAction label="Approve" tone="confirm" onClick={() => reviewAction(r.id, "approve")} />
                     )}
@@ -469,6 +586,181 @@ export function ReviewsPanel({
           </div>
         </>
       )}
+
+      {/* ============ ADD / EDIT REVIEW DIALOG ============ */}
+      <Dialog
+        open={draft !== null}
+        onOpenChange={(open) => {
+          if (!open) setDraft(null);
+        }}
+      >
+        <DialogContent className="max-h-[88vh] overflow-y-auto rounded-3xl border-blue-100 bg-white p-6 sm:max-w-lg sm:p-8">
+          <DialogHeader>
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-brand-blue ring-1 ring-blue-100">
+              <MessageSquareQuote className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <DialogTitle className="font-heading text-xl font-bold text-brand-navy">
+              {draft?.id ? "Edit review" : "Add a review"}
+            </DialogTitle>
+            <DialogDescription className="leading-relaxed">
+              One review per patient — it carries the treatment they received and appears on the
+              website as both a review and a patient story.
+            </DialogDescription>
+          </DialogHeader>
+
+          {draft ? (
+            <div className="mt-2 space-y-5">
+              <div className="space-y-2">
+                <span className="block text-sm font-semibold text-brand-navy">
+                  Rating <span className="text-rose-500">*</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const value = i + 1;
+                    const active = value <= draft.rating;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-label={`${value} star${value > 1 ? "s" : ""}`}
+                        aria-pressed={draft.rating === value}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setDraft({ ...draft, rating: value });
+                        }}
+                        className="rounded-xl p-1 transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40"
+                      >
+                        <Star
+                          aria-hidden="true"
+                          className={cn(
+                            "h-7 w-7 transition-colors duration-200",
+                            active
+                              ? "fill-amber-400 text-amber-400"
+                              : "fill-slate-100 text-slate-300"
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="rev-name" className="text-sm font-semibold text-brand-navy">
+                    Patient name <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    id="rev-name"
+                    value={draft.name}
+                    maxLength={60}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="R. Ahmed"
+                    className="rounded-xl border-blue-100 bg-ice/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rev-treatment" className="text-sm font-semibold text-brand-navy">
+                    Treatment received
+                  </Label>
+                  <Input
+                    id="rev-treatment"
+                    value={draft.treatment}
+                    maxLength={60}
+                    list="review-treatment-options"
+                    onChange={(e) => setDraft({ ...draft, treatment: e.target.value })}
+                    placeholder="e.g. Root Canal Treatment"
+                    className="rounded-xl border-blue-100 bg-ice/50"
+                  />
+                  <datalist id="review-treatment-options">
+                    {TREATMENTS.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rev-title" className="text-sm font-semibold text-brand-navy">
+                  Headline (optional)
+                </Label>
+                <Input
+                  id="rev-title"
+                  value={draft.title}
+                  maxLength={80}
+                  onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                  placeholder="Painless root canal, very caring team"
+                  className="rounded-xl border-blue-100 bg-ice/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rev-message" className="text-sm font-semibold text-brand-navy">
+                  Review <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  id="rev-message"
+                  rows={5}
+                  maxLength={600}
+                  value={draft.message}
+                  onChange={(e) => setDraft({ ...draft, message: e.target.value })}
+                  placeholder="What the patient said about their visit…"
+                  className="resize-none rounded-xl border-blue-100 bg-ice/50 text-sm leading-relaxed"
+                />
+                <p className="text-right text-[11px] tabular-nums text-slate-400">
+                  {draft.message.length} / 600
+                </p>
+              </div>
+
+              <label className="flex items-center justify-between gap-3 rounded-xl border border-blue-100 bg-ice/40 px-4 py-3">
+                <span className="text-sm font-semibold text-brand-navy">
+                  Show on the website
+                </span>
+                <Switch
+                  checked={draft.approved}
+                  onCheckedChange={(v) => setDraft({ ...draft, approved: v })}
+                  aria-label="Show this review on the website"
+                />
+              </label>
+
+              {formError ? (
+                <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 ring-1 ring-rose-100">
+                  {formError}
+                </p>
+              ) : null}
+
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDraft(null)}
+                  className="rounded-full border-blue-200 px-6 font-semibold text-slate-600 hover:bg-blue-50 hover:text-brand-navy"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void saveDraft()}
+                  disabled={saving}
+                  className="rounded-full bg-brand-blue px-7 font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-brand-navy disabled:opacity-60"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      {draft.id ? "Save changes" : "Add review"}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
