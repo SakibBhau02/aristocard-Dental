@@ -57,6 +57,25 @@ const CACHE_TTL_MS = 5_000;
    it — any instance that observes a newer version rebuilds immediately.
    Falls back to the time-based TTL only if the probe query fails. */
 async function contentVersion(): Promise<number> {
+  /* One round trip instead of seven: the app server and the database can
+     sit in different regions, and this runs on every public request. */
+  try {
+    const rows = await db.$queryRaw<Array<{ v: Date | string | null }>>`
+      SELECT GREATEST(
+        (SELECT MAX("updatedAt") FROM "public"."Doctor"),
+        (SELECT MAX("updatedAt") FROM "public"."BlogPost"),
+        (SELECT MAX("updatedAt") FROM "public"."Faq"),
+        (SELECT MAX("updatedAt") FROM "public"."SmileCase"),
+        (SELECT MAX("updatedAt") FROM "public"."ServiceContent"),
+        (SELECT MAX("updatedAt") FROM "public"."HeroSlide"),
+        (SELECT MAX("updatedAt") FROM "public"."PageBlock")
+      ) AS "v"
+    `;
+    const v = rows[0]?.v;
+    return v ? new Date(v).getTime() : 0;
+  } catch {
+    /* fall through to the per-table probe below */
+  }
   const stamps = await Promise.all([
     db.doctor.aggregate({ _max: { updatedAt: true } }),
     db.blogPost.aggregate({ _max: { updatedAt: true } }),
