@@ -3,6 +3,12 @@ import { getContentBundle } from "@/lib/content/server";
 
 const BASE = "https://aristocratdentalcarebd.com";
 
+/* Built from the live CMS, so it must be generated per request — a
+   build-time copy would miss new services, doctors and blog posts until
+   the next deployment. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   /* Slugs come from the live CMS bundle (DB with static fallback), so new
      services / doctors / published posts enter the sitemap automatically. */
