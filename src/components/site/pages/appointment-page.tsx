@@ -21,7 +21,7 @@ import { useLang, toBnDigits } from "@/lib/i18n";
 import type { Lang } from "@/lib/data/dictionary";
 import { useBundle, useRouteHeroSlides } from "@/components/site/content-provider";
 import { Reveal } from "@/components/site/motion";
-import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -341,7 +341,7 @@ export function AppointmentPage() {
     <>
       {/* Hero — centered over a sliding clinic backdrop */}
       <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="light" interval={8000} indicators priority />
+        <SiteHeroBackdrop slides={heroSlides} overlay="light" indicators priority />
         <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

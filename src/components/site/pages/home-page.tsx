@@ -33,7 +33,7 @@ import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
 import { featuredServices, pickBn, testimonials } from "@/lib/content/shared";
 import { DynamicIcon } from "@/components/site/icon-map";
-import { ClinicGallery } from "@/components/site/clinic-gallery";
+import { ClinicGallery, hasClinicPhotos } from "@/components/site/clinic-gallery";
 import {
   AnimatedCounter,
   Reveal,
@@ -46,7 +46,7 @@ import { FounderSpotlight } from "@/components/site/founder-spotlight";
 import { TestimonialMarquee } from "@/components/site/testimonial-marquee";
 import { BeforeAfterSlider } from "@/components/site/before-after-slider";
 import { PatientReviews } from "@/components/site/patient-reviews";
-import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,7 @@ export function HomePage() {
         aria-labelledby="hero-heading"
       >
         {/* sliding background images (+ optional YouTube video) + navy overlay */}
-        <HeroBackdrop slides={heroSlides} indicators priority overlay="light" />
+        <SiteHeroBackdrop slides={heroSlides} indicators priority overlay="light" />
 
         {/* centered copy */}
         <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
@@ -395,12 +395,12 @@ export function HomePage() {
             description={pickBn(home.facility.description, home.facility.descriptionBn, bn)}
           />
 
-          {/* Live clinic tour preview — the same rooms + equipment the
-              About page gallery renders (Admin → About → Clinic tour).
-              Falls back to the legacy facility cards when no rooms have
-              been defined yet, so the Homepage panel's facility copy is
-              never orphaned. */}
-          {(about.clinicRooms ?? []).length > 0 ? (
+          {/* Live clinic tour preview — the same photo wall the About
+              page gallery renders (Admin → About → Clinic tour). Only
+              rooms with a photo appear; falls back to the legacy
+              facility cards when no tour photos exist yet, so the
+              Homepage panel's facility copy is never orphaned. */}
+          {hasClinicPhotos(about.clinicRooms) ? (
             <>
               <div className="mt-12">
                 <ClinicGallery rooms={about.clinicRooms ?? []} variant="preview" />
@@ -420,7 +420,7 @@ export function HomePage() {
                   >
                     <Camera className="h-4.5 w-4.5" aria-hidden="true" />
                     {bn
-                      ? "সব রুম ও ইকুইপমেন্ট দেখুন"
+                      ? "পুরো ক্লিনিকের ছবি দেখুন"
                       : "Take the full clinic tour"}
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </a>

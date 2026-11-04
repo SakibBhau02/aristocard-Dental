@@ -16,7 +16,12 @@ import { doctors as staticDoctors, testimonials as staticTestimonials } from "@/
 import { blogPosts as staticPosts } from "@/lib/data/blog";
 import { generalFaqs as staticFaqs } from "@/lib/data/faqs";
 import { smileCases as staticCases } from "@/lib/data/smile-cases";
-import { homeHeroImages, heroVideoUrls } from "@/lib/data/hero-media";
+import {
+  homeHeroImages,
+  heroVideoUrls,
+  HERO_IMAGE_DURATION_MS,
+  HERO_VIDEO_DURATION_MS,
+} from "@/lib/data/hero-media";
 import { dictionary } from "@/lib/data/dictionary";
 const en = dictionary.en;
 const bn = dictionary.bn;
@@ -238,6 +243,10 @@ export type SiteSettings = {
   instagram: string;
   linkedin: string;
   heroVideoUrls: string[];
+  /* Hero playback timing (seconds) — admin-managed defaults: 5s images
+     (with a slow zoom-in) and 20s videos. */
+  heroImageDuration: number;
+  heroVideoDuration: number;
 };
 
 /* ------------------------------------------------------------------ */
@@ -635,12 +644,12 @@ export function defaultAboutContent(): AboutContent {
        Clinic tour; rooms without a photo render a designed placeholder. */
     clinicGalleryEyebrow: "Inside the clinic",
     clinicGalleryEyebrowBn: "ক্লিনিকের ভেতরে",
-    clinicGalleryTitle: "Every room, every instrument",
-    clinicGalleryTitleBn: "প্রতিটি রুম, প্রতিটি যন্ত্র",
+    clinicGalleryTitle: "A look inside our clinic",
+    clinicGalleryTitleBn: "আমাদের ক্লিনিকের ভেতরটা",
     clinicGalleryDescription:
-      "Walk through Aristocrat Dental Care room by room — the equipment we use, the spaces we treat in, and the hygiene protocols that run behind every appointment.",
+      "Real photographs of the spaces where we treat — calm operatories, a child-friendly room, and a sterilization suite that follows hospital-grade protocols.",
     clinicGalleryDescriptionBn:
-      "অ্যারিস্টোক্র্যাট ডেন্টাল কেয়ারের প্রতিটি রুম ঘুরে দেখুন — কোন যন্ত্রপাতি ব্যবহার করি, কোথায় চিকিৎসা হয়, আর প্রতিটি অ্যাপয়েন্টমেন্টের পেছনে যেসব হাইজিন প্রোটোকল কাজ করে।",
+      "যে পরিবেশে আমরা চিকিৎসা করি তার আসল ছবি — শান্ত অপারেটিং রুম, শিশু-বান্ধব রুম, আর হাসপাতাল-মানের স্টেরিলাইজেশন ইউনিট।",
     clinicRooms: [
       {
         id: "reception",
@@ -1010,6 +1019,8 @@ export function defaultSettings(): SiteSettings {
     instagram: site.social.instagram,
     linkedin: site.social.linkedin,
     heroVideoUrls: [...heroVideoUrls],
+    heroImageDuration: HERO_IMAGE_DURATION_MS / 1000,
+    heroVideoDuration: HERO_VIDEO_DURATION_MS / 1000,
   };
 }
 
@@ -1412,22 +1423,26 @@ export function heroSlideRowToSlide(row: HeroSlideRow): HeroSlide {
   return { type: "image", src: row.src, alt: row.alt ?? "" };
 }
 
+/* Home hero playlist — the admin-managed rows are the SINGLE ordered
+   list of images + videos, so the owner can decide exactly which video
+   follows which image. Legacy `settings.heroVideoUrls` is only used as
+   a fallback when the database has no home slides at all (fresh install
+   / DB read failure); the admin panel offers a one-click import for old
+   installations that still have links in that field. */
 export function buildHomeHeroSlides(rows: HeroSlideRow[], videoUrls: string[]): HeroSlide[] {
-  const images = rows
-    .filter((r) => r.active && r.kind === "image")
-    .sort((a, b) => a.sort - b.sort)
-    .map(heroSlideRowToSlide);
-  const dbVideos = rows
-    .filter((r) => r.active && r.kind === "youtube")
+  const ordered = rows
+    .filter((r) => r.active)
     .sort((a, b) => a.sort - b.sort)
     .map(heroSlideRowToSlide)
-    .filter((s) => s.type === "youtube");
+    .filter((s) => (s.type === "youtube" ? Boolean(s.id) : Boolean(s.src)));
+
+  if (ordered.length > 0) return ordered;
+
   const settingsVideos = videoUrls
     .map(parseYouTubeId)
     .filter((id): id is string => Boolean(id))
     .map((id) => ({ type: "youtube", id }) as HeroSlide);
-  const slides = buildHeroSlides(images, [...dbVideos, ...settingsVideos]);
-  return slides.length ? slides : buildHeroSlides(homeHeroImages, settingsVideos);
+  return buildHeroSlides(homeHeroImages, settingsVideos);
 }
 
 /* Page-scope slides: active rows in sort order (images + YouTube both OK).

@@ -22,7 +22,7 @@ import { useLang, toBnDigits } from "@/lib/i18n";
 import { useBundle } from "@/components/site/content-provider";
 import { pickBn, testimonials } from "@/lib/content/shared";
 import { PageHeader, CtaBanner, DoctorCard } from "@/components/site/shared";
-import { ClinicGallery } from "@/components/site/clinic-gallery";
+import { ClinicGallery, hasClinicPhotos } from "@/components/site/clinic-gallery";
 import {
   AnimatedCounter,
   Reveal,
@@ -731,8 +731,8 @@ export function AboutPage() {
         </section>
       ) : null}
 
-      {/* ============ CLINIC TOUR (rooms + equipment) ============ */}
-      {(about.clinicRooms ?? []).length > 0 ? (
+      {/* ============ CLINIC TOUR (photos only) ============ */}
+      {hasClinicPhotos(about.clinicRooms) ? (
         <section
           id="clinic-tour"
           className="relative scroll-mt-24 py-16 sm:py-20"
@@ -764,8 +764,8 @@ export function AboutPage() {
                 <Images className="mt-0.5 h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />
                 <span>
                   {bn
-                    ? "গ্যালারির ছবিগুলো ক্লিনিকের আসল রুম ও ইকুইপমেন্টের — নতুন ছবি যোগ হলে এখানেই আপডেট হবে।"
-                    : "These photographs show the clinic's own rooms and equipment; the gallery is updated from the clinic's content panel as new photos are added."}
+                    ? "গ্যালারির ছবিগুলো ক্লিনিকের নিজস্ব — নতুন ছবি যোগ হলে এখানেই আপডেট হবে।"
+                    : "These photographs are of the clinic itself — the wall updates automatically as new photos are added."}
                 </span>
               </p>
             </Reveal>

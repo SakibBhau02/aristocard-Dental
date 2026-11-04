@@ -5,6 +5,7 @@ import { bad, guard, serverError } from "@/lib/content/admin-api";
 import {
   buildUploadKey,
   isAllowedImageSrc,
+  normalizeImageBytes,
   r2Enabled,
   uploadToR2,
   validateImageFile,
@@ -13,6 +14,11 @@ import {
 /* ------------------------------------------------------------------ */
 /*  Admin API — Image upload                                            */
 /*  POST /api/admin/upload (multipart form, field "file") → { url }    */
+/*                                                                     */
+/*  Every image is re-encoded to a web-sized WebP before it is stored  */
+/*  (the admin panel also shrinks it in the browser first), so the     */
+/*  bucket only ever holds optimised files regardless of the original  */
+/*  resolution.                                                        */
 /*                                                                     */
 /*  Production (Vercel, read-only filesystem) → Cloudflare R2, needs    */
 /*  R2_* env (see .env.example). Local dev without R2 vars falls back   */
@@ -30,13 +36,14 @@ export async function POST(req: NextRequest) {
     const invalid = validateImageFile(file);
     if (invalid) return bad(invalid);
 
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const key = buildUploadKey(file);
+    const raw = new Uint8Array(await file.arrayBuffer());
+    const { body: bytes, contentType, ext } = await normalizeImageBytes(raw, file.type);
+    const key = buildUploadKey(file, ext);
 
     if (r2Enabled()) {
-      const url = await uploadToR2(key, bytes, file.type);
+      const url = await uploadToR2(key, bytes, contentType);
       if (!isAllowedImageSrc(url)) return serverError("upload", new Error("R2 URL rejected"));
-      return NextResponse.json({ url });
+      return NextResponse.json({ url, bytes: bytes.byteLength, type: contentType });
     }
 
     /* ---- local-dev fallback (never used on Vercel) ---- */
@@ -46,11 +53,11 @@ export async function POST(req: NextRequest) {
         { status: 503, headers: { "Cache-Control": "no-store" } }
       );
     }
-    const rel = key; // uploads/YYYY/MM/<uuid>.<ext>
+    const rel = key; // uploads/YYYY/MM/<uuid>.webp
     const abs = join(process.cwd(), "public", rel);
     await mkdir(join(abs, ".."), { recursive: true });
     await writeFile(abs, bytes);
-    return NextResponse.json({ url: `/${rel}` });
+    return NextResponse.json({ url: `/${rel}`, bytes: bytes.byteLength, type: contentType });
   } catch (err) {
     return serverError("upload", err);
   }

@@ -7,6 +7,15 @@ export type HeroSlide =
   | { type: "youtube"; id: string };
 
 /* ------------------------------------------------------------------ */
+/*  Playback timing — one shared source of truth for every hero        */
+/*  section. Images stay on screen for 5s (with a slow zoom-in) and    */
+/*  videos play for 20s before the rotation advances. The admin panel  */
+/*  can override these values per site from Configuration → Hero.      */
+/* ------------------------------------------------------------------ */
+export const HERO_IMAGE_DURATION_MS = 5_000;
+export const HERO_VIDEO_DURATION_MS = 20_000;
+
+/* ------------------------------------------------------------------ */
 /*  YOUTUBE VIDEO BACKGROUND (client-configurable)                     */
 /* ------------------------------------------------------------------ */
 /*

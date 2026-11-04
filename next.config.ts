@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  /* sharp is a native module — it must be required at runtime instead of
+     being bundled, otherwise the image encoder breaks inside the app
+     server (admin uploads are re-encoded to WebP with it). */
+  serverExternalPackages: ["sharp"],
   reactStrictMode: false,
   /* Admin-uploaded images live on Cloudflare R2 (see src/lib/r2.ts).
      next/image needs the R2 host allow-listed: the configured

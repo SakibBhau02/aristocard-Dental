@@ -1547,8 +1547,8 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
       {/* ============ CLINIC TOUR ============ */}
       <FormSection
         icon={Images}
-        title="Clinic tour (rooms & equipment)"
-        description="Photographs, room names and the equipment list shown in the About gallery and the home preview"
+        title="Clinic tour (photos)"
+        description="The tour is a photo wall — only the pictures are shown on the site, in this order"
         edited={groupDirty((a) => [
           a.clinicGalleryEyebrow,
           a.clinicGalleryTitle,
@@ -1580,10 +1580,11 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
           onBnChange={(v) => set("clinicGalleryDescriptionBn", v)}
         />
         <Hint>
-          Upload a photo for each room (JPG/PNG/WebP). Rooms without a photo
-          show a designed placeholder, so you can publish the equipment lists
-          first and add photographs later. Rooms marked “featured” also appear
-          in the home-page preview.
+          Visitors only see the photographs — no room names, categories or
+          equipment lists are drawn on the tour. Those fields are kept for
+          screen readers and search engines. Rooms without a photo are hidden
+          from the site, and rooms marked “featured” also appear in the
+          home-page preview.
         </Hint>
 
         <div className="space-y-4">
@@ -1597,6 +1598,11 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
                   {room.title.trim() || `Room ${i + 1}`}
                 </p>
                 <span className="flex items-center gap-1">
+                  {!room.image?.trim() ? (
+                    <span className="mr-1 hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 sm:inline">
+                      Hidden on site — no photo
+                    </span>
+                  ) : null}
                   <RowMoveButton
                     onClick={() => moveRoom(i, -1)}
                     disabled={i === 0}
@@ -1615,7 +1621,7 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
 
               <ImageUploadField
                 label="Room photo"
-                hint="Landscape 16:11 works best. Leave empty to use the placeholder."
+                hint="Landscape 4:3 works best. Without a photo this entry is hidden from the tour."
                 value={room.image || undefined}
                 onChange={(url) => setRoom(i, { image: url ?? "" })}
                 onUnauthorized={onSessionExpired}
@@ -1634,7 +1640,7 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <BilingualField
-                  label="Filter category"
+                  label="Internal category (not shown)"
                   enValue={room.category}
                   bnValue={room.categoryBn}
                   onEnChange={(v) => setRoom(i, { category: v })}
@@ -1655,14 +1661,14 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
               </div>
 
               <BilingualField
-                label="Room name"
+                label="Photo label — screen readers & SEO only"
                 enValue={room.title}
                 bnValue={room.titleBn}
                 onEnChange={(v) => setRoom(i, { title: v })}
                 onBnChange={(v) => setRoom(i, { titleBn: v })}
               />
               <BilingualField
-                label="Description"
+                label="Description (not shown on the tour)"
                 textarea
                 rows={3}
                 enValue={room.description}
@@ -1673,13 +1679,13 @@ export function AboutPanel({ onSessionExpired }: PanelProps) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <LinesField
-                  label="Equipment — English"
+                  label="Equipment — English (not shown)"
                   value={room.equipment}
                   onChange={(next) => setRoom(i, { equipment: next })}
                   placeholder={"Digital X-ray\nIntraoral 3D scanner"}
                 />
                 <LinesField
-                  label="Equipment — বাংলা"
+                  label="Equipment — বাংলা (not shown)"
                   value={room.equipmentBn ?? []}
                   onChange={(next) => setRoom(i, { equipmentBn: next })}
                   placeholder={"ডিজিটাল এক্স-রে\nইন্ট্রাওরাল থ্রিডি স্ক্যানার"}

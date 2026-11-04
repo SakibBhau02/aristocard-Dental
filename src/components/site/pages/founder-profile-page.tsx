@@ -24,7 +24,7 @@ import { useBundle, useRouteHeroSlides } from "@/components/site/content-provide
 import { pickBn, testimonials } from "@/lib/content/shared";
 import { goToSection } from "@/lib/anchor";
 import { CtaBanner } from "@/components/site/shared";
-import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import {
   Reveal,
   SectionHeading,
@@ -156,7 +156,7 @@ export function FounderProfilePage({ slug }: { slug: string }) {
     <>
       {/* ================= HERO ================= */}
       <section className="relative isolate flex min-h-[88vh] items-center overflow-hidden bg-brand-navy text-white">
-        <HeroBackdrop slides={heroSlides} overlay="light" interval={8000} indicators priority />
+        <SiteHeroBackdrop slides={heroSlides} overlay="light" indicators priority />
         <span
           className="pointer-events-none absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full opacity-40 blur-[120px]"
           style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }}

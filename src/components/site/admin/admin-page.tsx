@@ -234,8 +234,8 @@ const NAV_GROUPS: { label: string; items: NavEntry[] }[] = [
       {
         id: "hero",
         label: "Hero & Videos",
-        title: "Hero Slides & Videos",
-        description: "Background slides and YouTube videos behind page heroes.",
+        title: "Hero Playlist & Timing",
+        description: "Exact image/video order and playback timing behind every page hero.",
         icon: MonitorPlay,
       },
     ],

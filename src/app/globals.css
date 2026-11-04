@@ -984,17 +984,25 @@ html[lang="bn"] {
 
 /* ================= ROUND 11 — hero media redesign ================= */
 
-/* ---------- Hero Ken-Burns zoom (active hero slide) ---------- */
+/* ---------- Hero Ken-Burns zoom (active hero slide) ----------
+   One slow zoom-in per image, timed to the slide duration. The
+   component overrides animation-duration inline from the admin
+   setting (default 5s); the animation intentionally does NOT loop
+   so the photo never snaps back while it is on screen. */
 @keyframes hero-kenburns {
   0% {
-    transform: scale(1) translate(0, 0);
+    transform: scale(1) translate3d(0, 0, 0);
   }
   100% {
-    transform: scale(1.09) translate(-1.2%, 1%);
+    transform: scale(1.09) translate3d(-1.2%, 1%, 0);
   }
 }
 .hero-kenburns {
-  animation: hero-kenburns 9s ease-in-out infinite alternate;
+  animation-name: hero-kenburns;
+  animation-duration: 5000ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-fill-mode: forwards;
+  transform-origin: center;
   will-change: transform;
 }
 

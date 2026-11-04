@@ -23,6 +23,11 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  formatBytes,
+  IMAGE_MAX_SOURCE_BYTES,
+  optimizeImageForUpload,
+} from "@/lib/image-optimize";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -856,17 +861,45 @@ export function ImageUploadField({
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [stage, setStage] = useState<"idle" | "optimising" | "uploading">("idle");
+  const [lastInfo, setLastInfo] = useState<string | null>(null);
   const { fail } = useAdminToast();
 
   async function uploadFile(file: File) {
     if (uploading) return;
+    if (file.size > IMAGE_MAX_SOURCE_BYTES) {
+      fail(
+        "Image is too large",
+        `Please pick a file under ${formatBytes(IMAGE_MAX_SOURCE_BYTES)} — it is optimised automatically after that.`
+      );
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setUploading(true);
+    setLastInfo(null);
     try {
+      /* Shrink + convert to WebP in the browser so a 12 MP phone photo
+         uploads in a second instead of being rejected for size. */
+      setStage("optimising");
+      const optimised = await optimizeImageForUpload(file);
+
+      /* Serverless request bodies cap out around 4 MB — if the browser
+         could not decode/shrink the file, say so instead of letting the
+         API reject it with a generic message. */
+      if (optimised.file.size > 4 * 1024 * 1024) {
+        fail(
+          "Image is too heavy to upload",
+          "We could not compress it below 4 MB. Please export it as a JPG or PNG and try again."
+        );
+        return;
+      }
+
+      setStage("uploading");
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", optimised.file);
       const res = await fetch("/api/admin/upload", { method: "POST", body });
       const data = (await res.json().catch(() => null)) as
-        | { url?: string; error?: string }
+        | { url?: string; error?: string; bytes?: number; type?: string }
         | null;
       if (res.status === 401) {
         onUnauthorized?.();
@@ -877,9 +910,16 @@ export function ImageUploadField({
         throw new Error(data?.error ?? "The upload was rejected by the server.");
       }
       onChange(data.url);
+      const finalBytes = data.bytes ?? optimised.bytes;
+      setLastInfo(
+        optimised.converted && optimised.originalBytes > 0
+          ? `Optimised ${formatBytes(optimised.originalBytes)} → ${formatBytes(finalBytes)} WebP`
+          : `Uploaded ${formatBytes(finalBytes)} WebP`
+      );
     } catch (err) {
       fail("Upload failed", err instanceof Error ? err.message : "Please try again.");
     } finally {
+      setStage("idle");
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
@@ -937,7 +977,7 @@ export function ImageUploadField({
           <input
             ref={inputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
+            accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -958,18 +998,30 @@ export function ImageUploadField({
               ) : (
                 <Upload className="h-4 w-4" aria-hidden="true" />
               )}
-              {uploading ? "Uploading…" : "Upload image"}
+              {stage === "optimising"
+                ? "Optimising…"
+                : stage === "uploading"
+                  ? "Uploading…"
+                  : "Upload image"}
             </Button>
           </div>
           <Input
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value || undefined)}
-            placeholder="/images/example.png — or an /uploads/… path"
+            placeholder="https://… (R2) or /images/example.webp"
             aria-label="Image path"
             className="h-9 rounded-xl border-blue-100 bg-ice text-xs text-brand-navy placeholder:text-slate-400 focus:border-brand-blue focus:ring-brand-blue/25"
           />
           <p className="text-[11px] leading-relaxed text-slate-400">
-            PNG, JPG, WEBP or GIF — uploads land in <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/uploads</code>; you can also paste an existing path from <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">/public</code>.
+            {lastInfo ? (
+              <span className="font-semibold text-emerald-600">{lastInfo}</span>
+            ) : (
+              <>
+                PNG, JPG, WEBP, AVIF or GIF — every upload is resized and converted to{" "}
+                <span className="font-semibold text-slate-500">WebP</span> automatically, whatever
+                the original resolution.
+              </>
+            )}
           </p>
         </div>
       </div>

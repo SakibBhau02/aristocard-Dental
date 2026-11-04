@@ -36,7 +36,7 @@ import { DynamicIcon } from "@/components/site/icon-map";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
-import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
@@ -990,7 +990,7 @@ export function DoctorDetailPage({ slug }: { slug: string }) {
     <>
       {/* HERO — centered over a sliding team backdrop */}
       <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="light" interval={8000} indicators priority />
+        <SiteHeroBackdrop slides={heroSlides} overlay="light" indicators priority />
         <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-blue-200/80">

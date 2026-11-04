@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { services } from "@/lib/data/services";
+import { looksLikeImageSrc } from "@/lib/image-optimize";
 import type { CaseRow } from "@/lib/content/shared";
 import { useContent } from "@/components/site/content-provider";
 import {
@@ -364,10 +365,10 @@ function CasesEditor({
     if (!SLUG_RE.test(slug) || slug.length < 2 || slug.length > 80)
       problems.push("Slug must be lowercase letters, numbers and hyphens (2–80 characters).");
     if (d.treatment.trim().length < 2) problems.push("Treatment name is required.");
-    if (!d.beforeSrc.trim().startsWith("/"))
-      problems.push("Before photo path must start with / (e.g. /images/… or /uploads/…).");
-    if (!d.afterSrc.trim().startsWith("/"))
-      problems.push("After photo path must start with / (e.g. /images/… or /uploads/…).");
+    if (!looksLikeImageSrc(d.beforeSrc))
+      problems.push("Add a before photo — upload one or paste an image URL.");
+    if (!looksLikeImageSrc(d.afterSrc))
+      problems.push("Add an after photo — upload one or paste an image URL.");
     if (d.patient.trim().length < 1) problems.push("Patient label is required (e.g. \"R. Ahmed\").");
     if (d.result.trim().length < 10)
       problems.push("Result description must be at least 10 characters.");

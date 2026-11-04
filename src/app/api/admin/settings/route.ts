@@ -40,6 +40,8 @@ function sanitizeSettings(raw: Record<string, unknown>): Record<string, unknown>
     instagram: url(raw.instagram, "https://www.instagram.com/aristocratdentalcare01"),
     linkedin: url(raw.linkedin, "https://www.linkedin.com/company/aristocrat-dental-care-orthodontic-center"),
     heroVideoUrls,
+    heroImageDuration: Math.min(30, Math.max(1, Math.round(n(raw.heroImageDuration, 5)))),
+    heroVideoDuration: Math.min(180, Math.max(3, Math.round(n(raw.heroVideoDuration, 20)))),
   };
 }
 

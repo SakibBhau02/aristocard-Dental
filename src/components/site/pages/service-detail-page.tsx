@@ -35,7 +35,7 @@ import { Reveal, SectionHeading, StaggerContainer, StaggerItem } from "@/compone
 import { ServiceCard, CtaBanner } from "@/components/site/shared";
 import { ServiceReviews } from "@/components/site/service-reviews";
 import { NotFoundPage } from "@/components/site/pages/not-found-page";
-import { HeroBackdrop } from "@/components/site/hero-backdrop";
+import { SiteHeroBackdrop } from "@/components/site/hero-backdrop";
 import type { HeroSlide } from "@/lib/data/hero-media";
 import Image from "next/image";
 
@@ -169,7 +169,7 @@ export function ServiceDetailPage({ slug }: { slug: string }) {
     <>
       {/* ============ HERO — centered over the service's own imagery ============ */}
       <section className="relative isolate flex min-h-[88vh] items-center justify-center overflow-hidden bg-brand-navy">
-        <HeroBackdrop slides={heroSlides} overlay="light" interval={7500} indicators priority />
+        <SiteHeroBackdrop slides={heroSlides} overlay="light" indicators priority />
         <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
           {/* breadcrumb (centered) */}
           <nav aria-label="Breadcrumb" className="mb-8">
